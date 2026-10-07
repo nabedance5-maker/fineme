@@ -9,6 +9,7 @@ import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
+import { rangeLabel } from '@/lib/time-span';
 import PageDesignSettings from './PageDesignSettings';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
@@ -1772,7 +1773,7 @@ export default function ProviderDashboardPage() {
         const cell = (s, d) => {
           const r = reqMap[s.id]?.[d];
           if (!r) return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#d1d5db;border-bottom:1px solid #f3f4f6">—</td>`;
-          if (r.type === 'work') return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#2563eb;font-weight:700;white-space:nowrap;border-bottom:1px solid #f3f4f6">${esc((r.start_time || '').slice(0, 5))}〜${esc((r.end_time || '').slice(0, 5))}</td>`;
+          if (r.type === 'work') return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#2563eb;font-weight:700;white-space:nowrap;border-bottom:1px solid #f3f4f6">${esc(rangeLabel(r.start_time, r.end_time))}</td>`;
           return `<td style="padding:4px 6px;text-align:center;font-size:12px;color:#dc2626;font-weight:700;border-bottom:1px solid #f3f4f6">休</td>`;
         };
         return renderStaffDateGrid(dates, cell) + '<p class="muted" style="font-size:11px;margin-top:6px">青=出勤希望時間／赤「休」=休み希望／グレー「—」=未提出</p>';
@@ -1783,7 +1784,7 @@ export default function ProviderDashboardPage() {
         const cell = (s, d) => {
           const list = map[s.id]?.[d] || [];
           const inner = list.length
-            ? list.map(e => `${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span style="color:#9ca3af">・自動</span>' : ''}`).join('<br>')
+            ? list.map(e => `${esc(rangeLabel(e.start_time, e.end_time))}${e.source === 'auto' ? '<span style="color:#9ca3af">・自動</span>' : ''}`).join('<br>')
             : '<span style="color:#d1d5db">—</span>';
           return `<td style="padding:4px 6px;text-align:center;font-size:11px;white-space:nowrap;border-bottom:1px solid #f3f4f6;cursor:pointer" data-shift-cell-staff="${s.id}" data-shift-cell-date="${d}">${inner}</td>`;
         };
@@ -1805,7 +1806,7 @@ export default function ProviderDashboardPage() {
             <div style="margin-bottom:12px">
               ${list.length ? list.map(e => `
                 <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
-                  <span style="flex:1">${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span class="muted" style="font-size:11px"> ・自動</span>' : ''}</span>
+                  <span style="flex:1">${esc(rangeLabel(e.start_time, e.end_time))}${e.source === 'auto' ? '<span class="muted" style="font-size:11px"> ・自動</span>' : ''}</span>
                   <button type="button" data-shift-cell-del="${e.id}" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;color:#ef4444;background:none;border-radius:6px;cursor:pointer">削除</button>
                 </div>
               `).join('') : '<p class="muted" style="font-size:12px;margin:0">まだシフトがありません。</p>'}
@@ -1877,6 +1878,44 @@ export default function ProviderDashboardPage() {
         const data = await res.json();
         const sel = document.getElementById('shift-rule-type-select');
         if (sel) { sel.value = data.rule_type; sel.dispatchEvent(new Event('change')); }
+        renderSubmitNotify(data.submit_notify || {});
+      }
+
+      // ── 提出の通知（でお要望2026-10-07）：スタッフが提出を完了したら、選んだ先へ知らせる ──
+      async function renderSubmitNotify(cfg) {
+        const box = document.getElementById('shift-notify-box');
+        if (!box) return;
+        if (!shiftStaffList.length) await loadStaffLinks();
+        const prov = loadProviderData() || {};
+        const ownerLine = !!prov.line_user_id;
+        box.innerHTML = `
+          <p class="muted" style="font-size:12px;line-height:1.7;margin:0 0 10px">スタッフが「提出を完了する」を押すと、ここで選んだ先に、誰が出したか・提出状況・未提出の人をお知らせします。</p>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" data-sn-store-email ${cfg.store_email ? 'checked' : ''} style="width:16px;height:16px" />店舗のメール${prov.email ? `（${esc(prov.email)}）` : ''}</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:4px"><input type="checkbox" data-sn-owner-line ${cfg.owner_line ? 'checked' : ''} ${ownerLine ? '' : 'disabled'} style="width:16px;height:16px" />店舗アカウントのLINE（Fineme公式LINE）${ownerLine ? '' : '<span class="muted" style="font-size:11.5px">・未連携</span>'}</label>
+          <div class="form-field" style="margin:10px 0 8px"><label style="font-size:12px">ほかに通知するメールアドレス（カンマ区切り・10件まで）</label><input type="text" data-sn-emails value="${esc((cfg.extra_emails || []).join(', '))}" placeholder="manager@example.com" /></div>
+          <div style="font-size:12px;font-weight:700;margin:12px 0 4px">LINEで通知するスタッフ（店長・シフト作成者など）</div>
+          ${shiftStaffList.length ? shiftStaffList.map(st => `
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 0">
+              <input type="checkbox" data-sn-staff="${st.id}" ${(cfg.staff_ids || []).includes(st.id) ? 'checked' : ''} ${st.line_user_id ? '' : 'disabled'} style="width:16px;height:16px" />
+              <span style="flex:1">${esc(st.name)}</span>
+              ${st.line_user_id ? '<span style="font-size:11px;color:#23784a;font-weight:700">LINE連携済み</span>' : '<span class="muted" style="font-size:11px">未連携：本人のシフト提出リンクの「LINEで受け取る」から連携できます</span>'}
+            </label>`).join('') : '<p class="muted" style="font-size:12px">スタッフが登録されていません。</p>'}
+          <div style="margin-top:12px"><button type="button" class="btn" data-sn-save>通知の設定を保存</button><span data-sn-msg style="font-size:12px;margin-left:8px"></span></div>`;
+        box.querySelector('[data-sn-save]').addEventListener('click', async () => {
+          const msg = box.querySelector('[data-sn-msg]');
+          const body = {
+            submit_notify: {
+              store_email: box.querySelector('[data-sn-store-email]').checked,
+              owner_line: box.querySelector('[data-sn-owner-line]').checked,
+              extra_emails: box.querySelector('[data-sn-emails]').value,
+              staff_ids: [...box.querySelectorAll('[data-sn-staff]:checked')].map(i => i.dataset.snStaff),
+            },
+          };
+          msg.style.color = ''; msg.textContent = '保存中…';
+          const res = await fetch('/api/provider/shift-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify(body) });
+          if (res.ok) { msg.style.color = '#23784a'; msg.textContent = '✓ 保存しました'; renderSubmitNotify((await res.json()).submit_notify || {}); }
+          else { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
+        });
       }
       document.getElementById('shift-rule-save-btn')?.addEventListener('click', async () => {
         const msg = document.getElementById('shift-rule-save-msg');
@@ -2473,7 +2512,7 @@ export default function ProviderDashboardPage() {
               const dis = stt !== 'free';
               const bg = dis ? '#f3f4f6' : sel ? '#111827' : '#fff';
               const col = dis ? '#9ca3af' : sel ? '#fff' : '#111827';
-              const sub = stt === 'done' ? '適用済' : stt === 'off' ? '休希望' : `${String(r.start_time).slice(0, 5).replace(/^0/, '')}-${String(r.end_time).slice(0, 5).replace(/^0/, '')}`;
+              const sub = stt === 'done' ? '適用済' : stt === 'off' ? '休希望' : rangeLabel(r.start_time, r.end_time, '-');
               cells += `<button type="button" data-d="${date}" ${dis ? 'disabled' : ''} style="min-height:46px;border-radius:6px;border:1px solid ${sel ? '#111827' : '#d1d5db'};background:${bg};color:${col};padding:2px 0;line-height:1.25;cursor:${dis ? 'default' : 'pointer'}">
                 <div style="font-size:13px;font-weight:700">${d}</div><div style="font-size:9.5px">${esc(sub)}</div>${closed && !dis ? `<div style="font-size:9px;opacity:.75">定休日</div>` : ''}</button>`;
             }
@@ -2549,7 +2588,7 @@ export default function ProviderDashboardPage() {
             warnEl.innerHTML = data.skipped?.length
               ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#9a3412">
                   <strong>労働条件を超えるため、適用しなかった希望が${data.skipped.length}件あります（労基法違反を避けるため入れていません）</strong>
-                  <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(String(k.start_time).slice(0, 5))}〜${esc(String(k.end_time).slice(0, 5))}：${esc(k.reason)}</li>`).join('')}</ul>
+                  <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(rangeLabel(k.start_time, k.end_time))}：${esc(k.reason)}</li>`).join('')}</ul>
                 </div>` : '';
           }
           showToast(`${data.appliedCount}件を適用しました${data.skipped?.length ? `（${data.skipped.length}件は労働条件のため除外）` : ''}`);
@@ -2602,7 +2641,7 @@ export default function ProviderDashboardPage() {
           const nameOf = id => shiftStaffList.find(x => x.id === id)?.name || '(不明)';
           const shortHtml = data.warnings?.length
             ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#92400e">
-                人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(w.start_time)}〜${esc(w.end_time)}（必要${w.required}人・確保${w.filled}人）`).join('／')}
+                人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(rangeLabel(w.start_time, w.end_time))}（必要${w.required}人・確保${w.filled}人）`).join('／')}
               </div>`
             : '';
           const rangeSkipped = (data.skipped || []).filter(k => k.range);
@@ -2616,7 +2655,7 @@ export default function ProviderDashboardPage() {
           const skipHtml = data.skipped?.length
             ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-top:${shortHtml ? '8px' : '0'}">
                 <strong>労働条件を超えるため、採用しなかった希望が${data.skipped.length}件あります（労基法違反を避けるため自動では入れていません）</strong>
-                <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(String(k.start_time).slice(0, 5))}〜${esc(String(k.end_time).slice(0, 5))}：${esc(k.reason)}</li>`).join('')}</ul>
+                <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(rangeLabel(k.start_time, k.end_time))}：${esc(k.reason)}</li>`).join('')}</ul>
               </div>`
             : '';
           warnEl.innerHTML = shortHtml + skipHtml + rangeHtml;
@@ -2744,12 +2783,12 @@ export default function ProviderDashboardPage() {
             const mine = dayEntries.filter(e => e.staff_id === s.id);
             const reqHtml = !req ? '<span style="color:#9ca3af">未提出</span>'
               : req.type === 'off' ? '<span style="color:#dc2626;font-weight:700">休み希望</span>'
-              : `<span style="color:#2563eb;font-weight:700">${esc((req.start_time || '').slice(0, 5))}〜${esc((req.end_time || '').slice(0, 5))}</span>`;
+              : `<span style="color:#2563eb;font-weight:700">${esc(rangeLabel(req.start_time, req.end_time))}</span>`;
             const adopt = req && req.type === 'work' && !mine.length && period
               ? `<button type="button" data-day-adopt="${s.id}" data-start="${esc((req.start_time || '').slice(0, 5))}" data-end="${esc((req.end_time || '').slice(0, 5))}" style="font-size:11px;padding:3px 8px;border:1px solid #93c5fd;color:#2563eb;background:none;border-radius:6px;cursor:pointer;white-space:nowrap">希望を採用</button>` : '';
             const mineHtml = mine.length ? mine.map(e => `
               <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-                <span style="font-size:12px;font-weight:700;color:#059669">${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span style="color:#9ca3af;font-weight:400">・自動</span>' : ''}</span>
+                <span style="font-size:12px;font-weight:700;color:#059669">${esc(rangeLabel(e.start_time, e.end_time))}${e.source === 'auto' ? '<span style="color:#9ca3af;font-weight:400">・自動</span>' : ''}</span>
                 <button type="button" data-day-del="${e.id}" style="font-size:11px;padding:2px 7px;border:1px solid #fca5a5;color:#ef4444;background:none;border-radius:6px;cursor:pointer">削除</button>
               </div>`).join('') : '';
             const vios = (dayLabor.violations || []).filter(v => v.staff_id === s.id && v.dates.includes(date));
@@ -4827,9 +4866,19 @@ export default function ProviderDashboardPage() {
                 <input type="time" data-bh-open="${key}" value="${h.open || ''}" style="width:110px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" ${h.closed ? 'disabled' : ''} />
                 <span class="muted">〜</span>
                 <input type="time" data-bh-close="${key}" value="${h.close || ''}" style="width:110px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" ${h.closed ? 'disabled' : ''} />
+                <span data-bh-next="${key}" style="font-size:12px;font-weight:700;color:#84651a"></span>
               </div>
             `;
-          }).join('');
+          }).join('') + '<p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.6">閉店を開店より前の時刻にすると、翌日のその時刻までの営業になります（例：18:00〜3:00＝翌3時まで）。</p>';
+          const markNext = key => {
+            const o = el.querySelector(`[data-bh-open="${key}"]`)?.value, c = el.querySelector(`[data-bh-close="${key}"]`)?.value;
+            const tag = el.querySelector(`[data-bh-next="${key}"]`);
+            if (tag) tag.textContent = o && c && c <= o ? '（翌日）' : '';
+          };
+          Object.keys(WEEKDAY_LABEL_BH).forEach(key => {
+            markNext(key);
+            el.querySelectorAll(`[data-bh-open="${key}"], [data-bh-close="${key}"]`).forEach(inp => inp.addEventListener('input', () => markNext(key)));
+          });
           el.querySelectorAll('[data-bh-closed]').forEach(cb => cb.addEventListener('change', () => {
             const key = cb.dataset.bhClosed;
             const openInput = el.querySelector(`[data-bh-open="${key}"]`);
@@ -9188,15 +9237,18 @@ export default function ProviderDashboardPage() {
           closedDatesSet = new Set((rows || []).map(r => r.date));
         }
         const opens = [], closes = [];
+        let overnight = false;
         Object.values(businessHoursData).forEach(h => {
           if (h && !h.closed && h.open && h.close) {
-            opens.push(timeToMinutes(h.open));
-            closes.push(timeToMinutes(h.close));
+            const o = timeToMinutes(h.open), c = timeToMinutes(h.close);
+            opens.push(o);
+            if (c <= o) { overnight = true; closes.push(24 * 60); } else closes.push(c);
           }
         });
         if (opens.length) {
-          RANGE_START_MIN = Math.max(0, Math.min(...opens) - 60);
-          RANGE_END_MIN = Math.min(24 * 60, Math.max(...closes) + 60);
+          // 日付をまたぐ営業（例：18:00〜翌3:00）がある店舗は、0時台の予約も見えるよう1日全体を表示する
+          RANGE_START_MIN = overnight ? 0 : Math.max(0, Math.min(...opens) - 60);
+          RANGE_END_MIN = overnight ? 24 * 60 : Math.min(24 * 60, Math.max(...closes) + 60);
         }
       }
 
@@ -9220,9 +9272,15 @@ export default function ProviderDashboardPage() {
           return [{ start: RANGE_START_MIN, end: RANGE_END_MIN }]; // 休業日はRANGE全体が対象外
         }
         const openMin = timeToMinutes(hours.open);
-        const closeMin = timeToMinutes(hours.close);
+        let closeMin = timeToMinutes(hours.close);
+        if (closeMin <= openMin) closeMin = 24 * 60; // 翌日までの営業は、この日の24時まで
+        // 前日が日付をまたぐ営業なら、0時からその閉店時刻までも営業時間
+        const prev = new Date(`${dateStr}T00:00:00`); prev.setDate(prev.getDate() - 1);
+        const ph = businessHoursData[WEEKDAY_KEYS_BH[prev.getDay()]];
+        const carry = ph && !ph.closed && ph.open && ph.close && timeToMinutes(ph.close) <= timeToMinutes(ph.open) ? timeToMinutes(ph.close) : 0;
         const out = [];
-        if (openMin > RANGE_START_MIN) out.push({ start: RANGE_START_MIN, end: Math.min(openMin, RANGE_END_MIN) });
+        const gapStart = Math.max(RANGE_START_MIN, carry);
+        if (openMin > gapStart) out.push({ start: gapStart, end: Math.min(openMin, RANGE_END_MIN) });
         if (closeMin < RANGE_END_MIN) out.push({ start: Math.max(closeMin, RANGE_START_MIN), end: RANGE_END_MIN });
         return out;
       }
@@ -12430,6 +12488,11 @@ export default function ProviderDashboardPage() {
               <span id="shift-rule-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
             </div>
+          </details>
+
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>提出の通知</summary>
+            <div id="shift-notify-box" style={{ marginTop: '12px' }}>読み込み中…</div>
           </details>
 
           <details id="shift-patterns-wrap" className="card" style={{ padding: '16px 24px', marginBottom: '10px', display: 'none' }}>

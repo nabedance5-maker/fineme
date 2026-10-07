@@ -8,6 +8,7 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 import { normalizeFormat } from '@/lib/shift-request-format';
+import { normalizeSubmitNotify } from '@/lib/shift-submit-notify';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -30,11 +31,11 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('provider_shift_settings')
-    .select('rule_type, request_format')
+    .select('rule_type, request_format, submit_notify')
     .eq('provider_id', provider.id)
     .single();
 
-  return Response.json({ ...DEFAULT_SETTINGS, ...(data || {}), request_format: normalizeFormat(data?.request_format) });
+  return Response.json({ ...DEFAULT_SETTINGS, ...(data || {}), request_format: normalizeFormat(data?.request_format), submit_notify: normalizeSubmitNotify(data?.submit_notify) });
 }
 
 async function __PATCH(request) {
@@ -51,16 +52,17 @@ async function __PATCH(request) {
     update.rule_type = body.rule_type;
   }
   if (body.request_format !== undefined) update.request_format = normalizeFormat(body.request_format);
-  if (update.rule_type === undefined && update.request_format === undefined) return Response.json({ error: '更新項目がありません' }, { status: 400 });
+  if (body.submit_notify !== undefined) update.submit_notify = normalizeSubmitNotify(body.submit_notify);
+  if (update.rule_type === undefined && update.request_format === undefined && update.submit_notify === undefined) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_shift_settings')
     .upsert(update, { onConflict: 'provider_id' })
-    .select('rule_type, request_format')
+    .select('rule_type, request_format, submit_notify')
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json({ ...data, request_format: normalizeFormat(data?.request_format) });
+  return Response.json({ ...data, request_format: normalizeFormat(data?.request_format), submit_notify: normalizeSubmitNotify(data?.submit_notify) });
 }
 
 export const PATCH = withAudit(__PATCH);

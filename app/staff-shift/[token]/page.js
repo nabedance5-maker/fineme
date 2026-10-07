@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { rangeLabel, toMin } from '@/lib/time-span';
 
 // スタッフ本人が各自のスマホから出勤・休み希望を提出するページ（でお要望2026-09-13）。
 // Finemeアカウント不要。provider_staff.shift_access_token（推測不可能なUUID）付きの
@@ -16,9 +17,11 @@ import { useState, useEffect, useMemo } from 'react';
 
 const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
 
+// 店舗の営業時間に関係なく24時間から選べる（営業時間外の仕事もあるため。でお要望2026-10-07）。
+// 終了が開始以前の時刻なら翌日の時刻（例：22:00〜翌5:00）。
 const TIME_OPTIONS = (() => {
   const out = [];
-  for (let m = 8 * 60; m <= 23 * 60; m += 30) {
+  for (let m = 0; m < 24 * 60; m += 30) {
     const h = String(Math.floor(m / 60)).padStart(2, '0');
     const mm = String(m % 60).padStart(2, '0');
     out.push(`${h}:${mm}`);
@@ -31,7 +34,9 @@ const PRESETS = [
   { label: '午後（13-18時）', start: '13:00', end: '18:00' },
   { label: '夜（18-22時）', start: '18:00', end: '22:00' },
   { label: '終日（10-22時）', start: '10:00', end: '22:00' },
+  { label: '深夜（22-翌5時）', start: '22:00', end: '05:00' },
 ];
+const endLabel = (t, start) => (toMin(t) <= toMin(start) ? `翌${t}` : t);
 
 function monthsInRange(start, end) {
   const months = [];
@@ -263,7 +268,17 @@ export default function StaffShiftPage({ params }) {
         </div>
       )}
       <h1 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 4px' }}>{data.provider.name} シフト希望</h1>
-      <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', margin: '0 0 20px' }}>{data.staff.name}さん</p>
+      <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', margin: '0 0 12px' }}>{data.staff.name}さん</p>
+      <div style={{ ...cardStyle, marginBottom: '16px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {data.staff.line_connected ? (
+          <p style={{ margin: 0, fontSize: '12.5px', color: '#4ade80', fontWeight: '700' }}>✓ LINEで連絡を受け取れます（Fineme公式LINE）</p>
+        ) : (
+          <>
+            <p style={{ margin: 0, flex: 1, fontSize: '12px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.6 }}>シフトの連絡（提出の知らせなど）をLINEで受け取れます</p>
+            <a href={`/api/staff-shift/${token}/line-connect`} style={{ flexShrink: 0, padding: '8px 12px', borderRadius: '999px', background: '#06c755', color: '#fff', fontSize: '12px', fontWeight: '800', textDecoration: 'none' }}>LINEで受け取る</a>
+          </>
+        )}
+      </div>
 
       {!data.period ? (
         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.7)' }}>現在、希望を募集中の期間はありません。店舗からの案内をお待ちください。</p>
@@ -376,7 +391,7 @@ export default function StaffShiftPage({ params }) {
                     <div style={{ flex: 1 }}>
                       <label style={labelStyle}>終了</label>
                       <select value={editEnd} onChange={e => setEditEnd(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{endLabel(t, editStart)}</option>)}
                       </select>
                     </div>
                   </div>
@@ -384,7 +399,7 @@ export default function StaffShiftPage({ params }) {
               )}
 
               <button type="button" disabled={saving || !multiDates.length} onClick={saveMulti} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', background: '#c9a84c', color: '#0a0f1e', fontWeight: '800', fontSize: '14px', cursor: saving || !multiDates.length ? 'not-allowed' : 'pointer', opacity: !multiDates.length ? 0.4 : 1, marginBottom: '8px' }}>
-                {multiDates.length ? `選んだ${multiDates.length}日に${effMultiType === 'work' ? `${editStart}〜${editEnd}で出勤希望を` : '休み希望を'}まとめて保存` : '日付を選んでください'}
+                {multiDates.length ? `選んだ${multiDates.length}日に${effMultiType === 'work' ? `${rangeLabel(editStart, editEnd)}で出勤希望を` : '休み希望を'}まとめて保存` : '日付を選んでください'}
               </button>
               <button type="button" disabled={saving || !multiDates.length} onClick={clearMulti} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(248,113,113,0.4)', background: 'none', color: '#f87171', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: !multiDates.length ? 0.4 : 1 }}>
                 選んだ日の希望をまとめて取り消す
@@ -424,7 +439,7 @@ export default function StaffShiftPage({ params }) {
                 <div style={{ flex: 1 }}>
                   <label style={labelStyle}>終了</label>
                   <select value={editEnd} disabled={saving} onChange={e => { setEditEnd(e.target.value); autoSave(selectedDate, 'work', editStart, e.target.value); }} style={{ ...selectStyle, width: '100%' }}>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{endLabel(t, editStart)}</option>)}
                   </select>
                 </div>
               </div>
@@ -445,7 +460,7 @@ export default function StaffShiftPage({ params }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
               {data.requests.slice().sort((a, b) => a.date.localeCompare(b.date)).map(r => (
                 <div key={r.id} onClick={() => openDay(r.date)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: 'rgba(10,15,30,0.4)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
-                  <span style={{ flex: 1 }}>{r.date}　{r.type === 'work' ? `出勤 ${r.start_time}〜${r.end_time}` : '休み希望'}</span>
+                  <span style={{ flex: 1 }}>{r.date}　{r.type === 'work' ? `出勤 ${rangeLabel(r.start_time, r.end_time)}` : '休み希望'}</span>
                 </div>
               ))}
             </div>

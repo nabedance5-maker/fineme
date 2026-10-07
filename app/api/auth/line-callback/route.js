@@ -78,6 +78,19 @@ export async function GET(request) {
   // マイページからの「LINEで連携する」はここに合流する（state.link_user_id あり）。
   // 専用の /api/me/line-callback を使うと Callback URL の登録がもう1本必要になり、
   // 登録漏れで Invalid redirect_uri になるため、登録済みのこのURLに相乗りさせている。
+  // スタッフのシフト用リンクからの「LINEで通知を受け取る」（state.link_staff_token あり）
+  if (stateData.link_staff_token) {
+    const back = `${BASE_URL}/staff-shift/${encodeURIComponent(stateData.link_staff_token)}`;
+    const { data: staffRow, error: staffErr } = await supabase
+      .from('provider_staff')
+      .update({ line_user_id: lineUserId })
+      .eq('shift_access_token', stateData.link_staff_token)
+      .select('id')
+      .maybeSingle();
+    if (staffErr || !staffRow) return Response.redirect(`${back}?line_error=save_failed`);
+    return Response.redirect(`${back}?line_connected=1`);
+  }
+
   if (stateData.link_user_id) {
     const { error: linkError } = await supabase
       .from('profiles')

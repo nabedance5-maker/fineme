@@ -36,7 +36,7 @@ async function getStaffByToken(token) {
   // 無効です」と出る不具合の原因。シフト機能を追加した副作用）。
   const { data } = await supabase
     .from('provider_staff')
-    .select('id, name, provider_id, providers!provider_staff_provider_id_fkey(name)')
+    .select('id, name, provider_id, line_user_id, providers!provider_staff_provider_id_fkey(name)')
     .eq('shift_access_token', token)
     .single();
   return data || null;
@@ -70,7 +70,7 @@ export async function GET(request, { params }) {
   }
 
   return Response.json({
-    staff: { id: staff.id, name: staff.name },
+    staff: { id: staff.id, name: staff.name, line_connected: !!staff.line_user_id },
     provider: { name: staff.providers?.name || '' },
     period: period ? { id: period.id, period_start: period.period_start, period_end: period.period_end, request_deadline: period.request_deadline, status: period.status, pastDeadline: isDeadlinePassed(period), locked: isDeadlinePassed(period) && submitted } : null,
     rule: rule ? { ...rule, label: describeRule(rule) } : null,
@@ -95,6 +95,10 @@ export async function POST(request, { params }) {
   }
   if (type === 'work' && (!start_time || !end_time)) {
     return Response.json({ error: '出勤希望には開始・終了時刻が必要です' }, { status: 400 });
+  }
+  // 0:00〜23:59のどこでも可。終了が開始より前なら翌日まで（日付またぎ）。同じ時刻は不可
+  if (type === 'work' && (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(start_time).slice(0, 5)) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(String(end_time).slice(0, 5)) || String(start_time).slice(0, 5) === String(end_time).slice(0, 5))) {
+    return Response.json({ error: '開始・終了時刻が正しくありません（開始と終了を同じ時刻にはできません）' }, { status: 400 });
   }
 
   // この期間が本当に自分の店舗のものか確認（他店舗の期間IDを渡された場合に書き込ませない）

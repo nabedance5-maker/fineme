@@ -111,7 +111,7 @@ function todayStatusText(provider) {
   const key = WEEKDAY_KEYS_BH[new Date(`${todayStr}T00:00:00Z`).getUTCDay()];
   const today = hours[key];
   if (!today?.open || !today?.close) return null;
-  return `本日 ${today.open}〜${today.close} 営業中`;
+  return `本日 ${today.open}〜${today.close <= today.open ? '翌' + today.close : today.close} 営業中`;
 }
 
 // 住所の地図検索リンク（でお要望2026-09-29：住所を公開表示し地図リンクも追加）。
@@ -1044,7 +1044,7 @@ function BasicInfoTab({ provider }) {
           {WEEKDAY_KEYS_BH.map(key => {
             const h = provider.business_hours[key];
             const isToday = key === todayKey;
-            const text = (!h || h.closed || !h.open || !h.close) ? '定休日' : `${h.open}〜${h.close}`;
+            const text = (!h || h.closed || !h.open || !h.close) ? '定休日' : `${h.open}〜${h.close <= h.open ? '翌' + h.close : h.close}`;
             return (
               <div key={key} style={{ display: 'flex', gap: '10px', padding: '6px 0', fontWeight: isToday ? '800' : '500' }}>
                 <span style={{ flexShrink: 0, width: '28px', fontSize: 'calc(13px * var(--pv-fs))', color: isToday ? 'var(--pv-accent)' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>{WEEKDAY_LABEL_BH[key]}</span>

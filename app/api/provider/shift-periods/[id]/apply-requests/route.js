@@ -4,7 +4,8 @@
 // 超えるものは入れず、skippedとして理由付きで返す（自動作成と同じ判定）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { createLoadTracker, effectiveLimits, toMinutes, workingHours } from '@/lib/shift-labor';
+import { createLoadTracker, effectiveLimits, workingHours } from '@/lib/shift-labor';
+import { spanOf } from '@/lib/time-span';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -54,7 +55,7 @@ async function __POST(request, { params }) {
   const assigned = {};
   const remember = (e) => {
     tracker.add(e.staff_id, e.date, workingHours(e.start_time, e.end_time));
-    (assigned[`${e.staff_id}|${e.date}`] = assigned[`${e.staff_id}|${e.date}`] || []).push({ s: toMinutes(e.start_time), e: toMinutes(e.end_time) });
+    { const sp = spanOf(e.start_time, e.end_time); if (sp) (assigned[`${e.staff_id}|${e.date}`] = assigned[`${e.staff_id}|${e.date}`] || []).push(sp); }
   };
   [...neighborEntries, ...(ownEntries || [])].forEach(remember);
 
@@ -62,7 +63,7 @@ async function __POST(request, { params }) {
   const skipped = [];
   let duplicateCount = 0;
   for (const r of targets) {
-    const s = toMinutes(r.start_time), e = toMinutes(r.end_time);
+    const { s, e } = spanOf(r.start_time, r.end_time) || { s: 0, e: 0 };
     if ((assigned[`${r.staff_id}|${r.date}`] || []).some(a => a.s < e && a.e > s)) { duplicateCount++; continue; }
     const reason = tracker.check(r.staff_id, r.date, workingHours(r.start_time, r.end_time));
     if (reason) { skipped.push({ staff_id: r.staff_id, date: r.date, start_time: r.start_time, end_time: r.end_time, reason }); continue; }

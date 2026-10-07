@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
 import { isDeadlinePassed, LOCKED_MESSAGE } from '@/lib/shift-deadline';
+import { notifyShiftSubmitted } from '@/lib/shift-submit-notify';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getStaffByToken(token) {
@@ -24,7 +25,7 @@ export async function POST(request, { params }) {
   const { period_id } = body;
   if (!period_id) return Response.json({ error: 'period_idは必須です' }, { status: 400 });
 
-  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, request_deadline').eq('id', period_id).single();
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, request_deadline, period_start, period_end').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
   if (isDeadlinePassed(period)) {
@@ -36,6 +37,14 @@ export async function POST(request, { params }) {
     .from('provider_shift_submissions')
     .upsert({ period_id, staff_id: staff.id, submitted_at: new Date().toISOString() }, { onConflict: 'period_id,staff_id' });
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // 店舗が選んだ先へ提出を知らせる（失敗しても提出自体は完了扱い）
+  try {
+    await Promise.race([
+      notifyShiftSubmitted(supabase, { providerId: staff.provider_id, period, staffId: staff.id }),
+      new Promise(r => setTimeout(r, 8000)),
+    ]);
+  } catch (e) { console.error('[shift submit notify]', e); }
 
   return Response.json({ ok: true });
 }
