@@ -2605,13 +2605,21 @@ export default function ProviderDashboardPage() {
                 人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(w.start_time)}〜${esc(w.end_time)}（必要${w.required}人・確保${w.filled}人）`).join('／')}
               </div>`
             : '';
+          const rangeSkipped = (data.skipped || []).filter(k => k.range);
+          data.skipped = (data.skipped || []).filter(k => !k.range);
+          const rangeHtml = rangeSkipped.length
+            ? `<details style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#334155;margin-top:8px">
+                <summary style="cursor:pointer">「この時間内なら出勤できる」と範囲で出された日のうち、週・月の上限や休日の確保のため入れなかった日が${rangeSkipped.length}件あります</summary>
+                <ul style="margin:6px 0 0;padding-left:18px">${rangeSkipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)}：${esc(k.reason)}</li>`).join('')}</ul>
+              </details>`
+            : '';
           const skipHtml = data.skipped?.length
             ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-top:${shortHtml ? '8px' : '0'}">
                 <strong>労働条件を超えるため、採用しなかった希望が${data.skipped.length}件あります（労基法違反を避けるため自動では入れていません）</strong>
                 <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(String(k.start_time).slice(0, 5))}〜${esc(String(k.end_time).slice(0, 5))}：${esc(k.reason)}</li>`).join('')}</ul>
               </div>`
             : '';
-          warnEl.innerHTML = shortHtml + skipHtml;
+          warnEl.innerHTML = shortHtml + skipHtml + rangeHtml;
         }
         showToast(`${data.createdCount}件のシフトを作成しました`);
         loadEntries();
@@ -12413,7 +12421,7 @@ export default function ProviderDashboardPage() {
                         <div className="form-field" style={{ marginBottom: 0 }}>
               <label>作り方</label>
               <select id="shift-rule-type-select">
-                <option value="as_requested">出勤希望をそのまま入れる（休み希望だけの人は、休み以外の日に労働条件の範囲内で配置）</option>
+                <option value="as_requested">出勤希望をもとに入れる（長い時間帯や休み希望だけの人は、法律の範囲内で他の人とずらして配置）</option>
                 <option value="staffing_target">時間帯パターンの必要人数に沿って優先度で調整する</option>
               </select>
             </div>
