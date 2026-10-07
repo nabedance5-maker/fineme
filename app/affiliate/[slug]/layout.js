@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
+import { SeoInitialProvider } from './_seo-initial';
 
 const BASE_URL = 'https://www.fineme.me';
 
@@ -58,6 +59,24 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default function AffiliateSlugLayout({ children }) {
-  return children;
+export default async function AffiliateSlugLayout({ children, params }) {
+  let initial = null;
+  try {
+    const { data: a } = await getSupabase()
+      .from('providers')
+      .select('name, catchphrase, description, main_category')
+      .eq('slug', params.slug)
+      .eq('entity_type', 'affiliate')
+      .eq('published', true)
+      .single();
+    if (a) {
+      initial = {
+        name: a.name,
+        catchphrase: a.catchphrase || '',
+        description: a.description ? a.description.slice(0, 400) : '',
+        categoryLabel: CATEGORY_LABELS[a.main_category] || 'サービス',
+      };
+    }
+  } catch {}
+  return <SeoInitialProvider value={initial}>{children}</SeoInitialProvider>;
 }

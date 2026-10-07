@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { SeoSummary } from './_seo-initial';
 
 // ── 定数 ────────────────────────────────────────────────────────────────────
 const CATEGORY_LABELS = {
@@ -88,11 +89,7 @@ function AffiliatePageInner() {
     }
   }, [affiliate?.id]);
 
-  if (loading) return (
-    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'rgba(232,228,220,0.55)' }}>読み込み中…</p>
-    </div>
-  );
+  if (loading) return <SeoSummary color="rgba(232,228,220,0.55)" />;
   if (error) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
       <p style={{ color: '#6b7280' }}>{error}</p>
@@ -468,7 +465,7 @@ function AffiliatePageInner() {
 
 export default function AffiliatePage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#6b7280' }}>読み込み中…</p></div>}>
+    <Suspense fallback={<SeoSummary />}>
       <AffiliatePageInner />
     </Suspense>
   );
