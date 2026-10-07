@@ -2,7 +2,6 @@
 //     /api/provider/shift-requests?from=&to= → 期間をまたいだ日付範囲の希望一覧（月カレンダー用）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { loadImpliedRequests } from '@/lib/shift-implied-requests';
 import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -59,10 +58,5 @@ export async function GET(request) {
     .order('date', { ascending: true });
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // implied=1：休み希望のみで提出したスタッフの「休み以外は出勤可」分を implied:true で補って返す
-  if (searchParams.get('implied') === '1') {
-    const implied = await loadImpliedRequests(supabase, provider.id, period, data || []);
-    return Response.json([...(data || []), ...implied]);
-  }
   return Response.json(data || []);
 }

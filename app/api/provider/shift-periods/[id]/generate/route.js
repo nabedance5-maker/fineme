@@ -6,7 +6,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { generateShift } from '@/lib/shift-generator';
-import { loadImpliedRequests } from '@/lib/shift-implied-requests';
+import { loadAvailability } from '@/lib/shift-implied-requests';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -49,10 +49,11 @@ async function __POST(request, { params }) {
     supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id).eq('source', 'manual'),
   ]);
 
-  const impliedRequests = await loadImpliedRequests(supabase, provider.id, period, requests || []);
+  const availability = await loadAvailability(supabase, provider.id, period, requests || []);
   const { entries, warnings, skipped } = generateShift({
     period,
-    requests: [...(requests || []), ...impliedRequests],
+    requests: requests || [],
+    availability,
     ruleType: settings?.rule_type || 'as_requested',
     dayPatterns,
     patternsById,

@@ -6,7 +6,6 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { createLoadTracker, effectiveLimits, toMinutes, workingHours } from '@/lib/shift-labor';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
-import { loadImpliedRequests } from '@/lib/shift-implied-requests';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 
@@ -42,7 +41,8 @@ async function __POST(request, { params }) {
     loadNeighborEntries(supabase, provider.id, period),
   ]);
 
-  const allRequests = [...(requests || []), ...(await loadImpliedRequests(supabase, provider.id, period, requests || []))];
+  // 本人が出した出勤希望だけを適用する（休み希望のみの人の空き日は希望ではないので適用しない）
+  const allRequests = requests || [];
   const offSet = new Set((requests || []).filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`));
   const targets = allRequests
     .filter(r => r.type === 'work' && wanted.has(`${r.staff_id}|${r.date}`) && !offSet.has(`${r.staff_id}|${r.date}`))
