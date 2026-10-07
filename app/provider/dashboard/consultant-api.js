@@ -17,7 +17,19 @@ function getToken() {
   } catch { return null; }
 }
 
-export async function consultantApi(path, options = {}) {
+// 右下のウィジェットと専用タブが同時に同じ読み込みをするので、進行中の読み込み（GET）は1本にまとめる
+const inflight = new Map();
+
+export function consultantApi(path, options = {}) {
+  const isGet = !options.method || options.method === 'GET';
+  if (!isGet) return request(path, options);
+  if (inflight.has(path)) return inflight.get(path);
+  const p = request(path, options).finally(() => inflight.delete(path));
+  inflight.set(path, p);
+  return p;
+}
+
+async function request(path, options) {
   const token = getToken();
   const res = await fetch(`/api/provider/consultant${path}`, {
     ...options,

@@ -47,6 +47,15 @@ const DASHBOARD_CSS = `
       /* 初回読み込み中の待機表示（でお要望2026-09-28）。ページ全体を覆い、
          データ取得が終わり次第JSで非表示にする。 */
       .pd-global-loading { position: fixed; inset: 0; background: var(--color-bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+      .pd-session-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(10,14,22,.62); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+      .pd-session-card { background: #fff; color: #1a1410; border-radius: 20px; padding: 32px 28px 28px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+      .pd-session-mark { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(176,143,51,.55); color: #8a6a17; font-family: 'Shippori Mincho', serif; font-weight: 700; font-size: 24px; }
+      .pd-session-card h2 { font-size: 19px; margin: 0 0 10px; }
+      .pd-session-card p { font-size: 14px; line-height: 1.8; color: rgba(26,20,16,.7); margin: 0 0 22px; }
+      .pd-session-btn { display: inline-flex; justify-content: center; width: 100%; padding: 14px 20px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #1a1410; background: linear-gradient(180deg, #e8cf7e, #c9a84c); text-decoration: none; }
+      #tab-calendar.pd-cal-loading { position: relative; }
+      #tab-calendar.pd-cal-loading::after { content: ''; position: absolute; inset: 0; background: rgba(250,248,243,.6); z-index: 5; }
+      #tab-calendar.pd-cal-loading::before { content: ''; position: absolute; left: 50%; top: 160px; width: 36px; height: 36px; margin-left: -18px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; z-index: 6; }
       .pd-spinner { width: 40px; height: 40px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; }
       @keyframes pd-spin { to { transform: rotate(360deg); } }
       /* <main>には共通クラス"section"（globals.cssでpadding:64px 0）も付いており、
@@ -301,7 +310,9 @@ export default function ProviderDashboardPage() {
     // 確定した）タブ」の完了だけを合図として使う——他タブのバックグラウンド更新
     // （例：予約リクエストの件数バッジは常に裏で読み込まれる）で誤って消さないため。
     window.__pdMarkTabReady = (key) => { if (pdLandingTabKey === key) hidePdGlobalLoading(); };
-    setTimeout(hidePdGlobalLoading, 6000); // 起動時タブの特定に失敗した場合等の保険
+    // 保険のタイマー。以前は6秒で消していたが、通信が遅い時に中身が届く前に消えてしまい
+    // 「ぐるぐるが最初だけ」に見えていた（でお報告2026-10-07）。各タブは完了時（失敗時も）に必ず合図する。
+    setTimeout(hidePdGlobalLoading, 45000);
 
     // ── Auth helpers (inlined from scripts/auth.js) ──────────────
     const PROVIDER_KEY = 'fineme:provider:current';
@@ -644,6 +655,37 @@ export default function ProviderDashboardPage() {
         return { ...init, headers };
       } catch { return init; }
     }
+    // ログインの有効期限切れ・通信不良を、各画面の小さなエラーではなく画面全体の案内で知らせる
+    // （でお報告2026-10-07：セッション切れでも再ログインの表示が出ず、サイトが壊れたように見える）。
+    let sessionExpiredShown = false;
+    function showSessionExpired() {
+      if (sessionExpiredShown) return;
+      sessionExpiredShown = true;
+      hidePdGlobalLoading();
+      const back = encodeURIComponent(location.pathname + location.search);
+      const el = document.createElement('div');
+      el.className = 'pd-session-overlay';
+      el.setAttribute('role', 'alertdialog');
+      el.setAttribute('aria-modal', 'true');
+      el.innerHTML = `
+        <div class="pd-session-card">
+          <div class="pd-session-mark">鍵</div>
+          <h2>ログインの有効期限が切れました</h2>
+          <p>安全のため、しばらく操作がない場合などにログインが切れます。もう一度ログインすると、いまの画面に戻ります。入力途中の内容は保存されていない場合があります。</p>
+          <a class="pd-session-btn" href="${PROVIDER_LOGIN_URL}&redirect=${back}">もう一度ログインする</a>
+        </div>`;
+      document.body.appendChild(el);
+      el.querySelector('a')?.focus();
+    }
+    let connectionNoticeAt = 0;
+    function showConnectionTrouble() {
+      if (sessionExpiredShown || Date.now() - connectionNoticeAt < 60000) return;
+      connectionNoticeAt = Date.now();
+      showToast('通信が不安定なため読み込めませんでした。電波のよい場所で、もう一度お試しください');
+    }
+    let loggingOut = false;
+    _sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT' && !loggingOut) showSessionExpired(); });
+
     const rawFetch = window.fetch;
     window.fetch = async function (input, init) {
       init = withOperator(input, init);
@@ -653,9 +695,11 @@ export default function ProviderDashboardPage() {
       const url = typeof input === 'string' ? input : input?.url || '';
       const auth = init?.headers && (init.headers.Authorization || init.headers.authorization);
       if (!url.startsWith('/api/') || !auth || !String(auth).startsWith('Bearer ')) return res;
-      if ((await refreshSessionWithRetry()) !== 'ok') return res;
+      const refreshed = await refreshSessionWithRetry();
+      if (refreshed === 'fatal') { showSessionExpired(); return res; }
+      if (refreshed !== 'ok') { showConnectionTrouble(); return res; }
       const fresh = getSupabaseToken();
-      if (!fresh) return res;
+      if (!fresh) { showSessionExpired(); return res; }
       const headers = { ...init.headers };
       delete headers.authorization;
       headers.Authorization = `Bearer ${fresh}`;
@@ -672,6 +716,7 @@ export default function ProviderDashboardPage() {
     // ネットワーク通信を伴い、回線が不安定だとawaitが長引くことがあるため3秒で
     // タイムアウトし、signOut自体が終わらなくても必ず掲載者向けログイン画面へ遷移させる。
     document.getElementById('pd-logout-btn')?.addEventListener('click', async () => {
+      loggingOut = true;
       try {
         await Promise.race([
           _sb.auth.signOut(),
@@ -707,7 +752,7 @@ export default function ProviderDashboardPage() {
     // の時だけ」の通り、タイムアウト以外でログイン画面へ飛ばすと未ログイン時の意図しない
     // 挙動やトークン読み取りのタイミング差での誤リダイレクトを招くため、範囲を絞る。
     function redirectToProviderLogin() {
-      window.location.replace(`${PROVIDER_LOGIN_URL}&redirect=%2Fprovider%2Fdashboard`);
+      showSessionExpired();
     }
     async function fetchAndCacheProviderData() {
       // 401でリダイレクトする前に、まず失効トークンの裏側リフレッシュ（474行目、
@@ -715,7 +760,7 @@ export default function ProviderDashboardPage() {
       // トークンでも本当に無効と誤判定してログイン画面へ飛ばしてしまう。
       await _sb.auth.getSession().catch(() => {});
       const token = getSupabaseToken();
-      if (!token) return null;
+      if (!token) { if (loadProviderData()) showSessionExpired(); return null; }
       try {
         const res = await fetch('/api/provider/me', {
           headers: { 'Authorization': `Bearer ${getSupabaseToken()}` }
@@ -6405,7 +6450,7 @@ export default function ProviderDashboardPage() {
       if (sortSel) sortSel.addEventListener('change', render);
       function loadCustomersTab() {
         Promise.all([loadFields(), loadMenus(), loadAll(), loadManualCustomers()])
-          .then(() => window.__pdMarkTabReady?.('customers'));
+          .finally(() => window.__pdMarkTabReady?.('customers'));
       }
       document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadCustomersTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomersTab();
@@ -7967,7 +8012,7 @@ export default function ProviderDashboardPage() {
         fetch(`/api/reservations?providerId=${providerId}`, { headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {} }),
         loadActivePackagesByUser(),
       ]);
-      if (!res.ok) { document.getElementById('requests-list').innerHTML = authErrorHtml(res); return; }
+      if (!res.ok) { document.getElementById('requests-list').innerHTML = authErrorHtml(res); window.__pdMarkTabReady?.('requests'); return; }
       const items = await res.json();
       _allRequests = items;
       // でお要望2026-09-25：「既読一覧見れるといいですね」。バッジは元々pending件数
@@ -8834,7 +8879,7 @@ export default function ProviderDashboardPage() {
       if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
       function loadSalesTab() {
-        Promise.all([loadSalesOptions(), loadSales()]).then(() => window.__pdMarkTabReady?.('sales'));
+        Promise.all([loadSalesOptions(), loadSales()]).finally(() => window.__pdMarkTabReady?.('sales'));
       }
       document.querySelectorAll('[data-tab="sales"]').forEach(btn => btn.addEventListener('click', loadSalesTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'sales') loadSalesTab();
@@ -9699,10 +9744,16 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadWeek() {
-        const ok = await loadWeekData();
-        if (ok === false) return;
-        renderPills();
-        renderDay();
+        const wrap = document.getElementById('tab-calendar');
+        wrap?.classList.add('pd-cal-loading');
+        try {
+          const ok = await loadWeekData();
+          if (ok === false) return;
+          renderPills();
+          renderDay();
+        } finally {
+          wrap?.classList.remove('pd-cal-loading');
+        }
       }
 
       // ── 予約ブロック／アジェンダ行クリック → 会員クイックビュー（氏名・連絡先・
@@ -10220,10 +10271,13 @@ export default function ProviderDashboardPage() {
         // 互いに依存しないため同時に取得する（でお報告2026-09-16：「グループレッスンを
         // 入れる前から遅かった」。従来は設定データを全部待ってから週データの取得を
         // 始めていたため、直列2段階分の待ち時間がそのままカレンダー表示の遅さになっていた）。
-        const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
-        renderViewToggle();
-        if (weekOk !== false) { renderPills(); renderDay(); }
-        window.__pdMarkTabReady?.('calendar');
+        try {
+          const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
+          renderViewToggle();
+          if (weekOk !== false) { renderPills(); renderDay(); }
+        } finally {
+          window.__pdMarkTabReady?.('calendar');
+        }
       }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
@@ -10641,7 +10695,7 @@ export default function ProviderDashboardPage() {
         renderToday();
       });
       function loadToday() {
-        loadTodayBlocks().then(renderToday).then(() => window.__pdMarkTabReady?.('today'));
+        loadTodayBlocks().then(renderToday).finally(() => window.__pdMarkTabReady?.('today'));
       }
 
       document.querySelectorAll('[data-tab="today"]').forEach(btn => btn.addEventListener('click', loadToday, { once: false }));

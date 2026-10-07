@@ -45,7 +45,11 @@ async function checkIsProviderAccount(accessToken, attempts = 2) {
       const res = await fetch('/api/provider/me', {
         headers: { 'Authorization': `Bearer ${accessToken}` },
       });
-      if (res.ok) return true;
+      if (res.ok) {
+        // ダッシュボード初回表示で「キャッシュ無し→取得→再読み込み」の二度読みを避けるため先に保存する
+        try { localStorage.setItem('fineme:provider:current', JSON.stringify(await res.json())); } catch {}
+        return true;
+      }
       if (res.status === 404) return false; // 明確に「掲載者ではない」
     } catch {}
     if (i < attempts - 1) await new Promise(resolve => setTimeout(resolve, 600));
