@@ -126,8 +126,8 @@ export default function StaffShiftPage({ params }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          period_id: data.period.id, dates: multiDates, type: multiType,
-          start_time: multiType === 'work' ? editStart : null, end_time: multiType === 'work' ? editEnd : null,
+          period_id: data.period.id, dates: multiDates, type: effMultiType,
+          start_time: effMultiType === 'work' ? editStart : null, end_time: effMultiType === 'work' ? editEnd : null,
         }),
       });
       if (res.ok) {
@@ -242,6 +242,18 @@ export default function StaffShiftPage({ params }) {
   if (error || !data) return <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(232,228,220,0.6)' }}>{error || 'エラーが発生しました'}</div>;
 
   const selectedReq = selectedDate ? requestsByDate[selectedDate] : null;
+  // 店舗が決めた提出のしかた（でお要望2026-10-07）
+  const rule = data.rule || { mode: 'free', max_off_days: null };
+  const canWork = rule.mode !== 'off_only';
+  const canOff = rule.mode !== 'work_time';
+  const offCount = (data.requests || []).filter(r => r.type === 'off').length;
+  const offLimit = canOff && rule.max_off_days !== null && rule.max_off_days !== undefined ? rule.max_off_days : null;
+  const effMultiType = !canWork ? 'off' : !canOff ? 'work' : multiType;
+  const ruleGuide = rule.mode === 'off_only'
+    ? `休みたい日だけを選んでください${offLimit !== null ? `（${offLimit}日まで）` : ''}。それ以外の日は、店舗が労働時間のルールの範囲内でシフトを組みます。`
+    : rule.mode === 'work_time'
+      ? '出勤できる日と時間帯を選んでください。選んだ日時の中でシフトが組まれます（休み希望の提出は不要です）。'
+      : '日付をタップして、出勤・休みの希望を選んでください。';
 
   return (
     <div style={{ maxWidth: '480px', margin: '40px auto', padding: '0 20px 60px', color: '#e8e4dc' }}>
@@ -260,7 +272,10 @@ export default function StaffShiftPage({ params }) {
           <div style={{ ...cardStyle, marginBottom: '16px' }}>
             <p style={{ margin: 0, fontSize: '13px' }}>対象期間：{data.period.period_start} 〜 {data.period.period_end}</p>
             {data.period.request_deadline && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#c9a84c', fontWeight: '700' }}>提出締切：{data.period.request_deadline}</p>}
-            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.6)' }}>日付をタップして、出勤・休みの希望を選んでください（1日ずつ選ぶ場合はその場で自動保存）。「まとめて選ぶ」なら複数日に同じ内容を一括で入力できます。<span style={{ color: '#60a5fa' }}>■</span> 出勤希望　<span style={{ color: '#f87171' }}>■</span> 休み希望</p>
+            <p style={{ margin: '10px 0 0', fontSize: '13px', fontWeight: '800', color: '#c9a84c' }}>提出のしかた：{rule.label || '出勤・休みどちらでも'}</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', lineHeight: 1.7 }}>{ruleGuide}</p>
+            {offLimit !== null && <p style={{ margin: '6px 0 0', fontSize: '13px', fontWeight: '700', color: offCount >= offLimit ? '#f87171' : '#e8e4dc' }}>休み希望：{offCount} / {offLimit}日</p>}
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.6)' }}>1日ずつ選ぶ場合はその場で自動保存されます。「まとめて選ぶ」なら複数日に同じ内容を一括で入力できます。{canWork && <><span style={{ color: '#60a5fa' }}>■</span> 出勤希望　</>}{canOff && <><span style={{ color: '#f87171' }}>■</span> 休み希望</>}</p>
             {data.submitted && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#4ade80', fontWeight: '700' }}>✓ 提出完了しています{data.period.locked ? '' : '（締切までは内容を変更できます）'}</p>}
           </div>
 
@@ -335,12 +350,12 @@ export default function StaffShiftPage({ params }) {
 
               <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: multiDates.length ? '#c9a84c' : 'rgba(232,228,220,0.5)' }}>{multiDates.length ? `${multiDates.length}日を選択中` : 'まだ日付を選んでいません'}</p>
 
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+              {canWork && canOff && <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
                 <button type="button" onClick={() => setMultiType('work')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: multiType === 'work' ? '#60a5fa' : 'rgba(232,228,220,0.1)', color: multiType === 'work' ? '#0a0f1e' : '#e8e4dc' }}>出勤したい</button>
                 <button type="button" onClick={() => setMultiType('off')} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: multiType === 'off' ? '#f87171' : 'rgba(232,228,220,0.1)', color: multiType === 'off' ? '#0a0f1e' : '#e8e4dc' }}>休みたい</button>
-              </div>
+              </div>}
 
-              {multiType === 'work' && (
+              {effMultiType === 'work' && (
                 <>
                   <label style={labelStyle}>よく使う時間帯</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
@@ -369,7 +384,7 @@ export default function StaffShiftPage({ params }) {
               )}
 
               <button type="button" disabled={saving || !multiDates.length} onClick={saveMulti} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', background: '#c9a84c', color: '#0a0f1e', fontWeight: '800', fontSize: '14px', cursor: saving || !multiDates.length ? 'not-allowed' : 'pointer', opacity: !multiDates.length ? 0.4 : 1, marginBottom: '8px' }}>
-                {multiDates.length ? `選んだ${multiDates.length}日に${multiType === 'work' ? `${editStart}〜${editEnd}で出勤希望を` : '休み希望を'}まとめて保存` : '日付を選んでください'}
+                {multiDates.length ? `選んだ${multiDates.length}日に${effMultiType === 'work' ? `${editStart}〜${editEnd}で出勤希望を` : '休み希望を'}まとめて保存` : '日付を選んでください'}
               </button>
               <button type="button" disabled={saving || !multiDates.length} onClick={clearMulti} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(248,113,113,0.4)', background: 'none', color: '#f87171', fontWeight: '700', fontSize: '13px', cursor: 'pointer', opacity: !multiDates.length ? 0.4 : 1 }}>
                 選んだ日の希望をまとめて取り消す
@@ -385,10 +400,11 @@ export default function StaffShiftPage({ params }) {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                <button type="button" disabled={saving} onClick={() => autoSave(selectedDate, 'work', editStart, editEnd)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: selectedReq?.type === 'work' ? '#60a5fa' : 'rgba(232,228,220,0.1)', color: selectedReq?.type === 'work' ? '#0a0f1e' : '#e8e4dc' }}>出勤したい</button>
-                <button type="button" disabled={saving} onClick={() => autoSave(selectedDate, 'off', null, null)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: selectedReq?.type === 'off' ? '#f87171' : 'rgba(232,228,220,0.1)', color: selectedReq?.type === 'off' ? '#0a0f1e' : '#e8e4dc' }}>休みたい</button>
+                {canWork && <button type="button" disabled={saving} onClick={() => autoSave(selectedDate, 'work', editStart, editEnd)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: selectedReq?.type === 'work' ? '#60a5fa' : 'rgba(232,228,220,0.1)', color: selectedReq?.type === 'work' ? '#0a0f1e' : '#e8e4dc' }}>出勤したい</button>}
+                {canOff && <button type="button" disabled={saving} onClick={() => autoSave(selectedDate, 'off', null, null)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '14px', cursor: 'pointer', background: selectedReq?.type === 'off' ? '#f87171' : 'rgba(232,228,220,0.1)', color: selectedReq?.type === 'off' ? '#0a0f1e' : '#e8e4dc' }}>休みたい</button>}
               </div>
 
+              {canWork && <>
               <label style={labelStyle}>よく使う時間帯（選ぶとすぐ保存されます）</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                 {PRESETS.map(p => (
@@ -412,6 +428,7 @@ export default function StaffShiftPage({ params }) {
                   </select>
                 </div>
               </div>
+              </>}
 
               {selectedReq && (
                 <button type="button" disabled={saving} onClick={() => clearDay(selectedDate)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(248,113,113,0.4)', background: 'none', color: '#f87171', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>

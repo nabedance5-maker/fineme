@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { parseNotifyDays } from '@/lib/shift-deadline';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeFormat } from '@/lib/shift-request-format';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
@@ -28,6 +29,7 @@ async function __PATCH(request, { params }) {
   if (body.request_deadline !== undefined) update.request_deadline = body.request_deadline || null;
   const notifyDays = parseNotifyDays(body.notify_days_before);
   if (notifyDays) update.notify_days_before = notifyDays;
+  if (body.request_format !== undefined) update.request_format = normalizeFormat(body.request_format);
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase

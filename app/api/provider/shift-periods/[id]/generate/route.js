@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { generateShift } from '@/lib/shift-generator';
 import { loadAvailability } from '@/lib/shift-implied-requests';
+import { resolveRule } from '@/lib/shift-request-format';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -49,7 +50,10 @@ async function __POST(request, { params }) {
     supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id).eq('source', 'manual'),
   ]);
 
-  const availability = await loadAvailability(supabase, provider.id, period, requests || []);
+  // 「出勤希望（時間帯つき）だけ」の人は、希望した日時以外には入れない
+  const empOf = Object.fromEntries((conditions || []).map(c => [c.staff_id, c.employment_type]));
+  const availability = (await loadAvailability(supabase, provider.id, period, requests || []))
+    .filter(a => resolveRule(period.request_format, a.staff_id, empOf[a.staff_id]).mode !== 'work_time');
   const { entries, warnings, skipped } = generateShift({
     period,
     requests: requests || [],

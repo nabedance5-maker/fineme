@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeFormat } from '@/lib/shift-request-format';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -29,11 +30,11 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('provider_shift_settings')
-    .select('rule_type')
+    .select('rule_type, request_format')
     .eq('provider_id', provider.id)
     .single();
 
-  return Response.json(data || DEFAULT_SETTINGS);
+  return Response.json({ ...DEFAULT_SETTINGS, ...(data || {}), request_format: normalizeFormat(data?.request_format) });
 }
 
 async function __PATCH(request) {
@@ -44,18 +45,22 @@ async function __PATCH(request) {
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
-  if (!body.rule_type || !['as_requested', 'staffing_target'].includes(body.rule_type)) {
-    return Response.json({ error: 'rule_typeが不正です' }, { status: 400 });
+  const update = { provider_id: provider.id, updated_at: new Date().toISOString() };
+  if (body.rule_type !== undefined) {
+    if (!['as_requested', 'staffing_target'].includes(body.rule_type)) return Response.json({ error: 'rule_typeが不正です' }, { status: 400 });
+    update.rule_type = body.rule_type;
   }
+  if (body.request_format !== undefined) update.request_format = normalizeFormat(body.request_format);
+  if (update.rule_type === undefined && update.request_format === undefined) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_shift_settings')
-    .upsert({ provider_id: provider.id, rule_type: body.rule_type, updated_at: new Date().toISOString() }, { onConflict: 'provider_id' })
-    .select('rule_type')
+    .upsert(update, { onConflict: 'provider_id' })
+    .select('rule_type, request_format')
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json(data);
+  return Response.json({ ...data, request_format: normalizeFormat(data?.request_format) });
 }
 
 export const PATCH = withAudit(__PATCH);

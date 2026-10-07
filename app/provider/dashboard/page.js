@@ -8,6 +8,7 @@ import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
+import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
 import PageDesignSettings from './PageDesignSettings';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
@@ -2126,12 +2127,104 @@ export default function ProviderDashboardPage() {
           const over = p.status === 'collecting' && p.request_deadline && p.request_deadline < shiftTodayStr();
           meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}${p.status === 'collecting' ? (over ? '（締切超過・未提出のスタッフは遅れて提出できます。提出済みのスタッフは変更できません）' : '（締切後は提出済みのスタッフが変更できなくなります）') : ''}` : '';
         }
+        renderPeriodFormat(p);
         const nd = document.getElementById('shift-period-notify-days');
         if (nd && p) {
           nd.value = (p.notify_days_before || [1, 0]).join(',');
           document.getElementById('shift-period-notify-wrap').style.display = p.status === 'collecting' && p.request_deadline ? '' : 'none';
         }
       }
+      // ── 提出のしかた（でお要望2026-10-07）：募集ごとに、基本・雇用形態ごと・スタッフ個別で決める ──
+      const ruleOf = (fmt, staffId) => resolveRule(fmt, staffId, shiftConditions[staffId]?.employment_type || null);
+      function renderPeriodFormat(p) {
+        const box = document.getElementById('shift-period-format');
+        if (!box || !p) return;
+        const fmt = normalizeFormat(p.request_format);
+        const extra = Object.keys(fmt.by_employment_type).length + Object.keys(fmt.by_staff).length;
+        box.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(201,168,76,.45);border-radius:10px;background:rgba(201,168,76,.06)">
+            <div style="flex:1;min-width:180px">
+              <div style="font-size:12px;font-weight:800;color:#84651a">希望の提出のしかた</div>
+              <div style="font-size:13px;margin-top:2px">基本：${esc(describeRule(fmt.default))}${extra ? `<span class="muted" style="font-size:12px">（雇用形態・個別の設定 ${extra}件）</span>` : ''}</div>
+            </div>
+            <button type="button" class="btn btn-ghost" id="shift-format-edit" style="font-size:12px;padding:6px 12px">変更する</button>
+          </div>`;
+        box.querySelector('#shift-format-edit').addEventListener('click', () => openFormatEditor(p));
+      }
+      async function openFormatEditor(p) {
+        if (!shiftStaffList.length) await loadStaffLinks();
+        if (!Object.keys(shiftConditions).length) {
+          const r = await fetch('/api/provider/shift-staff-conditions', { headers: authHeadersShift() });
+          (r.ok ? await r.json() : []).forEach(c => { shiftConditions[c.staff_id] = c; });
+        }
+        const fmt = normalizeFormat(p.request_format);
+        const modeOptions = (cur, inheritLabel) => (inheritLabel ? `<option value=""${cur ? '' : ' selected'}>${inheritLabel}</option>` : '')
+          + Object.entries(REQUEST_MODES).map(([k, v]) => `<option value="${k}"${cur?.mode === k ? ' selected' : ''}>${v}</option>`).join('');
+        const ruleRow = (key, label, cur, inheritLabel, sub) => `
+          <div data-fmt-row="${key}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #f1efe9">
+            <div style="flex:1;min-width:120px;font-size:13px;font-weight:700">${label}${sub ? `<div class="muted" style="font-size:11px;font-weight:400">${sub}</div>` : ''}</div>
+            <select data-fmt-mode style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;max-width:210px">${modeOptions(cur, inheritLabel)}</select>
+            <label data-fmt-max-wrap style="display:${cur && cur.mode !== 'work_time' ? 'flex' : 'none'};align-items:center;gap:4px;font-size:12px">休み<input data-fmt-max type="number" min="0" max="31" value="${cur?.max_off_days ?? ''}" placeholder="上限なし" style="width:76px;padding:5px 6px;border:1px solid #d1d5db;border-radius:8px;font-size:13px" />日まで</label>
+          </div>`;
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay';
+        ov.style.display = 'flex';
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:560px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <h3 style="margin:0;font-size:16px">希望の提出のしかた（${esc(p.period_start)}〜${esc(p.period_end)}）</h3>
+            <button type="button" class="btn btn-ghost" data-fmt-close style="font-size:12px;padding:5px 10px">閉じる</button>
+          </div>
+          <p class="muted" style="font-size:12px;line-height:1.7;margin:6px 0 10px">スタッフの提出画面は、この設定に合わせて出せる操作だけになります。優先順は「スタッフ個別 ＞ 雇用形態 ＞ 基本」。「休み希望だけ」の人は、休み以外の日に自動作成で労働条件の範囲内で配置されます。「出勤希望（時間帯つき）だけ」の人は、希望した日時の中でだけ配置されます。</p>
+          <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:6px">基本</div>
+          ${ruleRow('default', 'このお店の基本', fmt.default, null)}
+          <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:14px">雇用形態ごと</div>
+          ${Object.entries(SHIFT_EMP_LABEL).map(([k, v]) => ruleRow('emp:' + k, v, fmt.by_employment_type[k], '基本と同じ', `${shiftStaffList.filter(st => (shiftConditions[st.id]?.employment_type || 'fulltime') === k).length}人`)).join('')}
+          <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:14px">スタッフ個別</div>
+          ${shiftStaffList.map(st => ruleRow('staff:' + st.id, esc(st.name), fmt.by_staff[st.id], '雇用形態・基本と同じ', esc(SHIFT_EMP_LABEL[shiftConditions[st.id]?.employment_type || 'fulltime'] || ''))).join('') || '<p class="muted" style="font-size:12px">スタッフが登録されていません。</p>'}
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:14px 0 4px"><input type="checkbox" data-fmt-default-too style="width:16px;height:16px" />次回以降の募集でも、この設定を最初から使う</label>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button type="button" class="btn" data-fmt-save>この募集に保存</button>
+            <span data-fmt-msg class="muted" style="font-size:12px;align-self:center"></span>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('[data-fmt-close]').addEventListener('click', close);
+        ov.querySelectorAll('[data-fmt-row]').forEach(row => {
+          const sel = row.querySelector('[data-fmt-mode]');
+          sel.addEventListener('change', () => { row.querySelector('[data-fmt-max-wrap]').style.display = sel.value && sel.value !== 'work_time' ? 'flex' : 'none'; });
+        });
+        ov.querySelector('[data-fmt-save]').addEventListener('click', async () => {
+          const next = { default: null, by_employment_type: {}, by_staff: {} };
+          ov.querySelectorAll('[data-fmt-row]').forEach(row => {
+            const mode = row.querySelector('[data-fmt-mode]').value;
+            if (!mode) return;
+            const maxRaw = row.querySelector('[data-fmt-max]').value;
+            const rule = { mode, max_off_days: mode === 'work_time' || maxRaw === '' ? null : Number(maxRaw) };
+            const key = row.dataset.fmtRow;
+            if (key === 'default') next.default = rule;
+            else if (key.startsWith('emp:')) next.by_employment_type[key.slice(4)] = rule;
+            else if (key.startsWith('staff:')) next.by_staff[key.slice(6)] = rule;
+          });
+          const msg = ov.querySelector('[data-fmt-msg]');
+          msg.textContent = '保存中…';
+          const res = await fetch('/api/provider/shift-periods/' + p.id, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+            body: JSON.stringify({ request_format: next }),
+          });
+          if (!res.ok) { msg.textContent = '保存に失敗しました'; return; }
+          if (ov.querySelector('[data-fmt-default-too]').checked) {
+            await fetch('/api/provider/shift-settings', {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+              body: JSON.stringify({ request_format: next }),
+            });
+          }
+          close();
+          showToast('提出のしかたを保存しました');
+          await loadPeriods();
+        });
+      }
+
       async function loadPeriods() {
         const el = document.getElementById('shift-period-list');
         if (!el) return;
@@ -2160,7 +2253,8 @@ export default function ProviderDashboardPage() {
               <input id="shift-period-notify-days" type="text" placeholder="3,1,0" style="width:140px;padding:7px 10px;font-size:14px;border:1px solid #d1d5db;border-radius:8px" />
               <button type="button" class="btn btn-ghost" id="shift-period-notify-save" style="font-size:12px;padding:6px 12px">保存</button>
             </div>
-          </div>`;
+          </div>
+          <div id="shift-period-format" style="margin-top:10px"></div>`;
         el.querySelector('#shift-period-notify-save').addEventListener('click', async () => {
           if (!currentPeriodId) return;
           const raw = document.getElementById('shift-period-notify-days').value;
@@ -2293,7 +2387,7 @@ export default function ProviderDashboardPage() {
         // 誰が「これで完了です」を押したか一目で分かるようにする）
         const statusHtml = shiftStaffList.length
           ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${shiftStaffList.map(s => `
-              <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${submittedIds.has(s.id) ? '#10b98120' : '#f3f4f6'};color:${submittedIds.has(s.id) ? '#10b981' : '#9ca3af'}">${submittedIds.has(s.id) ? '✓' : '…'} ${esc(s.name)}</span>
+              <span title="${esc(describeRule(ruleOf(shiftPeriods.find(x => x.id === currentPeriodId)?.request_format, s.id)))}" style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${submittedIds.has(s.id) ? '#10b98120' : '#f3f4f6'};color:${submittedIds.has(s.id) ? '#10b981' : '#9ca3af'}">${submittedIds.has(s.id) ? '✓' : '…'} ${esc(s.name)}<span style="font-weight:500;opacity:.8">・${esc(describeRule(ruleOf(shiftPeriods.find(x => x.id === currentPeriodId)?.request_format, s.id)))}</span></span>
             `).join('')}</div>`
           : '';
 

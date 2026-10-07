@@ -16,6 +16,12 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
 import { isDeadlinePassed, LOCKED_MESSAGE } from '@/lib/shift-deadline';
+import { resolveRule, describeRule } from '@/lib/shift-request-format';
+
+async function ruleFor(period, staff) {
+  const { data: cond } = await supabase.from('provider_shift_staff_conditions').select('employment_type').eq('provider_id', staff.provider_id).eq('staff_id', staff.id).maybeSingle();
+  return resolveRule(period.request_format, staff.id, cond?.employment_type || null);
+}
 
 async function hasSubmitted(periodId, staffId) {
   const { data } = await supabase.from('provider_shift_submissions').select('staff_id').eq('period_id', periodId).eq('staff_id', staffId).maybeSingle();
@@ -43,7 +49,7 @@ export async function GET(request, { params }) {
   // 募集中（collecting）の期間のうち、直近のものを対象にする
   const { data: period } = await supabase
     .from('provider_shift_periods')
-    .select('id, period_start, period_end, request_deadline, status')
+    .select('id, period_start, period_end, request_deadline, status, request_format')
     .eq('provider_id', staff.provider_id)
     .eq('status', 'collecting')
     .order('period_start', { ascending: true })
@@ -52,7 +58,9 @@ export async function GET(request, { params }) {
 
   let requests = [];
   let submitted = false;
+  let rule = null;
   if (period) {
+    rule = await ruleFor(period, staff);
     const [{ data }, { data: sub }] = await Promise.all([
       supabase.from('provider_shift_requests').select('id, date, type, start_time, end_time, note').eq('period_id', period.id).eq('staff_id', staff.id),
       supabase.from('provider_shift_submissions').select('submitted_at').eq('period_id', period.id).eq('staff_id', staff.id).maybeSingle(),
@@ -64,7 +72,8 @@ export async function GET(request, { params }) {
   return Response.json({
     staff: { id: staff.id, name: staff.name },
     provider: { name: staff.providers?.name || '' },
-    period: period ? { ...period, pastDeadline: isDeadlinePassed(period), locked: isDeadlinePassed(period) && submitted } : null,
+    period: period ? { id: period.id, period_start: period.period_start, period_end: period.period_end, request_deadline: period.request_deadline, status: period.status, pastDeadline: isDeadlinePassed(period), locked: isDeadlinePassed(period) && submitted } : null,
+    rule: rule ? { ...rule, label: describeRule(rule) } : null,
     requests,
     submitted,
   });
@@ -89,12 +98,22 @@ export async function POST(request, { params }) {
   }
 
   // この期間が本当に自分の店舗のものか確認（他店舗の期間IDを渡された場合に書き込ませない）
-  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, period_start, period_end, request_deadline').eq('id', period_id).single();
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, period_start, period_end, request_deadline, request_format').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
   if (isDeadlinePassed(period) && await hasSubmitted(period.id, staff.id)) return Response.json({ error: LOCKED_MESSAGE }, { status: 400 });
   if (dates.some(d => d < period.period_start || d > period.period_end)) {
     return Response.json({ error: '募集期間外の日付が含まれています' }, { status: 400 });
+  }
+
+  // 店舗が決めた提出のしかたに合わない希望は受け付けない
+  const rule = await ruleFor(period, staff);
+  if (rule.mode === 'off_only' && type === 'work') return Response.json({ error: 'この募集では休み希望だけを提出してください' }, { status: 400 });
+  if (rule.mode === 'work_time' && type === 'off') return Response.json({ error: 'この募集では出勤できる日と時間帯を提出してください（休み希望は不要です）' }, { status: 400 });
+  if (type === 'off' && rule.max_off_days !== null && rule.max_off_days !== undefined) {
+    const { data: offs } = await supabase.from('provider_shift_requests').select('date').eq('period_id', period_id).eq('staff_id', staff.id).eq('type', 'off');
+    const total = new Set([...(offs || []).map(o => o.date), ...dates]).size;
+    if (total > rule.max_off_days) return Response.json({ error: `休み希望は${rule.max_off_days}日までです（いま${(offs || []).length}日選択中）` }, { status: 400 });
   }
 
   // 同じ日にwork/off両方が残るのはおかしいため、逆typeの既存希望があれば消してから保存する

@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { parseNotifyDays } from '@/lib/shift-deadline';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeFormat } from '@/lib/shift-request-format';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
@@ -46,9 +47,13 @@ async function __POST(request) {
     return Response.json({ error: '対象期間（開始日・終了日）は必須です' }, { status: 400 });
   }
 
+  // 提出のしかたは、店舗の初期設定を募集ごとに写して使う（作成後に募集ごと変更できる）
+  const { data: settings } = await supabase.from('provider_shift_settings').select('request_format').eq('provider_id', provider.id).maybeSingle();
+  const request_format = normalizeFormat(body.request_format !== undefined ? body.request_format : settings?.request_format);
+
   const { data, error } = await supabase
     .from('provider_shift_periods')
-    .insert({ provider_id: provider.id, period_start, period_end, request_deadline: request_deadline || null, ...(notifyDays ? { notify_days_before: notifyDays } : {}) })
+    .insert({ provider_id: provider.id, period_start, period_end, request_deadline: request_deadline || null, request_format, ...(notifyDays ? { notify_days_before: notifyDays } : {}) })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
