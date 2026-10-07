@@ -458,7 +458,34 @@ export default function ProviderDashboardPage() {
     // ニーズが分かれるため、lib/dashboard-prefs.jsのデフォルト値を今の構成のまま
     // 使いつつ、店舗ごとに変更できるようにする。calendar IIFE等、後方の複数の
     // クロージャから読めるようダッシュボードのトップレベルで保持する。
-    let dashboardPrefs = null;
+    //
+    // でお報告2026-10-07：時間を空けて開くと、カレンダーの縦横などが既定に戻っていることがある。
+    // 原因は、設定をサーバーから非同期に取り終える前にカレンダー等が既定値で描画され、取得が遅れた・
+    // 失敗した時にそのままになっていたこと。前回の設定を端末に保存して開いた瞬間から使い、取得は
+    // 数回やり直し、後から届いた設定で描き直す。機能のON/OFFも同じ仕組みにする（下のsettingsCache）。
+    const settingsCache = {
+      key(name) { return `fineme:dashboard:${name}:${loadProviderData()?.id || ''}`; },
+      read(name) { try { const raw = localStorage.getItem(this.key(name)); return raw ? JSON.parse(raw) : null; } catch { return null; } },
+      write(name, value) { try { localStorage.setItem(this.key(name), JSON.stringify(value)); } catch {} },
+    };
+    async function fetchJsonWithRetry(url, tries = 3) {
+      for (let i = 0; i < tries; i++) {
+        try {
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+          if (res.ok) return await res.json();
+          if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+        } catch {}
+        if (i < tries - 1) await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      }
+      return null;
+    }
+    let dashboardPrefs = settingsCache.read('prefs');
+    function setDashboardPrefs(prefs) {
+      dashboardPrefs = prefs;
+      if (prefs) settingsCache.write('prefs', prefs);
+    }
+    let resolvePrefsReady;
+    const dashboardPrefsReady = new Promise(r => { resolvePrefsReady = r; });
 
     // ヘッダー（モバイル用トップバー）のショートカットボタンを描画（でお要望2026-09-14）。
     // サイドバーを開かずに主要タブへ直接飛べるようにする。タブボタン自体を.click()するだけ
@@ -550,22 +577,32 @@ export default function ProviderDashboardPage() {
       });
     }
 
-    (async () => {
-      const _prefsToken = getSupabaseToken();
-      if (!_prefsToken) return;
-      const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${_prefsToken}` } });
-      if (!res.ok) return;
-      const { prefs } = await res.json();
-      dashboardPrefs = prefs;
-      renderHeaderShortcuts(prefs);
-      applyTabLayout(prefs);
-
-      // サイドバーの並び順を適用（CSS flexのorderプロパティで見た目の順序だけ変える。
-      // DOM構造・data-category自体は変えないので他のロジックへの影響がない）。
-      prefs.sidebar_order.forEach((key, i) => {
+    function applySidebarOrder(prefs) {
+      (prefs?.sidebar_order || []).forEach((key, i) => {
         const btn = document.querySelector(`.pd-rail-btn[data-category="${key}"]`);
         if (btn) btn.style.order = String(i);
       });
+    }
+    // 前回の設定があれば、取得を待たずにまずそれで並べる
+    if (dashboardPrefs) {
+      try { renderHeaderShortcuts(dashboardPrefs); applyTabLayout(dashboardPrefs); applySidebarOrder(dashboardPrefs); } catch {}
+    }
+
+    (async () => {
+      const cachedBefore = dashboardPrefs;
+      const fetched = getSupabaseToken() ? await fetchJsonWithRetry('/api/provider/dashboard-prefs') : null;
+      if (fetched?.prefs) setDashboardPrefs(fetched.prefs);
+      const prefs = dashboardPrefs;
+      resolvePrefsReady(prefs);
+      if (!prefs) { if (needsLandingTabApply) hidePdGlobalLoading(); return; }
+      renderHeaderShortcuts(prefs);
+      applyTabLayout(prefs);
+      applySidebarOrder(prefs);
+      // カレンダーを前回の設定（または既定値）で描いた後に、違う設定が届いたら描き直す
+      const calKeys = ['calendar_axis', 'calendar_default_view', 'calendar_column_order'];
+      if (fetched?.prefs && (!cachedBefore || calKeys.some(k => JSON.stringify(cachedBefore[k]) !== JSON.stringify(prefs[k])))) {
+        window.__calApplyPrefs?.();
+      }
 
       // 起動時タブの適用。switchTab()は見た目だけなので、対応するタブボタンの
       // .click()を直接呼ぶ（ネイティブクリックと全く同じ経路を1回だけ通るため、
@@ -7168,7 +7205,7 @@ export default function ProviderDashboardPage() {
         });
         if (res.ok) {
           const { prefs } = await res.json();
-          dashboardPrefs = prefs; // カレンダー等、他のクロージャにも即時反映
+          setDashboardPrefs(prefs); // カレンダー等、他のクロージャにも即時反映
           if (msgEl) { msgEl.style.color = '#4ade80'; msgEl.textContent = '✓ 保存しました'; setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500); }
         } else if (msgEl) {
           msgEl.style.color = '#ef4444'; msgEl.textContent = '保存に失敗しました';
@@ -7194,7 +7231,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const { prefs } = await res.json();
-        dashboardPrefs = prefs;
+        setDashboardPrefs(prefs);
         if (landingSel) landingSel.value = prefs.landing_tab;
         renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', prefs.calendar_axis);
         renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', prefs.calendar_default_view);
@@ -7367,11 +7404,22 @@ export default function ProviderDashboardPage() {
         applyGating(window.__providerFeatures);
       };
 
+      const cachedFeatures = settingsCache.read('features');
+      if (cachedFeatures) {
+        try {
+          defsCache = cachedFeatures.defs || {};
+          window.__providerLocks = cachedFeatures.locks || {};
+          window.__providerFeatureDefs = cachedFeatures.defs || {};
+          window.__providerFeatures = cachedFeatures.features || {};
+          applyGating(cachedFeatures.features);
+        } catch {}
+      }
       (async () => {
         try {
-          const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
-          if (!res.ok) return;
-          const { features, defs, locks, can_preview, preview } = await res.json();
+          const data = await fetchJsonWithRetry('/api/provider/features');
+          if (!data) return;
+          const { features, defs, locks, can_preview, preview } = data;
+          if (!preview) settingsCache.write('features', { features, defs, locks });
           defsCache = defs || {};
           window.__providerLocks = locks || {};
           window.__providerFeatureDefs = defs || {};
@@ -9662,7 +9710,7 @@ export default function ProviderDashboardPage() {
         });
         if (!res.ok) { showToast('保存に失敗しました'); return; }
         const { prefs } = await res.json();
-        dashboardPrefs = prefs;
+        setDashboardPrefs(prefs);
         if (columnOrderModalEl) columnOrderModalEl.style.display = 'none';
         showToast('列の並び順を保存しました');
         renderDay();
@@ -10262,6 +10310,8 @@ export default function ProviderDashboardPage() {
       agendaPopupEl?.addEventListener('click', (e) => { if (e.target === agendaPopupEl) agendaPopupEl.style.display = 'none'; });
 
       async function initAndLoad() {
+        // 表示設定（縦横・既定ビュー・列順）の取得を少しだけ待ってから描く（前回の設定があれば即時）
+        if (!dashboardPrefs) await Promise.race([dashboardPrefsReady, new Promise(r => setTimeout(r, 6000))]);
         // 部屋・設備管理がONの店舗は、店舗設定の既定ビュー（スタッフ別/部屋別）を
         // 初回だけ適用する（でお要望2026-09-13：部屋別をメインにしたい店舗もある）。
         if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
@@ -10286,6 +10336,14 @@ export default function ProviderDashboardPage() {
       // 既に開かれていれば表示を追従させるための橋渡し（でお要望2026-09-12：
       // 「代替案送ったらカレンダー上でその日時に移動するのが正解」）。
       window.__calReloadWeek = loadWeek;
+      // 後から届いた表示設定でカレンダーを描き直す（手で切り替えたビューはそのまま）
+      window.__calApplyPrefs = () => {
+        if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
+          viewMode = dashboardPrefs.calendar_default_view;
+          renderViewToggle();
+        }
+        if (Object.keys(byDate || {}).length || document.getElementById('tab-calendar')?.classList.contains('active')) renderDay();
+      };
     })();
 
     // ── 今日の業務タブ（2026-09-12・でお要望：毎日の流れを1画面にまとめる） ──────
