@@ -2345,6 +2345,8 @@ export default function ProviderDashboardPage() {
           b.disabled = status === 'confirmed';
           b.textContent = status === 'confirmed' ? '確定済み' : 'この期間を確定する';
         });
+        const heading = document.getElementById('shift-table-heading');
+        if (heading) heading.textContent = status === 'confirmed' ? '確定したシフト' : '作成したシフト（確定前）';
         document.getElementById('shift-generate-warnings').innerHTML = '';
         const laborEl = document.getElementById('shift-labor-panel');
         if (laborEl) laborEl.innerHTML = '';
@@ -2664,17 +2666,17 @@ export default function ProviderDashboardPage() {
             : '';
           // 作成直後に、その場で確認→確定できる案内（でお指摘2026-10-08：確定ボタンが見つからない）
           const doneHtml = `<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px 14px;font-size:13px;color:#065f46;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-              <span style="flex:1;min-width:200px"><strong>${data.createdCount}件のシフトを作成しました。</strong>下のシフト表と労働条件チェックを確認し、問題がなければ確定してください。</span>
-              <button type="button" class="btn btn-ghost" data-shift-jump style="font-size:12px;padding:6px 12px">シフト表を見る</button>
+              <span style="flex:1;min-width:200px"><strong>${data.createdCount}件のシフトを作成しました。</strong>すぐ下の「作成したシフト」を確認し、問題がなければ確定してください。</span>
               <button type="button" class="btn" data-shift-confirm style="font-size:12px;padding:6px 14px">この内容で確定する</button>
             </div>`;
           warnEl.innerHTML = doneHtml + shortHtml + skipHtml + rangeHtml;
-          warnEl.querySelector('[data-shift-jump]')?.addEventListener('click', () => document.getElementById('shift-entries-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
           warnEl.querySelector('[data-shift-confirm]')?.addEventListener('click', confirmPeriod);
         }
         showToast(`${data.createdCount}件のシフトを作成しました`);
-        loadEntries();
+        await loadEntries();
         loadCalendar();
+        loadLaborCheck();
+        document.getElementById('shift-generate-warnings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
       async function confirmPeriod() {
@@ -12429,15 +12431,6 @@ export default function ProviderDashboardPage() {
             <h3 style={{ margin: 0, fontSize: '15px' }}>期間ごとのシフト作成</h3>
             <div id="shift-period-list">読み込み中…</div>
             <div id="shift-detail-body" className="stack" style={{ gap: '16px', display: 'none' }}>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-ghost" id="shift-generate-btn">自動作成</button>
-              <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
-            </div>
-            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>
-              流れ：①提出された希望を確認 → ②「自動作成」（スタッフごとの労働条件・法定の上限を守って自動で割り振ります）→ ③下の労働条件チェックとシフト表を見ながら調整 → ④問題がなければ「この期間を確定する」。条件を超える希望は自動では入れず、理由を表示します。
-            </p>
-            <div id="shift-generate-warnings"></div>
-
             {/* 日付ごとのパターン割当（でお要望2026-09-14：1日ずつ作るのは大変なので、
                 日付を複数選んでパターンをまとめて一括適用できるように）。 */}
             <div id="shift-day-patterns-wrap" style={{ display: 'none' }}>
@@ -12452,13 +12445,19 @@ export default function ProviderDashboardPage() {
               <div id="shift-day-pattern-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(64px,1fr))', gap: '6px', marginBottom: '10px' }}></div>
             </div>
 
-            <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>提出された希望</h4>
-            <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-ghost" id="shift-generate-btn">自動作成</button>
+              <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
+            </div>
+            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>
+              流れ：①「自動作成」を押す（提出された希望とスタッフごとの労働条件・法定の上限をもとに割り振ります）→ ②すぐ下の「作成したシフト」を確認・調整 → ③問題がなければ「この期間を確定する」で、作成したシフトを確定します。条件を超える希望は自動では入れず、理由を表示します。
+            </p>
+            <div id="shift-generate-warnings"></div>
 
-            <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>労働条件チェック</h4>
-            <div id="shift-labor-panel"></div>
-
-            <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>シフト表</h4>
+            <div>
+              <h4 id="shift-table-heading" style={{ margin: '8px 0 4px', fontSize: '14px' }}>作成したシフト（確定前）</h4>
+              <p className="muted" style={{ fontSize: '12px', margin: 0 }}>「自動作成」の結果がここに出ます。「この期間を確定する」を押すと、このシフトが確定します。</p>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '8px', alignItems: 'end' }}>
               <div className="form-field" style={{ marginBottom: 0 }}><label>スタッフ</label><select id="shift-entry-staff"></select></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>日付</label><input type="date" id="shift-entry-date" /></div>
@@ -12471,7 +12470,16 @@ export default function ProviderDashboardPage() {
               <span style={{ flex: 1, minWidth: '200px', fontSize: '12.5px', lineHeight: 1.6 }}>シフト表と労働条件チェックを確認したら、確定してください。</span>
               <button type="button" className="btn" id="shift-confirm-btn-bottom">この期間を確定する</button>
             </div>
+            <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>労働条件チェック</h4>
+            <div id="shift-labor-panel"></div>
+
+            <div>
+              <h4 style={{ margin: '16px 0 4px', fontSize: '13px' }}>提出された希望（参考）</h4>
+              <p className="muted" style={{ fontSize: '12px', margin: 0 }}>スタッフが出した希望です。確定するのは上の「作成したシフト」です。</p>
             </div>
+            <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>
+
+           </div>
           </div>
 
           <h3 style={{ margin: '24px 0 10px', fontSize: '14px' }}>設定</h3>
