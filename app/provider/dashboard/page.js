@@ -2339,8 +2339,12 @@ export default function ProviderDashboardPage() {
         currentPeriodStart = periodStart;
         currentPeriodEnd = periodEnd;
         setDetailBody(true);
-        const confirmBtn = document.getElementById('shift-confirm-btn');
-        if (confirmBtn) confirmBtn.disabled = status === 'confirmed';
+        ['shift-confirm-btn', 'shift-confirm-btn-bottom'].forEach(id => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.disabled = status === 'confirmed';
+          b.textContent = status === 'confirmed' ? '確定済み' : 'この期間を確定する';
+        });
         document.getElementById('shift-generate-warnings').innerHTML = '';
         const laborEl = document.getElementById('shift-labor-panel');
         if (laborEl) laborEl.innerHTML = '';
@@ -2658,14 +2662,22 @@ export default function ProviderDashboardPage() {
                 <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(rangeLabel(k.start_time, k.end_time))}：${esc(k.reason)}</li>`).join('')}</ul>
               </div>`
             : '';
-          warnEl.innerHTML = shortHtml + skipHtml + rangeHtml;
+          // 作成直後に、その場で確認→確定できる案内（でお指摘2026-10-08：確定ボタンが見つからない）
+          const doneHtml = `<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:12px 14px;font-size:13px;color:#065f46;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+              <span style="flex:1;min-width:200px"><strong>${data.createdCount}件のシフトを作成しました。</strong>下のシフト表と労働条件チェックを確認し、問題がなければ確定してください。</span>
+              <button type="button" class="btn btn-ghost" data-shift-jump style="font-size:12px;padding:6px 12px">シフト表を見る</button>
+              <button type="button" class="btn" data-shift-confirm style="font-size:12px;padding:6px 14px">この内容で確定する</button>
+            </div>`;
+          warnEl.innerHTML = doneHtml + shortHtml + skipHtml + rangeHtml;
+          warnEl.querySelector('[data-shift-jump]')?.addEventListener('click', () => document.getElementById('shift-entries-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          warnEl.querySelector('[data-shift-confirm]')?.addEventListener('click', confirmPeriod);
         }
         showToast(`${data.createdCount}件のシフトを作成しました`);
         loadEntries();
         loadCalendar();
       });
 
-      document.getElementById('shift-confirm-btn')?.addEventListener('click', async () => {
+      async function confirmPeriod() {
         if (!currentPeriodId) return;
         const labor = await fetchLabor(currentPeriodId);
         const vios = labor.violations || [];
@@ -2677,9 +2689,16 @@ export default function ProviderDashboardPage() {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
           body: JSON.stringify({ status: 'confirmed' }),
         });
-        if (res.ok) { showToast('確定しました'); await loadPeriods(); loadCalendar(); }
+        if (res.ok) {
+          showToast('確定しました');
+          const w = document.getElementById('shift-generate-warnings');
+          if (w) w.innerHTML = '';
+          await loadPeriods(); loadCalendar();
+        }
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-      });
+      }
+      document.getElementById('shift-confirm-btn')?.addEventListener('click', confirmPeriod);
+      document.getElementById('shift-confirm-btn-bottom')?.addEventListener('click', confirmPeriod);
 
       // ── シフトカレンダー（でお指摘2026-10-02：最初にカレンダー、日付タップでその日のシフト表、前月・次月へ移動） ──
       function shiftTodayStr() {
@@ -12448,6 +12467,10 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-entry-add-btn">＋手動で追加</button>
             </div>
             <div id="shift-entries-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '12px 14px', border: '1px solid rgba(201,168,76,.45)', borderRadius: '10px', background: 'rgba(201,168,76,.06)' }}>
+              <span style={{ flex: 1, minWidth: '200px', fontSize: '12.5px', lineHeight: 1.6 }}>シフト表と労働条件チェックを確認したら、確定してください。</span>
+              <button type="button" className="btn" id="shift-confirm-btn-bottom">この期間を確定する</button>
+            </div>
             </div>
           </div>
 
