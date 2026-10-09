@@ -16,7 +16,7 @@ const CATEGORY_LABEL = {
   photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート',
   eyebrow: '眉毛サロン', hairremoval: '脱毛', esthetic: 'エステ・フェイシャル',
   whitening: '歯のホワイトニング', orthodontics: '歯列矯正', nail: 'ネイル',
-  aga: 'AGA・薄毛治療', consulting: 'コンサルティング',
+  aga: 'AGA・薄毛治療', consulting: 'コンサルティング', other: 'その他',
 };
 
 async function __POST(request) {
@@ -27,6 +27,9 @@ async function __POST(request) {
 
     if (!bizName || !contactName || !email) {
       return NextResponse.json({ error: '必須項目が未入力です' }, { status: 400 });
+    }
+    if (!category) {
+      return NextResponse.json({ error: 'カテゴリを選択してください（当てはまらない場合は「その他」）' }, { status: 400 });
     }
 
     const { error } = await supabase.from('provider_inquiries').insert({

@@ -187,7 +187,7 @@ export default function ProviderInquiryPage() {
         photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート',
         eyebrow: '眉毛サロン', hairremoval: '脱毛', esthetic: 'エステ・フェイシャル',
         whitening: '歯のホワイトニング', orthodontics: '歯列矯正', nail: 'ネイル',
-        aga: 'AGA・薄毛治療', consulting: 'コンサルティング',
+        aga: 'AGA・薄毛治療', consulting: 'コンサルティング', other: 'その他',
       };
       return map[v] || '未選択';
     }
@@ -227,6 +227,12 @@ export default function ProviderInquiryPage() {
         if (!data.bizName || !data.contactName || !data.email || !consent) {
           statusEl.textContent = '必須項目が未入力です（会社名・担当者・メール・同意）';
           statusEl.style.color = '#b91c1c';
+          return;
+        }
+        if (!data.category) {
+          statusEl.textContent = 'カテゴリを選択してください（当てはまらない場合は「その他」）';
+          statusEl.style.color = '#b91c1c';
+          document.getElementById('category')?.focus();
           return;
         }
         const submitBtn = form.querySelector('.inq-btn-primary');
@@ -308,9 +314,9 @@ export default function ProviderInquiryPage() {
 
             <div className="inq-row">
               <div className="inq-field">
-                <label className="inq-label" htmlFor="category">掲載カテゴリ（目安）</label>
-                <select className="inq-select" id="category" name="category">
-                  <option value="">未選択</option>
+                <label className="inq-label" htmlFor="category">掲載カテゴリ（目安）<span style={{ color: '#ef4444' }}> *</span></label>
+                <select className="inq-select" id="category" name="category" required defaultValue="">
+                  <option value="" disabled>選択してください</option>
                   <option value="gym">ジム・パーソナルトレーニング</option>
                   <option value="makeup">メイク・コスメ</option>
                   <option value="hair">ヘア・美容院</option>
@@ -328,6 +334,7 @@ export default function ProviderInquiryPage() {
                   <option value="nail">ネイル</option>
                   <option value="aga">AGA・薄毛治療</option>
                   <option value="consulting">コンサルティング</option>
+                  <option value="other">その他</option>
                 </select>
               </div>
               <div className="inq-field">
