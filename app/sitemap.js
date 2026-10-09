@@ -12,6 +12,7 @@ const STATIC_PAGES = [
   { url: '/mirror', priority: 0.8, changeFrequency: 'weekly' },
   { url: '/feature', priority: 0.8, changeFrequency: 'daily' },
   { url: '/provider/join', priority: 0.8, changeFrequency: 'monthly' },
+  { url: '/sales-partner', priority: 0.7, changeFrequency: 'monthly' },
   { url: '/about', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/terms', priority: 0.4, changeFrequency: 'monthly' },
   { url: '/privacy', priority: 0.4, changeFrequency: 'monthly' },

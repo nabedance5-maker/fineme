@@ -17,6 +17,7 @@ const CATEGORY_LABEL = {
   eyebrow: '眉毛サロン', hairremoval: '脱毛', esthetic: 'エステ・フェイシャル',
   whitening: '歯のホワイトニング', orthodontics: '歯列矯正', nail: 'ネイル',
   aga: 'AGA・薄毛治療', consulting: 'コンサルティング', other: 'その他',
+  sales_partner: '営業パートナー応募',
 };
 
 async function __POST(request) {
@@ -49,6 +50,7 @@ async function __POST(request) {
     if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const categoryLabel = category ? (CATEGORY_LABEL[category] || category) : '未選択';
+      const isPartner = category === 'sales_partner';
       const contactPrefLabel = contactPref === 'phone' ? '電話' : contactPref === 'either' ? 'どちらでも' : 'メール';
 
       try {
@@ -57,9 +59,9 @@ async function __POST(request) {
           await resend.emails.send({
             from: 'Fineme <noreply@fineme.me>',
             to: process.env.ADMIN_EMAIL,
-            subject: `【掲載問い合わせ】${bizName}`,
+            subject: isPartner ? `【営業パートナー応募】${bizName}` : `【掲載問い合わせ】${bizName}`,
             text: [
-              '掲載相談フォームから問い合わせが届きました。',
+              isPartner ? '営業パートナー募集ページ（/sales-partner）から応募が届きました。' : '掲載相談フォームから問い合わせが届きました。',
               '',
               `会社名・屋号: ${bizName}`,
               `担当者: ${contactName}`,
@@ -82,12 +84,12 @@ async function __POST(request) {
         await resend.emails.send({
           from: 'Fineme <noreply@fineme.me>',
           to: email,
-          subject: `【Fineme】お問い合わせを受け付けました`,
+          subject: isPartner ? `【Fineme】営業パートナーへのご応募を受け付けました` : `【Fineme】お問い合わせを受け付けました`,
           text: [
             `${contactName} 様`,
             '',
-            'この度はFinemeへお問い合わせいただき、ありがとうございます。',
-            '以下の内容で受け付けました。担当者より改めてご連絡差し上げます。',
+            isPartner ? 'この度はFinemeの営業パートナーにご応募いただき、ありがとうございます。' : 'この度はFinemeへお問い合わせいただき、ありがとうございます。',
+            isPartner ? '以下の内容で受け付けました。内容を拝見し、オンライン面談の日程をご連絡します。' : '以下の内容で受け付けました。担当者より改めてご連絡差し上げます。',
             '',
             '━━━━━━━━━━━━━━━━━━',
             `会社名・屋号: ${bizName}`,

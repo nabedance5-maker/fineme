@@ -17,6 +17,7 @@ export default function Footer() {
           <Link href="/terms" style={{fontSize:'13px', color:'inherit'}}>利用規約</Link>
           <Link href="/about" style={{fontSize:'13px', color:'inherit'}}>About Fineme</Link>
           <Link href="/provider/join" style={{fontSize:'13px', color:'inherit'}}>掲載をご検討中の方</Link>
+          <Link href="/sales-partner" style={{fontSize:'13px', color:'inherit'}}>営業パートナー募集</Link>
           <Link href="/login?type=provider" style={{fontSize:'13px', color:'inherit'}}>掲載者ログイン</Link>
         </nav>
         <div style={{textAlign:'center', fontSize:'12px', color:'#9ca3af'}}>

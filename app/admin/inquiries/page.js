@@ -29,7 +29,7 @@ export default function AdminInquiriesPage() {
     function h() { return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY }; }
 
     function labelCategory(v) {
-      const map = { hair: '美容室・ヘアサロン', esthetic: 'エステ・痩身', nails: 'ネイル', makeup: 'メイク・顔分析', eyelash: 'まつ毛・アイブロウ', cosmetic: '美容外科・美容クリニック', gym: 'ジム・パーソナルトレーニング', hairremoval: '脱毛', eyebrow: '眉毛サロン', colordiagnosis: 'パーソナルカラー診断', bonediagnosis: '骨格診断', diagnosis: '診断', fashion: 'ファッション・スタイリング', photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート', whitening: '歯のホワイトニング', orthodontics: '歯列矯正', aga: 'AGA・薄毛治療', consulting: 'コンサルティング', other: 'その他' };
+      const map = { hair: '美容室・ヘアサロン', esthetic: 'エステ・痩身', nails: 'ネイル', makeup: 'メイク・顔分析', eyelash: 'まつ毛・アイブロウ', cosmetic: '美容外科・美容クリニック', gym: 'ジム・パーソナルトレーニング', hairremoval: '脱毛', eyebrow: '眉毛サロン', colordiagnosis: 'パーソナルカラー診断', bonediagnosis: '骨格診断', diagnosis: '診断', fashion: 'ファッション・スタイリング', photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート', whitening: '歯のホワイトニング', orthodontics: '歯列矯正', aga: 'AGA・薄毛治療', consulting: 'コンサルティング', other: 'その他', sales_partner: '営業パートナー応募' };
       return map[v] || (v || '—');
     }
 

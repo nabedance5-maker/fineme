@@ -181,7 +181,7 @@ export function RoiCalculator() {
   );
 }
 
-export function StickyCta({ href }) {
+export function StickyCta({ href, text = '月額¥5,000から｜予約の手数料0円', label = '掲載について相談する' }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const onScroll = () => {
@@ -195,8 +195,8 @@ export function StickyCta({ href }) {
   }, []);
   return (
     <div className={`pj-sticky ${show ? 'show' : ''}`} aria-hidden={!show}>
-      <div className="pj-sticky-text">月額¥5,000から｜予約の手数料0円</div>
-      <a className="pj-btn pj-btn-gold" href={href} tabIndex={show ? 0 : -1}>掲載について相談する</a>
+      <div className="pj-sticky-text">{text}</div>
+      <a className="pj-btn pj-btn-gold" href={href} tabIndex={show ? 0 : -1}>{label}</a>
     </div>
   );
 }
