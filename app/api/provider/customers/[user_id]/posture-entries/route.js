@@ -4,6 +4,7 @@
 // 分析→Storage保存→DB保存」のパターン。posture_analysis機能フラグOFFの店舗は弾く。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
 import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
 import { withAudit } from '@/lib/activity-log';
@@ -50,7 +51,7 @@ export async function GET(request, { params }) {
       .in('manual_customer_id', manualLinked.map(m => m.id));
     merged = [...merged, ...(manualEntries || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
-  return Response.json(merged);
+  return Response.json(await withSignedPhotoUrls(supabase, merged));
 }
 
 async function __POST(request, { params }) {

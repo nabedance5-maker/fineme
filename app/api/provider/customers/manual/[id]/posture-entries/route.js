@@ -3,6 +3,7 @@
 // app/api/provider/customers/[user_id]/posture-entries/route.js の非会員版。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
 import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
 import { withAudit } from '@/lib/activity-log';
@@ -35,7 +36,7 @@ export async function GET(request, { params }) {
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data || []);
+  return Response.json(await withSignedPhotoUrls(supabase, data || []));
 }
 
 async function __POST(request, { params }) {

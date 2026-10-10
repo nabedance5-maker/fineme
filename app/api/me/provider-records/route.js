@@ -8,6 +8,7 @@
 // 店舗専用として引き続き本人には見せない（このルートでは扱わない）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -42,5 +43,5 @@ export async function GET(request) {
   });
   records.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  return Response.json(records);
+  return Response.json(await withSignedPhotoUrls(supabase, records));
 }

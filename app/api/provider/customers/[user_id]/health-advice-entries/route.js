@@ -3,6 +3,7 @@
 // でお要望2026-09-27（今野くん発案）。app/api/.../posture-entries/route.jsと同じパターン。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
 import { createHealthAdviceEntry } from '@/lib/health-advice-analysis';
 import { isPostureEligiblePlan } from '@/lib/posture-analysis';
@@ -49,7 +50,7 @@ export async function GET(request, { params }) {
       .in('manual_customer_id', manualLinked.map(m => m.id));
     merged = [...merged, ...(manualEntries || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
-  return Response.json(merged);
+  return Response.json(await withSignedPhotoUrls(supabase, merged));
 }
 
 async function __POST(request, { params }) {
