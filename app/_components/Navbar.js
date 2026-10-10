@@ -84,7 +84,7 @@ export default function Navbar() {
 
   // 掲載者ダッシュボードは独自のヘッダー（サイドバー含む）を持つアプリ画面のため、
   // サイト共通のヘッダーは表示しない（でお指摘：2つのヘッダーが重なって見える、2026-09-05）
-  if (pathname?.startsWith('/provider/dashboard')) return null;
+  if (pathname?.startsWith('/provider/dashboard') || pathname?.startsWith('/admin')) return null;
 
   return (
     <header className="navbar">
