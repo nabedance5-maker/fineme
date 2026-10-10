@@ -110,12 +110,14 @@ export default function AdminOptionsPage() {
         </div>
 
         <div className="card" style={{padding:'16px',marginTop:'12px'}}>
-          <table className="table" style={{width:'100%'}}>
-            <thead>
-              <tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr>
-            </thead>
-            <tbody id="options-tbody"></tbody>
-          </table>
+          <div style={{overflowX:'auto'}}>
+            <table className="table" style={{width:'100%'}}>
+              <thead>
+                <tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr>
+              </thead>
+              <tbody id="options-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -284,10 +284,12 @@ export default function AdminAnalyticsPage() {
                 </select>
                 <button className="btn btn-ghost" id="ana-export-queries">CSVエクスポート</button>
               </div>
-              <table style={{width:'100%',marginTop:'8px'}}>
-                <thead><tr><th>キーワード</th><th style={{textAlign:'right'}}>回数</th></tr></thead>
-                <tbody id="ana-top-queries"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
-              </table>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',marginTop:'8px'}}>
+                  <thead><tr><th>キーワード</th><th style={{textAlign:'right'}}>回数</th></tr></thead>
+                  <tbody id="ana-top-queries"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
+                </table>
+              </div>
               <h3 className="section-title" style={{fontSize:'16px',margin:'12px 0 4px'}}>無結果ワード</h3>
               <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap',marginTop:'4px'}}>
                 <label className="muted">並び替え</label>
@@ -298,10 +300,12 @@ export default function AdminAnalyticsPage() {
                 </select>
                 <button className="btn btn-ghost" id="ana-export-noresult">CSVエクスポート</button>
               </div>
-              <table style={{width:'100%',marginTop:'4px'}}>
-                <thead><tr><th>キーワード</th><th style={{textAlign:'right'}}>回数</th></tr></thead>
-                <tbody id="ana-noresult-queries"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
-              </table>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',marginTop:'4px'}}>
+                  <thead><tr><th>キーワード</th><th style={{textAlign:'right'}}>回数</th></tr></thead>
+                  <tbody id="ana-noresult-queries"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
+                </table>
+              </div>
             </div>
             <div className="card" style={{padding:'12px'}}>
               <h2 className="section-title" style={{fontSize:'18px',margin:'0'}}>特集性能</h2>
@@ -314,15 +318,19 @@ export default function AdminAnalyticsPage() {
                 </select>
                 <button className="btn btn-ghost" id="ana-export-features">CSVエクスポート</button>
               </div>
-              <table style={{width:'100%',marginTop:'8px'}}>
-                <thead><tr><th>特集</th><th style={{textAlign:'right'}}>閲覧</th></tr></thead>
-                <tbody id="ana-top-features"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
-              </table>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',marginTop:'8px'}}>
+                  <thead><tr><th>特集</th><th style={{textAlign:'right'}}>閲覧</th></tr></thead>
+                  <tbody id="ana-top-features"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
+                </table>
+              </div>
               <h3 className="section-title" style={{fontSize:'16px',margin:'12px 0 4px'}}>要改善（閲覧が少ない）</h3>
-              <table style={{width:'100%',marginTop:'4px'}}>
-                <thead><tr><th>特集</th><th style={{textAlign:'right'}}>閲覧</th></tr></thead>
-                <tbody id="ana-low-features"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
-              </table>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',marginTop:'4px'}}>
+                  <thead><tr><th>特集</th><th style={{textAlign:'right'}}>閲覧</th></tr></thead>
+                  <tbody id="ana-low-features"><tr><td style={{padding:'8px'}} colSpan={2} className="muted">データがありません</td></tr></tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div className="card" style={{padding:'12px'}}>

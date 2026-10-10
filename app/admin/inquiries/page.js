@@ -193,7 +193,7 @@ export default function AdminInquiriesPage() {
           </div>
 
           <div className="card" style={{padding:'12px'}}>
-            <div className="table-responsive">
+            <div className="table-responsive" style={{overflowX:'auto'}}>
               <table className="table" style={{width:'100%'}}>
                 <thead>
                   <tr>

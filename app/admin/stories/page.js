@@ -14,7 +14,7 @@ export default function AdminStoriesPage() {
       .badge-pending{background:#fef3c7;color:#92400e}
       .badge-approved{background:#d1fae5;color:#065f46}
       .badge-rejected{background:#fee2e2;color:#991b1b}
-      .tab-nav{display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:20px}
+      .tab-nav{display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:20px;overflow-x:auto}
       .tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
       .tab-btn.active{color:#111;border-bottom-color:#111}
       .story-grid{display:flex;flex-direction:column;gap:12px}

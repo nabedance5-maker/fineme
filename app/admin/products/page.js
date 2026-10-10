@@ -266,6 +266,7 @@ export default function AdminProductsPage() {
 
       {/* 一覧 */}
       {loading ? <p style={{ color: '#9ca3af' }}>読み込み中…</p> : (
+        <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
@@ -303,6 +304,7 @@ export default function AdminProductsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
