@@ -23,6 +23,7 @@ const CATEGORIES = [
     { href: '/admin/affiliates', label: 'アフィリエイト管理' },
     { href: '/admin/products', label: '商品アフィリエイト' },
     { href: '/admin/sales-partners', label: '営業パートナー' },
+    { href: '/admin/collaborator-rewards', label: '協業者の報酬' },
   ] },
   { key: 'content', label: '記事', items: [
     { href: '/admin/features', label: '特集管理' },

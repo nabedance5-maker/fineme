@@ -29,7 +29,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('sales_partners')
-    .select('id, name, email, referral_code, provider_id, status, created_at, access_token, providers(name, slug)')
+    .select('id, name, email, referral_code, provider_id, status, created_at, access_token, is_collaborator, collaborator_rate, excluded_provider_ids, providers(name, slug)')
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -60,13 +60,15 @@ export async function PATCH(request) {
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { id, status, name, email } = body;
+  const { id, status, name, email, is_collaborator, excluded_provider_ids } = body;
   if (!id) return Response.json({ error: 'idは必須です' }, { status: 400 });
 
   const patch = {};
   if (status === 'active' || status === 'inactive') patch.status = status;
   if (typeof name === 'string' && name.trim()) patch.name = name.trim();
   if (typeof email === 'string') patch.email = email || null;
+  if (typeof is_collaborator === 'boolean') patch.is_collaborator = is_collaborator;
+  if (Array.isArray(excluded_provider_ids)) patch.excluded_provider_ids = excluded_provider_ids;
   if (Object.keys(patch).length === 0) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase

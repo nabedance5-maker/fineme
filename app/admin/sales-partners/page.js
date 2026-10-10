@@ -69,6 +69,7 @@ export default function AdminSalesPartnersPage() {
           const providerLabel = p.provider_id
             ? `<span class="sp-meta">掲載者：${esc(p.providers?.name || p.provider_id)}</span>`
             : `<span class="sp-meta">未掲載の営業パートナー</span>`;
+          const collabBadge = p.is_collaborator ? ' <span class="badge" style="background:#e0e7ff;color:#3730a3;">協業者</span>' : '';
           const badge = p.status === 'active'
             ? '<span class="badge badge-green">有効</span>'
             : '<span class="badge badge-gray">停止中</span>';
@@ -76,11 +77,12 @@ export default function AdminSalesPartnersPage() {
           return `
             <div class="sp-row" data-id="${p.id}">
               <div style="flex:1;min-width:160px;">
-                <div class="sp-name">${esc(p.name)} <span class="sp-code">${esc(p.referral_code)}</span></div>
+                <div class="sp-name">${esc(p.name)} <span class="sp-code">${esc(p.referral_code)}</span>${collabBadge}</div>
                 <div style="margin-top:2px;">${providerLabel}${p.email ? ` <span class="sp-meta">・${esc(p.email)}</span>` : ''}</div>
               </div>
               ${badge}
               <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
+              <button class="sp-btn-ghost" data-collab="${p.id}" data-on="${p.is_collaborator ? '1' : '0'}">${p.is_collaborator ? '協業者（解除する）' : '協業者にする'}</button>
               <button class="sp-btn-ghost" data-toggle="${p.id}" data-status="${p.status}">${p.status === 'active' ? '停止する' : '再開する'}</button>
             </div>
           `;
@@ -93,6 +95,15 @@ export default function AdminSalesPartnersPage() {
               btn.textContent = 'コピーしました';
               setTimeout(() => { btn.textContent = orig; }, 1500);
             }).catch(() => {});
+          });
+        });
+
+        listEl.querySelectorAll('[data-collab]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const on = btn.dataset.on !== '1';
+            if (!confirm(on ? '協業者にします。掲載2ヶ月目以降の全掲載者の受領額(税抜)の10%が、毎月この人の報酬として記録されます。よろしいですか？' : '協業者を解除します。以降の受領分から10%の記録は止まります（記録済みの分は残ります）。')) return;
+            await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: btn.dataset.collab, is_collaborator: on }) });
+            load();
           });
         });
 

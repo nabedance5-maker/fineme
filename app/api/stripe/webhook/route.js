@@ -7,6 +7,7 @@ import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
 import { markInvoicePaid } from '@/lib/invoices';
+import { recordPaymentAndRewards, recordRefund } from '@/lib/collaborator-rewards';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -79,11 +80,23 @@ export async function POST(request) {
           .eq('id', providerId)
           .is('billing_started', null);
 
-        // 紹介報酬を計算・記録（月次）
-        const yearMonth = new Date().toISOString().slice(0, 7);
-        await recordReferralReward(providerId, yearMonth, invoice.amount_paid);
+        // 掲載料の受領を記録し、紹介報酬（一般）と協業者報酬（10%オーバーライド等）を計算・記録する
+        try {
+          await recordPaymentAndRewards(supabaseAdmin, providerId, invoice);
+        } catch (e) {
+          console.error('[webhook] reward recording error:', e);
+        }
 
         console.log(`[webhook] payment succeeded for provider ${providerId}: ¥${invoice.amount_paid}`);
+        break;
+      }
+
+      // 返金：該当請求書の受領を返金済みにし、未払いの協業者報酬を無効にする
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        if (charge.invoice) {
+          try { await recordRefund(supabaseAdmin, charge.invoice); } catch (e) { console.error('[webhook] refund record error:', e); }
+        }
         break;
       }
 
@@ -149,48 +162,4 @@ export async function POST(request) {
   }
 
   return new Response('ok', { status: 200 });
-}
-
-// 紹介報酬の月次記録
-// ストック型紹介報酬の仕様（でお確定）：
-//   ①初月：紹介した掲載店舗の初回課金額の90%を成果報酬としてキャッシュバック
-//   ②継続：その掲載店舗が掲載を続ける限り、1社につき月¥500をストック報酬として支払う
-async function recordReferralReward(referredId, yearMonth, invoiceAmount) {
-  try {
-    // この掲載者を紹介した人を探す
-    const { data: referral } = await supabaseAdmin
-      .from('referrals')
-      .select('referrer_id, reward_per_month')
-      .eq('referred_id', referredId)
-      .eq('status', 'active')
-      .single();
-
-    if (!referral) return;
-
-    // この紹介ペアで過去に報酬記録が無ければ「初月」＝①成果報酬90%を適用
-    const { count } = await supabaseAdmin
-      .from('referral_rewards')
-      .select('id', { count: 'exact', head: true })
-      .eq('referrer_id', referral.referrer_id)
-      .eq('referred_id', referredId);
-
-    const isFirstMonth = !count;
-    const amount = isFirstMonth
-      ? Math.round((invoiceAmount || 0) * 0.9)
-      : (referral.reward_per_month || 500);
-
-    // 月次報酬を記録（重複は UNIQUE制約でスキップ）
-    await supabaseAdmin.from('referral_rewards').upsert({
-      referrer_id: referral.referrer_id,
-      referred_id: referredId,
-      year_month: yearMonth,
-      amount,
-      is_first_month: isFirstMonth,
-      paid: false,
-    }, { onConflict: 'referrer_id,referred_id,year_month', ignoreDuplicates: true });
-
-    console.log(`[webhook] referral reward recorded: ${referral.referrer_id} ← ${referredId} (${yearMonth}, ¥${amount}${isFirstMonth ? ' ※初月90%成果報酬' : ' ※継続ストック'})`);
-  } catch (e) {
-    console.warn('[webhook] referral reward error:', e.message);
-  }
 }
