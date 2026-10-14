@@ -62,7 +62,7 @@ export async function POST(request, { params }) {
 
   const { data: updated, error: updateError } = await supabase
     .from('user_service_logs')
-    .update({ last_visit: visited_at, next_visit: null, updated_at: new Date().toISOString() })
+    .update({ last_visit: visited_at, next_visit: null, snoozed_until: null, updated_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', user.id)
     .select()

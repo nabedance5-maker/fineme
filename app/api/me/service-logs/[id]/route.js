@@ -25,13 +25,19 @@ async function getUser(request) {
   return user || null;
 }
 
+// 予約・購入ページのURL（LINE通知のボタン・Logカードのリンク先になる）。http(s)以外は捨てる
+function cleanActionUrl(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return /^https?:\/\/\S+$/i.test(s) && s.length <= 1000 ? s : null;
+}
+
 export async function PUT(request, { params }) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type } = body;
+  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type, action_url } = body;
 
   const update = { updated_at: new Date().toISOString() };
   if (axis            !== undefined) update.axis            = String(axis).trim();
@@ -46,7 +52,10 @@ export async function PUT(request, { params }) {
   if (custom_icon     !== undefined) update.custom_icon     = custom_icon || null;
   if (cost            !== undefined) update.cost            = cost ? Number(cost) : null;
   if (entry_type      !== undefined) update.entry_type      = entry_type === 'purchase' ? 'purchase' : 'visit';
+  if (action_url      !== undefined) update.action_url      = cleanActionUrl(action_url);
 
+  // 来店・購入を記録したら「◯日後にまた」の保留も解く
+  if (last_visit !== undefined) update.snoozed_until = null;
   // 次回日を変えたら通知サイクルもリセットする（新しい予定として通知し直す）
   if (next_visit !== undefined) update.last_notified_at = null;
 

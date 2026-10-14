@@ -7,6 +7,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendLineReply, sendLinePush } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
 import { idealNextDate } from '@/lib/log-axes';
+import { SNOOZE_DAYS } from '@/lib/log-rebook';
 import { sendLineBookingRequestEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { logCustomerActivity } from '@/lib/activity-log';
 
@@ -92,7 +93,7 @@ async function recordLineVisit(logId, channelProviderId, lineUserId, visitedDate
 
   const { error: updateError } = await supabase
     .from('user_service_logs')
-    .update({ last_visit: visitDate, next_visit: null, updated_at: new Date().toISOString() })
+    .update({ last_visit: visitDate, next_visit: null, snoozed_until: null, updated_at: new Date().toISOString() })
     .eq('id', logId)
     .eq('user_id', log.user_id);
   if (updateError) {
@@ -104,7 +105,37 @@ async function recordLineVisit(logId, channelProviderId, lineUserId, visitedDate
   return `✓ ${fmtJa(visitDate)}の記録をつけました${next ? ` — 次の目安は ${fmtJa(next)}` : ''}`;
 }
 
+// New Me Log のリマインドの「◯日後にまた」から呼ばれる（でお指摘2026-10-14）。
+// 今は行けない人に同じ催促が毎回届くとブロックされて全部終わるので、その記録だけ
+// しばらく静かにする。snoozed_until までは cron/log-reminder が送らない。
+async function snoozeLineLog(logId, channelProviderId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+  const { data: log } = await supabase
+    .from('user_service_logs')
+    .select('id, user_id, name')
+    .eq('id', logId)
+    .single();
+  if (!log) return 'この記録が見つかりませんでした。';
+  if (!(await verifyLineIdentity(channelProviderId, log.user_id, lineUserId))) {
+    console.warn('[line/webhook] log_snooze: identity mismatch', { logId, channelProviderId });
+    return '本人確認ができませんでした。';
+  }
+  const until = new Date(Date.now() + 9 * 60 * 60 * 1000 + SNOOZE_DAYS * 86400000).toISOString().slice(0, 10);
+  const { error } = await supabase
+    .from('user_service_logs')
+    .update({ snoozed_until: until, updated_at: new Date().toISOString() })
+    .eq('id', logId)
+    .eq('user_id', log.user_id);
+  if (error) {
+    console.error('[line/webhook] log_snooze update error', error);
+    return 'うまく設定できませんでした。New Me Logの通知設定から調整してください。';
+  }
+  return `了解です。${log.name}は${fmtJa(until)}にまたお知らせします。`;
+}
+
 // New Me Log のリマインドに付けた「予約をリクエスト」から呼ばれる（でお要望2026-09-09）。
+// ※2026-10-14以降の通知には付けていない（予約ページへの直行ボタンに置き換え）。
+//   送信済みの古い通知のボタンが押された時のために処理は残してある。
 // 初版はpostbackボタン1つで日時を聞かずに送る設計だったが、でお指摘「日時をその場で
 // 希望を送れないと使えない」を受け、datetimepicker（mode:'datetime'）に変更して
 // 希望日時を一緒に取れるようにした。preferredDateTime は "YYYY-MM-DDTHH:mm" 形式
@@ -359,6 +390,11 @@ export async function POST(request, { params }) {
       if (!lid) continue;
       const pickedDate = event.postback?.params?.date;
       const message = await recordLineVisit(lid, providerId, event.source?.userId, pickedDate);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'log_snooze') {
+      const lid = data.get('lid');
+      if (!lid) continue;
+      const message = await snoozeLineLog(lid, providerId, event.source?.userId);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     } else if (action === 'book_request') {
       const lid = data.get('lid');

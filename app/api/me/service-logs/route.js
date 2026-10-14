@@ -31,6 +31,12 @@ async function getUser(request) {
   return user || null;
 }
 
+// 予約・購入ページのURL（LINE通知のボタン・Logカードのリンク先になる）。http(s)以外は捨てる
+function cleanActionUrl(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return /^https?:\/\/\S+$/i.test(s) && s.length <= 1000 ? s : null;
+}
+
 export async function GET(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -66,7 +72,7 @@ export async function POST(request) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type } = body;
+  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type, action_url } = body;
 
   if (!axis || !name) {
     return Response.json({ error: 'axis と name は必須です' }, { status: 400 });
@@ -86,6 +92,7 @@ export async function POST(request) {
     custom_icon:     custom_icon || null,
     cost:            cost ? Number(cost) : null,
     entry_type:      entry_type === 'purchase' ? 'purchase' : 'visit',
+    action_url:      cleanActionUrl(action_url),
   };
 
   const { data, error } = await supabase

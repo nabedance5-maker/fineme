@@ -8,6 +8,7 @@ import { sendLinePush, sendLineLogReminder } from '@/lib/line-push';
 import { sendWebPush } from '@/lib/web-push';
 import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
+import { buildLogColumns } from '@/lib/log-rebook';
 
 // 店舗の公式LINEチャネルから送る分は、Fineme独自の航海クルー口調ではなく
 // 店舗からの通知として自然な、簡潔な文面にする（フェーズ2・店舗別LINE連携）。
@@ -26,43 +27,15 @@ function buildStoreLogMessage(booking, reminder, resolveAxisFn) {
     const d = new Date(r.next_visit).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
     // 予定日を過ぎても同じ「次回は◯月◯日です」が延々届いていた
     // （でお報告2026-09-09：9/2の予定が9/9になってもそのまま）。
-    // 過ぎている間は「過ぎています」に切り替える。実際に来店したかは
-    // 下のボタン（今日行った／日付を選ぶ）で本人に記録してもらう。
+    // 過ぎている間は「過ぎています」に切り替える。来店済みなら下のボタンで記録、
+    // まだなら同じボタン群からそのまま予約し直せる。
     const when = r.diff < 0
       ? `予定日（${d}）を${-r.diff}日過ぎています。ご来店されましたか？`
       : `次回のご予約は${d}です。`;
     lines.push(`${def.icon} ${r.name}：${when}`);
   });
-  return ['New Me Logからのお知らせです', '', ...lines].join('\n');
-}
-
-// LINEから直接操作できるボタン付きカルーセルを組み立てる（でお要望2026-08-05）。
-// 「今日行った」「日付を選ぶ」はテキストだけの通知だと結局New Me Logを開かないと
-// 何もできず埋もれてしまうための対策。店舗別LINEチャネル宛は元々このボタンが無く
-// プレーンテキストのみだったため、同じ対策が効いていなかった（でお報告2026-09-09）。
-// provider_slug を持つ行（＝店舗と紐づいている）かつ来店予定日がまだ無い行には
-// 「予約をリクエスト」も足す（希望日時をdatetimepickerで一緒に取る。当初は日時を
-// 聞かずpostback即送信だったが、でお指摘「日時をその場で希望を送れないと使えない」を
-// 受けて変更。来店日は確定ではなくLINEのトーク上で最終すり合わせる前提）。
-function buildLogColumns(logs, todayStr) {
-  return logs.slice(0, 10).map(l => {
-    const def = resolveAxis(l.axis, l.custom_icon);
-    const statusText = l.kind === 'reminder'
-      ? (l.diff < 0 ? `${-l.diff}日過ぎています` : l.diff === 0 ? '本日が予定日です' : l.diff === 1 ? '明日が予定日です' : `${l.diff}日後が予定日です`)
-      : (l.diff < 0 ? `目安から${-l.diff}日過ぎています` : 'そろそろの時期です');
-    const actions = [
-      { type: 'postback', label: '今日行った', data: `action=log_visit&lid=${l.id}`, displayText: `${l.name} に今日行ったことを記録` },
-      { type: 'datetimepicker', label: '日付を選ぶ', data: `action=log_visit_pick&lid=${l.id}`, mode: 'date', initial: todayStr, max: todayStr },
-    ];
-    if (l.kind === 'booking' && l.provider_slug) {
-      actions.push({ type: 'datetimepicker', label: '予約をリクエスト', data: `action=book_request&lid=${l.id}`, mode: 'datetime', initial: `${todayStr}T10:00` });
-    }
-    return {
-      title: `${def.icon} ${l.name}`.slice(0, 40),
-      text: statusText.slice(0, 60),
-      actions,
-    };
-  });
+  // 「お知らせ」で終わると読んで閉じられる。次の一手（予約）を最後に示す（でお指摘2026-10-14）
+  return ['New Me Logからのお知らせです', '', ...lines, '', '下のボタンから、そのままご予約いただけます（ご来店済みの方は記録のみでも）。'].join('\n');
 }
 
 export const dynamic = 'force-dynamic';
@@ -104,7 +77,9 @@ export async function GET(request) {
 
   // next_visit がある行（予約済み）と無い行（前回だけ記録）の両方を見るため、
   // active な行をまとめて取り、判定はアプリ側で行う。
-  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at, entry_type, provider_slug';
+  // frequency_months は以前選んでいなかったため、「月1回」等の月単位で登録した記録が
+  // 軸の推奨頻度で判定され、目安日がズレていた（2026-10-14 気づき・修正）。
+  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, frequency_months, notify_enabled, notify_days_before, last_notified_at, entry_type, provider_slug, provider_type, action_url, snoozed_until';
   const COLS_LEGACY = 'id, user_id, axis, name, last_visit, next_visit, frequency_weeks, provider_slug';
 
   let { data: logs, error } = await db
@@ -212,6 +187,8 @@ export async function GET(request) {
 
     for (const l of logsByUser[userId]) {
       if (l.notify_enabled === false) continue;
+      // 通知の「◯日後にまた」で本人が静かにしている間は送らない
+      if (l.snoozed_until && l.snoozed_until > todayStr) continue;
 
       if (l.next_visit) {
         // 予約済み：同じ予約について何度も送らない
@@ -248,11 +225,53 @@ export async function GET(request) {
   const dueSlugs = [...new Set(
     dueUserIds.flatMap(uid => byUser[uid].map(l => l.provider_slug).filter(Boolean))
   )];
-  let providerBySlug = {};   // slug -> { id, channelToken }
+  let providerBySlug = {};   // slug -> { id, channelToken }（店舗別LINEチャネル連携済みの店舗だけ）
   let linksByProviderUser = {}; // `${providerId}:${userId}` -> store_line_user_id
+  // 通知の「予約する」ボタンの行き先を決める材料（lib/log-rebook.js）
+  const providerInfoBySlug = {}; // slug -> providers の行
+  const lastMenuByLogId = {};    // log.id -> { serviceId, serviceName, staffId, staffName }
   if (dueSlugs.length) {
-    const { data: providersRows } = await db.from('providers').select('id, slug').in('slug', dueSlugs);
+    const { data: providersRows } = await db
+      .from('providers')
+      .select('id, slug, entity_type, booking_url, enabled_features, plan')
+      .in('slug', dueSlugs);
+    (providersRows || []).forEach(p => { providerInfoBySlug[p.slug] = p; });
     const providerIds = (providersRows || []).map(p => p.id);
+
+    // 前回と同じメニュー・担当で予約できるよう、その店舗での直近の予約（来店済み／確定）を引く
+    if (providerIds.length) {
+      const { data: pastResv } = await db
+        .from('reservations')
+        .select('user_id, provider_id, service_id, service_name, staff_id, created_at')
+        .in('provider_id', providerIds)
+        .in('user_id', dueUserIds)
+        .in('status', ['visited', 'approved'])
+        .order('created_at', { ascending: false });
+      const latestByUserProvider = {};
+      (pastResv || []).forEach(r => {
+        const k = `${r.user_id}:${r.provider_id}`;
+        if (!latestByUserProvider[k]) latestByUserProvider[k] = r;
+      });
+      const staffIds = [...new Set(Object.values(latestByUserProvider).map(r => r.staff_id).filter(Boolean))];
+      const staffNameById = {};
+      if (staffIds.length) {
+        const { data: staffRows } = await db.from('provider_staff').select('id, name').in('id', staffIds);
+        (staffRows || []).forEach(s => { staffNameById[s.id] = s.name; });
+      }
+      for (const uid of dueUserIds) {
+        for (const l of byUser[uid]) {
+          const p = l.provider_slug && providerInfoBySlug[l.provider_slug];
+          const r = p && latestByUserProvider[`${uid}:${p.id}`];
+          if (!r) continue;
+          lastMenuByLogId[l.id] = {
+            serviceId: r.service_id || null,
+            serviceName: r.service_name || null,
+            staffId: r.staff_id || null,
+            staffName: (r.staff_id && staffNameById[r.staff_id]) || null,
+          };
+        }
+      }
+    }
     let channelsById = {};
     if (providerIds.length) {
       const { data: channels } = await db
@@ -324,7 +343,7 @@ export async function GET(request) {
     for (const { target, logs } of byStore.values()) {
       const { booking, reminder } = toBookingReminder(logs);
       const text = buildStoreLogMessage(booking, reminder, resolveAxis);
-      const columns = buildLogColumns(logs, todayStr);
+      const columns = buildLogColumns(logs, todayStr, { providerBySlug: providerInfoBySlug, lastMenuByLogId });
       const res = await sendLineLogReminder(target.lineUserId, text, columns, target.token);
       if (res.ok) { sent++; notifiedIds.push(...logs.map(l => l.id)); }
     }
@@ -337,12 +356,8 @@ export async function GET(request) {
         trackId: profile.track,
         monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
       });
-      // アプリを開かなくてもLINEから「行った」を記録できるボタン（でお要望 2026-08-05）。
-      // 当初はクイックリプライで実装したが、1メッセージに複数ボタンを載せると
-      // どれか1つ押した時点で残り全部が消えてしまうため（でお報告2026-08-27）、
-      // 押しても消えないテンプレートメッセージのカルーセルに置き換えた。
-      // 「今日行った」に加え、datetimepickerで「今日じゃない日」も選べるようにしてある。
-      const columns = buildLogColumns(fallbackLogs, todayStr);
+      // ボタン付きカルーセル（予約する／行った日を記録／◯日後にまた）。中身は lib/log-rebook.js。
+      const columns = buildLogColumns(fallbackLogs, todayStr, { providerBySlug: providerInfoBySlug, lastMenuByLogId });
       const res = await sendLineLogReminder(profile.line_user_id, text, columns);
       if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
     }

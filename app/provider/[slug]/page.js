@@ -1319,7 +1319,7 @@ function PackagesTab({ provider }) {
   );
 }
 
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, mode }) {
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -1377,12 +1377,13 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   }, [referralProgramOn, userId, provider?.slug]);
   const referralLink = referralCode && provider?.slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/provider/${provider.slug}?ref=${referralCode}` : '';
   const bookableStaff = (staff || []).filter(s => s.bookable !== false);
-  const [staffId, setStaffId] = useState('');
+  // LINE通知「前回と同じで予約」から来た時は前回の担当を選んだ状態にする（指名できる担当のみ）
+  const [staffId, setStaffId] = useState(() => (presetStaffId && bookableStaff.some(s => s.id === presetStaffId)) ? presetStaffId : '');
   const selectedStaff = bookableStaff.find(s => s.id === staffId);
 
   const [slots, setSlots] = useState(null); // null=未取得
   const [selectedSlotId, setSelectedSlotId] = useState('');
-  const [gridStaffFilter, setGridStaffFilter] = useState(''); // ''=指名なし（全スタッフ横断）
+  const [gridStaffFilter, setGridStaffFilter] = useState(staffId); // ''=指名なし（全スタッフ横断）。通知から来た時は前回の担当で絞った状態
   const [gridWeekOffset, setGridWeekOffset] = useState(0); // 表示中の週（0=今日から7日間、1=その次の7日間…）
   const [lastWasInstant, setLastWasInstant] = useState(false);
 
@@ -2028,13 +2029,25 @@ function ProviderPageContent() {
       setServices(Array.isArray(svcs) ? svcs : []);
       setStaff(Array.isArray(stf) ? stf : []);
       setAppealBlocks(Array.isArray(blocks) ? blocks : []);
+      // New Me Log のLINE通知「前回と同じで予約」から来た時は、前回のメニューを選んだ状態で開く
+      // （でお指摘2026-10-14：通知からそのまま予約まで行けないと意味がない）
+      const presetServiceId = searchParams.get('service_id');
+      if (presetServiceId && Array.isArray(svcs)) {
+        const preset = svcs.find(s => String(s.id) === presetServiceId);
+        if (preset) setSelectedService(preset);
+      }
       setLoading(false);
       // ?tab=consultでの直接着地・ブックマーク等で、その店舗には実在しないタブIDを
       // 指していた場合のフォールバック（例：即時予約のみでリクエストOFFの店舗に
-      // ?tab=consultで来た場合は'instant'へ寄せる）
+      // ?tab=consultで来た場合は'instant'へ寄せる）。以前は validIds[0]（基本情報）に
+      // 落ちていて、予約しに来た人が予約画面に着かなかった（2026-10-14修正）。
       if (prov) {
         const validIds = tabsFor(prov).map(t => t.id);
-        setActiveTab(current => validIds.includes(current) ? current : (validIds[0] || 'basic'));
+        setActiveTab(current => {
+          if (validIds.includes(current)) return current;
+          if (current === 'consult' || current === 'instant') return primaryBookingTabId(prov);
+          return validIds[0] || 'basic';
+        });
       }
     }).catch(() => setLoading(false));
 
@@ -2201,6 +2214,7 @@ function ProviderPageContent() {
           diagnosis={diagnosis}
           matchData={matchData}
           menuNameHint={searchParams.get('menu_name') || ''}
+          presetStaffId={searchParams.get('staff_id') || ''}
           mode="instant"
         />
       )}
@@ -2216,6 +2230,7 @@ function ProviderPageContent() {
           diagnosis={diagnosis}
           matchData={matchData}
           menuNameHint={searchParams.get('menu_name') || ''}
+          presetStaffId={searchParams.get('staff_id') || ''}
           mode={hasFeature(provider, 'booking_request') ? 'request' : 'closed'}
         />
       )}

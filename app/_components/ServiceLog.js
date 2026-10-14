@@ -333,6 +333,7 @@ export default function ServiceLog({ withSideNav = false }) {
          アイコンの当たり判定自体をinput全体に広げる */
       .log-visit-pick-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
       .log-visit-today:disabled { opacity: .6; cursor: default; }
+      .log-action-link { text-decoration: none; }
       .log-book-request-btn { flex: 1 1 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; background: rgba(107,155,255,0.1); border: 1px solid rgba(107,155,255,0.35); color: #8fb3ff; }
       .log-book-request-btn:hover { background: rgba(107,155,255,0.18); }
       .log-book-request-btn:disabled { opacity: .6; cursor: default; }
@@ -1157,6 +1158,7 @@ export default function ServiceLog({ withSideNav = false }) {
                   <input type="date" class="log-visit-pick-input" data-visit-date="${log.id}" max="${todayStr}" />
                 </label>
                 ${canBookRequest && bookFormOpenId !== log.id ? `<button class="log-book-request-btn" data-book-request="${log.id}">予約をリクエスト</button>` : ''}
+                ${!canBookRequest && log.action_url && /^https?:\/\//i.test(log.action_url) ? `<a class="log-book-request-btn log-action-link" href="${esc(log.action_url)}" target="_blank" rel="noopener noreferrer">${log.entry_type === 'purchase' ? '購入ページを開く' : '予約ページを開く'}</a>` : ''}
               </div>
               ${canBookRequest && bookFormOpenId === log.id ? (() => {
                 const svc = bookServicesCache[log.provider_slug];
@@ -1275,6 +1277,7 @@ export default function ServiceLog({ withSideNav = false }) {
       nextInputEl.dataset.auto = ''; // モーダルは使い回すため、前回開いた時のフラグを必ず消す
       document.getElementById('log-f-cost').value = log?.cost || '';
       document.getElementById('log-f-memo').value = log?.memo || '';
+      document.getElementById('log-f-action-url').value = log?.action_url || '';
       document.getElementById('log-provider-search-input').value = log?.provider_slug
         ? `（登録済み）${log.provider_slug}`
         : (selectedProvider ? `（お店から案内）${selectedProvider.name || selectedProvider.slug}` : '');
@@ -1308,6 +1311,12 @@ export default function ServiceLog({ withSideNav = false }) {
       if (nextLabel) nextLabel.textContent = def.nextLabel;
       const providerWrap = document.getElementById('log-provider-wrap');
       if (providerWrap) providerWrap.style.display = entryType === 'purchase' ? 'none' : '';
+      const actionLabel = document.getElementById('log-f-action-url-label');
+      if (actionLabel) actionLabel.textContent = entryType === 'purchase' ? '購入ページのURL（任意）' : '予約ページのURL（任意）';
+      const actionHint = document.getElementById('log-f-action-url-hint');
+      if (actionHint) actionHint.textContent = entryType === 'purchase'
+        ? 'いつも買っているページを入れておくと、LINEのお知らせから1タップで買い足せます'
+        : 'いつも予約しているページを入れておくと、LINEのお知らせから1タップで開けます';
     }
 
     function closeModal() {
@@ -1400,6 +1409,7 @@ export default function ServiceLog({ withSideNav = false }) {
         next_visit: document.getElementById('log-f-next').value || null,
         cost: parseInt(document.getElementById('log-f-cost').value) || null,
         memo: document.getElementById('log-f-memo').value.trim() || null,
+        action_url: (() => { const v = document.getElementById('log-f-action-url').value.trim(); return /^https?:\/\/\S+$/i.test(v) ? v : null; })(),
         provider_slug: selectedProvider?.slug || null,
         provider_type: selectedProvider?.type || null,
       };
@@ -1988,7 +1998,21 @@ export default function ServiceLog({ withSideNav = false }) {
     });
 
     root.innerHTML = `<div style="text-align:center;padding:60px 0;color:rgba(232,228,220,0.3);font-size:13px">読み込み中...</div>`;
-    Promise.all([fetchLogs(), fetchProviderRecords()]).then(() => render());
+    Promise.all([fetchLogs(), fetchProviderRecords()]).then(() => {
+      render();
+      // LINE通知の「予約先を登録する」から来た時（?edit=<id>&focus=action_url）は、
+      // その記録の編集画面を開いてURL欄にカーソルを置く（一度登録すれば次回から1タップ）
+      const qp = new URLSearchParams(window.location.search);
+      const editId = qp.get('edit');
+      const target = editId && logs.find(l => String(l.id) === editId);
+      if (target) {
+        openModal(target);
+        if (qp.get('focus') === 'action_url') {
+          const el = document.getElementById('log-f-action-url');
+          if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); }
+        }
+      }
+    });
   }, []);
 
   return (
@@ -2061,6 +2085,12 @@ export default function ServiceLog({ withSideNav = false }) {
               <label id="log-f-next-label">次回予約日</label>
               <input id="log-f-next" type="date" />
             </div>
+          </div>
+
+          <div className="log-field">
+            <label id="log-f-action-url-label">予約ページのURL（任意）</label>
+            <input id="log-f-action-url" type="url" inputMode="url" placeholder="https://..." />
+            <p className="log-field-hint" id="log-f-action-url-hint">いつも予約しているページを入れておくと、LINEのお知らせから1タップで開けます</p>
           </div>
 
           <div className="log-field">
