@@ -145,8 +145,9 @@ export default function AttendanceKiosk() {
       ) : !verified ? (
         <section className="ak-card ak-pin">
           <div className="ak-pin-name">{picked.name} さん</div>
-          <p>暗証番号を入力してください</p>
-          <div className="ak-dots" aria-label={`${pin.length}桁入力済み`}>{Array.from({ length: 6 }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}</div>
+          <p>暗証番号（4〜6桁）を入力して「次へ」を押してください</p>
+          {/* 桁数は人によって4〜6桁。最初は4つ表示し、5桁目・6桁目を入れた時だけ増やす */}
+          <div className="ak-dots" aria-label={`${pin.length}桁入力済み`}>{Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}</div>
           {error && <p className="ak-error" role="alert">{error}</p>}
           <div className="ak-pad">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(n => <button key={n} type="button" onClick={() => press(n)}>{n}</button>)}
