@@ -94,6 +94,17 @@ export default function AdminLayout({ children }) {
         .ad-main :is(h1, h2, h3, h4, p, li, label, td, th, dt, dd, legend, summary, small, strong, em):not(#feature-preview *) { color: inherit; }
         .ad-main .section-title:not(#feature-preview *), .ad-main .card h2:not(#feature-preview *), .ad-main .card h3:not(#feature-preview *) { color: #111; }
         .ad-main :is(.muted, .kpi-label, .kpi-sub, .hint, small):not(#feature-preview *) { color: #111 !important; }
+        /* ボタン：共通CSSの .btn は金文字＋透明背景、.btn-ghost は薄クリーム文字で、白い地では
+           文字が読めない（でお指摘2026-10-14「編集する・非公開にする等のボタンの文字が見えない」）。
+           管理画面では 通常＝白地・黒文字・黒の細枠、.btn（強調）＝黒地・白文字 に統一する。
+           ページ側が style で色を指定したもの（例：削除ボタンの赤文字）はそちらが優先される。 */
+        .ad-main .btn, .ad-main .btn-ghost, .ad-main button.btn {
+          background: #fff; color: #111; border: 1.5px solid #111; box-shadow: none;
+        }
+        .ad-main .btn:not(.btn-ghost):not(.btn--ghost) { background: #111; color: #fff; border-color: #111; }
+        .ad-main .btn:hover, .ad-main .btn-ghost:hover { background: #111 !important; color: #fff !important; border-color: #111; box-shadow: none; }
+        .ad-main .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .ad-main .btn:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
         @media (max-width: 900px) {
           .ad-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
           .ad-sidebar { width: 264px; transform: translateX(-100%); transition: transform .25s ease; box-shadow: 4px 0 24px rgba(0,0,0,0.4); z-index: 60; }
