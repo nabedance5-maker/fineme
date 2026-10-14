@@ -145,9 +145,9 @@ export default function AttendanceKiosk() {
       ) : !verified ? (
         <section className="ak-card ak-pin">
           <div className="ak-pin-name">{picked.name} さん</div>
-          <p>暗証番号（4〜6桁）を入力して「次へ」を押してください</p>
-          {/* 桁数は人によって4〜6桁。最初は4つ表示し、5桁目・6桁目を入れた時だけ増やす */}
-          <div className="ak-dots" aria-label={`${pin.length}桁入力済み`}>{Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}</div>
+          <p>暗証番号を入力して「次へ」を押してください</p>
+          {/* 桁数を推測できる枠（空の丸など）は出さない。押した数字だけを●で表示する */}
+          <div className="ak-pin-field" aria-label={pin ? '入力中' : '未入力'}>{pin ? '●'.repeat(pin.length) : <span>暗証番号</span>}</div>
           {error && <p className="ak-error" role="alert">{error}</p>}
           <div className="ak-pad">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(n => <button key={n} type="button" onClick={() => press(n)}>{n}</button>)}
@@ -203,9 +203,8 @@ const CSS = `
 .ak-ghost { font: inherit; font-size: 15px; font-weight: 700; padding: 12px; border: 1.5px solid rgba(26,20,16,.2); border-radius: 12px; background: #fff; cursor: pointer; }
 .ak-error { color: #b42318 !important; font-weight: 700; }
 .ak-pin-name { font-size: 24px; font-weight: 800; }
-.ak-dots { display: flex; justify-content: center; gap: 12px; }
-.ak-dots span { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(26,20,16,.3); }
-.ak-dots span.on { background: #1a1410; border-color: #1a1410; }
+.ak-pin-field { height: 56px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(26,20,16,.2); border-radius: 14px; font-size: 22px; letter-spacing: .35em; color: #1a1410; background: #faf8f3; }
+.ak-pin-field span { font-size: 15px; letter-spacing: 0; color: rgba(26,20,16,.4); }
 .ak-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .ak-pad button { font: inherit; font-size: 28px; font-weight: 700; padding: 16px 0; border-radius: 14px; border: 1.5px solid rgba(26,20,16,.12); background: #faf8f3; cursor: pointer; }
 .ak-pad button:active { background: #efe9dc; }
