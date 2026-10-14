@@ -557,6 +557,16 @@ export default function ProviderDashboardPage() {
       });
     }
 
+    // 中身のタブが無い大カテゴリー（例：シフト管理も勤怠もOFFの「勤怠」）は左の列に出さない
+    window.__pdSyncRails = () => {
+      document.querySelectorAll('.pd-rail-btn[data-category]').forEach(btn => {
+        const key = btn.dataset.category;
+        if (key === 'hidden' || key === 'tutorial' || key === 'home') return;
+        const panel = document.querySelector(`.pd-panel-section[data-panel="${key}"]`);
+        if (panel) btn.style.display = panel.querySelector('.tab-btn') ? '' : 'none';
+      });
+    };
+
     function applyTabLayout(prefs) {
       syncCustomCategoryRail(prefs);
       window.__tabCategoryOverrides = prefs?.tab_category_overrides || {};
@@ -577,6 +587,7 @@ export default function ProviderDashboardPage() {
           if (btn) section.appendChild(btn);
         });
       });
+      window.__pdSyncRails?.();
     }
 
     function applySidebarOrder(prefs) {
@@ -7762,6 +7773,7 @@ export default function ProviderDashboardPage() {
         if (hiddenSection && hiddenRailBtn) {
           hiddenRailBtn.style.display = hiddenSection.children.length ? '' : 'none';
         }
+        window.__pdSyncRails?.();
       }
 
       // 機能設定タブのチェックボックスをON/OFFした直後にも、リロードなしでサイドバー・
@@ -11773,6 +11785,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="pd-rail-btn" data-category="customer">顧客</button>
                 <button type="button" className="pd-rail-btn" data-category="sales">売上</button>
                 <button type="button" className="pd-rail-btn" data-category="store">店舗設定</button>
+                <button type="button" className="pd-rail-btn" data-category="labor">勤怠</button>
                 <button type="button" className="pd-rail-btn" data-category="growth">集客</button>
                 <button type="button" className="pd-rail-btn" data-category="account">アカウント</button>
                 <button type="button" className="pd-rail-btn" data-category="tutorial">使い方</button>
@@ -11819,13 +11832,15 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
-                  <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="attendance" data-feature="attendance">勤怠<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="classes" data-feature="class_management">クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
                   <button className="tab-btn" data-tab="publish">公開設定</button>
+                </div>
+                <div className="pd-panel-section" data-panel="labor" style={{ display: 'none' }}>
+                  <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="attendance" data-feature="attendance">打刻・勤怠記録<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="growth" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="area-demand">エリア需要</button>
