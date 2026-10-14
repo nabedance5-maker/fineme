@@ -87,6 +87,13 @@ export default function AdminLayout({ children }) {
         .ad-main .section { padding: 0; }
         .ad-main .container { max-width: none; padding-left: 0; padding-right: 0; }
         .ad-main .card { background: #ffffff; border-color: rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); }
+        /* 運営管理画面は明るい地。サイト共通CSSの文字色（薄クリーム＝暗い地用）を継承して
+           見出し・説明文が背景に溶けるため、主要な文字を黒に固定する（でお指摘2026-10-14）。
+           各ページが style / ページ内CSS で色を指定している要素は、そちらが優先される。 */
+        .ad-main { color: #111; }
+        .ad-main :is(h1, h2, h3, h4, p, li, label, td, th, dt, dd, legend, summary, small, strong, em):not(#feature-preview *) { color: inherit; }
+        .ad-main .section-title:not(#feature-preview *), .ad-main .card h2:not(#feature-preview *), .ad-main .card h3:not(#feature-preview *) { color: #111; }
+        .ad-main :is(.muted, .kpi-label, .kpi-sub, .hint, small):not(#feature-preview *) { color: #111 !important; }
         @media (max-width: 900px) {
           .ad-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
           .ad-sidebar { width: 264px; transform: translateX(-100%); transition: transform .25s ease; box-shadow: 4px 0 24px rgba(0,0,0,0.4); z-index: 60; }
