@@ -13727,6 +13727,9 @@ export default function ProviderDashboardPage() {
             <div className="fx-line-preview">
               <div className="fx-line-preview-head">LINEで届く内容</div>
               <div className="fx-line-preview-body" id="nudge-preview-body"></div>
+              {/* 声かけは戻ってきてもらうためのもの。予約ボタンが自動で添えられることを見せる（2026-10-14） */}
+              <div className="fx-line-preview-btn">予約する</div>
+              <p className="fx-line-preview-note">予約ボタンが一緒に届きます。前回のメニュー・担当が選ばれた状態で予約画面が開きます（オンライン予約・リクエスト受付、または外部の予約ページを設定している場合）。</p>
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button type="button" className="btn" id="nudge-send-btn">送信する</button>

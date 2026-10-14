@@ -9,6 +9,7 @@ import { sendWebPush } from '@/lib/web-push';
 import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
 import { buildLogColumns } from '@/lib/log-rebook';
+import { hasFeature } from '@/lib/feature-flags';
 
 // 店舗の公式LINEチャネルから送る分は、Fineme独自の航海クルー口調ではなく
 // 店舗からの通知として自然な、簡潔な文面にする（フェーズ2・店舗別LINE連携）。
@@ -283,7 +284,8 @@ export async function GET(request) {
       });
     }
     (providersRows || []).forEach(p => {
-      if (channelsById[p.id]) providerBySlug[p.slug] = { id: p.id, channelToken: channelsById[p.id] };
+      // 店舗別LINEはCプランの機能（lib/line-channel.js の resolveLineTarget と同じ判定）
+      if (channelsById[p.id] && hasFeature(p, 'line_channel')) providerBySlug[p.slug] = { id: p.id, channelToken: channelsById[p.id] };
     });
     const connectedProviderIds = Object.values(providerBySlug).map(p => p.id);
     if (connectedProviderIds.length) {

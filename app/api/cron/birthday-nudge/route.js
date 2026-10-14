@@ -3,7 +3,8 @@
 // New Me Logで紐づけている店舗ごとにお祝いメッセージを送る（予約・再来店リマインドSaaS フェーズ3-F）。
 // 店舗別LINEチャネル連携済みならそちらから、未連携ならFineme公式LINEから送る（resolveLineTarget）。
 import { getSupabase } from '@/lib/supabase';
-import { sendLinePush } from '@/lib/line-push';
+import { sendLinePushWithAction } from '@/lib/line-push';
+import { storeBookingAction, fetchLastMenu, lastMenuLine } from '@/lib/log-rebook';
 import { resolveLineTarget } from '@/lib/line-channel';
 
 export const dynamic = 'force-dynamic';
@@ -51,7 +52,7 @@ export async function GET(request) {
   const allSlugs = [...new Set((logs || []).map(l => l.provider_slug))];
   let providerBySlug = {};
   if (allSlugs.length) {
-    const { data: providers } = await db.from('providers').select('id, slug, name').in('slug', allSlugs);
+    const { data: providers } = await db.from('providers').select('id, slug, name, entity_type, booking_url, enabled_features, plan').in('slug', allSlugs);
     (providers || []).forEach(p => { providerBySlug[p.slug] = p; });
   }
 
@@ -79,7 +80,14 @@ export async function GET(request) {
       if (!target.lineUserId) continue;
 
       const text = `お誕生日おめでとうございます🎂\n${provider.name}より、日頃のご利用に感謝を込めて。よろしければまたお越しください。`;
-      const res = await sendLinePush(target.lineUserId, text, target.token);
+      // 「またお越しください」で終わらせず、そのまま予約できるボタンを添える（でお指摘2026-10-14）
+      const lastMenu = await fetchLastMenu(db, provider.id, profile.id);
+      const action = storeBookingAction(provider, lastMenu, 'birthday');
+      const res = await sendLinePushWithAction(
+        target.lineUserId, text,
+        action && { ...action, caption: lastMenuLine(lastMenu) || 'ご予約はこちらから' },
+        target.token,
+      );
       if (res.ok) {
         sent++;
         await db.from('provider_birthday_nudges').insert({ provider_id: provider.id, user_id: profile.id, year });

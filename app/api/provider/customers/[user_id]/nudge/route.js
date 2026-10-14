@@ -2,7 +2,8 @@
 // 店舗別LINEチャネルが連携済みならそちらから、未連携ならFineme公式LINEから送る（resolveLineTarget）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { sendLinePush } from '@/lib/line-push';
+import { sendLinePushWithAction } from '@/lib/line-push';
+import { storeBookingAction, fetchLastMenu, lastMenuLine } from '@/lib/log-rebook';
 import { resolveLineTarget } from '@/lib/line-channel';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -12,7 +13,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan, entity_type, booking_url, enabled_features').eq('email', user.email).single();
   return data || null;
 }
 
@@ -47,10 +48,19 @@ async function __POST(request, { params }) {
   });
   if (!target.lineUserId) return Response.json({ error: 'このお客様はLINE通知の宛先が未設定です' }, { status: 400 });
 
-  const res = await sendLinePush(target.lineUserId, message.trim(), target.token);
+  // 声かけは「戻ってきてもらう」ためのもの。文字だけだと読まれて終わるので、
+  // 前回と同じメニュー・担当を選んだ予約画面へのボタンを添える（でお指摘2026-10-14）
+  const lastMenu = await fetchLastMenu(supabase, provider.id, userId);
+  const action = storeBookingAction(provider, lastMenu, 'store_nudge');
+  const res = await sendLinePushWithAction(
+    target.lineUserId,
+    message.trim(),
+    action && { ...action, caption: lastMenuLine(lastMenu) || 'ご予約はこちらから' },
+    target.token,
+  );
   if (!res.ok) return Response.json({ error: `送信に失敗しました（${res.reason || res.status || '不明'}）` }, { status: 502 });
 
-  return Response.json({ ok: true, viaStore: target.viaStore });
+  return Response.json({ ok: true, viaStore: target.viaStore, withBookingButton: !!action });
 }
 
 export const POST = withAudit(__POST);

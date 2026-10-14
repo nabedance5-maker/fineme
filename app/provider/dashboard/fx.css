@@ -62,6 +62,8 @@
 .fx-line-preview { margin-top: 12px; background: #f6f2ea; border: 1px solid rgba(26,20,16,.06); border-radius: 4px 16px 16px 16px; padding: 12px 14px; }
 .fx-line-preview-head { font-size: 11px; font-weight: 800; color: #1f8a54; margin-bottom: 4px; }
 .fx-line-preview-body { font-size: 13px; line-height: 1.75; color: #1a1410; white-space: pre-wrap; word-break: break-word; min-height: 1.75em; }
+.fx-line-preview-btn { margin-top: 10px; background: #fff; border: 1px solid rgba(26,20,16,.1); border-radius: 10px; padding: 9px; text-align: center; font-size: 13px; font-weight: 700; color: #1f6fd1; }
+.fx-line-preview-note { margin: 6px 0 0; font-size: 11px; line-height: 1.6; color: rgba(26,20,16,.55); }
 .fx-line-preview-body:empty::before { content: 'ここに入力した文章が表示されます'; color: rgba(26,20,16,.4); }
 
 /* カルテ */
