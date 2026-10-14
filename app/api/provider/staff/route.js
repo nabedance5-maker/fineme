@@ -27,6 +27,8 @@ export async function GET(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!data?.length) return Response.json([]);
+  // 打刻用暗証番号のハッシュは画面に渡さない（設定済みかどうかだけ返す）
+  data.forEach(s => { s.has_attendance_pin = !!s.attendance_pin_hash; delete s.attendance_pin_hash; delete s.attendance_pin_failures; delete s.attendance_pin_locked_until; });
 
   // リピート率・指名率（SAAS-036）。担当割当(provider_customer_notes.assigned_staff_id)と
   // New Me Logの来店回数(user_service_log_visits)から都度算出する。

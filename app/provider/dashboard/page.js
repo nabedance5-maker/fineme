@@ -1704,6 +1704,203 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'staff') loadStaff();
     })();
 
+    // ── 勤怠タブ（でお要望2026-10-14） ──────────────────────────────
+    (function setupAttendance() {
+      if (!getSupabaseToken()) return;
+      const H = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
+      const HJ = () => ({ 'Content-Type': 'application/json', ...H() });
+      const KIND = { in: '出勤', break_start: '休憩開始', break_end: '休憩終了', out: '退勤' };
+      const hm = min => (min ? `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}` : '—');
+      const jst = iso => new Date(new Date(iso).getTime() + 9 * 3600 * 1000).toISOString();
+      const tOf = iso => (iso ? jst(iso).slice(11, 16) : '—');
+      const dOf = iso => jst(iso).slice(0, 10);
+      let data = null;
+      const monthEl = document.getElementById('att-month');
+      const filterEl = document.getElementById('att-staff-filter');
+      if (monthEl && !monthEl.value) monthEl.value = jst(new Date().toISOString()).slice(0, 7);
+
+      function range() {
+        const [y, m] = (monthEl?.value || '').split('-').map(Number);
+        const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        return { from: `${monthEl.value}-01`, to: `${monthEl.value}-${String(last).padStart(2, '0')}` };
+      }
+      const nameOf = id => data?.staff.find(s => s.id === id)?.name || '(不明)';
+
+      async function loadRecords() {
+        const sum = document.getElementById('att-summary');
+        if (!sum || !monthEl?.value) return;
+        sum.innerHTML = '読み込み中…';
+        const { from, to } = range();
+        const res = await fetch(`/api/provider/attendance?from=${from}&to=${to}`, { headers: H() });
+        if (!res.ok) { sum.innerHTML = authErrorHtml(res); document.getElementById('att-days').innerHTML = ''; return; }
+        data = await res.json();
+        const cur = filterEl.value;
+        filterEl.innerHTML = '<option value="">全員</option>' + data.staff.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+        filterEl.value = cur;
+        render();
+      }
+
+      function render() {
+        const sel = filterEl.value;
+        const days = data.days.filter(d => !sel || d.staff_id === sel);
+        const totals = {};
+        days.forEach(d => {
+          const t = totals[d.staff_id] || (totals[d.staff_id] = { days: 0, work: 0, ot: 0, night: 0, late: 0, early: 0, issues: 0 });
+          if (d.in) t.days++;
+          t.work += d.work_min; t.ot += d.overtime_min; t.night += d.night_min;
+          if (d.late_min > 0) t.late++; if (d.early_min > 0) t.early++; if (d.issues.length) t.issues++;
+        });
+        const rows = Object.entries(totals).map(([id, t]) => `<tr>
+            <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(nameOf(id))}</td>
+            <td style="padding:6px 8px;text-align:right">${t.days}日</td>
+            <td style="padding:6px 8px;text-align:right">${hm(t.work)}</td>
+            <td style="padding:6px 8px;text-align:right">${hm(t.ot)}</td>
+            <td style="padding:6px 8px;text-align:right">${hm(t.night)}</td>
+            <td style="padding:6px 8px;text-align:right">${t.late}回</td>
+            <td style="padding:6px 8px;text-align:right">${t.early}回</td>
+            <td style="padding:6px 8px;text-align:right;${t.issues ? 'color:#b42318;font-weight:700' : ''}">${t.issues}件</td>
+          </tr>`).join('');
+        document.getElementById('att-summary').innerHTML = rows
+          ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px;min-width:560px;width:100%"><thead><tr style="color:#6b7280;font-size:11.5px;text-align:right"><th style="padding:6px 8px;text-align:left">スタッフ</th><th style="padding:6px 8px">勤務日数</th><th style="padding:6px 8px">実働</th><th style="padding:6px 8px">残業</th><th style="padding:6px 8px">深夜</th><th style="padding:6px 8px">遅刻</th><th style="padding:6px 8px">早退</th><th style="padding:6px 8px">要確認</th></tr></thead><tbody>${rows}</tbody></table></div>`
+          : '<p class="muted" style="font-size:13px;margin:0">この月の打刻はまだありません。</p>';
+        document.getElementById('att-days').innerHTML = days.length ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:12.5px;min-width:820px;width:100%">
+            <thead><tr style="color:#6b7280;font-size:11px;text-align:left;border-bottom:1px solid #e5e7eb">
+              <th style="padding:6px">日付</th><th style="padding:6px">スタッフ</th><th style="padding:6px">シフト</th><th style="padding:6px">出勤</th><th style="padding:6px">退勤</th><th style="padding:6px">休憩</th><th style="padding:6px">実働</th><th style="padding:6px">残業</th><th style="padding:6px">深夜</th><th style="padding:6px">遅刻・早退</th><th style="padding:6px"></th>
+            </tr></thead><tbody>${days.map((d, i) => `<tr style="border-bottom:1px solid #f3f4f6;${d.issues.length ? 'background:#fff7f5' : ''}">
+              <td style="padding:6px;white-space:nowrap">${esc(d.date.slice(5).replace('-', '/'))}</td>
+              <td style="padding:6px;white-space:nowrap;font-weight:700">${esc(nameOf(d.staff_id))}</td>
+              <td style="padding:6px;white-space:nowrap;color:#6b7280">${d.shift ? esc(rangeLabel(d.shift.start_time, d.shift.end_time)) : '—'}</td>
+              <td style="padding:6px">${tOf(d.in)}</td>
+              <td style="padding:6px">${d.out ? (dOf(d.out) !== d.date ? '翌' : '') + tOf(d.out) : d.working ? '<span style="color:#1f8a54;font-weight:700">勤務中</span>' : '—'}</td>
+              <td style="padding:6px">${hm(d.break_min)}</td>
+              <td style="padding:6px;font-weight:700">${hm(d.work_min)}</td>
+              <td style="padding:6px">${hm(d.overtime_min)}</td>
+              <td style="padding:6px">${hm(d.night_min)}</td>
+              <td style="padding:6px;white-space:nowrap">${[d.late_min ? `遅刻${d.late_min}分` : '', d.early_min ? `早退${d.early_min}分` : ''].filter(Boolean).join('・') || '—'}${d.issues.length ? `<div style="color:#b42318;font-size:11px">${d.issues.map(esc).join('<br>')}</div>` : ''}</td>
+              <td style="padding:6px"><button type="button" class="btn btn-ghost" data-att-day="${i}" style="font-size:11.5px;padding:4px 10px">打刻を見る・直す</button></td>
+            </tr>`).join('')}</tbody></table></div>` : '';
+        document.querySelectorAll('[data-att-day]').forEach(b => b.addEventListener('click', () => openDay(days[Number(b.dataset.attDay)])));
+      }
+
+      function openDay(day) {
+        const ids = new Set(day.punch_ids);
+        const punches = data.punches.filter(p => ids.has(p.id) || (p.voided_at && p.staff_id === day.staff_id && dOf(p.punched_at) === day.date));
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        const local = iso => jst(iso).slice(0, 16);
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h3 style="margin:0;font-size:16px">${esc(nameOf(day.staff_id))}・${esc(day.date)}の打刻</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <p class="muted" style="font-size:12px;margin:6px 0 10px;line-height:1.6">打刻は消せません。間違いは「取り消す」（正しい時刻を入れると取り消しと同時に追加）で直し、理由と直した人が記録に残ります。</p>
+          <div style="display:flex;flex-direction:column;gap:6px">${punches.map(p => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;${p.voided_at ? 'opacity:.55' : ''}">
+              <span style="font-weight:700;min-width:64px">${KIND[p.kind]}</span>
+              <span style="flex:1">${esc(local(p.punched_at).replace('T', ' '))}<span class="muted" style="font-size:11px">・${p.source === 'kiosk' ? '店頭タブレット' : `手入力（${esc(p.created_by || '')}）`}</span>${p.note ? `<div class="muted" style="font-size:11px">${esc(p.note)}</div>` : ''}${p.voided_at ? `<div style="font-size:11px;color:#b42318">取り消し済み：${esc(p.void_reason || '')}（${esc(p.voided_by || '')}）</div>` : ''}</span>
+              ${p.voided_at ? '' : `<button type="button" class="btn btn-ghost" data-void="${p.id}" data-at="${local(p.punched_at)}" style="font-size:11.5px;padding:4px 10px">取り消す</button>`}
+            </div>`).join('')}</div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">打刻を追加（打ち忘れなど）</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <select data-add-kind style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px">${Object.entries(KIND).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+              <input type="datetime-local" data-add-at value="${day.date}T09:00" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:8px" />
+              <input type="text" data-add-note placeholder="理由（必須）例：退勤の押し忘れ" style="flex:1;min-width:160px;padding:6px 8px;border:1px solid #d1d5db;border-radius:8px" />
+              <button type="button" class="btn" data-add style="font-size:12.5px">追加</button>
+            </div>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('[data-x]').addEventListener('click', close);
+        ov.querySelectorAll('[data-void]').forEach(b => b.addEventListener('click', async () => {
+          const reason = prompt('取り消す理由を入力してください（例：押し間違い）');
+          if (!reason || !reason.trim()) return;
+          const fix = prompt('正しい時刻があれば「YYYY-MM-DD HH:MM」で入力（無ければ空欄のまま OK）', b.dataset.at.replace('T', ' '));
+          const body = { reason: reason.trim() };
+          if (fix && fix.trim()) body.replace_at = fix.trim().replace(' ', 'T');
+          const res = await fetch(`/api/provider/attendance/punches/${b.dataset.void}`, { method: 'PATCH', headers: HJ(), body: JSON.stringify(body) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+          showToast('打刻を直しました'); close(); loadRecords();
+        }));
+        ov.querySelector('[data-add]').addEventListener('click', async () => {
+          const body = { staff_id: day.staff_id, kind: ov.querySelector('[data-add-kind]').value, at: ov.querySelector('[data-add-at]').value, note: ov.querySelector('[data-add-note]').value };
+          const res = await fetch('/api/provider/attendance/punches', { method: 'POST', headers: HJ(), body: JSON.stringify(body) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+          showToast('打刻を追加しました'); close(); loadRecords();
+        });
+      }
+
+      document.getElementById('att-csv-btn')?.addEventListener('click', () => {
+        if (!data) return;
+        const sel = filterEl.value;
+        const rows = [['日付', 'スタッフ', 'シフト', '出勤', '退勤', '休憩(分)', '実働(分)', '残業(分)', '深夜(分)', '遅刻(分)', '早退(分)', '要確認']];
+        data.days.filter(d => !sel || d.staff_id === sel).forEach(d => rows.push([
+          d.date, nameOf(d.staff_id), d.shift ? rangeLabel(d.shift.start_time, d.shift.end_time, '-') : '', d.in ? tOf(d.in) : '', d.out ? (dOf(d.out) !== d.date ? '翌' : '') + tOf(d.out) : '',
+          d.break_min, d.work_min, d.overtime_min, d.night_min, d.late_min, d.early_min, d.issues.join(' / '),
+        ]));
+        const csv = '\ufeff' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = `勤怠_${monthEl.value}${sel ? '_' + nameOf(sel) : ''}.csv`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      });
+
+      async function loadSetup() {
+        const [devRes, staffRes] = await Promise.all([
+          fetch('/api/provider/attendance/devices', { headers: H() }),
+          fetch('/api/provider/staff', { headers: H() }),
+        ]);
+        const devEl = document.getElementById('att-devices');
+        const devices = devRes.ok ? await devRes.json() : [];
+        const active = devices.filter(d => !d.revoked_at && d.paired_at);
+        devEl.innerHTML = active.length ? active.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px">
+            <span style="flex:1;font-size:13px;font-weight:700">${esc(d.name)}<span class="muted" style="font-size:11.5px;font-weight:400">・登録 ${esc(d.paired_at.slice(0, 10))}${d.last_used_at ? `・最終利用 ${esc(jst(d.last_used_at).slice(0, 16).replace('T', ' '))}` : ''}</span></span>
+            <button type="button" class="btn btn-ghost" data-revoke="${d.id}" style="font-size:12px;padding:4px 10px;color:#b42318">登録を取り消す</button>
+          </div>`).join('') : '<p class="muted" style="font-size:13px;margin:0">まだ登録された端末はありません。</p>';
+        devEl.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('この端末の登録を取り消しますか？（その端末からは打刻できなくなります）')) return;
+          const res = await fetch(`/api/provider/attendance/devices/${b.dataset.revoke}`, { method: 'DELETE', headers: H() });
+          showToast(res.ok ? '登録を取り消しました' : '取り消せませんでした'); loadSetup();
+        }));
+        const pinsEl = document.getElementById('att-pins');
+        const staff = staffRes.ok ? await staffRes.json() : [];
+        pinsEl.innerHTML = staff.length ? staff.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;flex-wrap:wrap">
+            <span style="flex:1;font-size:13px;font-weight:700">${esc(s.name)}</span>
+            <span style="font-size:11.5px;font-weight:700;${s.has_attendance_pin ? 'color:#23784a' : 'color:#9ca3af'}">${s.has_attendance_pin ? '設定済み' : '未設定'}</span>
+            <input type="password" inputmode="numeric" maxlength="6" data-pin-input="${s.id}" placeholder="4〜6桁" autocomplete="new-password" style="width:96px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />
+            <button type="button" class="btn btn-ghost" data-pin-save="${s.id}" style="font-size:12px;padding:4px 10px">${s.has_attendance_pin ? '変更' : '設定'}</button>
+          </div>`).join('') : '<p class="muted" style="font-size:13px;margin:0">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>';
+        pinsEl.querySelectorAll('[data-pin-save]').forEach(b => b.addEventListener('click', async () => {
+          const pin = pinsEl.querySelector(`[data-pin-input="${b.dataset.pinSave}"]`).value.trim();
+          if (!/^\d{4,6}$/.test(pin)) { showToast('暗証番号は4〜6桁の数字にしてください'); return; }
+          const res = await fetch('/api/provider/attendance/pin', { method: 'POST', headers: HJ(), body: JSON.stringify({ staff_id: b.dataset.pinSave, pin }) });
+          const d = await res.json().catch(() => ({}));
+          showToast(res.ok ? '暗証番号を設定しました' : 'エラー: ' + (d.error || '不明')); if (res.ok) loadSetup();
+        }));
+      }
+      document.getElementById('att-device-add')?.addEventListener('click', async () => {
+        const res = await fetch('/api/provider/attendance/devices', { method: 'POST', headers: HJ(), body: JSON.stringify({ name: '店頭タブレット' }) });
+        const d = await res.json().catch(() => ({}));
+        const el = document.getElementById('att-device-code');
+        if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+        el.innerHTML = `<div style="padding:16px;border:2px dashed #c9a84c;border-radius:12px;text-align:center;background:#fffdf7">
+            <div style="font-size:12.5px;color:#84651a;font-weight:700">タブレットで入力する登録コード（10分間有効）</div>
+            <div style="font-size:40px;font-weight:800;letter-spacing:.25em;font-variant-numeric:tabular-nums;margin:6px 0">${esc(d.pairing_code)}</div>
+            <div class="muted" style="font-size:12px">タブレットで www.fineme.me/attendance-kiosk を開いて入力してください。登録が済んだら「端末の一覧を更新」を押してください。</div>
+            <button type="button" class="btn btn-ghost" data-att-refresh style="font-size:12px;margin-top:8px">端末の一覧を更新</button>
+          </div>`;
+        el.querySelector('[data-att-refresh]').addEventListener('click', () => { el.innerHTML = ''; loadSetup(); });
+      });
+
+      monthEl?.addEventListener('change', loadRecords);
+      filterEl?.addEventListener('change', () => data && render());
+      const loadTab = () => { loadRecords(); loadSetup(); };
+      document.querySelectorAll('[data-tab="attendance"]').forEach(btn => btn.addEventListener('click', loadTab));
+      if (new URLSearchParams(location.search).get('tab') === 'attendance') loadTab();
+    })();
+
     // ── シフト管理タブ（でお要望2026-09-13） ──────────────────────────
     (function setupShift() {
       const token = getSupabaseToken();
@@ -11623,6 +11820,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
                   <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="attendance" data-feature="attendance">勤怠<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="classes" data-feature="class_management">クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
@@ -12406,6 +12604,37 @@ export default function ProviderDashboardPage() {
             自動作成できる。ルール（希望をそのまま入れるか、曜日・時間帯ごとの必要人数に
             沿って優先度で調整するか）は店舗ごとに変更できる。「機能設定」タブでONにした
             店舗のみ表示。 */}
+        {/* 勤怠（でお要望2026-10-14）：店頭タブレット1台で打刻。打刻は消さず、修正は取り消し＋追加で残す */}
+        <div className="tab-pane" id="tab-attendance">
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0, fontSize: '16px', flex: 1 }}>勤怠の記録</h2>
+              <input type="month" id="att-month" style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+              <select id="att-staff-filter" style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}><option value="">全員</option></select>
+              <button type="button" className="btn btn-ghost" id="att-csv-btn" style={{ fontSize: '13px' }}>CSVで書き出す</button>
+            </div>
+            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: 1.7 }}>実働は休憩を除いた時間。残業は1日8時間を超えた分、深夜は22時〜翌5時の勤務です。遅刻・早退は確定したシフトとの差で、勤務日は出勤した日（日付をまたぐ退勤も同じ日の勤務）で数えます。</p>
+            <div id="att-summary">読み込み中…</div>
+            <h3 style={{ margin: '8px 0 0', fontSize: '14px' }}>日ごとの記録</h3>
+            <div id="att-days"></div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>打刻の準備</h2>
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>打刻は店頭のタブレットだけでできます（スタッフ個人のスマホからはできません）。①打刻用の端末を登録 → ②スタッフごとに暗証番号を設定 → ③タブレットで名前を選び、暗証番号を入れて打刻、の流れです。打刻の時刻はタブレットの時計ではなくサーバーの時刻で記録します。</p>
+            <h3 style={{ margin: '4px 0 0', fontSize: '14px' }}>打刻用の端末</h3>
+            <div id="att-devices">読み込み中…</div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" className="btn" id="att-device-add">打刻用の端末を追加</button>
+              <span className="muted" style={{ fontSize: '12px' }}>タブレットで <a href="/attendance-kiosk" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>www.fineme.me/attendance-kiosk</a> を開き、表示される登録コードを入力します。</span>
+            </div>
+            <div id="att-device-code"></div>
+            <h3 style={{ margin: '8px 0 0', fontSize: '14px' }}>スタッフの暗証番号</h3>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>4〜6桁の数字。本人にだけ伝えてください。5回続けて間違えると10分間打刻できなくなります。</p>
+            <div id="att-pins">読み込み中…</div>
+          </div>
+        </div>
+
         <div className="tab-pane" id="tab-shift">
           {/* でお指摘2026-10-02：「シフト管理の中の並び順が意味不明。最初にカレンダーを出して、
               日付をタップするとその日のシフト表がポップアップ、前月・次月にも移動できるように」。
