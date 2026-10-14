@@ -105,7 +105,7 @@ export default function AdminCustomersPage() {
   }
 
   return (
-    <main className="section" style={{ textShadow: 'none', color: '#e8e4dc' }}>
+    <main className="section" style={{ textShadow: 'none', color: '#111' }}>
       <section className="stack">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <h1 className="section-title" style={{ margin: 0 }}>顧客管理</h1>
@@ -120,19 +120,19 @@ export default function AdminCustomersPage() {
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="お客様の名前・会員番号・店舗名で検索" style={{ ...input, flex: '2 1 240px' }} />
         </div>
 
-        {error && <p style={{ color: '#ef4444' }}>{error}</p>}
+        {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
         {!error && !loading && !customers.length && <p className="muted">該当するお客様はいません。</p>}
         {truncated && <p style={{ fontSize: 12 }}>表示は先頭1000件までです。店舗や検索で絞り込んでください。</p>}
 
         <div>
           {customers.map(c => (
             <div key={c.key} style={{ ...card, padding: '12px 16px', marginBottom: 8, display: 'grid', gridTemplateColumns: '64px minmax(0,1.4fr) minmax(0,1fr) auto', gap: 12, alignItems: 'center', fontSize: 14 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>{c.member_number != null ? `No.${fmtNo(c.member_number)}` : '—'}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#111', fontVariantNumeric: 'tabular-nums' }}>{c.member_number != null ? `No.${fmtNo(c.member_number)}` : '—'}</span>
               <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.name}
-                {c.kind === 'manual' && c.memo ? <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: 8, fontSize: 12 }}>{c.memo}</span> : null}
+                {c.kind === 'manual' && c.memo ? <span style={{ fontWeight: 400, color: '#111', marginLeft: 8, fontSize: 12 }}>{c.memo}</span> : null}
               </span>
-              <span style={{ fontSize: 12, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 12, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {c.provider_name}{c.kind === 'member' ? `／前回来店 ${fmtDate(c.last_visit)}` : ''}
               </span>
               <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -155,17 +155,17 @@ export default function AdminCustomersPage() {
           <div style={{ ...card, borderRadius: 18, padding: 24, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 16 }}>「{linkTarget.name}」を会員と紐付ける</h2>
-              <button type="button" onClick={() => setLinkTarget(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#6b7280' }}>✕</button>
+              <button type="button" onClick={() => setLinkTarget(null)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#111' }}>✕</button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 8px' }}>{linkTarget.provider_name} に紐づく会員から、名前または会員番号で検索します。</p>
+            <p style={{ fontSize: 12, color: '#111', margin: '0 0 8px' }}>{linkTarget.provider_name} に紐づく会員から、名前または会員番号で検索します。</p>
             <input autoFocus value={linkKw} onChange={e => setLinkKw(e.target.value)} placeholder="会員の名前・会員番号" style={{ ...input, width: '100%', marginBottom: 10 }} />
-            {!linkKw.trim() && <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>名前または会員番号を入力すると、該当する会員が表示されます。</p>}
-            {linkKw.trim() && !linkCandidates.length && <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>該当する会員はいません。</p>}
+            {!linkKw.trim() && <p style={{ fontSize: 12, color: '#111', margin: 0 }}>名前または会員番号を入力すると、該当する会員が表示されます。</p>}
+            {linkKw.trim() && !linkCandidates.length && <p style={{ fontSize: 12, color: '#111', margin: 0 }}>該当する会員はいません。</p>}
             {linkCandidates.map(m => (
               <button key={m.key} type="button" onClick={() => link(m)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', color: '#111', fontSize: 13, marginBottom: 6, cursor: 'pointer' }}>
-                <span style={{ fontSize: 11, color: '#6b7280', minWidth: 56 }}>{m.member_number != null ? `No.${fmtNo(m.member_number)}` : ''}</span>
+                <span style={{ fontSize: 11, color: '#111', minWidth: 56 }}>{m.member_number != null ? `No.${fmtNo(m.member_number)}` : ''}</span>
                 <span style={{ flex: 1, fontWeight: 700 }}>{m.name}</span>
-                <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>紐付ける</span>
+                <span style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 700 }}>紐付ける</span>
               </button>
             ))}
           </div>

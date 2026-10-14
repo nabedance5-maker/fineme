@@ -12,7 +12,7 @@ export default function AdminAnalyticsPage() {
     style.textContent = `
       .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
       .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
-      .kpi-label{color:#6b7280;font-size:12px}
+      .kpi-label{color:#111;font-size:12px}
       .kpi-value{font-weight:800;font-size:24px}
       table{border-collapse:collapse;width:100%}
       th,td{border-bottom:1px solid var(--color-border);padding:8px;text-align:left}
@@ -232,7 +232,7 @@ export default function AdminAnalyticsPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">分析</h1>

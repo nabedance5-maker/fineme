@@ -14,18 +14,18 @@ export default function AdminAffiliatesPage() {
     style.textContent = `
       .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
       .badge-green { background: #d1fae5; color: #065f46; }
-      .badge-gray  { background: #f3f4f6; color: #6b7280; }
+      .badge-gray  { background: #f3f4f6; color: #111; }
       .badge-red   { background: #fee2e2; color: #991b1b; }
       .aff-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 10px; background: #fff; }
       .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
       .modal-box { background: #fff; border-radius: 18px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
       .form-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
+      .form-field label { font-size: 12px; font-weight: 700; color: #111; }
       .form-field input, .form-field select { padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
       .kpi-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 20px; }
       .kpi-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
       .kpi-value { font-size: 28px; font-weight: 800; color: #111; }
-      .kpi-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+      .kpi-label { font-size: 12px; color: #111; margin-top: 2px; }
     `;
     document.head.appendChild(style);
 
@@ -53,7 +53,7 @@ export default function AdminAffiliatesPage() {
       listEl.innerHTML = '<p class="muted">読み込み中…</p>';
       try {
         const res = await fetch('/api/admin/affiliates', { headers: h() });
-        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー。APIキーを確認してください。</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#b91c1c">取得エラー。APIキーを確認してください。</p>'; return; }
         affiliates = await res.json();
         const kpiTotal = document.getElementById('kpi-total');
         if (kpiTotal) kpiTotal.textContent = affiliates.length;
@@ -76,10 +76,10 @@ export default function AdminAffiliatesPage() {
                   <span class="badge badge-gray">${catLabel(a.main_category)}</span>
                   ${aiLabel}
                 </div>
-                <div style="font-size:12px;color:#6b7280;margin-top:4px">
+                <div style="font-size:12px;color:#111;margin-top:4px">
                   ${a.price_from ? `¥${Number(a.price_from).toLocaleString()}〜 ` : ''}
-                  <a href="/affiliate/${esc(a.slug)}" target="_blank" style="color:#6366f1">/affiliate/${esc(a.slug)}</a>
-                  ${a.affiliate_url ? ` → <a href="${esc(a.affiliate_url)}" target="_blank" style="color:#059669;font-size:11px">PR先リンク ↗</a>` : ''}
+                  <a href="/affiliate/${esc(a.slug)}" target="_blank" style="color:#4338ca">/affiliate/${esc(a.slug)}</a>
+                  ${a.affiliate_url ? ` → <a href="${esc(a.affiliate_url)}" target="_blank" style="color:#047857;font-size:11px">PR先リンク ↗</a>` : ''}
                 </div>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -87,7 +87,7 @@ export default function AdminAffiliatesPage() {
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-toggle="${a.id}" data-pub="${a.published}">
                   ${a.published ? '非公開にする' : '公開する'}
                 </button>
-                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-delete="${a.id}" data-name="${esc(a.name)}">削除</button>
+                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#b91c1c" data-delete="${a.id}" data-name="${esc(a.name)}">削除</button>
               </div>
             </div>
           `;
@@ -114,7 +114,7 @@ export default function AdminAffiliatesPage() {
             if (res.ok) { load(); } else { const err = await res.json(); alert('削除エラー: ' + (err.error || '不明')); }
           });
         });
-      } catch (e) { listEl.innerHTML = `<p class="muted" style="color:#ef4444">接続エラー: ${e.message}</p>`; }
+      } catch (e) { listEl.innerHTML = `<p class="muted" style="color:#b91c1c">接続エラー: ${e.message}</p>`; }
     }
 
     function closeModal() { modal.style.display = 'none'; form.reset(); resetModalState(); }
@@ -185,7 +185,7 @@ export default function AdminAffiliatesPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
@@ -205,13 +205,13 @@ export default function AdminAffiliatesPage() {
         <div className="modal-box">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <h2 style={{ margin: '0', fontSize: '18px' }}>アフィリエイトを追加</h2>
-            <button type="button" id="modal-close" style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
+            <button type="button" id="modal-close" style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#111' }}>✕</button>
           </div>
 
           {/* AI自動入力の説明 */}
           <div style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#6366f1', marginBottom: '6px' }}>✨ AI自動入力モード</div>
-            <p style={{ fontSize: '12px', color: '#374151', margin: '0', lineHeight: '1.6' }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#4338ca', marginBottom: '6px' }}>✨ AI自動入力モード</div>
+            <p style={{ fontSize: '12px', color: '#111', margin: '0', lineHeight: '1.6' }}>
               サービス名を入力してボタンを押すと、AIがサービスを調査してFinemeの全フィールドを自動入力します。
               登録後に編集画面で内容を確認・修正できます。
             </p>
@@ -221,17 +221,17 @@ export default function AdminAffiliatesPage() {
             <div className="form-field">
               <label>サービス名 *</label>
               <input name="service_name" required placeholder="例: ローランドビューティーラウンジ" />
-              <small style={{ fontSize: '11px', color: '#9ca3af' }}>AIがこの名前で情報を調査します</small>
+              <small style={{ fontSize: '11px', color: '#111' }}>AIがこの名前で情報を調査します</small>
             </div>
             <div className="form-field">
               <label>アフィリエイトURL（PR先リンク）*</label>
               <input name="affiliate_url" required placeholder="https://px.a8.net/..." />
-              <small style={{ fontSize: '11px', color: '#9ca3af' }}>A8.netなどのトラッキングURLを貼り付け</small>
+              <small style={{ fontSize: '11px', color: '#111' }}>A8.netなどのトラッキングURLを貼り付け</small>
             </div>
             <div className="form-field">
               <label>サービスの公式サイトURL（任意・精度向上）</label>
               <input name="service_url" type="url" placeholder="https://..." />
-              <small style={{ fontSize: '11px', color: '#9ca3af' }}>入力するとAIがサイトを読んでより正確な情報を生成します</small>
+              <small style={{ fontSize: '11px', color: '#111' }}>入力するとAIがサイトを読んでより正確な情報を生成します</small>
             </div>
 
             {/* ステータス表示 */}

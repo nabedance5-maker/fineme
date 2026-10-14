@@ -12,7 +12,7 @@ export default function AdminInquiriesPage() {
     style.textContent = `
       .table th, .table td { padding:8px; border-bottom:1px solid var(--color-border) }
       .badge { display:inline-block; padding:2px 8px; font-size:12px; border-radius:999px; background:#111; color:#fff }
-      .row-note{ color:#6b7280; font-size:12px }
+      .row-note{ color:#111; font-size:12px }
       .msg { max-width:720px; white-space:pre-wrap }
       .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:end }
       .status-new { background:#111; color:#fff }
@@ -49,11 +49,11 @@ export default function AdminInquiriesPage() {
       tbody.innerHTML = '<tr><td colspan="8" class="muted">読み込み中…</td></tr>';
       try {
         const res = await fetch('/api/admin/inquiries', { headers: h() });
-        if (!res.ok) { tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:8px">取得エラー。APIキーを確認してください。</td></tr>'; return; }
+        if (!res.ok) { tbody.innerHTML = '<tr><td colspan="8" style="color:#b91c1c;padding:8px">取得エラー。APIキーを確認してください。</td></tr>'; return; }
         allData = await res.json();
         render();
       } catch {
-        tbody.innerHTML = '<tr><td colspan="8" style="color:#ef4444;padding:8px">ネットワークエラー</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#b91c1c;padding:8px">ネットワークエラー</td></tr>';
       }
     }
 
@@ -159,7 +159,7 @@ export default function AdminInquiriesPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">問い合わせ一覧</h1>

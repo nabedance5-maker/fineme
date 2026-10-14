@@ -233,7 +233,7 @@ export default function AdminFeaturesPage() {
           : '';
 
         const catBadge = category
-          ? `<span style="display:inline-block;background:#c9a84c;color:#0a0f1e;font-size:10px;font-weight:800;padding:3px 12px;border-radius:99px;letter-spacing:.12em;margin-bottom:10px;text-transform:uppercase">${category}</span>`
+          ? `<span style="display:inline-block;background:#c9a84c;color:#111;font-size:10px;font-weight:800;padding:3px 12px;border-radius:99px;letter-spacing:.12em;margin-bottom:10px;text-transform:uppercase">${category}</span>`
           : '';
 
         pv.innerHTML = `
@@ -244,24 +244,24 @@ export default function AdminFeaturesPage() {
               <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,15,30,.05) 0%,rgba(10,15,30,.35) 40%,rgba(10,15,30,.88) 78%,rgba(10,15,30,.97) 100%)"></div>
               <div style="position:absolute;bottom:0;left:0;right:0;padding:0 20px 24px">
                 ${catBadge}
-                <div style="font-size:clamp(16px,3vw,22px);font-weight:800;line-height:1.45;color:#fff;margin-bottom:10px">${title}</div>
+                <div style="font-size:clamp(16px,3vw,22px);font-weight:800;line-height:1.45;color:#111;margin-bottom:10px">${title}</div>
                 <div style="font-size:12px;color:rgba(255,255,255,.55)">📖 ${readTime}分で読める</div>
               </div>
             </div>
             <!-- 本文エリア -->
             <div style="background:rgba(10,15,30,.78);padding:24px 24px 32px">
               <style>
-                #feature-preview .ab-body h2{font-size:18px;font-weight:800;padding-left:12px;border-left:4px solid #c9a84c;margin:36px 0 12px;line-height:1.55;color:#fff}
+                #feature-preview .ab-body h2{font-size:18px;font-weight:800;padding-left:12px;border-left:4px solid #c9a84c;margin:36px 0 12px;line-height:1.55;color:#111}
                 #feature-preview .ab-body h3{font-size:15px;font-weight:700;margin:24px 0 8px;color:rgba(255,255,255,.9)}
                 #feature-preview .ab-body p{font-size:15px;line-height:2;margin-bottom:16px;color:rgba(240,236,228,.85)}
                 #feature-preview .ab-body blockquote{background:rgba(201,168,76,.07);border-left:4px solid #c9a84c;border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;color:rgba(240,236,228,.88)}
                 #feature-preview .ab-body img{max-width:100%;border-radius:10px;display:block;margin:18px auto}
                 #feature-preview .ab-body ul,#feature-preview .ab-body ol{padding-left:20px;margin-bottom:16px}
                 #feature-preview .ab-body li{font-size:14px;line-height:1.85;color:rgba(240,236,228,.82);margin-bottom:4px}
-                #feature-preview .ab-body a{color:#c9a84c;text-decoration:underline}
-                #feature-preview .ab-body strong{color:#fff;font-weight:800}
+                #feature-preview .ab-body a{color:#111;text-decoration:underline}
+                #feature-preview .ab-body strong{color:#111;font-weight:800}
                 #feature-preview .ab-body .fb-block{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:14px;color:rgba(240,236,228,.88);margin-bottom:14px}
-                #feature-preview .ab-body .fb-heading{font-weight:800;font-size:18px;color:#fff}
+                #feature-preview .ab-body .fb-heading{font-weight:800;font-size:18px;color:#111}
                 #feature-preview .ab-body .fb-text{font-size:14px;color:rgba(240,236,228,.85);line-height:1.9}
               </style>
               ${bodyHtml
@@ -277,19 +277,19 @@ export default function AdminFeaturesPage() {
     let _blocks = [];
 
     const BLOCK_TYPES = {
-      lead:      { label: 'リード文',         color: '#0a0f1e' },
-      h2:        { label: '見出し H2',        color: '#c9a84c' },
-      h3:        { label: '小見出し H3',      color: '#9ca3af' },
-      text:      { label: '本文テキスト',     color: '#374151' },
-      tip:       { label: 'ポイント TIP',     color: '#059669' },
-      callout:   { label: 'コールアウト',     color: '#7c3aed' },
-      quote:     { label: '引用',             color: '#dc2626' },
-      checklist: { label: 'チェックリスト',  color: '#ea580c' },
-      steps:     { label: 'ステップ',         color: '#2563eb' },
-      cards:     { label: 'カードグリッド',   color: '#7c3aed' },
+      lead:      { label: 'リード文',         color: '#111' },
+      h2:        { label: '見出し H2',        color: '#111' },
+      h3:        { label: '小見出し H3',      color: '#111' },
+      text:      { label: '本文テキスト',     color: '#111' },
+      tip:       { label: 'ポイント TIP',     color: '#047857' },
+      callout:   { label: 'コールアウト',     color: '#5b21b6' },
+      quote:     { label: '引用',             color: '#b91c1c' },
+      checklist: { label: 'チェックリスト',  color: '#c2410c' },
+      steps:     { label: 'ステップ',         color: '#1d4ed8' },
+      cards:     { label: 'カードグリッド',   color: '#5b21b6' },
       stat:      { label: 'KPIカード',        color: '#b45309' },
       image:     { label: '画像',             color: '#0369a1' },
-      cta:       { label: 'CTA ボタン',       color: '#c9a84c' },
+      cta:       { label: 'CTA ボタン',       color: '#111' },
     };
 
     function bEsc(s) {
@@ -302,7 +302,7 @@ export default function AdminFeaturesPage() {
     }
 
     function renderBlockCard(b, i) {
-      const type = BLOCK_TYPES[b.type] || { label: b.type, color: '#9ca3af' };
+      const type = BLOCK_TYPES[b.type] || { label: b.type, color: '#111' };
       const isFirst = i === 0, isLast = i === _blocks.length - 1;
       let fields = '';
       const ta = (field, val, rows=4, ph='') => `<textarea data-field="${field}" rows="${rows}" placeholder="${ph}" style="width:100%;resize:vertical;font-size:14px;padding:8px;border:1px solid #e5e7eb;border-radius:6px;box-sizing:border-box">${bEsc(val)}</textarea>`;
@@ -324,7 +324,7 @@ export default function AdminFeaturesPage() {
           const items = (b.items||[]).map((item,j)=>`
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
               <input type="text" data-cl-item="${j}" value="${bEsc(item)}" style="flex:1;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px">
-              <button type="button" data-cl-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+              <button type="button" data-cl-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#b91c1c">✕</button>
             </div>`).join('');
           fields = inp('title', b.title||'', 'リストのタイトル（任意）', '700')
             + `<div data-cl-list>${items}</div>`
@@ -337,23 +337,23 @@ export default function AdminFeaturesPage() {
             const tx = typeof item==='object'?item.text||'':'';
             return `<div data-step-item="${j}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:6px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-size:11px;font-weight:700;color:#6b7280">STEP ${j+1}</span>
-                <button type="button" data-step-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#dc2626">削除</button>
+                <span style="font-size:11px;font-weight:700;color:#111">STEP ${j+1}</span>
+                <button type="button" data-step-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#b91c1c">削除</button>
               </div>
               <input type="text" data-step-title="${j}" placeholder="タイトル" value="${bEsc(t)}" style="width:100%;padding:5px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;font-weight:700;box-sizing:border-box">
               <textarea data-step-text="${j}" rows="2" placeholder="説明文" style="width:100%;resize:vertical;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;box-sizing:border-box">${bEsc(tx)}</textarea>
             </div>`;
           }).join('');
           fields = `<div data-step-list>${items}</div>`
-            + `<button type="button" data-step-add style="margin-top:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;font-size:12px;color:#2563eb">＋ ステップを追加</button>`;
+            + `<button type="button" data-step-add style="margin-top:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;font-size:12px;color:#1d4ed8">＋ ステップを追加</button>`;
           break;
         }
         case 'cards': {
           const items = (b.items||[]).map((item,j)=>`
             <div data-cards-item="${j}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:6px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                <span style="font-size:11px;font-weight:700;color:#6b7280">カード ${j+1}</span>
-                <button type="button" data-cards-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#dc2626">削除</button>
+                <span style="font-size:11px;font-weight:700;color:#111">カード ${j+1}</span>
+                <button type="button" data-cards-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#b91c1c">削除</button>
               </div>
               <input type="text" data-cards-icon="${j}" placeholder="絵文字アイコン（例：✅ 💪 ✦）" value="${bEsc(item.icon||'')}" style="width:100%;padding:4px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:18px;box-sizing:border-box">
               <input type="text" data-cards-title="${j}" placeholder="タイトル" value="${bEsc(item.title||'')}" style="width:100%;padding:4px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;font-weight:700;box-sizing:border-box">
@@ -368,7 +368,7 @@ export default function AdminFeaturesPage() {
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
               <input type="text" data-stat-val="${j}" placeholder="値（例：98%）" value="${bEsc(item.value||'')}" style="width:90px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:15px;font-weight:800;box-sizing:border-box">
               <input type="text" data-stat-label="${j}" placeholder="ラベル（例：顧客満足度）" value="${bEsc(item.label||'')}" style="flex:1;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;box-sizing:border-box">
-              <button type="button" data-stat-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+              <button type="button" data-stat-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#b91c1c">✕</button>
             </div>`).join('');
           fields = `<div data-stat-list>${items}</div>`
             + `<button type="button" data-stat-add style="margin-top:4px;padding:5px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;cursor:pointer;font-size:12px;color:#854d0e">＋ 統計を追加</button>`;
@@ -382,11 +382,11 @@ export default function AdminFeaturesPage() {
       }
       return `<div data-block-idx="${i}" style="border:1px solid #e5e7eb;border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
-          <span style="font-size:11px;font-weight:800;color:#fff;background:${type.color};padding:2px 10px;border-radius:99px">${type.label}</span>
+          <span style="font-size:11px;font-weight:800;color:#111;background:${type.color};padding:2px 10px;border-radius:99px">${type.label}</span>
           <span style="flex:1"></span>
           <button type="button" data-block-up="${i}" style="padding:2px 7px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;cursor:pointer;opacity:${isFirst?.35:1}">↑</button>
           <button type="button" data-block-dn="${i}" style="padding:2px 7px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;cursor:pointer;opacity:${isLast?.35:1}">↓</button>
-          <button type="button" data-block-del="${i}" style="padding:2px 8px;border:1px solid #fca5a5;border-radius:4px;background:#fee2e2;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+          <button type="button" data-block-del="${i}" style="padding:2px 8px;border:1px solid #fca5a5;border-radius:4px;background:#fee2e2;cursor:pointer;font-size:12px;color:#b91c1c">✕</button>
         </div>
         <div style="padding:12px" data-block-fields="${i}">${fields}</div>
       </div>`;
@@ -397,7 +397,7 @@ export default function AdminFeaturesPage() {
       if (!list) return;
       list.innerHTML = _blocks.length
         ? _blocks.map((b,i) => renderBlockCard(b,i)).join('')
-        : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px 0">ブロックがありません。下の「＋ブロックを追加」から追加してください。</p>';
+        : '<p style="color:#111;font-size:13px;text-align:center;padding:20px 0">ブロックがありません。下の「＋ブロックを追加」から追加してください。</p>';
     }
 
     function readBlockEditorState() {
@@ -964,7 +964,7 @@ export default function AdminFeaturesPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">特集管理</h1>

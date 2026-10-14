@@ -144,11 +144,11 @@ export default function AdminCuratedPostsPage() {
   const filtered = filterStatus === 'all' ? posts : posts.filter(p => p.status === filterStatus);
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif', color: '#e8e4dc' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif', color: '#111' }}>
       <div style={{ marginBottom: 24 }}>
-        <Link href="/admin" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
+        <Link href="/admin" style={{ color: '#111', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
         <h1 style={{ margin: '8px 0 4px', fontSize: 22, fontWeight: 800 }}>投稿キュレーション管理</h1>
-        <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#111' }}>
           New Me Map・Mirror結果面に紐づけるInstagram/TikTok投稿プール。
           「承認」＝プレーンリンクとして公開可、「許諾取れた」＝サムネ付き表示へ格上げ（許諾は別途投稿者から取得すること）
         </p>
@@ -162,7 +162,7 @@ export default function AdminCuratedPostsPage() {
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
           <button onClick={analyzePost} disabled={analyzing} style={{ ...btnPrimary, background: '#4f46e5' }}>{analyzing ? '取得中…' : '🔗 URLから自動入力'}</button>
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>サムネ・投稿者・軸・トピック・対象・キャプションを自動推定します</span>
+          <span style={{ fontSize: 11, color: '#111' }}>サムネ・投稿者・軸・トピック・対象・キャプションを自動推定します</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
           <label style={labelStyle}>
@@ -207,7 +207,7 @@ export default function AdminCuratedPostsPage() {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '保存中…' : editId ? '更新する' : '候補として追加する'}</button>
           {editId && <button onClick={cancelEdit} style={btnSecondary}>キャンセル</button>}
-          {msg && <span style={{ fontSize: 13, color: '#059669' }}>{msg}</span>}
+          {msg && <span style={{ fontSize: 13, color: '#047857' }}>{msg}</span>}
         </div>
       </div>
 
@@ -220,9 +220,9 @@ export default function AdminCuratedPostsPage() {
         ))}
       </div>
 
-      {loading ? <p style={{ color: '#9ca3af' }}>読み込み中…</p> : (
+      {loading ? <p style={{ color: '#111' }}>読み込み中…</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>該当する候補がありません。</p>}
+          {filtered.length === 0 && <p style={{ color: '#111', fontSize: 13 }}>該当する候補がありません。</p>}
           {filtered.map(p => (
             <div key={p.id} style={{
               background: p.status === 'approved' ? '#f0fdf4' : p.status === 'rejected' ? '#fef2f2' : '#fff',
@@ -232,14 +232,14 @@ export default function AdminCuratedPostsPage() {
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: '#e0e7ff', color: '#4f46e5', borderRadius: 4, padding: '2px 6px' }}>{PLATFORM_LABELS[p.platform]}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: '#e0e7ff', color: '#3730a3', borderRadius: 4, padding: '2px 6px' }}>{PLATFORM_LABELS[p.platform]}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#dbeafe', color: '#1e40af', borderRadius: 4, padding: '2px 6px' }}>{AXIS_LABELS[p.axis] || p.axis}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#fce7f3', color: '#9d174d', borderRadius: 4, padding: '2px 6px' }}>{TRACK_LABELS[p.track] || TRACK_LABELS.common}</span>
-                    {p.creator_handle && <span style={{ fontSize: 11, color: '#9ca3af' }}>{p.creator_handle}</span>}
-                    <a href={p.post_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>投稿を見る →</a>
+                    {p.creator_handle && <span style={{ fontSize: 11, color: '#111' }}>{p.creator_handle}</span>}
+                    <a href={p.post_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#1d4ed8' }}>投稿を見る →</a>
                   </div>
-                  <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, margin: '0 0 6px' }}>{p.caption}</p>
-                  <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>
+                  <p style={{ fontSize: 13, color: '#111', lineHeight: 1.7, margin: '0 0 6px' }}>{p.caption}</p>
+                  <p style={{ fontSize: 11, color: '#111', margin: 0 }}>
                     トピック: {(p.topic_tags || []).join('、') || '-'} ／ 対象: {(p.target_concerns || []).join('、') || '-'}
                   </p>
                 </div>
@@ -248,7 +248,7 @@ export default function AdminCuratedPostsPage() {
                     <button onClick={() => setStatus(p, 'approved')} disabled={p.status === 'approved'} style={{ ...btnSmall, background: p.status === 'approved' ? '#dcfce7' : '#fff', color: '#15803d', borderColor: '#86efac' }}>承認</button>
                     <button onClick={() => setStatus(p, 'rejected')} disabled={p.status === 'rejected'} style={{ ...btnSmall, background: p.status === 'rejected' ? '#fee2e2' : '#fff', color: '#b91c1c', borderColor: '#fca5a5' }}>却下</button>
                   </div>
-                  <button onClick={() => togglePermission(p)} style={{ ...btnSmall, background: p.permission_confirmed ? '#fef9c3' : '#fff', color: '#a16207', borderColor: '#fde68a', width: '100%' }}>
+                  <button onClick={() => togglePermission(p)} style={{ ...btnSmall, background: p.permission_confirmed ? '#fef9c3' : '#fff', color: '#854d0e', borderColor: '#fde68a', width: '100%' }}>
                     {p.permission_confirmed ? '✓ 許諾取得済み' : '許諾取れた →'}
                   </button>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -266,11 +266,11 @@ export default function AdminCuratedPostsPage() {
   );
 }
 
-const labelStyle = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 };
+const labelStyle = { fontSize: 12, fontWeight: 600, color: '#111', display: 'flex', flexDirection: 'column', gap: 4 };
 const inputStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13, boxSizing: 'border-box' };
 const selectStyle = { ...inputStyle };
 const btnPrimary = { padding: '8px 18px', borderRadius: 8, border: 'none', background: '#111827', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' };
-const btnSecondary = { padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
-const btnFilter = { padding: '5px 12px', borderRadius: 99, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' };
+const btnSecondary = { padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#111', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
+const btnFilter = { padding: '5px 12px', borderRadius: 99, border: '1px solid #d1d5db', background: '#fff', color: '#111', fontSize: 12, cursor: 'pointer' };
 const btnFilterActive = { ...btnFilter, background: '#111827', color: '#fff', borderColor: '#111827' };
-const btnSmall = { fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', color: '#374151', cursor: 'pointer' };
+const btnSmall = { fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: '#fff', color: '#111', cursor: 'pointer' };

@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 function Card({ label, value, sub, accent }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', flex: '1 1 160px', minWidth: 160 }}>
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#111', marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: accent || '#111827', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: '#111', marginTop: 6 }}>{sub}</div>}
     </div>
   );
 }
@@ -15,7 +15,7 @@ function FunnelBlock({ title, d }) {
   if (!d) return null;
   return (
     <div style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>{title}</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', marginBottom: 12 }}>{title}</h2>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Card label="分析数（利用）" value={d.total} />
         <Card label="¥500 購入" value={d.purchases} sub={`売上 ¥${d.revenue.toLocaleString()}`} accent="#c9a84c" />
@@ -81,19 +81,19 @@ function VoicesSection({ adminKey }) {
   return (
     <div style={{ marginTop: 32 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', margin: 0 }}>LP掲載管理（E3収集の声）</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', margin: 0 }}>LP掲載管理（E3収集の声）</h2>
         {voices !== null && (
           <span style={{ fontSize: 12, background: approved > 0 ? '#dcfce7' : '#f3f4f6', color: approved > 0 ? '#16a34a' : '#6b7280', borderRadius: 20, padding: '2px 10px', fontWeight: 700 }}>
             {approved}件 LP掲載中 / 計{voices.length}件
           </span>
         )}
-        <button onClick={loadVoices} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginLeft: 'auto' }}>再読み込み</button>
+        <button onClick={loadVoices} style={{ fontSize: 11, color: '#1d4ed8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginLeft: 'auto' }}>再読み込み</button>
       </div>
 
-      {voices === null && <div style={{ color: '#9ca3af', fontSize: 13 }}>読み込み中...</div>}
+      {voices === null && <div style={{ color: '#111', fontSize: 13 }}>読み込み中...</div>}
 
       {voices !== null && voices.length === 0 && (
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '20px', fontSize: 13, color: '#6b7280' }}>
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '20px', fontSize: 13, color: '#111' }}>
           E3（購入後24h）メールへの回答がまだありません。
         </div>
       )}
@@ -112,7 +112,7 @@ function VoicesSection({ adminKey }) {
             >
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.75, margin: '0 0 8px' }}>
+                  <p style={{ fontSize: 13, color: '#111', lineHeight: 1.75, margin: '0 0 8px' }}>
                     「{v.text}」
                   </p>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -122,9 +122,9 @@ function VoicesSection({ adminKey }) {
                       value={metaInputs[v.id] ?? ''}
                       onChange={e => setMetaInputs(m => ({ ...m, [v.id]: e.target.value }))}
                       onBlur={() => saveMeta(v.id)}
-                      style={{ fontSize: 11, border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 8px', color: '#374151', width: 200 }}
+                      style={{ fontSize: 11, border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 8px', color: '#111', width: 200 }}
                     />
-                    <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                    <span style={{ fontSize: 11, color: '#111' }}>
                       {new Date(v.created_at).toLocaleDateString('ja-JP')}
                     </span>
                   </div>
@@ -181,12 +181,12 @@ export default function AdminMirrorPage() {
   }
 
   return (
-    <div style={{ color: '#111827' }}>
+    <div style={{ color: '#111' }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>🪞 Mirror ダッシュボード</h1>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>利用数・無料→課金転換・紹介経由・フィードバックの推移</p>
+      <p style={{ fontSize: 13, color: '#111', marginBottom: 24 }}>利用数・無料→課金転換・紹介経由・フィードバックの推移</p>
 
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: 8, marginBottom: 16 }}>{error}</div>}
-      {stats == null && !error && <div style={{ color: '#6b7280', padding: '40px 0', textAlign: 'center' }}>読み込み中...</div>}
+      {stats == null && !error && <div style={{ color: '#111', padding: '40px 0', textAlign: 'center' }}>読み込み中...</div>}
 
       {stats && (
         <>
@@ -194,13 +194,13 @@ export default function AdminMirrorPage() {
           <FunnelBlock title="直近30日間" d={stats.last30d} />
           <FunnelBlock title="累計" d={stats.all} />
 
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>サブスク・紹介</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', marginBottom: 12 }}>サブスク・紹介</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
             <Card label="サブスク加入（active）" value={stats.subscription.active} sub={`MRR ¥${stats.subscription.mrr.toLocaleString()}`} accent="#c9a84c" />
             <Card label="紹介成立（累計）" value={stats.referral.total} sub={`7日 ${stats.referral.last7d} / 30日 ${stats.referral.last30d}`} accent="#2563eb" />
           </div>
 
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>解約動向（直近3ヶ月）</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', marginBottom: 12 }}>解約動向（直近3ヶ月）</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
             {(stats.subscription.cancellations || []).map(c => (
               <Card
@@ -213,7 +213,7 @@ export default function AdminMirrorPage() {
             ))}
           </div>
 
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>Mirror フィードバック（声）</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', marginBottom: 12 }}>Mirror フィードバック（声）</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
             <Card label="回答数" value={stats.feedback.count} />
             <Card label="分析の的確さ（平均）" value={stats.feedback.avgAccuracy || '-'} sub="★5中" />
@@ -221,11 +221,11 @@ export default function AdminMirrorPage() {
           </div>
           {stats.feedback.recentComments.length > 0 && (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', marginBottom: 12 }}>最近の「気づき」コメント（アプリ内フィードバック）</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#111', marginBottom: 12 }}>最近の「気づき」コメント（アプリ内フィードバック）</div>
               {stats.feedback.recentComments.map((c, i) => (
-                <div key={i} style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, padding: '8px 0', borderBottom: i < stats.feedback.recentComments.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                <div key={i} style={{ fontSize: 13, color: '#111', lineHeight: 1.7, padding: '8px 0', borderBottom: i < stats.feedback.recentComments.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
                   「{c.comment}」
-                  <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>{new Date(c.created_at).toLocaleDateString('ja-JP')}</span>
+                  <span style={{ fontSize: 11, color: '#111', marginLeft: 8 }}>{new Date(c.created_at).toLocaleDateString('ja-JP')}</span>
                 </div>
               ))}
             </div>
@@ -233,9 +233,9 @@ export default function AdminMirrorPage() {
 
           <VoicesSection adminKey={adminKey} />
 
-          <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 20 }}>
+          <p style={{ fontSize: 11, color: '#111', marginTop: 20 }}>
             集計時刻: {new Date(stats.generatedAt).toLocaleString('ja-JP')}
-            <button onClick={() => load()} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>再読み込み</button>
+            <button onClick={() => load()} style={{ fontSize: 11, color: '#1d4ed8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>再読み込み</button>
           </p>
         </>
       )}

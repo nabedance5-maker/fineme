@@ -60,23 +60,23 @@ export default function AdminLayout({ children }) {
   return (
     <>
       <style>{`
-        .ad-root { background: var(--color-bg); min-height: 100vh; color: #1a1410; }
+        .ad-root { background: var(--color-bg); min-height: 100vh; color: #111; }
         .ad-topbar { display: none; }
         .ad-backdrop { display: none; }
         .ad-sidebar { width: 244px; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 30; background: #0a0f1e; padding: 20px 0 0; overflow-y: auto; }
         .ad-brand { padding: 0 16px 16px; }
         .ad-brand p { margin: 0; }
-        .ad-brand .ad-brand-name { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: #c9a84c; letter-spacing: 1px; }
-        .ad-brand .ad-brand-sub { font-size: 10px; color: rgba(232,228,220,0.4); letter-spacing: 1px; margin-top: 2px; }
+        .ad-brand .ad-brand-name { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+        .ad-brand .ad-brand-sub { font-size: 10px; color: #fff; letter-spacing: 1px; margin-top: 2px; }
         .ad-rail-wrap { display: flex; flex: 1; min-height: 0; }
         .ad-rail { width: 64px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
-        .ad-rail-btn { display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line; width: 100%; padding: 14px 4px; border: none; background: none; cursor: pointer; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.55); line-height: 1.35; }
-        .ad-rail-btn:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); }
-        .ad-rail-btn.active { background: rgba(201,168,76,0.16); color: #c9a84c; border-right: 2px solid #c9a84c; margin-right: -1px; }
+        .ad-rail-btn { display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line; width: 100%; padding: 14px 4px; border: none; background: none; cursor: pointer; font-size: 11.5px; font-weight: 700; color: #fff; line-height: 1.35; }
+        .ad-rail-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .ad-rail-btn.active { background: rgba(255,255,255,0.16); color: #fff; border-right: 2px solid #fff; margin-right: -1px; }
         .ad-panel { flex: 1; min-width: 0; padding: 4px 8px 12px; display: flex; flex-direction: column; gap: 2px; }
-        .ad-panel a { display: block; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88); text-decoration: none; }
-        .ad-panel a:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
-        .ad-panel a.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
+        .ad-panel a { display: block; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #fff; text-decoration: none; }
+        .ad-panel a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .ad-panel a.active { background: rgba(255,255,255,0.16); color: #fff; }
         /* 1frは minmax(auto,1fr) 扱いで中の表・nowrap要素の最小幅に引き伸ばされるため、
            mainは min-width:0 で必ず親の幅に収め、はみ出す要素は各自の枠内でスクロールさせる
            （でお報告2026-10-10：スマホで右にはみ出す不具合の真因）。 */
@@ -98,7 +98,7 @@ export default function AdminLayout({ children }) {
       <div className="ad-root">
         <div className="ad-topbar">
           <button type="button" aria-label="メニューを開く" onClick={() => setNavOpen(true)} style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer' }}>☰</button>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c' }}>fineme 運営</p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#fff' }}>fineme 運営</p>
         </div>
         <div className={`ad-backdrop${navOpen ? ' open' : ''}`} onClick={() => setNavOpen(false)} />
         <nav className={`ad-sidebar${navOpen ? ' open' : ''}`}>

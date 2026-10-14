@@ -15,13 +15,13 @@ export default function AdminStoriesPage() {
       .badge-approved{background:#d1fae5;color:#065f46}
       .badge-rejected{background:#fee2e2;color:#991b1b}
       .tab-nav{display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:20px;overflow-x:auto}
-      .tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
+      .tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#111;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s}
       .tab-btn.active{color:#111;border-bottom-color:#111}
       .story-grid{display:flex;flex-direction:column;gap:12px}
       .story-card{border:1px solid var(--color-border);border-radius:12px;overflow:hidden;background:#fff}
       .story-card-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f9fafb;border-bottom:1px solid var(--color-border);flex-wrap:wrap;gap:6px}
       .story-card-body{padding:16px;display:flex;flex-direction:column;gap:10px}
-      .story-q{font-size:11px;font-weight:600;color:#6b7280;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+      .story-q{font-size:11px;font-weight:600;color:#111;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
       .story-a{font-size:14px;line-height:1.7;color:#111;white-space:pre-wrap}
       .story-tags{display:flex;gap:6px;flex-wrap:wrap}
       .story-tag{padding:2px 8px;border-radius:99px;font-size:11px;background:#ede9fe;color:#5b21b6}
@@ -29,17 +29,17 @@ export default function AdminStoriesPage() {
       .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
       .kpi-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;text-align:center}
       .kpi-value{font-size:28px;font-weight:800;color:#111}
-      .kpi-label{font-size:12px;color:#6b7280;margin-top:2px}
+      .kpi-label{font-size:12px;color:#111;margin-top:2px}
       .axis-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;background:#dbeafe;color:#1e40af}
       .path-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;background:#f0fdf4;color:#166534}
-      .milestone-text{font-size:12px;color:#6366f1;font-weight:600;padding:4px 10px;background:#eef2ff;border-radius:8px;display:inline-block}
+      .milestone-text{font-size:12px;color:#4338ca;font-weight:600;padding:4px 10px;background:#eef2ff;border-radius:8px;display:inline-block}
       .meta-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
       .meta-edit-panel{display:none;padding:14px 16px;border-top:1px dashed #e5e7eb;background:#fafafa}
       .meta-edit-panel.open{display:block}
       .meta-edit-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:0}
       .meta-select{border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px;background:#fff;cursor:pointer}
       .meta-input{border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 10px;font-size:13px;flex:1;min-width:160px}
-      .meta-label{font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:3px}
+      .meta-label{font-size:11px;font-weight:700;color:#111;display:block;margin-bottom:3px}
     `;
     document.head.appendChild(style);
 
@@ -141,7 +141,7 @@ export default function AdminStoriesPage() {
               ${tags.length ? `<div class="story-tags">${tags.map(t => `<span class="story-tag">${esc(t)}</span>`).join('')}</div>` : ''}
             </div>
             <div class="meta-edit-panel" id="meta-panel-${sid}">
-              <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:10px">変容の証言メタデータ（New Me Navi 連動）</div>
+              <div style="font-size:11px;font-weight:700;color:#111;margin-bottom:10px">変容の証言メタデータ（New Me Navi 連動）</div>
               <div class="meta-edit-row">
                 <div>
                   <label class="meta-label">変容軸</label>
@@ -160,7 +160,7 @@ export default function AdminStoriesPage() {
             </div>
             <div class="story-actions">
               ${s.status !== 'approved' ? `<button class="btn" style="font-size:13px" data-id="${sid}" data-action="approved">承認・公開する</button>` : ''}
-              ${s.status !== 'rejected' ? `<button class="btn btn-ghost" style="font-size:13px;color:#ef4444" data-id="${sid}" data-action="rejected">却下する</button>` : ''}
+              ${s.status !== 'rejected' ? `<button class="btn btn-ghost" style="font-size:13px;color:#b91c1c" data-id="${sid}" data-action="rejected">却下する</button>` : ''}
               ${s.status !== 'pending' ? `<button class="btn btn-ghost" style="font-size:13px" data-id="${sid}" data-action="pending">審査待ちに戻す</button>` : ''}
               <button class="btn btn-ghost" style="font-size:12px;margin-left:auto" data-toggle-meta="${sid}">🏷 変容軸を設定</button>
             </div>
@@ -240,7 +240,7 @@ export default function AdminStoriesPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">変容の証言 管理</h1>

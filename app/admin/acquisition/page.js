@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 function Card({ label, value, sub, accent }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '18px 20px', flex: '1 1 160px', minWidth: 160 }}>
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#111', marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: accent || '#111827', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: '#111', marginTop: 6 }}>{sub}</div>}
     </div>
   );
 }
@@ -26,7 +26,7 @@ function Section({ title, status, children }) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', margin: 0 }}>{title}</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111', margin: 0 }}>{title}</h2>
         {status}
       </div>
       {children}
@@ -58,14 +58,14 @@ export default function AdminAcquisitionPage() {
   }
 
   return (
-    <div style={{ color: '#111827' }}>
+    <div style={{ color: '#111' }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>📣 集客施策ダッシュボード</h1>
-      <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: '#111', marginBottom: 24 }}>
         2026-08-03新設：Pinterest・提携店舗B2B2C・借り場コンテンツ・Mirror Xレーンの稼働状況
       </p>
 
       {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '12px 16px', borderRadius: 8, marginBottom: 16 }}>{error}</div>}
-      {stats == null && !error && <div style={{ color: '#6b7280', padding: '40px 0', textAlign: 'center' }}>読み込み中...</div>}
+      {stats == null && !error && <div style={{ color: '#111', padding: '40px 0', textAlign: 'center' }}>読み込み中...</div>}
 
       {stats && (
         <>
@@ -80,7 +80,7 @@ export default function AdminAcquisitionPage() {
             {stats.channels.pinterest.recentPosts.length > 0 && (
               <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 16px' }}>
                 {stats.channels.pinterest.recentPosts.map((p, i) => (
-                  <div key={i} style={{ fontSize: 12, color: '#374151', padding: '6px 0', borderBottom: i < stats.channels.pinterest.recentPosts.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                  <div key={i} style={{ fontSize: 12, color: '#111', padding: '6px 0', borderBottom: i < stats.channels.pinterest.recentPosts.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
                     <b>{p.source}</b>・{p.posted ? '自動投稿' : 'メール下書き'}・{new Date(p.at).toLocaleDateString('ja-JP')}
                   </div>
                 ))}
@@ -103,12 +103,12 @@ export default function AdminAcquisitionPage() {
             {stats.channels.qandaScout.lastRuns.length > 0 ? (
               <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 16px' }}>
                 {stats.channels.qandaScout.lastRuns.map((r, i) => (
-                  <div key={i} style={{ fontSize: 12, color: '#374151', padding: '6px 0' }}>
+                  <div key={i} style={{ fontSize: 12, color: '#111', padding: '6px 0' }}>
                     {r.mode === 'live_scout' ? '候補' : 'ストック'} {r.detail} ・ {new Date(r.at).toLocaleDateString('ja-JP')}
                   </div>
                 ))}
               </div>
-            ) : <p style={{ fontSize: 13, color: '#9ca3af' }}>まだ実行履歴がありません（次回スケジュールで初回実行）。</p>}
+            ) : <p style={{ fontSize: 13, color: '#111' }}>まだ実行履歴がありません（次回スケジュールで初回実行）。</p>}
           </Section>
 
           <Section title="Mirror「でお実体験」Xレーン">
@@ -126,17 +126,17 @@ export default function AdminAcquisitionPage() {
             {stats.srcInbound30d.length > 0 ? (
               <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 16px' }}>
                 {stats.srcInbound30d.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#374151', padding: '6px 0', borderBottom: i < stats.srcInbound30d.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#111', padding: '6px 0', borderBottom: i < stats.srcInbound30d.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
                     <span>{s.src}</span><b>{s.count}</b>
                   </div>
                 ))}
               </div>
-            ) : <p style={{ fontSize: 13, color: '#9ca3af' }}>まだ流入計測がありません。</p>}
+            ) : <p style={{ fontSize: 13, color: '#111' }}>まだ流入計測がありません。</p>}
           </Section>
 
-          <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 20 }}>
+          <p style={{ fontSize: 11, color: '#111', marginTop: 20 }}>
             集計時刻: {new Date(stats.generatedAt).toLocaleString('ja-JP')}
-            <button onClick={() => load()} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginLeft: 8 }}>再読み込み</button>
+            <button onClick={() => load()} style={{ fontSize: 11, color: '#1d4ed8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginLeft: 8 }}>再読み込み</button>
           </p>
         </>
       )}

@@ -12,7 +12,7 @@ export default function AdminProvidersPage() {
     style.textContent = `
       .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
       .badge-green { background: #d1fae5; color: #065f46; }
-      .badge-gray { background: #f3f4f6; color: #6b7280; }
+      .badge-gray { background: #f3f4f6; color: #111; }
       .badge-red { background: #fee2e2; color: #991b1b; }
       .provider-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 10px; background: #fff; color: #111; text-shadow: none; }
       .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -20,16 +20,16 @@ export default function AdminProvidersPage() {
       .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
       .form-field { display: flex; flex-direction: column; gap: 4px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: #374151; text-shadow: none; }
+      .form-field label { font-size: 12px; font-weight: 700; color: #111; text-shadow: none; }
       .form-field input, .form-field textarea, .form-field select { padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; color: #111; background: #fff; text-shadow: none; }
       .form-field textarea { min-height: 80px; resize: vertical; }
       .form-field-full { grid-column: 1 / -1; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
-      .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #374151; text-shadow: none; }
+      .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #111; text-shadow: none; }
       .kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
       .kpi-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; text-shadow: none; }
       .kpi-value { font-size: 28px; font-weight: 800; color: #111; }
-      .kpi-label { font-size: 12px; color: #374151; margin-top: 2px; font-weight: 600; }
+      .kpi-label { font-size: 12px; color: #111; margin-top: 2px; font-weight: 600; }
     `;
     document.head.appendChild(style);
 
@@ -52,7 +52,7 @@ export default function AdminProvidersPage() {
       listEl.innerHTML = '<p class="muted">読み込み中…</p>';
       try {
         const res = await fetch('/api/admin/providers', { headers: h() });
-        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー。APIキーを確認してください。</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#b91c1c">取得エラー。APIキーを確認してください。</p>'; return; }
         providers = await res.json();
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
@@ -74,11 +74,11 @@ export default function AdminProvidersPage() {
                   ${p.plan === 'special' ? '<span class="badge badge-green">特例無料</span>' : p.billing_status === 'active' ? '<span class="badge badge-green">New Me Map掲載中</span>' : '<span class="badge badge-gray">無料掲載</span>'}
                   ${p.plan && p.billing_status === 'active' && p.plan !== 'special' ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || p.plan}</span>` : ''}
                 </div>
-                <div style="font-size:12px;color:#6b7280;margin-top:4px">
+                <div style="font-size:12px;color:#111;margin-top:4px">
                   ${p.area ? `📍 ${esc(p.area)} ` : ''}${p.price_from ? `¥${Number(p.price_from).toLocaleString()}〜 ` : ''}
-                  <a href="/provider/${esc(p.slug)}" target="_blank" style="color:#6366f1">/provider/${esc(p.slug)}</a>
+                  <a href="/provider/${esc(p.slug)}" target="_blank" style="color:#4338ca">/provider/${esc(p.slug)}</a>
                 </div>
-                ${p.referred_by ? `<div style="font-size:11px;margin-top:4px;color:#6366f1"><span style="background:#eef2ff;padding:1px 7px;border-radius:99px;font-weight:700">紹介: ${esc(p.referred_by)}</span></div>` : ''}
+                ${p.referred_by ? `<div style="font-size:11px;margin-top:4px;color:#4338ca"><span style="background:#eef2ff;padding:1px 7px;border-radius:99px;font-weight:700">紹介: ${esc(p.referred_by)}</span></div>` : ''}
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-edit="${p.id}">編集</button>
@@ -86,8 +86,8 @@ export default function AdminProvidersPage() {
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-toggle="${p.id}" data-pub="${p.published}" data-hidden="${p.admin_hidden}">
                   ${p.admin_hidden ? '強制非公開解除' : p.published ? '非公開にする' : '公開する'}
                 </button>
-                ${!p.admin_hidden ? `<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-force-hide="${p.id}">強制非公開</button>` : ''}
-                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-delete="${p.id}" data-name="${esc(p.name)}">削除</button>
+                ${!p.admin_hidden ? `<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#b91c1c" data-force-hide="${p.id}">強制非公開</button>` : ''}
+                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#b91c1c" data-delete="${p.id}" data-name="${esc(p.name)}">削除</button>
               </div>
             </div>
           `;
@@ -124,7 +124,7 @@ export default function AdminProvidersPage() {
           const res = await fetch(`/api/admin/providers/${btn.dataset.delete}`, { method: 'DELETE', headers: h() });
           if (res.ok) { load(); } else { const err = await res.json(); alert('削除エラー: ' + (err.error || '不明')); }
         }));
-      } catch (e) { listEl.innerHTML = `<p class="muted" style="color:#ef4444">接続エラー: ${e.message}</p>`; }
+      } catch (e) { listEl.innerHTML = `<p class="muted" style="color:#b91c1c">接続エラー: ${e.message}</p>`; }
     }
 
     function openModal(data) {
@@ -191,7 +191,7 @@ export default function AdminProvidersPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
@@ -211,7 +211,7 @@ export default function AdminProvidersPage() {
         <div className="modal-box">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
             <h2 style={{margin:'0',fontSize:'18px'}} id="modal-title">掲載者を登録</h2>
-            <button type="button" id="modal-close" style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#6b7280'}}>✕</button>
+            <button type="button" id="modal-close" style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#111'}}>✕</button>
           </div>
           <form id="pform" className="stack">
             <div className="form-grid">
@@ -252,7 +252,7 @@ export default function AdminProvidersPage() {
                 </select>
               </div>
               <div className="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
-              <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#6b7280',fontSize:'11px'}}>登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
+              <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#111',fontSize:'11px'}}>登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
               <div className="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /></div>
               <div className="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
               <div className="form-field"><label>プラン</label>

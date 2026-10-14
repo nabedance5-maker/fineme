@@ -179,11 +179,11 @@ export default function AdminProductsPage() {
   const filtered = filterAxis === 'all' ? products : products.filter(p => p.axis === filterAxis);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif', color: '#e8e4dc' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif', color: '#111' }}>
       <div style={{ marginBottom: 24 }}>
-        <Link href="/admin" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
+        <Link href="/admin" style={{ color: '#111', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
         <h1 style={{ margin: '8px 0 4px', fontSize: 22, fontWeight: 800 }}>商品アフィリエイト管理</h1>
-        <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>診断結果・New Me Map に表示する商品プールを管理します（Amazonアソシエイト等）</p>
+        <p style={{ margin: 0, fontSize: 13, color: '#111' }}>診断結果・New Me Map に表示する商品プールを管理します（Amazonアソシエイト等）</p>
       </div>
 
       {/* フォーム */}
@@ -223,7 +223,7 @@ export default function AdminProductsPage() {
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
           <button onClick={analyzeProduct} disabled={analyzing} style={{ ...btnPrimary, background: '#4f46e5' }}>{analyzing ? 'AI分析中…' : '✨ AI自動入力'}</button>
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>商品名+軸でdescription/target_user/target_concernsを自動生成</span>
+          <span style={{ fontSize: 11, color: '#111' }}>商品名+軸でdescription/target_user/target_concernsを自動生成</span>
         </div>
         <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
           商品説明（50文字以内）
@@ -237,7 +237,7 @@ export default function AdminProductsPage() {
           <span>対象コンサーン（複数選択可）</span>
           {(AXIS_CONCERNS[form.axis] || []).map(group => (
             <div key={group.label} style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', letterSpacing: '.08em', marginBottom: 4 }}>{group.label}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#111', letterSpacing: '.08em', marginBottom: 4 }}>{group.label}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {group.items.map(c => (
                   <button key={c} type="button" onClick={() => toggleConcern(c)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, border: '1px solid', borderColor: form.target_concerns.includes(c) ? '#6366f1' : '#d1d5db', background: form.target_concerns.includes(c) ? '#e0e7ff' : '#fff', color: form.target_concerns.includes(c) ? '#4f46e5' : '#6b7280', cursor: 'pointer', fontWeight: form.target_concerns.includes(c) ? 700 : 400 }}>{c}</button>
@@ -245,12 +245,12 @@ export default function AdminProductsPage() {
               </div>
             </div>
           ))}
-          {form.target_concerns.length > 0 && <div style={{ fontSize: 11, color: '#4f46e5', marginTop: 6 }}>選択中: {form.target_concerns.join('、')}</div>}
+          {form.target_concerns.length > 0 && <div style={{ fontSize: 11, color: '#3730a3', marginTop: 6 }}>選択中: {form.target_concerns.join('、')}</div>}
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '保存中…' : editId ? '更新する' : '追加する'}</button>
           {editId && <button onClick={cancelEdit} style={btnSecondary}>キャンセル</button>}
-          {msg && <span style={{ fontSize: 13, color: '#059669' }}>{msg}</span>}
+          {msg && <span style={{ fontSize: 13, color: '#047857' }}>{msg}</span>}
         </div>
       </div>
 
@@ -265,7 +265,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* 一覧 */}
-      {loading ? <p style={{ color: '#9ca3af' }}>読み込み中…</p> : (
+      {loading ? <p style={{ color: '#111' }}>読み込み中…</p> : (
         <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
@@ -285,11 +285,11 @@ export default function AdminProductsPage() {
               <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6', opacity: p.is_active ? 1 : 0.4 }}>
                 <td style={td}><span style={{ background: '#dbeafe', color: '#1e40af', borderRadius: 4, padding: '2px 6px', fontWeight: 700 }}>{AXIS_LABELS[p.axis]}</span></td>
                 <td style={{ ...td, maxWidth: 280 }}>
-                  <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ color: '#e8e4dc', textDecoration: 'none', fontWeight: 500 }}>{p.name}</a>
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" style={{ color: '#111', textDecoration: 'none', fontWeight: 500 }}>{p.name}</a>
                 </td>
                 <td style={td}>{LEVEL_LABELS[p.level]}</td>
                 <td style={td}>{PRICE_LABELS[p.price_range]}</td>
-                <td style={td}>{(p.target_concerns || []).length > 0 ? <span title={(p.target_concerns||[]).join('、')} style={{ fontSize: 11, background: '#e0e7ff', color: '#4f46e5', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>{(p.target_concerns||[]).length}件</span> : <span style={{ color: '#9ca3af', fontSize: 11 }}>-</span>}</td>
+                <td style={td}>{(p.target_concerns || []).length > 0 ? <span title={(p.target_concerns||[]).join('、')} style={{ fontSize: 11, background: '#e0e7ff', color: '#3730a3', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>{(p.target_concerns||[]).length}件</span> : <span style={{ color: '#111', fontSize: 11 }}>-</span>}</td>
                 <td style={td}>{p.sort_order}</td>
                 <td style={td}>
                   <button onClick={() => toggleActive(p)} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid', borderColor: p.is_active ? '#bbf7d0' : '#fca5a5', background: p.is_active ? '#dcfce7' : '#fee2e2', color: p.is_active ? '#15803d' : '#b91c1c', cursor: 'pointer' }}>
@@ -310,12 +310,12 @@ export default function AdminProductsPage() {
   );
 }
 
-const labelStyle = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 };
+const labelStyle = { fontSize: 12, fontWeight: 600, color: '#111', display: 'flex', flexDirection: 'column', gap: 4 };
 const inputStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13, boxSizing: 'border-box' };
 const selectStyle = { ...inputStyle };
 const btnPrimary = { padding: '8px 18px', borderRadius: 8, border: 'none', background: '#111827', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' };
-const btnSecondary = { padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
-const btnFilter = { padding: '5px 12px', borderRadius: 99, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' };
+const btnSecondary = { padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#111', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
+const btnFilter = { padding: '5px 12px', borderRadius: 99, border: '1px solid #d1d5db', background: '#fff', color: '#111', fontSize: 12, cursor: 'pointer' };
 const btnFilterActive = { ...btnFilter, background: '#111827', color: '#fff', borderColor: '#111827' };
-const th = { padding: '8px 12px', fontWeight: 700, color: '#e8e4dc', fontSize: 12 };
-const td = { padding: '10px 12px', color: '#e8e4dc', verticalAlign: 'middle' };
+const th = { padding: '8px 12px', fontWeight: 700, color: '#111', fontSize: 12 };
+const td = { padding: '10px 12px', color: '#111', verticalAlign: 'middle' };

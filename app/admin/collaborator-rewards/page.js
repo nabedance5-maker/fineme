@@ -56,7 +56,7 @@ export default function AdminCollaboratorRewardsPage() {
   return (
     <div style={{ maxWidth: '980px', margin: '0 auto', padding: '32px 20px', color: '#111' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>協業者の報酬</h1>
-      <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px' }}>
+      <p style={{ fontSize: '13px', color: '#111', margin: '0 0 20px' }}>
         掲載2ヶ月目以降の全掲載者の受領額(税抜)の10%と、協業者本人が紹介した掲載者の初月90%。月末締め・翌月末払い（手動振込）。
         協業者は「営業パートナー」画面で指定します。
       </p>
@@ -68,14 +68,14 @@ export default function AdminCollaboratorRewardsPage() {
       </div>
 
       {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
-      {data && data.summary.length === 0 && <p style={{ color: '#6b7280' }}>協業者が登録されていません。「営業パートナー」画面で「協業者にする」を押してください。</p>}
+      {data && data.summary.length === 0 && <p style={{ color: '#111' }}>協業者が登録されていません。「営業パートナー」画面で「協業者にする」を押してください。</p>}
 
       {data && data.summary.map(p => (
         <div key={p.partner_id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', padding: '16px 18px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div>
               <div style={{ fontWeight: 800, fontSize: '16px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>{month}　未払い {yen(p.pending)}　支払済 {yen(p.paid)}</div>
+              <div style={{ fontSize: '12px', color: '#111' }}>{month}　未払い {yen(p.pending)}　支払済 {yen(p.paid)}</div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...ghost, background: '#111', color: '#fff', borderColor: '#111' }} disabled={p.pending === 0} onClick={() => mark(p.partner_id, 'paid')}>この月を支払済にする</button>
@@ -85,7 +85,7 @@ export default function AdminCollaboratorRewardsPage() {
           {p.rows.length > 0 && (
             <div style={{ overflowX: 'auto', marginTop: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}>
-                <thead><tr>{['掲載者', '種別', '受領額(税抜)', '報酬', '状況'].map(h => <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#6b7280', fontSize: '11px', borderBottom: '1px solid #e5e7eb' }}>{h}</th>)}</tr></thead>
+                <thead><tr>{['掲載者', '種別', '受領額(税抜)', '報酬', '状況'].map(h => <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#111', fontSize: '11px', borderBottom: '1px solid #e5e7eb' }}>{h}</th>)}</tr></thead>
                 <tbody>
                   {p.rows.map(r => (
                     <tr key={r.id} style={r.status === 'void' ? { opacity: 0.45, textDecoration: 'line-through' } : null}>
@@ -106,5 +106,5 @@ export default function AdminCollaboratorRewardsPage() {
   );
 }
 
-const ghost = { padding: '8px 14px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontSize: '13px', fontWeight: 700, cursor: 'pointer' };
+const ghost = { padding: '8px 14px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#fff', color: '#111', fontSize: '13px', fontWeight: 700, cursor: 'pointer' };
 const cell = { padding: '8px', borderBottom: '1px solid #f3f4f6', whiteSpace: 'nowrap' };

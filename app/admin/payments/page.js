@@ -12,29 +12,29 @@ export default function AdminPaymentsPage() {
     style.textContent = `
       .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
       .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
-      .kpi-label{color:#6b7280;font-size:12px;margin-bottom:4px}
+      .kpi-label{color:#111;font-size:12px;margin-bottom:4px}
       .kpi-value{font-weight:800;font-size:24px}
-      .kpi-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+      .kpi-sub{font-size:11px;color:#111;margin-top:2px}
       .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
       .badge-active{background:#d1fae5;color:#065f46}
       .badge-trialing{background:#dbeafe;color:#1e40af}
       .badge-pending{background:#fef3c7;color:#92400e}
       .badge-past_due{background:#fee2e2;color:#991b1b}
-      .badge-cancelled{background:#f3f4f6;color:#6b7280}
+      .badge-cancelled{background:#f3f4f6;color:#111}
       .badge-paid{background:#d1fae5;color:#065f46}
       .badge-failed{background:#fee2e2;color:#991b1b}
       .badge-referral{background:#ede9fe;color:#5b21b6}
       .tab-bar{display:flex;gap:0;border-bottom:2px solid var(--color-border);margin-bottom:16px}
-      .tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+      .tab-btn{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;color:#111;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
       .tab-btn.active{color:var(--color-primary,#111);border-bottom-color:var(--color-primary,#111);font-weight:600}
       .tab-panel{display:none}
       .tab-panel.active{display:block}
       .table-responsive{overflow-x:auto}
       .table{width:100%;border-collapse:collapse;font-size:13px}
       .table th,.table td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--color-border)}
-      .table th{font-weight:600;color:#374151;background:#f9fafb}
+      .table th{font-weight:600;color:#111;background:#f9fafb}
       .table tbody tr:hover{background:#f9fafb}
-      .referral-chain{font-size:12px;color:#6b7280}
+      .referral-chain{font-size:12px;color:#111}
       @media(max-width:960px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     `;
     document.head.appendChild(style);
@@ -87,7 +87,7 @@ export default function AdminPaymentsPage() {
       if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">該当する掲載者がいません</td></tr>'; return; }
       tbody.innerHTML = filtered.map(p => `
         <tr>
-          <td><div style="font-weight:600">${esc(p.displayName || '-')}</div><div style="font-size:11px;color:#6b7280">${esc(p.email || '')}</div></td>
+          <td><div style="font-weight:600">${esc(p.displayName || '-')}</div><div style="font-size:11px;color:#111">${esc(p.email || '')}</div></td>
           <td>${esc(p.category || '-')}</td>
           <td>${statusBadge(p.subscriptionStatus)}</td>
           <td>¥${(p.planAmount || 0).toLocaleString()}/月</td>
@@ -120,10 +120,10 @@ export default function AdminPaymentsPage() {
       const payBadge = s => s === 'paid' ? '<span class="badge badge-paid">成功</span>' : '<span class="badge badge-failed">失敗</span>';
       tbody.innerHTML = filtered.map(p => `
         <tr>
-          <td><div style="font-weight:600">${esc(p.providerName || '-')}</div><div style="font-size:11px;color:#6b7280">${esc(p.providerEmail || '')}</div></td>
+          <td><div style="font-weight:600">${esc(p.providerName || '-')}</div><div style="font-size:11px;color:#111">${esc(p.providerEmail || '')}</div></td>
           <td>¥${(p.amount || 0).toLocaleString()}</td>
           <td>${payBadge(p.status)}</td>
-          <td style="font-size:11px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis">${esc(p.stripeInvoiceId || '-')}</td>
+          <td style="font-size:11px;color:#111;max-width:160px;overflow:hidden;text-overflow:ellipsis">${esc(p.stripeInvoiceId || '-')}</td>
           <td>${p.paidAt ? p.paidAt.slice(0, 10) : '-'}</td>
           <td>${p.createdAt ? p.createdAt.slice(0, 10) : '-'}</td>
         </tr>
@@ -158,8 +158,8 @@ export default function AdminPaymentsPage() {
       tbody.innerHTML = filtered.map(r => `
         <tr>
           <td><input type="checkbox" class="ref-check" data-id="${r.id}" ${r.status === 'paid' ? 'disabled' : ''} /></td>
-          <td><div style="font-weight:600">${esc(r.referrerName || '-')}</div><div style="font-size:11px;color:#6b7280">${esc(r.referrerEmail || '')}</div></td>
-          <td><div>${esc(r.referredName || '-')}</div><div style="font-size:11px;color:#6b7280">${esc(r.referredEmail || '')}</div></td>
+          <td><div style="font-weight:600">${esc(r.referrerName || '-')}</div><div style="font-size:11px;color:#111">${esc(r.referrerEmail || '')}</div></td>
+          <td><div>${esc(r.referredName || '-')}</div><div style="font-size:11px;color:#111">${esc(r.referredEmail || '')}</div></td>
           <td><span class="badge badge-referral">¥${(r.rewardAmount || 0).toLocaleString()}</span></td>
           <td>${r.periodYearMonth || '-'}</td>
           <td>${r.status === 'paid' ? '<span class="badge badge-active">支払い済み</span>' : '<span class="badge badge-pending">未払い</span>'}</td>
@@ -200,7 +200,7 @@ export default function AdminPaymentsPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">課金・サブスク管理</h1>

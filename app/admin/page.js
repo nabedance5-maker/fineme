@@ -20,31 +20,31 @@ export default function AdminDashboardPage() {
     style.textContent = `
       .db-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
       .db-kpi-card { padding: 18px 20px; border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; }
-      .db-kpi-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
-      .db-kpi-main { font-size: 28px; font-weight: 800; color: #111827; line-height: 1; }
-      .db-kpi-sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+      .db-kpi-label { font-size: 11px; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+      .db-kpi-main { font-size: 28px; font-weight: 800; color: #111; line-height: 1; }
+      .db-kpi-sub { font-size: 12px; color: #111; margin-top: 4px; }
       .db-kpi-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #dcfce7; color: #15803d; margin-left: 6px; }
       .db-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
-      .db-section-title { font-size: 15px; font-weight: 800; color: #111827; margin: 0 0 14px; }
+      .db-section-title { font-size: 15px; font-weight: 800; color: #111; margin: 0 0 14px; }
       .db-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
       .db-alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; color: inherit; }
       .db-alert-warn { background: #fef9c3; border: 1px solid #fde047; }
       .db-alert-red  { background: #fee2e2; border: 1px solid #fca5a5; }
       .db-alert-ok   { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
       .db-cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-      .db-cat-label { width: 100px; font-size: 12px; color: #374151; flex-shrink: 0; }
+      .db-cat-label { width: 100px; font-size: 12px; color: #111; flex-shrink: 0; }
       .db-cat-bar-wrap { flex: 1; height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
       .db-cat-bar { height: 100%; background: #2563eb; border-radius: 99px; transition: width .4s; }
-      .db-cat-count { font-size: 12px; color: #6b7280; width: 24px; text-align: right; flex-shrink: 0; }
-      .db-loading { color: #9ca3af; font-size: 14px; }
+      .db-cat-count { font-size: 12px; color: #111; width: 24px; text-align: right; flex-shrink: 0; }
+      .db-loading { color: #111; font-size: 14px; }
       .db-funnel { display: flex; flex-direction: column; gap: 6px; }
       .db-funnel-row { display: flex; align-items: center; gap: 10px; }
-      .db-funnel-label { width: 140px; font-size: 13px; color: #374151; font-weight: 600; flex-shrink: 0; }
+      .db-funnel-label { width: 140px; font-size: 13px; color: #111; font-weight: 600; flex-shrink: 0; }
       .db-funnel-bar-wrap { flex: 1; height: 22px; background: #f3f4f6; border-radius: 6px; overflow: hidden; position: relative; }
       .db-funnel-bar { height: 100%; border-radius: 6px; transition: width .5s; }
-      .db-funnel-count { font-size: 13px; font-weight: 700; color: #111827; width: 40px; text-align: right; flex-shrink: 0; }
-      .db-funnel-rate { font-size: 11px; color: #6b7280; width: 48px; text-align: right; flex-shrink: 0; }
-      .db-funnel-arrow { font-size: 12px; color: #d1d5db; text-align: center; padding-left: 150px; }
+      .db-funnel-count { font-size: 13px; font-weight: 700; color: #111; width: 40px; text-align: right; flex-shrink: 0; }
+      .db-funnel-rate { font-size: 11px; color: #111; width: 48px; text-align: right; flex-shrink: 0; }
+      .db-funnel-arrow { font-size: 12px; color: #111; text-align: center; padding-left: 150px; }
       @media (max-width: 900px) { .db-kpi-grid { grid-template-columns: repeat(2, 1fr); } .db-two-col { grid-template-columns: 1fr; } .db-funnel-label { width: 100px; } }
     `;
     document.head.appendChild(style);
@@ -110,11 +110,11 @@ export default function AdminDashboardPage() {
         const funnelEl = $('db-funnel');
         if (funnelEl) {
           const steps = [
-            { label: '👤 会員登録',      count: d.users.total,    color: '#6366f1' },
-            { label: '🧭 Me Scan受診',   count: d.meScan.total,   color: '#2563eb' },
-            { label: '🗺️ Navi利用',      count: d.navi.users,     color: '#0891b2' },
-            { label: '🪞 Mirror利用',    count: d.mirror.total,   color: '#059669' },
-            { label: '💳 Mirror有料',    count: d.mirror.paid,    color: '#d97706' },
+            { label: '👤 会員登録',      count: d.users.total,    color: '#4338ca' },
+            { label: '🧭 Me Scan受診',   count: d.meScan.total,   color: '#1d4ed8' },
+            { label: '🗺️ Navi利用',      count: d.navi.users,     color: '#0e7490' },
+            { label: '🪞 Mirror利用',    count: d.mirror.total,   color: '#047857' },
+            { label: '💳 Mirror有料',    count: d.mirror.paid,    color: '#b45309' },
           ];
           const base = steps[0].count || 1;
           funnelEl.innerHTML = '';
@@ -176,12 +176,12 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
         <section className="stack">
           <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px'}}>
             <h1 className="section-title" style={{margin:0}}>ダッシュボード</h1>
-            <span id="stats-error" style={{fontSize:'13px', color:'#ef4444'}}></span>
+            <span id="stats-error" style={{fontSize:'13px', color:'#b91c1c'}}></span>
           </div>
 
           {/* KPI グリッド */}
@@ -194,17 +194,17 @@ export default function AdminDashboardPage() {
             <div className="db-kpi-card">
               <div className="db-kpi-label">🧭 Me Scan受診者数</div>
               <div className="db-kpi-main" id="kpi-scan-total">—</div>
-              <div className="db-kpi-sub"><span id="kpi-scan-month">—</span>　<span id="kpi-scan-rate" style={{color:'#2563eb'}}></span></div>
+              <div className="db-kpi-sub"><span id="kpi-scan-month">—</span>　<span id="kpi-scan-rate" style={{color:'#1d4ed8'}}></span></div>
             </div>
             <div className="db-kpi-card">
               <div className="db-kpi-label">🏢 掲載者登録数</div>
               <div className="db-kpi-main" id="kpi-prov-total">—</div>
-              <div className="db-kpi-sub"><span id="kpi-prov-month">—</span>　<span id="kpi-prov-detail" style={{color:'#6b7280'}}></span></div>
+              <div className="db-kpi-sub"><span id="kpi-prov-month">—</span>　<span id="kpi-prov-detail" style={{color:'#111'}}></span></div>
             </div>
             <div className="db-kpi-card">
               <div className="db-kpi-label">🪞 Mirror有料利用数</div>
               <div className="db-kpi-main" id="kpi-mirror-paid">—</div>
-              <div className="db-kpi-sub"><span id="kpi-mirror-revenue" style={{color:'#059669', fontWeight:700}}></span>　<span id="kpi-mirror-total" style={{color:'#9ca3af'}}></span></div>
+              <div className="db-kpi-sub"><span id="kpi-mirror-revenue" style={{color:'#047857', fontWeight:700}}></span>　<span id="kpi-mirror-total" style={{color:'#111'}}></span></div>
             </div>
           </div>
 
@@ -239,7 +239,7 @@ export default function AdminDashboardPage() {
                   ['/admin/products',   '🛒 商品管理'],
                   ['/admin/analytics',  '📈 アナリティクス'],
                 ].map(([href, label]) => (
-                  <a key={href} href={href} style={{display:'block', padding:'10px 14px', border:'1px solid #e5e7eb', borderRadius:'8px', fontSize:'14px', fontWeight:500, color:'#374151', textDecoration:'none'}}>
+                  <a key={href} href={href} style={{display:'block', padding:'10px 14px', border:'1px solid #e5e7eb', borderRadius:'8px', fontSize:'14px', fontWeight:500, color:'#111', textDecoration:'none'}}>
                     {label}
                   </a>
                 ))}

@@ -19,14 +19,14 @@ export default function AdminSalesPartnersPage() {
       .sp-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: #fff; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
       .sp-name { font-weight: 700; font-size: 15px; }
       .sp-code { font-family: monospace; font-size: 13px; background: #f3f4f6; padding: 2px 8px; border-radius: 6px; }
-      .sp-meta { font-size: 12px; color: #6b7280; }
+      .sp-meta { font-size: 12px; color: #111; }
       .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
       .badge-green { background: #d1fae5; color: #065f46; }
-      .badge-gray { background: #f3f4f6; color: #6b7280; }
+      .badge-gray { background: #f3f4f6; color: #111; }
       .sp-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
       .sp-form input, .sp-form select { padding: 8px 10px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
       .sp-form button { padding: 8px 16px; border-radius: 8px; border: none; background: #111; color: #fff; font-weight: 700; cursor: pointer; }
-      .sp-btn-ghost { padding: 6px 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; font-size: 12px; cursor: pointer; }
+      .sp-btn-ghost { padding: 6px 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #111; font-size: 12px; cursor: pointer; }
     `;
     document.head.appendChild(style);
 
@@ -41,7 +41,7 @@ export default function AdminSalesPartnersPage() {
     root.innerHTML = `
       <div class="sp-wrap">
         <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;">営業パートナー管理</h1>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:20px;">
+        <p style="font-size:13px;color:#111;margin-bottom:20px;">
           掲載者とは別の役割です。Finemeに掲載していない人も、ここから「掲載者を紐付けない」状態で登録できます。
           掲載者本人が希望して登録する場合は、本人のダッシュボード「紹介報酬」タブから行います。
         </p>
@@ -51,7 +51,7 @@ export default function AdminSalesPartnersPage() {
           <input id="sp-new-provider" placeholder="掲載者ID（任意・空欄なら未掲載の営業パートナー）" style="flex:1;min-width:220px;" />
           <button id="sp-new-submit">新規登録</button>
         </div>
-        <div id="sp-list"><p style="color:#6b7280;">読み込み中…</p></div>
+        <div id="sp-list"><p style="color:#111;">読み込み中…</p></div>
       </div>
     `;
 
@@ -63,7 +63,7 @@ export default function AdminSalesPartnersPage() {
         const res = await fetch('/api/admin/sales-partners', { headers: h() });
         if (!res.ok) { listEl.innerHTML = `<p style="color:#b91c1c;">読み込み失敗（${res.status}）。管理APIキーを確認してください。</p>`; return; }
         const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) { listEl.innerHTML = '<p style="color:#6b7280;">まだ営業パートナーが登録されていません。</p>'; return; }
+        if (!Array.isArray(data) || data.length === 0) { listEl.innerHTML = '<p style="color:#111;">まだ営業パートナーが登録されていません。</p>'; return; }
 
         listEl.innerHTML = data.map(p => {
           const providerLabel = p.provider_id

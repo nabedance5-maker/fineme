@@ -33,12 +33,12 @@ export default function AdminAffiliateEditPage() {
     const style = document.createElement('style');
     style.textContent = `
       .tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; overflow-x: auto; }
-      .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
+      .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #111; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
       .tab-btn.active { color: #111; border-bottom-color: #111; }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
       .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
+      .form-field label { font-size: 12px; font-weight: 700; color: #111; }
       .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; }
       .form-field textarea { min-height: 100px; resize: vertical; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -210,7 +210,7 @@ export default function AdminAffiliateEditPage() {
       if (affiliate.ai_match_profile) {
         const d = affiliate.ai_match_profile;
         const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
-        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+        if (aiStatus) aiStatus.innerHTML = `<span style="color:#047857;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#111">${d.summary || ''}</span>`;
         setAnalyzeBtnState(true);
       } else {
         if (aiStatus) aiStatus.textContent = '未分析 — プロフィール入力後「AIで分析する」を押してください';
@@ -287,7 +287,7 @@ export default function AdminAffiliateEditPage() {
         if (!res.ok) throw new Error(json.error || '分析に失敗しました');
         affiliate.ai_match_profile = json.profile;
         if (status) {
-          status.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析完了</span><br><span style="font-size:12px;color:#6b7280">${json.profile.summary || ''}</span>`;
+          status.innerHTML = `<span style="color:#047857;font-weight:700">✅ AI分析完了</span><br><span style="font-size:12px;color:#111">${json.profile.summary || ''}</span>`;
         }
         showToast('✅ AI分析が完了しました');
         setAnalyzeBtnState(true);
@@ -327,13 +327,13 @@ export default function AdminAffiliateEditPage() {
       const list = document.getElementById('area-list');
       if (!list) return;
       if (!areas.length) {
-        list.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0;">エリア未設定 — 全国対応として扱われます</p>';
+        list.innerHTML = '<p style="font-size:12px;color:#111;margin:0;">エリア未設定 — 全国対応として扱われます</p>';
         return;
       }
       list.innerHTML = areas.map((a, i) => `
         <span style="display:inline-flex;align-items:center;gap:6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:4px 12px;font-size:13px;">
           ${esc(a.prefecture)}${a.city ? ' ' + esc(a.city) : ''}
-          <button onclick="removeArea(${i})" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;line-height:1;padding:0;">×</button>
+          <button onclick="removeArea(${i})" style="background:none;border:none;cursor:pointer;color:#111;font-size:16px;line-height:1;padding:0;">×</button>
         </span>
       `).join('');
     }
@@ -408,15 +408,15 @@ export default function AdminAffiliateEditPage() {
   }, [id]);
 
   return (
-    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
+    <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div className="container" style={{ maxWidth: '800px' }}>
 
         {/* ヘッダー */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
           <div>
-            <a href="/admin/affiliates" style={{ fontSize: '13px', color: '#6b7280', textDecoration: 'none' }}>← アフィリエイト管理</a>
+            <a href="/admin/affiliates" style={{ fontSize: '13px', color: '#111', textDecoration: 'none' }}>← アフィリエイト管理</a>
             <h1 className="section-title" style={{ margin: '4px 0 4px' }} id="aff-name-header">読み込み中…</h1>
-            <a id="aff-page-link" href="#" target="_blank" style={{ fontSize: '12px', color: '#6366f1' }}></a>
+            <a id="aff-page-link" href="#" target="_blank" style={{ fontSize: '12px', color: '#4338ca' }}></a>
           </div>
           <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}
             onClick={e => { const slug = document.getElementById('aff-page-link')?.href?.split('/affiliate/')?.[1]; if (slug) e.currentTarget.href = `/affiliate/${slug}`; }}>
@@ -426,8 +426,8 @@ export default function AdminAffiliateEditPage() {
 
         {/* AI自動入力カード */}
         <div id="regen-section" style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe', borderRadius: '16px', padding: '18px 20px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: '800', color: '#6366f1', marginBottom: '8px' }}>✨ AI自動入力</div>
-          <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 12px', lineHeight: '1.6' }}>
+          <div style={{ fontSize: '12px', fontWeight: '800', color: '#4338ca', marginBottom: '8px' }}>✨ AI自動入力</div>
+          <p style={{ fontSize: '12px', color: '#111', margin: '0 0 12px', lineHeight: '1.6' }}>
             サービス名を入力してAIに調査させると、全フィールドが自動入力されます。既存の内容は上書きされます。
           </p>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
@@ -440,13 +440,13 @@ export default function AdminAffiliateEditPage() {
             </button>
           </div>
           <div style={{ marginTop: '10px' }}>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#6366f1', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#4338ca', display: 'block', marginBottom: '4px' }}>
               ⚠️ アフィリエイト表現規約・注意事項（ASPから指定されたNG表現等をここに貼り付け）
             </label>
             <textarea id="regen-affiliate-notes" rows={3}
               placeholder={'例：「効果を保証する」表現は禁止&#10;競合他社との比較表現NG&#10;「ダイエット」という単語は使用不可'}
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #c7d2fe', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#374151' }} />
-            <p style={{ fontSize: '11px', color: '#6b7280', margin: '3px 0 0' }}>ここに入力した内容はAI自動入力時に参照され、規約に違反しない表現が生成されます。</p>
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #c7d2fe', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#111' }} />
+            <p style={{ fontSize: '11px', color: '#111', margin: '3px 0 0' }}>ここに入力した内容はAI自動入力時に参照され、規約に違反しない表現が生成されます。</p>
           </div>
           <div id="regen-status" style={{ display: 'none', fontSize: '12px', marginTop: '8px' }}></div>
         </div>
@@ -561,7 +561,7 @@ export default function AdminAffiliateEditPage() {
 
               {/* AI分析ステータス */}
               <div style={{ padding: '14px 16px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', marginBottom: '14px' }}>
-                <div id="ai-match-status" style={{ fontSize: '13px', color: '#6b7280' }}>未分析</div>
+                <div id="ai-match-status" style={{ fontSize: '13px', color: '#111' }}>未分析</div>
               </div>
               <button type="button" id="ai-analyze-btn" className="btn" style={{ marginBottom: '20px' }}>AIで分析する</button>
 
@@ -599,13 +599,13 @@ export default function AdminAffiliateEditPage() {
 
             {/* 登録済みエリア */}
             <div id="area-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', minHeight: '32px' }}>
-              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>読み込み中…</p>
+              <p style={{ fontSize: '12px', color: '#111', margin: 0 }}>読み込み中…</p>
             </div>
 
             {/* AI自動抽出 */}
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
               <p style={{ fontSize: '12px', color: '#1d4ed8', fontWeight: '700', margin: '0 0 8px' }}>✨ AIでエリア自動抽出</p>
-              <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 10px', lineHeight: '1.6' }}>
+              <p style={{ fontSize: '12px', color: '#111', margin: '0 0 10px', lineHeight: '1.6' }}>
                 サービス名・説明文・サイトURLからAIが展開エリアを推測して追加します。
               </p>
               <button type="button" id="area-extract-btn" className="btn" style={{ fontSize: '12px', padding: '7px 14px' }}>

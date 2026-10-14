@@ -10,11 +10,11 @@ function avg(arr, key) {
 }
 
 function Stars({ val }) {
-  if (val == null) return <span style={{color:'#9ca3af'}}>-</span>;
+  if (val == null) return <span style={{color:'#111'}}>-</span>;
   return (
-    <span style={{color:'#c9a84c',letterSpacing:'-1px'}}>
+    <span style={{color:'#111',letterSpacing:'-1px'}}>
       {'★'.repeat(val)}{'☆'.repeat(5 - val)}
-      <span style={{color:'#374151',marginLeft:4,letterSpacing:'normal'}}>{val}</span>
+      <span style={{color:'#111',marginLeft:4,letterSpacing:'normal'}}>{val}</span>
     </span>
   );
 }
@@ -60,14 +60,14 @@ export default function AdminFeedbackPage() {
   const kpiPage = filter ? filtered : kpiAll;
 
   return (
-    <div style={{color:'#111827'}}>
+    <div style={{color:'#111'}}>
       <h1 style={{fontSize:22,fontWeight:800,marginBottom:4}}>フィードバック</h1>
-      <p style={{fontSize:13,color:'#6b7280',marginBottom:24}}>ユーザーから届いた診断・Mapへの評価</p>
+      <p style={{fontSize:13,color:'#111',marginBottom:24}}>ユーザーから届いた診断・Mapへの評価</p>
 
       {error && <div style={{background:'#fee2e2',color:'#b91c1c',padding:'12px 16px',borderRadius:8,marginBottom:16}}>{error}</div>}
 
       {rows == null && !error && (
-        <div style={{color:'#6b7280',padding:'40px 0',textAlign:'center'}}>読み込み中...</div>
+        <div style={{color:'#111',padding:'40px 0',textAlign:'center'}}>読み込み中...</div>
       )}
 
       {rows != null && (
@@ -81,8 +81,8 @@ export default function AdminFeedbackPage() {
               { label:'また使いたいか（平均）', val: avg(kpiPage,'rating_revisit') ? `★ ${avg(kpiPage,'rating_revisit')}` : '-' },
             ].map(kpi => (
               <div key={kpi.label} style={{background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:12,padding:'14px 16px'}}>
-                <div style={{fontSize:11,color:'#6b7280',marginBottom:4}}>{kpi.label}</div>
-                <div style={{fontSize:22,fontWeight:800,color:'#111827'}}>{kpi.val}</div>
+                <div style={{fontSize:11,color:'#111',marginBottom:4}}>{kpi.label}</div>
+                <div style={{fontSize:22,fontWeight:800,color:'#111'}}>{kpi.val}</div>
               </div>
             ))}
           </div>
@@ -106,21 +106,21 @@ export default function AdminFeedbackPage() {
 
           {/* Table */}
           {filtered.length === 0
-            ? <div style={{textAlign:'center',color:'#9ca3af',padding:'48px 0'}}>フィードバックはまだありません</div>
+            ? <div style={{textAlign:'center',color:'#111',padding:'48px 0'}}>フィードバックはまだありません</div>
             : (
               <div style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
                   <thead>
                     <tr style={{borderBottom:'2px solid #e5e7eb',textAlign:'left'}}>
                       {['日時','ページ','的確さ','使いやすさ','また使いたい','タイプ','コンパス','コメント',''].map(h => (
-                        <th key={h} style={{padding:'8px 10px',fontWeight:700,color:'#374151',whiteSpace:'nowrap'}}>{h}</th>
+                        <th key={h} style={{padding:'8px 10px',fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map(r => (
                       <tr key={r.id} style={{borderBottom:'1px solid #f3f4f6'}}>
-                        <td style={{padding:'10px',whiteSpace:'nowrap',color:'#6b7280'}}>
+                        <td style={{padding:'10px',whiteSpace:'nowrap',color:'#111'}}>
                           {new Date(r.created_at).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
                         </td>
                         <td style={{padding:'10px',whiteSpace:'nowrap'}}>
@@ -131,14 +131,14 @@ export default function AdminFeedbackPage() {
                         <td style={{padding:'10px'}}><Stars val={r.rating_accuracy}/></td>
                         <td style={{padding:'10px'}}><Stars val={r.rating_usability}/></td>
                         <td style={{padding:'10px'}}><Stars val={r.rating_revisit}/></td>
-                        <td style={{padding:'10px',color:'#6b7280'}}>{r.type_code ?? '-'}</td>
-                        <td style={{padding:'10px',color:'#6b7280'}}>{r.compass_first ?? '-'}</td>
-                        <td style={{padding:'10px',maxWidth:240,color:'#374151'}}>{r.comment ?? <span style={{color:'#d1d5db'}}>-</span>}</td>
+                        <td style={{padding:'10px',color:'#111'}}>{r.type_code ?? '-'}</td>
+                        <td style={{padding:'10px',color:'#111'}}>{r.compass_first ?? '-'}</td>
+                        <td style={{padding:'10px',maxWidth:240,color:'#111'}}>{r.comment ?? <span style={{color:'#111'}}>-</span>}</td>
                         <td style={{padding:'10px'}}>
                           <button
                             disabled={deleting === r.id}
                             onClick={() => handleDelete(r.id)}
-                            style={{color:'#ef4444',background:'none',border:'none',cursor:'pointer',fontSize:12,padding:'2px 6px'}}
+                            style={{color:'#b91c1c',background:'none',border:'none',cursor:'pointer',fontSize:12,padding:'2px 6px'}}
                           >削除</button>
                         </td>
                       </tr>
