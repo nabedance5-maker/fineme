@@ -5,7 +5,6 @@ import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
-import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
@@ -262,6 +261,40 @@ const DASHBOARD_CSS = `
       .feature-off-badge { display: none; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(96,165,250,0.18); color: #60a5fa; vertical-align: middle; }
       .tab-btn.tab-feature-off .feature-off-badge { display: inline-block; }
       .feature-enable-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+      /* 接客の引き出し（来店前の接客メモ・次回の一言・接客の効果。2026-10-15） */
+      .svm-card { border: 1px solid rgba(26,20,16,0.1); border-radius: 12px; background: #fff; padding: 14px 16px; display: grid; gap: 12px; }
+      .svm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+      .svm-time { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 15px; color: #8a6a17; min-width: 44px; }
+      .svm-name { font-weight: 800; font-size: 15px; }
+      .svm-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+      .svm-chip { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: rgba(26,20,16,0.05); color: rgba(26,20,16,0.72); white-space: nowrap; }
+      .svm-chip.first { background: rgba(47,79,143,0.1); color: #2f4f8f; }
+      .svm-chip.warn { background: rgba(217,119,6,0.12); color: #a15c06; }
+      .svm-chip.gold { background: rgba(201,168,76,0.16); color: #7a5c12; }
+      .svm-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+      .svm-sec h4 { margin: 0 0 6px; font-size: 11.5px; letter-spacing: .06em; color: rgba(26,20,16,0.55); font-weight: 800; }
+      .svm-sec p, .svm-sec li { font-size: 13px; line-height: 1.65; margin: 0; }
+      .svm-sec ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+      .svm-karte { padding: 6px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); font-size: 12.5px; line-height: 1.6; }
+      .svm-karte:last-child { border-bottom: 0; }
+      .svm-caution { margin-top: 6px; padding: 7px 10px; border-radius: 8px; background: rgba(217,119,6,0.08); font-size: 12.5px; line-height: 1.6; }
+      .svm-next { border-top: 1px solid rgba(26,20,16,0.08); padding-top: 10px; display: grid; gap: 8px; }
+      .svm-line { font-size: 14px; line-height: 1.7; padding: 9px 12px; border-radius: 10px; background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.28); }
+      .svm-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .svm-book { display: none; gap: 8px; flex-wrap: wrap; align-items: flex-end; padding: 10px; border-radius: 10px; background: var(--color-bg); }
+      .svm-book.open { display: flex; }
+      .svm-book label { display: grid; gap: 3px; font-size: 11px; font-weight: 700; }
+      .svm-book input { padding: 6px 8px; font-size: 13px; border: 1px solid rgba(26,20,16,0.18); border-radius: 6px; }
+      .svm-tag-ai { font-size: 10px; font-weight: 800; color: #8a6a17; margin-left: 6px; letter-spacing: .04em; }
+      .svm-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+      .svm-metric { border: 1px solid rgba(26,20,16,0.1); border-radius: 12px; padding: 12px 14px; }
+      .svm-metric b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+      .svm-metric span { font-size: 12px; color: rgba(26,20,16,0.6); }
+      .svm-staff-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .svm-staff-table th, .svm-staff-table td { padding: 8px 10px; border-bottom: 1px solid rgba(26,20,16,0.08); text-align: left; white-space: nowrap; }
+      .svm-staff-table th { font-size: 11.5px; color: rgba(26,20,16,0.55); }
+      .svm-track { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: rgba(26,20,16,0.08); vertical-align: middle; margin-right: 8px; overflow: hidden; }
+      .svm-bar { display: block; height: 100%; background: #c9a84c; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -10566,10 +10599,13 @@ export default function ProviderDashboardPage() {
                 <div id="cal-modal-member-results" style="margin-top:4px"></div>
               </div>
             `}
+            <div id="cal-modal-service-memo" style="margin-top:10px"></div>
           `;
           // フルの顧客情報ポップアップ（カルテ編集・回数券・声かけ・担当割当・AI傾向分析）を
           // その場で開けるようにする導線（でお要望2026-09-13：「他の場所でもポップアップを
           // 出す時はちゃんと顧客情報全部見れて編集できたりページ飛べたりできるように」）。
+          // 接客の引き出し（来店前の接客メモ・会計時の次回の一言）をこの予約の詳細にも出す（2026-10-15）
+          window.__pdRenderServiceMemo?.(document.getElementById('cal-modal-service-memo'), reservationId);
           document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => {
             if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
             window.openCustomerModal(r.user_id, 'member', r.user_name);
@@ -10802,8 +10838,13 @@ export default function ProviderDashboardPage() {
             <span class="req-row-name">${custNameSpan(r.user_id, r.user_name)}</span>
             <span class="muted" style="font-size:12px">${r.staff_name ? esc(r.staff_name) : ''}</span>
           </div>
-        `).join('');
+        `).join('') + `
+          <button type="button" class="btn btn-ghost" id="today-open-service-memo" style="font-size:12px;padding:5px 12px;margin-top:8px">接客メモを見る（前回の記録・今日聞くこと・次回の一言）</button>
+        `;
         bindTodayCustHandlers(el);
+        document.getElementById('today-open-service-memo')?.addEventListener('click', () => {
+          document.querySelector('.tab-btn[data-tab="scripts"]')?.click();
+        });
       }
 
       async function loadTodayRequests() {
@@ -11670,58 +11711,259 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'events') loadEvents();
     })();
 
-    // ── 接客の引き出し：お店専用パーソナライズ ───────────────────
-    (function setupCustomerScripts() {
-      const t = getSupabaseToken();
-      if (!t) return;
-      const statusEl = document.getElementById('scripts-status');
-      const contentEl = document.getElementById('scripts-content');
-      const refreshBtn = document.getElementById('scripts-refresh-btn');
-      if (!statusEl || !contentEl) return;
+    // ── 接客の引き出し：来店前の接客メモ・会計時の次回の一言・接客の効果 ──────────
+    // でお承認（2026-10-15）：軸別の汎用トーク集を廃止。今日来る「このお客様」の事実
+    // （来店履歴・カルテ・固定メモ・回数券・誕生月・周期）と、それだけを元にしたAIの
+    // 「今日聞くこと」「次回の一言」を並べる。予約詳細モーダルからも同じ表示を使う
+    // （window.__pdRenderServiceMemo）。
+    (function setupServiceMemos() {
+      const listEl = document.getElementById('svm-list');
+      const statusEl = document.getElementById('svm-status');
+      const dateEl = document.getElementById('svm-date');
+      const metricsEl = document.getElementById('svm-metrics');
+      const metricsDaysEl = document.getElementById('svm-metrics-days');
 
-      function escSc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function escSm(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+      function authSm() { const t = getSupabaseToken(); return t ? { 'Authorization': `Bearer ${t}` } : {}; }
+      const jstTodaySm = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      function shiftDate(d, n) { const x = new Date(`${d}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+      function md(d) { if (!d) return ''; const [, m, dd] = d.split('-'); return `${Number(m)}月${Number(dd)}日`; }
+      function span(days) {
+        if (days == null) return '';
+        if (days >= 56 && days % 30 <= 5) return `${Math.round(days / 30)}ヶ月`;
+        if (days >= 14) return `${Math.round(days / 7)}週間`;
+        return `${days}日`;
+      }
 
-      function applyPersonalized(items) {
-        items.forEach(a => {
-          const block = contentEl.querySelector(`[data-axis="${a.axis}"]`);
-          if (!block) return;
-          block.innerHTML = `
-            <h3 style="margin:0 0 8px;font-size:14px;">${escSc(a.label)} <span style="font-size:10px;font-weight:700;color:#c9a84c;">このお店専用</span></h3>
-            <p class="muted" style="font-size:12px;margin:0 0 6px;font-weight:700;">声かけ例</p>
-            <ul style="margin:0 0 10px;padding-left:18px;">
-              ${a.openers.map(o => `<li style="font-size:13px;margin-bottom:4px;">${escSc(o)}</li>`).join('')}
-            </ul>
-            <p class="muted" style="font-size:12px;margin:0 0 6px;font-weight:700;">カルテの着眼点</p>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${(a.notePoints || []).map(n => `<span style="font-size:12px;padding:3px 10px;border-radius:99px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);">${escSc(n)}</span>`).join('')}
+      function memoHtml(it) {
+        const chips = [];
+        chips.push(it.isFirst ? '<span class="svm-chip first">初来店</span>' : `<span class="svm-chip">${it.visitCount + 1}回目</span>`);
+        if (it.lastVisit) {
+          const late = it.overdueDays != null && it.overdueDays > 7;
+          chips.push(`<span class="svm-chip${late ? ' warn' : ''}">前回から${span(it.lastVisit.daysAgo)}${it.interval ? `（目安${span(it.interval.days)}）` : ''}</span>`);
+        }
+        if (it.birthdayThisMonth) chips.push(`<span class="svm-chip gold">誕生月 ${escSm(it.birthdayThisMonth)}</span>`);
+        it.packages.forEach(p => chips.push(`<span class="svm-chip${p.remaining != null && p.remaining <= 1 ? ' warn' : ''}">${escSm(p.name)}${p.remaining != null ? ` 残り${p.remaining}回` : ''}</span>`));
+        if (it.meScanType) chips.push(`<span class="svm-chip">${escSm(it.meScanType)}</span>`);
+
+        const lastLine = it.lastVisit
+          ? `<p class="muted" style="font-size:12px;margin-bottom:4px">前回 ${md(it.lastVisit.date)}${it.lastVisit.menu ? `／${escSm(it.lastVisit.menu)}` : ''}${it.lastVisit.staff_name ? `／担当 ${escSm(it.lastVisit.staff_name)}` : ''}</p>`
+          : '';
+        const karteHtml = it.karte.length
+          ? it.karte.map(k => `
+              <div class="svm-karte">
+                <strong>${md(k.date)}</strong>${k.menu ? ` ／ ${escSm(k.menu)}` : ''}
+                ${k.values.length ? `<div>${k.values.map(v => `${escSm(v.label)}: ${escSm(v.value)}`).join('　')}</div>` : ''}
+                ${k.note ? `<div class="muted">${escSm(k.note)}</div>` : ''}
+              </div>`).join('')
+          : `<p class="muted" style="font-size:12.5px">${it.isFirst ? '初めてのお客様です。今日の内容をカルテに残すと、次回からここに出ます。' : 'まだカルテの記録がありません。'}</p>`;
+        const caution = it.fixedNote ? `<div class="svm-caution"><strong>固定メモ</strong>　${escSm(it.fixedNote)}</div>` : '';
+        const reqNote = it.note ? `<div class="svm-caution" style="background:rgba(47,79,143,0.06)"><strong>予約時のメッセージ</strong>　${escSm(it.note)}</div>` : '';
+
+        const ai = it.ai || it.draft;
+        const aiTag = it.ai ? '<span class="svm-tag-ai">AI</span>' : (it.draft ? '<span class="svm-tag-ai" style="color:rgba(26,20,16,0.45)">下書き</span>' : '');
+        const asksHtml = ai?.asks?.length
+          ? `<ul>${ai.asks.map(a => `<li>${escSm(a)}</li>`).join('')}</ul>`
+          : '<p class="muted" style="font-size:12.5px">作成中…</p>';
+
+        const nextMeta = it.nextBooked
+          ? `次回予約済み：${md(it.nextBooked.date)} ${escSm(it.nextBooked.time || '')}`
+          : it.nextSuggestedDate
+            ? `次回の目安：${md(it.nextSuggestedDate)}頃（${escSm(it.interval.basis)}）`
+            : '次回の目安：まだ分かりません（周期を設定するか、来店が2回以上になると出ます）';
+        const canBook = !it.nextBooked;
+        const bookDate = it.nextSuggestedDate || shiftDate(it.date, 28);
+
+        return `
+          <div class="svm-card" data-svm-id="${it.reservation_id}">
+            <div class="svm-head">
+              <span class="svm-time">${escSm(it.time || '--:--')}</span>
+              <span class="svm-name">${escSm(it.customer_name)} 様</span>
+              ${it.menu ? `<span class="muted" style="font-size:12.5px">${escSm(it.menu)}</span>` : ''}
+              ${it.staff_name ? `<span class="muted" style="font-size:12.5px">担当 ${escSm(it.staff_name)}</span>` : ''}
             </div>
-          `;
+            <div class="svm-chips">${chips.join('')}</div>
+            <div class="svm-cols">
+              <div class="svm-sec"><h4>前回の記録</h4>${lastLine}${karteHtml}${caution}${reqNote}</div>
+              <div class="svm-sec"><h4>今日聞くこと${aiTag}</h4>${asksHtml}</div>
+            </div>
+            <div class="svm-next svm-sec">
+              <h4>会計時の次回の一言${aiTag}</h4>
+              ${ai?.nextLine ? `<div class="svm-line">${escSm(ai.nextLine)}</div>` : ''}
+              <p class="muted" style="font-size:12px">${nextMeta}</p>
+              ${canBook ? `
+                <div class="svm-actions">
+                  <button type="button" class="btn" data-svm-book-toggle style="font-size:12px;padding:6px 14px">次回予約を入れる</button>
+                  ${it.user_id ? '<button type="button" class="btn btn-ghost" data-svm-line style="font-size:12px;padding:6px 14px">LINEで次回の目安を送る</button>' : ''}
+                </div>
+                <div class="svm-book" data-svm-book>
+                  <label>日付<input type="date" data-svm-book-date value="${bookDate}" /></label>
+                  <label>時間<input type="time" data-svm-book-time value="${escSm(it.time || '10:00')}" step="900" /></label>
+                  <span class="muted" style="font-size:12px;align-self:center">${it.staff_name ? `担当 ${escSm(it.staff_name)}` : '指名なし'}</span>
+                  <button type="button" class="btn" data-svm-book-save style="font-size:12px;padding:6px 14px">この日時で予約する</button>
+                  <span data-svm-book-msg class="muted" style="font-size:12px"></span>
+                </div>` : ''}
+            </div>
+          </div>`;
+      }
+
+      function bindMemo(container, it, onBooked) {
+        const card = container.querySelector(`[data-svm-id="${it.reservation_id}"]`);
+        if (!card) return;
+        const book = card.querySelector('[data-svm-book]');
+        card.querySelector('[data-svm-book-toggle]')?.addEventListener('click', () => book?.classList.toggle('open'));
+        card.querySelector('[data-svm-book-save]')?.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          const msg = card.querySelector('[data-svm-book-msg]');
+          const date = card.querySelector('[data-svm-book-date]')?.value;
+          const time = card.querySelector('[data-svm-book-time]')?.value;
+          if (!date || !time) { msg.textContent = '日付と時間を入れてください'; return; }
+          btn.disabled = true; msg.textContent = '予約中…';
+          const res = await fetch('/api/provider/reservations/manual', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authSm() },
+            body: JSON.stringify({ date, time, user_name: it.customer_name, user_contact: it.user_contact, staff_id: it.staff_id, user_id: it.user_id, note: '会計時に次回予約' }),
+          });
+          btn.disabled = false;
+          if (!res.ok) { const er = await res.json().catch(() => ({})); msg.style.color = '#ef4444'; msg.textContent = er.error || '予約できませんでした'; return; }
+          showToast(`${it.customer_name}様の次回予約を${md(date)} ${time}に入れました`);
+          window.__calReloadWeek?.();
+          onBooked?.();
+        });
+        card.querySelector('[data-svm-line]')?.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          const ai = it.ai || it.draft;
+          const base = it.nextSuggestedDate
+            ? `本日はありがとうございました。次回は${md(it.nextSuggestedDate)}頃がちょうどいいタイミングです。ご都合のいい日があれば、このままお気軽にご連絡ください。`
+            : (ai?.nextLine || '本日はありがとうございました。次回のご予約はお気軽にご連絡ください。');
+          const text = window.prompt('LINEで送るメッセージ（編集できます）', base);
+          if (text === null) return;
+          if (!text.trim()) { showToast('メッセージが空です'); return; }
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/customers/${it.user_id}/nudge`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...authSm() },
+            body: JSON.stringify({ message: text.trim() }),
+          });
+          btn.disabled = false;
+          if (!res.ok) { const er = await res.json().catch(() => ({})); showToast(er.error || '送信できませんでした'); return; }
+          showToast('LINEで送りました');
         });
       }
 
-      async function loadScripts(force) {
-        statusEl.textContent = force ? '更新中…' : '読み込み中…';
+      // 予約詳細モーダルなど、別の場所に1件分を描く
+      window.__pdRenderServiceMemo = async function (container, reservationId) {
+        if (!container || !reservationId) return;
+        container.innerHTML = '<p class="muted" style="font-size:12px">接客メモを読み込み中…</p>';
         try {
-          const res = await fetch(`/api/provider/customer-scripts${force ? '?force=1' : ''}`, {
-            method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || t}` },
-          });
-          const data = await res.json();
-          if (res.ok && Array.isArray(data.items) && data.items.length) {
-            applyPersonalized(data.items);
-            statusEl.textContent = `一部の軸が貴店専用の内容に更新されています（最終更新: ${new Date(data.generatedAt).toLocaleDateString('ja-JP')}）`;
-            refreshBtn.style.display = 'inline-block';
-          } else if (data.insufficientData) {
-            statusEl.textContent = `まだ貴店専用の内容を作るには記録が足りません（現在${data.count}件・カルテ記録等が増えると自動で切り替わります）`;
-            refreshBtn.style.display = 'none';
-          } else {
-            statusEl.textContent = '';
+          const res = await fetch(`/api/provider/service-memos?reservation_id=${encodeURIComponent(reservationId)}`, { headers: authSm() });
+          if (!res.ok) { container.innerHTML = ''; return; }
+          const { items } = await res.json();
+          const it = items?.[0];
+          if (!it) { container.innerHTML = ''; return; }
+          const draw = () => { container.innerHTML = memoHtml(it); bindMemo(container, it, () => window.__pdRenderServiceMemo(container, reservationId)); };
+          draw();
+          if (!it.ai) {
+            const r2 = await fetch('/api/provider/service-memos/ai', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', ...authSm() },
+              body: JSON.stringify({ reservation_id: reservationId }),
+            });
+            if (r2.ok) {
+              const d2 = await r2.json();
+              const got = d2.items?.[0];
+              if (got?.ai && container.isConnected) { it.ai = got.ai; draw(); }
+            }
           }
-        } catch { statusEl.textContent = ''; }
+        } catch { container.innerHTML = ''; }
+      };
+
+      if (!listEl || !dateEl) return;
+      let current = jstTodaySm();
+      let loadSeq = 0;
+      let loaded = false;
+
+      async function load(date) {
+        current = date;
+        dateEl.value = date;
+        const seq = ++loadSeq;
+        statusEl.textContent = '';
+        listEl.innerHTML = '<p class="muted" style="font-size:13px">読み込み中…</p>';
+        try {
+          const res = await fetch(`/api/provider/service-memos?date=${date}`, { headers: authSm() });
+          if (seq !== loadSeq) return;
+          if (!res.ok) { listEl.innerHTML = '<p class="muted" style="font-size:13px">読み込めませんでした。少し待ってから開き直してください。</p>'; return; }
+          const { items } = await res.json();
+          if (seq !== loadSeq) return;
+          if (!items.length) { listEl.innerHTML = `<p class="muted" style="font-size:13px">${md(date)}の予約はありません。</p>`; return; }
+          const draw = () => {
+            listEl.innerHTML = items.map(memoHtml).join('');
+            items.forEach(it => bindMemo(listEl, it, () => load(current)));
+          };
+          draw();
+          statusEl.textContent = `${items.length}名`;
+          if (items.some(it => !it.ai)) {
+            statusEl.textContent = `${items.length}名・AIが準備中…`;
+            const r2 = await fetch('/api/provider/service-memos/ai', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', ...authSm() },
+              body: JSON.stringify({ date }),
+            });
+            if (seq !== loadSeq) return;
+            if (r2.ok) {
+              const d2 = await r2.json();
+              const byId = Object.fromEntries((d2.items || []).map(x => [x.reservation_id, x]));
+              items.forEach(it => { if (byId[it.reservation_id]?.ai) it.ai = byId[it.reservation_id].ai; });
+              // 次回予約フォームを開いている最中に描き直すと入力が消えるため、開いていない時だけ描き直す
+              if (!listEl.querySelector('.svm-book.open')) draw();
+            }
+            statusEl.textContent = `${items.length}名`;
+          }
+        } catch {
+          if (seq === loadSeq) listEl.innerHTML = '<p class="muted" style="font-size:13px">読み込めませんでした。通信状況を確認してください。</p>';
+        }
       }
 
-      refreshBtn?.addEventListener('click', () => loadScripts(true));
-      document.querySelectorAll('[data-tab="scripts"]').forEach(btn => btn.addEventListener('click', () => loadScripts(false), { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'scripts') loadScripts(false);
+      function pct(v) { return v == null ? '—' : `${v}%`; }
+      async function loadMetrics() {
+        if (!metricsEl) return;
+        metricsEl.innerHTML = '<p class="muted" style="font-size:13px">読み込み中…</p>';
+        try {
+          const res = await fetch(`/api/provider/service-memos/metrics?days=${metricsDaysEl?.value || 90}`, { headers: authSm() });
+          if (!res.ok) { metricsEl.innerHTML = '<p class="muted" style="font-size:13px">読み込めませんでした。</p>'; return; }
+          const m = await res.json();
+          const tiles = `
+            <div class="svm-metrics">
+              <div class="svm-metric"><span>次回予約率（会計時）</span><b>${pct(m.rebook.rate)}</b><span>来店 ${m.rebook.n}件中 ${m.rebook.hit}件</span></div>
+              <div class="svm-metric"><span>2回目来店率</span><b>${pct(m.secondVisit.rate)}</b><span>初来店 ${m.secondVisit.n}名中 ${m.secondVisit.hit}名</span></div>
+            </div>`;
+          const rows = (m.staff || []).map(s => `
+            <tr>
+              <td>${escSm(s.name)}</td>
+              <td><span class="svm-track"><span class="svm-bar" style="width:${s.rebook.rate || 0}%"></span></span>${pct(s.rebook.rate)} <span class="muted">(${s.rebook.hit}/${s.rebook.n})</span></td>
+              <td><span class="svm-track"><span class="svm-bar" style="width:${s.secondVisit.rate || 0}%"></span></span>${pct(s.secondVisit.rate)} <span class="muted">(${s.secondVisit.hit}/${s.secondVisit.n})</span></td>
+            </tr>`).join('');
+          const small = m.rebook.n < 10 ? '<p class="muted" style="font-size:12px;margin:0">まだ件数が少ないため、数字は参考程度に見てください。来店確認の記録が増えると精度が上がります。</p>' : '';
+          metricsEl.innerHTML = tiles + small + (rows ? `
+            <div style="overflow-x:auto;margin-top:6px">
+              <table class="svm-staff-table">
+                <thead><tr><th>担当スタッフ</th><th>次回予約率</th><th>2回目来店率</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>` : '<p class="muted" style="font-size:12.5px;margin:6px 0 0">まだ来店の記録がありません。予約を「来店済み」にすると集計されます。</p>');
+        } catch { metricsEl.innerHTML = '<p class="muted" style="font-size:13px">読み込めませんでした。</p>'; }
+      }
+
+      function open() {
+        if (loaded) return;
+        loaded = true;
+        load(current);
+        loadMetrics();
+      }
+      document.getElementById('svm-prev')?.addEventListener('click', () => load(shiftDate(current, -1)));
+      document.getElementById('svm-next')?.addEventListener('click', () => load(shiftDate(current, 1)));
+      document.getElementById('svm-today')?.addEventListener('click', () => load(jstTodaySm()));
+      dateEl.addEventListener('change', () => { if (dateEl.value) load(dateEl.value); });
+      metricsDaysEl?.addEventListener('change', loadMetrics);
+      document.querySelectorAll('[data-tab="scripts"]').forEach(btn => btn.addEventListener('click', () => { if (loaded) load(current); else open(); }));
+      if (new URLSearchParams(location.search).get('tab') === 'scripts') open();
     })();
 
     return () => {
@@ -11808,6 +12050,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
+                  <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">一斉メール配信</button>
                   <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
@@ -11844,7 +12087,6 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="growth" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="area-demand">エリア需要</button>
-                  <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
                   <button className="tab-btn" data-tab="referral">紹介報酬</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
@@ -14459,36 +14701,42 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* 接客の引き出し：軸別の声かけ例・カルテの着眼点（あくまで参考・貴店のスタイルを優先） */}
+        {/* 接客の引き出し（でお承認 2026-10-15）：軸別の汎用トーク集を廃止し、
+            ①来店前の接客メモ ②会計時の次回の一言 ④接客の効果（スタッフ別の次回予約率・2回目来店率）に置き換え。
+            データは /api/provider/service-memos（事実）・/ai（今日聞くこと・次回の一言）・/metrics。 */}
         <div className="tab-pane" id="tab-scripts">
-          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+          <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>接客の引き出し</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.7' }}>
+                その日に来るお客様ごとに、前回の記録・今日聞くこと・会計時に伝える次回の一言をまとめています。カルテや来店の記録が増えるほど、内容が具体的になります。
+              </p>
+            </div>
+            <div className="svm-actions">
+              <button type="button" className="btn btn-ghost" id="svm-prev" style={{ fontSize: '12px', padding: '6px 12px' }}>前の日</button>
+              <input type="date" id="svm-date" style={{ padding: '6px 8px', fontSize: '13px', border: '1px solid rgba(26,20,16,0.18)', borderRadius: '6px' }} />
+              <button type="button" className="btn btn-ghost" id="svm-today" style={{ fontSize: '12px', padding: '6px 12px' }}>今日</button>
+              <button type="button" className="btn btn-ghost" id="svm-next" style={{ fontSize: '12px', padding: '6px 12px' }}>次の日</button>
+              <span id="svm-status" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+            <div id="svm-list" style={{ display: 'grid', gap: '12px' }}><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
               <div>
-                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>接客の引き出し</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                  困ったときの参考にしてください。貴店のスタイルを優先してかまいません。カルテ・体験談等の記録が増えると、貴店専用の内容に自動で切り替わります。
+                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>接客の効果</h2>
+                <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: '1.7' }}>
+                  次回予約率：来店した日〜翌日のうちに次の予約が入った割合。2回目来店率：初来店が30〜180日前のお客様のうち、2回目に来店した割合。どちらも担当スタッフ別に出します。
                 </p>
               </div>
-              <button type="button" id="scripts-refresh-btn" className="btn btn-ghost" style={{ fontSize: '12px', display: 'none' }}>更新する</button>
+              <select id="svm-metrics-days" defaultValue="90" style={{ padding: '6px 8px', fontSize: '13px', border: '1px solid rgba(26,20,16,0.18)', borderRadius: '6px' }}>
+                <option value="30">直近30日</option>
+                <option value="90">直近90日</option>
+                <option value="180">直近180日</option>
+              </select>
             </div>
-            <p id="scripts-status" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
-            <div id="scripts-content">
-              {CUSTOMER_SCRIPT_AXES.map(a => (
-                <div key={a.axis} data-axis={a.axis} style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
-                  <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>{a.label}</h3>
-                  <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>声かけ例</p>
-                  <ul style={{ margin: '0 0 10px', paddingLeft: '18px' }}>
-                    {a.openers.map((o, i) => <li key={i} style={{ fontSize: '13px', marginBottom: '4px' }}>{o}</li>)}
-                  </ul>
-                  <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>カルテの着眼点</p>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {a.notePoints.map((n, i) => (
-                      <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '99px', background: 'rgba(26,20,16,0.06)', border: '1px solid rgba(26,20,16,0.12)' }}>{n}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div id="svm-metrics" style={{ display: 'grid', gap: '10px' }}><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
           </div>
         </div>
 
