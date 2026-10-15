@@ -61,6 +61,12 @@ export async function POST(request) {
     return Response.json({ url: accountLink.url });
   } catch (err) {
     console.error('[connect/onboard]', err);
-    return Response.json({ error: err.message }, { status: 500 });
+    // Stripeの英語エラーをそのまま店舗に見せない（でお報告 2026-10-15）。
+    // 「signed up for Connect」はFineme側（プラットフォーム）のStripeでConnectが未有効のときのエラーで、
+    // 店舗側では解決できないため、運営側の準備中である旨を伝える。
+    if (/signed up for Connect/i.test(err?.message || '')) {
+      return Response.json({ error: 'カード決済の受け取り設定は、現在Fineme側で準備中です。準備ができ次第ご案内しますので、少しお待ちください。' }, { status: 503 });
+    }
+    return Response.json({ error: 'カード決済の受け取り設定を開始できませんでした。時間をおいてもう一度お試しください。続く場合は運営へお問い合わせください。' }, { status: 500 });
   }
 }

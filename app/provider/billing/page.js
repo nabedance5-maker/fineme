@@ -186,7 +186,7 @@ export default function BillingPage() {
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
-      else alert('エラー: ' + (data.error || '不明'));
+      else alert(data.error || '設定を開始できませんでした。もう一度お試しください');
     } catch (e) {
       alert('通信エラー: ' + e.message);
     }

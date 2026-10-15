@@ -9158,7 +9158,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/stripe/connect/onboard', { method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         const d = await res.json().catch(() => ({}));
         if (d.url) { location.href = d.url; return; }
-        showToast('設定を開始できませんでした: ' + (d.error || '不明なエラー'));
+        showToast(d.error || '設定を開始できませんでした。もう一度お試しください');
       } catch (err) {
         showToast('通信エラーが発生しました。もう一度お試しください');
       }
