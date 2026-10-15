@@ -10,6 +10,7 @@ import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
 import { rangeLabel } from '@/lib/time-span';
 import PageDesignSettings from './PageDesignSettings';
+import Onboarding from './Onboarding';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
@@ -11990,6 +11991,7 @@ export default function ProviderDashboardPage() {
   return (
     <main className="section pd-page-root">
       <style>{DASHBOARD_CSS}</style>
+      <Onboarding />
 
       {/* 初回読み込み中は画面が何も無いページのように見えるというでお報告（2026-09-28）
           への対応。データ取得が終わり次第（またはタイムアウト時）JSでdisplay:noneにする。 */}
@@ -14889,6 +14891,10 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 使いたい機能だけをオンにできます。オフの機能は左のメニューからも非表示になります。
               </p>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: '12px', padding: '5px 12px', marginTop: '10px' }}
+                onClick={() => window.dispatchEvent(new Event('pd-open-onboarding'))}>
+                はじめの質問に答え直して、おすすめに設定し直す
+              </button>
             </div>
             <div id="features-list" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
             <div id="deposit-settings-box" style={{ display: 'none', padding: '14px 16px', background: 'rgba(26,20,16,0.03)', border: '1px solid rgba(26,20,16,0.12)', borderRadius: '10px' }}>
