@@ -16,6 +16,7 @@ import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
 import { withOperator } from './operator';
 import './fx.css';
+import { PREFECTURES as CP_PREFECTURES } from '@/lib/customer-profile';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -312,6 +313,19 @@ const DASHBOARD_CSS = `
       .att-qr img { width: 168px; height: 168px; border-radius: 8px; background: #fff; }
       .att-code { font-size: 34px; font-weight: 800; letter-spacing: .22em; font-variant-numeric: tabular-nums; }
       @media (max-width: 520px) { .att-qr { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+      /* 顧客の基本情報（2026-10-16） */
+      .cp-card { border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; padding: 12px 14px; background: #fff; color: #1a1410; }
+      .cp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 13.5px; }
+      .cp-row { display: flex; gap: 12px; padding: 6px 0; border-top: 1px solid rgba(26,20,16,0.06); font-size: 13px; line-height: 1.55; }
+      .cp-row > span { flex: 0 0 104px; color: rgba(26,20,16,0.55); font-size: 12px; }
+      .cp-row > b { font-weight: 600; flex: 1; word-break: break-all; }
+      .cp-src { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; background: rgba(47,79,143,0.1); color: #2f4f8f; vertical-align: middle; }
+      .cp-pay { font-size: 12.5px; padding: 2px 0; }
+      .cp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .cp-f { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; font-weight: 700; color: rgba(26,20,16,0.7); }
+      .cp-f input, .cp-f select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13.5px; font-weight: 400; color: #1a1410; background: #fff; min-width: 0; }
+      .cp-wide { grid-column: 1 / -1; }
+      @media (max-width: 480px) { .cp-row > span { flex-basis: 84px; } }
 `;
 
 export default function ProviderDashboardPage() {
@@ -6544,6 +6558,82 @@ export default function ProviderDashboardPage() {
         if (av) av.textContent = (name || '客').trim().charAt(0) || '客';
         if (sb) sb.textContent = sub || '';
       }
+      // ── 顧客の基本情報（でお要望 2026-10-16：hacomonoのように住所・電話番号なども登録して見られるように） ──
+      // 保存していない項目は、オンライン入会の申込内容・Fineme会員の登録情報で補って表示する（出どころ付き）。
+      const CP_GENDER = { female: '女性', male: '男性', other: 'その他' };
+      const CP_BRAND = { visa: 'VISA', mastercard: 'Mastercard', amex: 'American Express', jcb: 'JCB', diners: 'Diners', discover: 'Discover', unionpay: 'UnionPay' };
+      let cpSeq = 0;
+      async function loadCustProfile(target) {
+        const el = document.getElementById('cust-modal-profile');
+        if (!el) return;
+        const seq = ++cpSeq;
+        el.innerHTML = '<p class="muted" style="font-size:12px;margin:0">基本情報を読み込み中…</p>';
+        const qs = target.user_id ? `user_id=${encodeURIComponent(target.user_id)}` : `manual_id=${encodeURIComponent(target.manual_id)}`;
+        const res = await fetch(`/api/provider/customer-profile?${qs}`, { headers: authHeaders() });
+        if (seq !== cpSeq) return;
+        if (!res.ok) { el.innerHTML = ''; return; }
+        const d = await res.json();
+        renderCustProfile(el, target, d);
+      }
+      function renderCustProfile(el, target, d) {
+        const p = d.profile; const src = d.sources || {};
+        const tag = k => (src[k] ? `<span class="cp-src">${esc(src[k])}</span>` : '');
+        const name = [p.last_name, p.first_name].filter(Boolean).join(' ');
+        const kana = [p.last_name_kana, p.first_name_kana].filter(Boolean).join(' ');
+        const addr = [p.postal_code ? `〒${p.postal_code}` : '', [p.prefecture, p.city, p.address1].filter(Boolean).join(''), p.address2 || ''].filter(Boolean).join(' ');
+        const emergency = [p.emergency_name, p.emergency_relation ? `（${p.emergency_relation}）` : '', p.emergency_phone].filter(Boolean).join(' ');
+        const row = (label, value, keys = []) => `<div class="cp-row"><span>${label}</span><b>${value ? `${value}${keys.map(tag).find(Boolean) || ''}` : '<span class="muted" style="font-weight:400">未登録</span>'}</b></div>`;
+        const cards = (d.payments || []).map(pm => `<div class="cp-pay"><b>${esc(pm.name)}</b>${pm.monthly_price != null ? `・月額¥${Number(pm.monthly_price).toLocaleString()}` : ''}・${esc(pm.status)}${pm.since ? `<span class="muted">（${esc(pm.since)}〜）</span>` : ''}${pm.card ? `<div>${esc(CP_BRAND[pm.card.brand] || pm.card.brand)} •••• ${esc(pm.card.last4)}　有効期限 ${String(pm.card.exp_month).padStart(2, '0')}/${String(pm.card.exp_year).slice(-2)}</div>` : ''}</div>`).join('');
+        el.innerHTML = `<div class="cp-card">
+            <div class="cp-head"><b>基本情報</b><button type="button" class="btn btn-ghost" data-cp-edit style="font-size:11.5px;padding:3px 10px">編集</button></div>
+            ${row('氏名', name ? `${esc(name)}${kana ? `<span class="muted" style="font-weight:400">（${esc(kana)}）</span>` : ''}` : '', ['last_name'])}
+            ${row('性別・年齢', [p.gender ? CP_GENDER[p.gender] : '', d.age != null ? `${d.age}歳` : '', p.birthday ? `（${p.birthday.replace(/-/g, '/')}）` : ''].filter(Boolean).join('・').replace('・（', '（'), ['birthday', 'gender'])}
+            ${row('電話番号', p.phone ? `<a href="tel:${esc(p.phone)}" style="color:inherit">${esc(p.phone)}</a>` : '', ['phone'])}
+            ${row('メール', p.email ? esc(p.email) : '', ['email'])}
+            ${row('住所', addr ? esc(addr) : '', ['postal_code', 'prefecture', 'address1'])}
+            ${row('緊急連絡先', emergency ? esc(emergency) : '', ['emergency_name', 'emergency_phone'])}
+            ${row('お知らせの受け取り', p.mail_opt_in ? '受け取る' : '受け取らない')}
+            ${cards ? `<div class="cp-row" style="align-items:flex-start"><span>お支払い方法</span><div style="flex:1">${cards}</div></div>` : ''}
+            ${d.updated_by ? `<p class="muted" style="font-size:11px;margin:6px 0 0">最終更新：${esc(d.updated_by)}${d.updated_at ? `・${esc(new Date(d.updated_at).toLocaleDateString('ja-JP'))}` : ''}</p>` : ''}
+          </div>`;
+        el.querySelector('[data-cp-edit]').addEventListener('click', () => editCustProfile(el, target, d));
+      }
+      function editCustProfile(el, target, d) {
+        const p = d.profile;
+        const v = k => esc(p[k] ?? '');
+        const input = (k, label, attrs = '') => `<label class="cp-f"><span>${label}</span><input data-cp="${k}" value="${v(k)}" ${attrs} /></label>`;
+        el.innerHTML = `<div class="cp-card">
+          <div class="cp-head"><b>基本情報を編集</b></div>
+          <div class="cp-grid">
+            ${input('last_name', '姓')}${input('first_name', '名')}
+            ${input('last_name_kana', 'セイ（カナ）')}${input('first_name_kana', 'メイ（カナ）')}
+            ${input('phone', '電話番号', 'inputmode="tel"')}${input('email', 'メール', 'type="email"')}
+            <label class="cp-f"><span>性別</span><select data-cp="gender"><option value="">未選択</option>${Object.entries(CP_GENDER).map(([k, l]) => `<option value="${k}"${p.gender === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+            ${input('birthday', '生年月日', 'type="date"')}
+            ${input('postal_code', '郵便番号', 'inputmode="numeric" placeholder="1580083"')}
+            <label class="cp-f"><span>都道府県</span><select data-cp="prefecture"><option value="">未選択</option>${CP_PREFECTURES.map(x => `<option${p.prefecture === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+            ${input('city', '市区町村')}${input('address1', '番地')}
+            <label class="cp-f cp-wide"><span>マンション・ビル等</span><input data-cp="address2" value="${v('address2')}" /></label>
+            ${input('emergency_name', '緊急連絡先（名前）')}${input('emergency_relation', '続柄', 'placeholder="例：夫"')}
+            ${input('emergency_phone', '緊急連絡先（電話）', 'inputmode="tel"')}
+            <label class="cp-f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" data-cp="mail_opt_in" ${p.mail_opt_in ? 'checked' : ''} style="width:16px;height:16px" /><span style="margin:0">お知らせを受け取る</span></label>
+          </div>
+          <p class="muted" style="font-size:11px;margin:6px 0 0;line-height:1.6">「オンライン入会」「Fineme会員情報」と付いた項目は、お客様が入力した内容を表示しています。保存すると、このお店の記録として残ります。</p>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button type="button" class="btn btn-ghost" data-cp-cancel style="font-size:12px">やめる</button><button type="button" class="btn" data-cp-save style="font-size:12px">保存する</button></div>
+        </div>`;
+        el.querySelector('[data-cp-cancel]').addEventListener('click', () => renderCustProfile(el, target, d));
+        el.querySelector('[data-cp-save]').addEventListener('click', async e => {
+          const body = { ...target };
+          el.querySelectorAll('[data-cp]').forEach(i => { body[i.dataset.cp] = i.type === 'checkbox' ? i.checked : i.value; });
+          e.currentTarget.disabled = true;
+          const res = await fetch('/api/provider/customer-profile', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+          const r = await res.json().catch(() => ({}));
+          if (!res.ok) { e.currentTarget.disabled = false; showToast(r.error || '保存できませんでした'); return; }
+          showToast('基本情報を保存しました');
+          loadCustProfile(target);
+        });
+      }
+
       function openCustomerModal(uidOrId, type, fallbackName) {
         if (type === 'manual') return openManualModal(uidOrId);
         return openMemberModal(uidOrId, fallbackName);
@@ -6621,6 +6711,7 @@ export default function ProviderDashboardPage() {
         custModalNoteSaveBtn.disabled = true;
 
         custModalEl.style.display = 'flex';
+        loadCustProfile({ user_id: uid });
         loadLatestKarte(uid);
 
         const noteRes = await fetch(`/api/provider/customers/${uid}/note`, { headers: authHeaders() });
@@ -6664,6 +6755,7 @@ export default function ProviderDashboardPage() {
         if (custModalManualPostureAddForm) { custModalManualPostureAddForm.style.display = 'none'; custModalManualPostureAddForm.innerHTML = ''; custModalManualPostureAddForm.dataset.built = ''; }
         if (custModalManualPostureHistoryEl) { custModalManualPostureHistoryEl.style.display = 'none'; custModalManualPostureHistoryEl.innerHTML = ''; custModalManualPostureHistoryEl.dataset.built = ''; }
         custModalEl.style.display = 'flex';
+        loadCustProfile({ manual_id: id });
       }
 
       // 会員の紐付け候補。全会員を並べず、名前または会員番号を入力した分だけ絞って出す。
@@ -14421,6 +14513,8 @@ export default function ProviderDashboardPage() {
             </div>
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
             <div id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 12px' }}></div>
+            {/* 顧客の基本情報（住所・電話・緊急連絡先・お支払い方法。でお要望 2026-10-16） */}
+            <div id="cust-modal-profile" style={{ margin: '0 0 12px' }}></div>
 
             {/* 会員（New Me Log紐づき）用セクション */}
             <div id="cust-modal-member-section">

@@ -22,6 +22,7 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
 import { planLockedResponse } from '@/lib/plan-features';
+import { profileFromMembership, fillEmpty } from '@/lib/customer-profile';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -130,6 +131,20 @@ async function __POST(request, { params }) {
         membership_id: m.id,
       });
     }
+
+    // 申込で入力してもらった内容を、顧客の基本情報に取り込む（空欄の項目だけ。店舗が入れた値は上書きしない）
+    // でお要望（2026-10-16）：入会した時に入力してもらった情報を顧客情報内に入れておく。
+    try {
+      const fromApp = profileFromMembership(m);
+      const { data: cur } = await supabase.from('provider_customer_profiles').select('*').eq('provider_id', provider.id).eq('user_id', m.user_id).maybeSingle();
+      if (cur) {
+        const merged = fillEmpty(cur, fromApp);
+        const patch = Object.fromEntries(Object.keys(fromApp).filter(k => merged[k] !== cur[k]).map(k => [k, merged[k]]));
+        if (Object.keys(patch).length) await supabase.from('provider_customer_profiles').update({ ...patch, updated_at: new Date().toISOString(), updated_by: 'オンライン入会' }).eq('id', cur.id);
+      } else {
+        await supabase.from('provider_customer_profiles').insert({ provider_id: provider.id, user_id: m.user_id, ...fromApp, updated_by: 'オンライン入会' });
+      }
+    } catch (e) { console.error('[memberships approve] profile', e); }
 
     return Response.json(updated);
   } catch (e) {
