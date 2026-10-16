@@ -9170,11 +9170,14 @@ export default function ProviderDashboardPage() {
       const text = document.getElementById('connect-card-text');
       const btn = document.getElementById('connect-card-btn');
       if (!badge || !text || !btn) return;
+      const dashBtn = document.getElementById('connect-dashboard-btn');
       try {
         const res = await fetch('/api/stripe/connect/status', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         const d = await res.json().catch(() => ({}));
         if (!res.ok) { text.textContent = '設定状況を取得できませんでした。時間をおいてもう一度お試しください。'; return; }
         const set = (label, bg, fg) => { badge.textContent = label; badge.style.background = bg; badge.style.color = fg; };
+        // Stripeでの登録を出し終えていれば、残高・入金予定・口座をStripeの画面で確認・変更できる
+        if (dashBtn) dashBtn.style.display = d.details_submitted ? '' : 'none';
         if (d.connected) {
           set('設定済み', '#dcfce7', '#166534');
           text.textContent = 'お客様のカード決済を受け取れる状態です。売上は決済手数料4.5%を差し引いて、登録した口座へ自動で振り込まれます。';
@@ -9192,6 +9195,18 @@ export default function ProviderDashboardPage() {
         }
       } catch { text.textContent = '設定状況を取得できませんでした。'; }
     }
+    document.getElementById('connect-dashboard-btn')?.addEventListener('click', async (e) => {
+      const b = e.currentTarget;
+      const original = b.textContent;
+      b.disabled = true; b.textContent = 'Stripeの画面を開いています…';
+      try {
+        const res = await fetch('/api/stripe/connect/dashboard', { method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        const d = await res.json().catch(() => ({}));
+        if (d.url) { location.href = d.url; return; }
+        else showToast(d.error || 'Stripeの画面を開けませんでした。もう一度お試しください');
+      } catch { showToast('通信エラーが発生しました。もう一度お試しください'); }
+      b.disabled = false; b.textContent = original;
+    });
     document.querySelectorAll('[data-tab="billing"]').forEach(btn => btn.addEventListener('click', loadConnectCard));
     {
       const q = new URLSearchParams(location.search);
@@ -14829,6 +14844,7 @@ export default function ProviderDashboardPage() {
             </div>
             <p id="connect-card-text" className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.8 }}>設定状況を確認しています…</p>
             <button type="button" className="btn" id="connect-card-btn" data-stripe-connect-start style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>カード決済の受け取りを設定する（Stripe）</button>
+            <button type="button" className="btn btn-ghost" id="connect-dashboard-btn" style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>入金・口座を確認する（Stripe）</button>
           </div>
           <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '14px' }}>
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px' }}>Finemeとのご契約</p>
