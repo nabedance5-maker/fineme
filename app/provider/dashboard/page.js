@@ -369,6 +369,19 @@ const DASHBOARD_CSS = `
       .lb-flag { position: absolute; top: 0; right: 0; background: #b42318; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 0 10px 0 8px; }
       #lb-tools { margin-top: 16px; }
       .lb-tools-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+      /* シフト：同じ日を2段（上＝シフト、下＝希望）で表示（2026-10-16） */
+      #shift-cal-grid [data-cal-date] .sc-top, #shift-cal-grid [data-cal-date] .sc-bottom { display: flex; flex-direction: column; gap: 1px; font-size: 10.5px; white-space: nowrap; }
+      #shift-cal-grid [data-cal-date] .sc-bottom { border-top: 1px dashed #e5e7eb; padding-top: 2px; margin-top: auto; min-height: 14px; }
+      .shift-tbl td.st-cell { padding: 0; vertical-align: top; }
+      .shift-tbl .st-top { padding: 5px 6px 3px; min-height: 22px; display: flex; flex-direction: column; gap: 1px; }
+      .shift-tbl .st-bottom { padding: 3px 6px 5px; border-top: 1px dashed #e5e7eb; font-size: 11px; background: #fbfcff; min-height: 18px; display: flex; flex-direction: column; gap: 1px; align-items: center; }
+      .shift-tbl .st-fix { font-weight: 800; color: #1a1410; }
+      .shift-tbl .st-draft { font-weight: 700; color: #7c3aed; }
+      .shift-tbl .st-lv { font-weight: 800; color: #047857; }
+      .shift-tbl .st-lv-sub { font-size: 10px; color: #047857; }
+      .shift-tbl .st-req { color: #2563eb; }
+      .shift-tbl .st-req-off { color: #6b7280; font-weight: 700; }
+      .shift-tbl .st-none { color: #d1d5db; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -3518,8 +3531,8 @@ export default function ProviderDashboardPage() {
           : '日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。';
         const legend = document.getElementById('shift-cal-legend');
         if (legend) legend.innerHTML = shiftView === 'table'
-          ? '<b style="color:#1a1410">黒</b>＝確定シフト　<span style="color:#2563eb;font-weight:700">青</span>＝出勤希望（確定前）　<span style="background:#f1f2f4;padding:0 4px">休</span>＝休み希望　<span style="background:#ecfdf5;color:#047857;padding:0 4px;font-weight:700">有給</span>＝承認済みの有給'
-          : '<span style="color:#059669;font-weight:700">■</span> 確定シフトの人数　<span style="color:#2563eb;font-weight:700">■</span> 出勤希望の人数（確定前）';
+          ? '各マスの<b>上段＝シフト</b>（<b style="color:#1a1410">黒</b>＝確定・<b style="color:#7c3aed">紫</b>＝作成中）、<b>下段＝スタッフの希望</b>（<span style="color:#2563eb;font-weight:700">青</span>＝出勤希望・休み希望）。<span style="color:#047857;font-weight:700">有給</span>＝承認済みの有給、＊＝コメントあり'
+          : '各日の<b>上段＝シフト</b>（<span style="color:#059669;font-weight:700">確定</span>・<span style="color:#7c3aed;font-weight:700">作成中</span>の人数）、<b>下段＝スタッフの希望</b>（<span style="color:#2563eb;font-weight:700">出勤希望</span>・休み希望の人数）';
       }
       document.querySelectorAll('[data-shift-view]').forEach(b => b.addEventListener('click', async () => {
         shiftView = b.dataset.shiftView;
@@ -3554,19 +3567,20 @@ export default function ProviderDashboardPage() {
           const es = (ent[k] || []).slice().sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
           const rq = req[k];
           const note = rq?.note ? ` title="${esc(rq.note)}"` : '';
-          let cls = 'st-cell', body = '';
-          if (lv && lv.unit === 'full') { cls += ' st-leave'; body = '有給'; }
-          else if (es.length) { cls += ' st-ok'; body = es.map(e => short(e.start_time, e.end_time)).join('<br>') + (lv ? `<div style="font-size:10px;color:#047857">${lv.unit === 'am' ? '午前半休' : '午後半休'}</div>` : ''); }
-          else if (rq?.type === 'off') { cls += ' st-off'; body = '休'; }
-          else if (rq?.type === 'work') { cls += ' st-wish'; body = short(rq.start_time, rq.end_time); }
-          else if (isShiftClosed(d)) { cls += ' st-closed'; body = ''; }
-          else body = '<span style="color:#d1d5db">—</span>';
-          if (rq?.note) body += '<span style="color:#b45309;font-weight:800">＊</span>';
+          // 上段：シフト（確定は黒・作成中は紫）／下段：スタッフの希望（でお要望 2026-10-16：同じ日に2段で）
+          let cls = 'st-cell', top = '', bottom = '';
+          if (lv && lv.unit === 'full') top = '<span class="st-lv">有給</span>';
+          else if (es.length) top = es.map(e => `<span class="${e.period_status === 'confirmed' ? 'st-fix' : 'st-draft'}">${short(e.start_time, e.end_time)}</span>`).join('') + (lv ? `<span class="st-lv-sub">${lv.unit === 'am' ? '午前半休' : '午後半休'}</span>` : '');
+          if (rq?.type === 'off') bottom = '<span class="st-req-off">休み希望</span>';
+          else if (rq?.type === 'work') bottom = `<span class="st-req">${short(rq.start_time, rq.end_time)}</span>`;
+          if (rq?.note) bottom += '<span style="color:#b45309;font-weight:800">＊</span>';
+          if (!top && !bottom && isShiftClosed(d)) cls += ' st-closed';
+          const body = `<div class="st-top">${top || '<span class="st-none">—</span>'}</div><div class="st-bottom">${bottom || '&nbsp;'}</div>`;
           return `<td class="${cls}${d === todayStr ? ' st-today' : ''}" data-cal-date="${d}"${note}>${body}</td>`;
         }).join('')}</tr>`).join('');
         grid.innerHTML = `<div class="shift-tbl-wrap"><table class="shift-tbl">
             <thead><tr><th class="st-name">スタッフ</th>${head}</tr></thead>
-            <tbody><tr class="st-sub"><th class="st-name">出勤（確定）</th>${countRow}</tr>${rows}</tbody>
+            <tbody><tr class="st-sub"><th class="st-name">出勤予定</th>${countRow}</tr>${rows}</tbody>
           </table></div>`;
         grid.querySelectorAll('[data-cal-date]').forEach(c => c.addEventListener('click', () => showDayModal(c.dataset.calDate)));
         // 今日の列が見えるように横スクロールしておく
@@ -3592,14 +3606,16 @@ export default function ProviderDashboardPage() {
         for (let day = 1; day <= last; day++) {
           const date = `${calYear}-${pad2(calMonth + 1)}-${pad2(day)}`;
           const wd = (firstWd + day - 1) % 7;
-          const confirmed = entryStaff[date]?.size || 0;
-          const wishing = [...(reqStaff[date] || [])].filter(id => !entryStaff[date]?.has(id)).length;
+          const confirmed = new Set(calEntries.filter(e => e.date === date && e.period_status === 'confirmed').map(e => e.staff_id)).size;
+          const drafting = new Set(calEntries.filter(e => e.date === date && e.period_status !== 'confirmed').map(e => e.staff_id)).size;
+          const wishing = reqStaff[date]?.size || 0;
+          const offs = calRequests.filter(r => r.date === date && r.type === 'off').length;
           const isToday = date === todayStr;
           const closed = isShiftClosed(date);
           cells += `<div data-cal-date="${date}" style="min-height:58px;padding:4px 5px;border:1px solid ${isToday ? '#c9a84c' : '#e5e7eb'};border-radius:8px;cursor:pointer;background:${closed ? '#e5e7eb' : isToday ? 'rgba(201,168,76,0.08)' : '#fff'};display:flex;flex-direction:column;gap:2px;overflow:hidden">
             <span style="font-size:12px;font-weight:700;color:${closed ? '#9ca3af' : wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151'}">${day}${closed ? '<span style="font-size:10px;font-weight:400;margin-left:4px">定休日</span>' : ''}</span>
-            ${confirmed ? `<span style="font-size:10.5px;font-weight:700;color:#059669;white-space:nowrap">確定${confirmed}人</span>` : ''}
-            ${wishing ? `<span style="font-size:10.5px;font-weight:700;color:#2563eb;white-space:nowrap">希望${wishing}人</span>` : ''}
+            <span class="sc-top">${confirmed ? `<b style="color:#059669">確定${confirmed}人</b>` : ''}${drafting ? `<b style="color:#7c3aed">作成中${drafting}人</b>` : ''}</span>
+            <span class="sc-bottom">${wishing ? `<b style="color:#2563eb">希望${wishing}人</b>` : ''}${offs ? `<b style="color:#6b7280">休${offs}人</b>` : ''}</span>
           </div>`;
         }
         grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">${head}${cells}</div>`;
@@ -14019,10 +14035,14 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
             </div>
             <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>
-              流れ：①「自動作成」を押す（提出された希望とスタッフごとの労働条件・法定の上限をもとに割り振ります）→ ②すぐ下の「作成したシフト」を確認・調整 → ③問題がなければ「この期間を確定する」で、作成したシフトを確定します。条件を超える希望は自動では入れず、理由を表示します。
+              流れ：①「自動作成」を押す（提出された希望とスタッフごとの労働条件・法定の上限をもとに割り振ります）→ ②シフトカレンダーの紫（作成中）を確認・調整 → ③問題がなければ「この期間を確定する」で確定します。条件を超える希望は自動では入れず、理由を表示します。
             </p>
             <div id="shift-generate-warnings"></div>
 
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, padding: '10px 12px', background: 'rgba(37,99,235,.05)', borderRadius: '10px' }}>作成したシフトと提出された希望は、上の<b>シフトカレンダー</b>に同じ日の2段（上＝シフト・下＝希望）でまとめて表示しています。マスをタップするとその日を直せます。</p>
+            <details>
+            <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>この期間の一覧（作成したシフト・提出された希望）を開く</summary>
+            <div className="stack" style={{ gap: '12px', marginTop: '12px' }}>
             <div>
               <h4 id="shift-table-heading" style={{ margin: '8px 0 4px', fontSize: '14px' }}>作成したシフト（確定前）</h4>
               <p className="muted" style={{ fontSize: '12px', margin: 0 }}>「自動作成」の結果がここに出ます。「この期間を確定する」を押すと、このシフトが確定します。</p>
@@ -14035,18 +14055,19 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-entry-add-btn">＋手動で追加</button>
             </div>
             <div id="shift-entries-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            <div>
+              <h4 style={{ margin: '16px 0 4px', fontSize: '13px' }}>提出された希望（参考）</h4>
+              <p className="muted" style={{ fontSize: '12px', margin: 0 }}>スタッフが出した希望です。確定するのは上の「作成したシフト」です。</p>
+            </div>
+            <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>
+            </div>
+            </details>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', padding: '12px 14px', border: '1px solid rgba(201,168,76,.45)', borderRadius: '10px', background: 'rgba(201,168,76,.06)' }}>
               <span style={{ flex: 1, minWidth: '200px', fontSize: '12.5px', lineHeight: 1.6 }}>シフト表と労働条件チェックを確認したら、確定してください。</span>
               <button type="button" className="btn" id="shift-confirm-btn-bottom">この期間を確定する</button>
             </div>
             <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>労働条件チェック</h4>
             <div id="shift-labor-panel"></div>
-
-            <div>
-              <h4 style={{ margin: '16px 0 4px', fontSize: '13px' }}>提出された希望（参考）</h4>
-              <p className="muted" style={{ fontSize: '12px', margin: 0 }}>スタッフが出した希望です。確定するのは上の「作成したシフト」です。</p>
-            </div>
-            <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>
 
            </div>
           </div>

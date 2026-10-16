@@ -35,12 +35,14 @@ export async function GET(request) {
   if (!periodId && from && to) {
     const { data: periods } = await supabase
       .from('provider_shift_periods')
-      .select('id')
+      .select('id, status')
       .eq('provider_id', provider.id)
       .lte('period_start', to)
       .gte('period_end', from);
     const ids = (periods || []).map(p => p.id);
     if (!ids.length) return Response.json([]);
+    // シフトカレンダーで「確定」と「作成中」を分けて表示するため、期間の状態を付けて返す
+    const statusOf = Object.fromEntries((periods || []).map(p => [p.id, p.status]));
     const { data, error } = await supabase
       .from('provider_shift_entries')
       .select('*')
@@ -49,7 +51,7 @@ export async function GET(request) {
       .lte('date', to)
       .order('date', { ascending: true });
     if (error) return Response.json({ error: error.message }, { status: 500 });
-    return Response.json(data || []);
+    return Response.json((data || []).map(e => ({ ...e, period_status: statusOf[e.period_id] || null })));
   }
 
   if (!periodId) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
