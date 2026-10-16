@@ -1,7 +1,7 @@
 'use client';
 
-// 店頭タブレットの打刻画面（でお要望2026-10-14：不正防止のため、打刻は店頭の端末1台だけ）。
-// 管理画面「勤怠」タブで発行した6桁の登録コードを入れた端末だけが打刻できる。スタッフは
+// お店の打刻用端末の画面（でお要望2026-10-14：不正防止のため、打刻はお店で登録した端末だけ）。
+// 管理画面「勤怠」タブで発行した6桁の登録コードを入れた（またはQRで ?code= 付きで開いた）端末だけが打刻できる。スタッフは
 // 名前を選んで自分の暗証番号を入れ、今の状態で押せる打刻（出勤・休憩開始・休憩終了・退勤）を選ぶ。
 // 時刻はサーバーの時刻で記録する。
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,7 +27,18 @@ export default function AttendanceKiosk() {
   const [done, setDone] = useState(null);
   const resetTimer = useRef(null);
 
-  useEffect(() => { setToken(readToken()); }, []);
+  useEffect(() => {
+    const existing = readToken();
+    setToken(existing);
+    // 管理画面のQRコード・「この端末を打刻用にする」から ?code= 付きで開かれたら、そのまま登録する
+    // （でお指摘 2026-10-16：コードを手で打つ登録が分かりづらい）。コードはURLから消しておく。
+    const qCode = new URLSearchParams(location.search).get('code');
+    if (qCode) {
+      try { history.replaceState(null, '', location.pathname); } catch {}
+      if (!existing && /^\d{6}$/.test(qCode)) pair(qCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const load = useCallback(async () => {
@@ -59,9 +70,10 @@ export default function AttendanceKiosk() {
     setPicked(null); setPin(''); setVerified(null); setDone(null); setError('');
   }
 
-  async function pair() {
+  async function pair(codeArg) {
+    const c = typeof codeArg === 'string' ? codeArg : code;
     setBusy(true); setError('');
-    const res = await fetch('/api/attendance-kiosk/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+    const res = await fetch('/api/attendance-kiosk/pair', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: c }) });
     const d = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) { setError(d.error || '登録できませんでした'); return; }
@@ -116,9 +128,9 @@ export default function AttendanceKiosk() {
       {token === null ? null : !token ? (
         <section className="ak-card ak-pair">
           <h1>この端末を打刻用に登録します</h1>
-          <p>管理画面の「勤怠」タブで「打刻用の端末を追加」を押すと、6桁の登録コードが表示されます（10分間有効）。そのコードを入力してください。</p>
+          <p>管理画面の「勤怠」タブ →「打刻用の端末を登録する」で表示されるQRコードを、この端末のカメラで読み取ると自動で登録されます。カメラが使えない場合は、同じ画面に出る6桁の番号を入力してください（10分間有効）。</p>
           <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" aria-label="登録コード" />
-          <button type="button" className="ak-primary" disabled={busy || code.length !== 6} onClick={pair}>{busy ? '登録中…' : 'この端末を登録する'}</button>
+          <button type="button" className="ak-primary" disabled={busy || code.length !== 6} onClick={() => pair()}>{busy ? '登録中…' : 'この端末を登録する'}</button>
           {error && <p className="ak-error" role="alert">{error}</p>}
         </section>
       ) : !picked ? (

@@ -199,7 +199,7 @@ const DASHBOARD_CSS = `
       .cal-agenda-row { cursor: pointer; }
       .cal-agenda-row:hover { background: rgba(26,20,16,0.03); }
       .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
-      .cal-modal-card { background: #fff; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
+      .cal-modal-card { background: #fff; color: #1a1410; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
       /* 顧客一覧のコンパクト行（でお指摘2026-09-12：1画面に多く並べたい） */
       .cust-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(26,20,16,0.06); font-size: 13px; }
       .cust-row[data-cust-open] { cursor: pointer; }
@@ -296,6 +296,21 @@ const DASHBOARD_CSS = `
       .svm-staff-table th { font-size: 11.5px; color: rgba(26,20,16,0.55); }
       .svm-track { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: rgba(26,20,16,0.08); vertical-align: middle; margin-right: 8px; overflow: hidden; }
       .svm-bar { display: block; height: 100%; background: #c9a84c; }
+      /* 勤怠：打刻の準備のステップ・管理者のロック（2026-10-16） */
+      .att-step { border: 1px solid rgba(26,20,16,0.1); border-radius: 12px; padding: 14px 16px; }
+      .att-step-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 14px; }
+      .att-step-num { width: 22px; height: 22px; border-radius: 50%; background: #1a1410; color: #e8cf7e; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .att-step-state { margin-left: auto; font-size: 11.5px; font-weight: 800; padding: 2px 10px; border-radius: 99px; background: rgba(26,20,16,0.06); color: rgba(26,20,16,0.6); white-space: nowrap; }
+      .att-step-state.ok { background: #dcfce7; color: #166534; }
+      .att-step-state.todo { background: #fef3c7; color: #92400e; }
+      .att-lock { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(26,20,16,0.12); background: #fff; font-size: 13px; }
+      .att-lock.open { border-color: rgba(22,101,52,0.35); background: #f0fdf4; }
+      .att-lock.warn { border-color: rgba(217,119,6,0.4); background: #fffbeb; }
+      .att-lock b { font-size: 13.5px; }
+      .att-qr { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; padding: 14px; border: 2px dashed #c9a84c; border-radius: 12px; background: #fffdf7; }
+      .att-qr img { width: 168px; height: 168px; border-radius: 8px; background: #fff; }
+      .att-code { font-size: 34px; font-weight: 800; letter-spacing: .22em; font-variant-numeric: tabular-nums; }
+      @media (max-width: 520px) { .att-qr { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1835,11 +1850,11 @@ export default function ProviderDashboardPage() {
         const local = iso => jst(iso).slice(0, 16);
         ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
           <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h3 style="margin:0;font-size:16px">${esc(nameOf(day.staff_id))}・${esc(day.date)}の打刻</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
-          <p class="muted" style="font-size:12px;margin:6px 0 10px;line-height:1.6">打刻は消せません。間違いは「取り消す」（正しい時刻を入れると取り消しと同時に追加）で直し、理由と直した人が記録に残ります。</p>
+          <p class="muted" style="font-size:12px;margin:6px 0 10px;line-height:1.6">打刻は消せません。間違いは「取り消す」（正しい時刻を入れると取り消しと同時に追加）で直し、理由と直した管理者の名前が記録に残ります。直すには勤怠の管理者のロック解除が必要です。</p>
           <div style="display:flex;flex-direction:column;gap:6px">${punches.map(p => `
             <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;${p.voided_at ? 'opacity:.55' : ''}">
               <span style="font-weight:700;min-width:64px">${KIND[p.kind]}</span>
-              <span style="flex:1">${esc(local(p.punched_at).replace('T', ' '))}<span class="muted" style="font-size:11px">・${p.source === 'kiosk' ? '店頭タブレット' : `手入力（${esc(p.created_by || '')}）`}</span>${p.note ? `<div class="muted" style="font-size:11px">${esc(p.note)}</div>` : ''}${p.voided_at ? `<div style="font-size:11px;color:#b42318">取り消し済み：${esc(p.void_reason || '')}（${esc(p.voided_by || '')}）</div>` : ''}</span>
+              <span style="flex:1">${esc(local(p.punched_at).replace('T', ' '))}<span class="muted" style="font-size:11px">・${p.source === 'kiosk' ? '打刻用の端末' : `手入力（${esc(p.created_by || '')}）`}</span>${p.note ? `<div class="muted" style="font-size:11px">${esc(p.note)}</div>` : ''}${p.voided_at ? `<div style="font-size:11px;color:#b42318">取り消し済み：${esc(p.void_reason || '')}（${esc(p.voided_by || '')}）</div>` : ''}</span>
               ${p.voided_at ? '' : `<button type="button" class="btn btn-ghost" data-void="${p.id}" data-at="${local(p.punched_at)}" style="font-size:11.5px;padding:4px 10px">取り消す</button>`}
             </div>`).join('')}</div>
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6">
@@ -1862,16 +1877,16 @@ export default function ProviderDashboardPage() {
           const fix = prompt('正しい時刻があれば「YYYY-MM-DD HH:MM」で入力（無ければ空欄のまま OK）', b.dataset.at.replace('T', ' '));
           const body = { reason: reason.trim() };
           if (fix && fix.trim()) body.replace_at = fix.trim().replace(' ', 'T');
-          const res = await fetch(`/api/provider/attendance/punches/${b.dataset.void}`, { method: 'PATCH', headers: HJ(), body: JSON.stringify(body) });
+          const res = await guarded(() => fetch(`/api/provider/attendance/punches/${b.dataset.void}`, { method: 'PATCH', headers: HU(), body: JSON.stringify(body) }));
           const d = await res.json().catch(() => ({}));
-          if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+          if (!res.ok) { showToast(d.error || '直せませんでした'); return; }
           showToast('打刻を直しました'); close(); loadRecords();
         }));
         ov.querySelector('[data-add]').addEventListener('click', async () => {
           const body = { staff_id: day.staff_id, kind: ov.querySelector('[data-add-kind]').value, at: ov.querySelector('[data-add-at]').value, note: ov.querySelector('[data-add-note]').value };
-          const res = await fetch('/api/provider/attendance/punches', { method: 'POST', headers: HJ(), body: JSON.stringify(body) });
+          const res = await guarded(() => fetch('/api/provider/attendance/punches', { method: 'POST', headers: HU(), body: JSON.stringify(body) }));
           const d = await res.json().catch(() => ({}));
-          if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+          if (!res.ok) { showToast(d.error || '追加できませんでした'); return; }
           showToast('打刻を追加しました'); close(); loadRecords();
         });
       }
@@ -1892,26 +1907,116 @@ export default function ProviderDashboardPage() {
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       });
 
+      // ── 勤怠の管理者のロック解除（でお要望 2026-10-16） ─────────────────
+      // 打刻の修正・端末の登録・暗証番号の設定・管理者の変更は、管理者が自分の暗証番号で
+      // ロックを解除した時（15分）だけ。解除トークンはこのタブを閉じると消える（sessionStorage）。
+      const UNLOCK_KEY = 'fineme:attendance:unlock';
+      let lockInfo = { admins: [], has_admin: false, unlocked: null };
+      function readUnlock() { try { const u = JSON.parse(sessionStorage.getItem(UNLOCK_KEY) || 'null'); return u && new Date(u.expires_at) > new Date() ? u : null; } catch { return null; } }
+      function saveUnlock(u) { try { if (u) sessionStorage.setItem(UNLOCK_KEY, JSON.stringify(u)); else sessionStorage.removeItem(UNLOCK_KEY); } catch {} }
+      function HU() { const u = readUnlock(); return u ? { ...HJ(), 'x-attendance-unlock': u.token } : HJ(); }
+      // 管理者のロック解除が必要な操作。ロック中なら解除の画面を出し、解除できたらもう一度送る
+      async function guarded(send) {
+        let res = await send();
+        if (res.status === 403) {
+          const d = await res.clone().json().catch(() => ({}));
+          if (d.code === 'locked' && await openUnlock()) res = await send();
+        }
+        return res;
+      }
+
+      async function loadLock() {
+        const bar = document.getElementById('att-lockbar');
+        if (!bar) return;
+        const res = await fetch('/api/provider/attendance/unlock', { headers: HU() });
+        if (!res.ok) { bar.innerHTML = ''; return; }
+        lockInfo = await res.json();
+        if (!lockInfo.unlocked && readUnlock()) saveUnlock(null);
+        renderLock();
+      }
+      function renderLock() {
+        const bar = document.getElementById('att-lockbar');
+        if (!bar) return;
+        const u = lockInfo.unlocked && readUnlock();
+        if (!lockInfo.has_admin) {
+          bar.innerHTML = `<div class="att-lock warn"><span style="flex:1;min-width:220px"><b>勤怠の管理者がまだいません</b><br><span class="muted" style="font-size:12px">管理者を決めるまで、打刻の修正と端末の登録はできません。下の「打刻の準備」で、暗証番号を設定した人を管理者にしてください。</span></span><button type="button" class="btn btn-ghost" data-go-setup style="font-size:12px">打刻の準備へ</button></div>`;
+          bar.querySelector('[data-go-setup]').addEventListener('click', () => document.getElementById('att-setup')?.scrollIntoView({ behavior: 'smooth' }));
+          return;
+        }
+        if (u) {
+          const left = Math.max(1, Math.ceil((new Date(u.expires_at) - Date.now()) / 60000));
+          bar.innerHTML = `<div class="att-lock open"><span style="flex:1;min-width:200px"><b>${esc(u.name)}さんがロックを解除中</b><span class="muted" style="font-size:12px">（あと${left}分で自動的にロック）</span></span><button type="button" class="btn btn-ghost" data-relock style="font-size:12px">ロックする</button></div>`;
+          bar.querySelector('[data-relock]').addEventListener('click', async () => {
+            await fetch('/api/provider/attendance/unlock', { method: 'DELETE', headers: HU() });
+            saveUnlock(null); loadLock(); showToast('ロックしました');
+          });
+          return;
+        }
+        bar.innerHTML = `<div class="att-lock"><span style="flex:1;min-width:200px"><b>勤怠の修正はロック中</b><br><span class="muted" style="font-size:12px">記録の確認とCSVの書き出しはそのままできます。修正するには、勤怠の管理者（${lockInfo.admins.map(a => esc(a.name)).join('・')}）がロックを解除してください。</span></span><button type="button" class="btn" data-unlock style="font-size:12px">管理者としてロックを解除</button></div>`;
+        bar.querySelector('[data-unlock]').addEventListener('click', () => openUnlock());
+      }
+      setInterval(() => { if (document.getElementById('tab-attendance')?.classList.contains('active')) renderLock(); }, 30000);
+
+      function openUnlock() {
+        return new Promise(resolve => {
+          if (!lockInfo.admins.length) { showToast('先に勤怠の管理者を決めてください'); resolve(false); return; }
+          const ov = document.createElement('div');
+          ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+          ov.innerHTML = `<div class="cal-modal-card" style="max-width:380px">
+            <h3 style="margin:0 0 6px;font-size:16px">勤怠の管理者のロック解除</h3>
+            <p class="muted" style="font-size:12px;margin:0 0 12px;line-height:1.6">管理者が自分の暗証番号を入れてください。15分間、勤怠の修正ができます。</p>
+            <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">管理者</label>
+            <select data-admin style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px">${lockInfo.admins.map(a => `<option value="${a.id}">${esc(a.name)}</option>`).join('')}</select>
+            <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">暗証番号</label>
+            <input type="password" inputmode="numeric" autocomplete="off" maxlength="6" data-pin style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:16px;box-sizing:border-box" />
+            <p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+              <button type="button" class="btn btn-ghost" data-cancel>やめる</button>
+              <button type="button" class="btn" data-ok>ロックを解除</button>
+            </div>
+          </div>`;
+          document.body.appendChild(ov);
+          const pinEl = ov.querySelector('[data-pin]');
+          setTimeout(() => pinEl.focus(), 50);
+          const finish = ok => { ov.remove(); resolve(ok); };
+          ov.addEventListener('click', e => { if (e.target === ov) finish(false); });
+          ov.querySelector('[data-cancel]').addEventListener('click', () => finish(false));
+          const submit = async () => {
+            const msg = ov.querySelector('[data-msg]');
+            const pin = pinEl.value.trim();
+            if (!/^\d{4,6}$/.test(pin)) { msg.textContent = '暗証番号を入れてください'; return; }
+            const btn = ov.querySelector('[data-ok]'); btn.disabled = true; msg.textContent = '';
+            const res = await fetch('/api/provider/attendance/unlock', { method: 'POST', headers: HJ(), body: JSON.stringify({ staff_id: ov.querySelector('[data-admin]').value, pin }) });
+            const d = await res.json().catch(() => ({}));
+            btn.disabled = false;
+            if (!res.ok) { msg.textContent = d.error || 'ロックを解除できませんでした'; pinEl.value = ''; pinEl.focus(); return; }
+            saveUnlock({ token: d.token, name: d.staff.name, expires_at: d.expires_at });
+            lockInfo.unlocked = { id: d.staff.id, name: d.staff.name, expires_at: d.expires_at };
+            renderLock();
+            showToast(`${d.staff.name}さんがロックを解除しました`);
+            finish(true);
+          };
+          ov.querySelector('[data-ok]').addEventListener('click', submit);
+          pinEl.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+        });
+      }
+
+      const stepState = (id, ok, text) => { const el = document.getElementById(id); if (el) { el.textContent = text; el.className = `att-step-state ${ok ? 'ok' : 'todo'}`; } };
+
       async function loadSetup() {
         const [devRes, staffRes] = await Promise.all([
           fetch('/api/provider/attendance/devices', { headers: H() }),
           fetch('/api/provider/staff', { headers: H() }),
         ]);
-        const devEl = document.getElementById('att-devices');
+        await loadLock();
         const devices = devRes.ok ? await devRes.json() : [];
-        const active = devices.filter(d => !d.revoked_at && d.paired_at);
-        devEl.innerHTML = active.length ? active.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px">
-            <span style="flex:1;font-size:13px;font-weight:700">${esc(d.name)}<span class="muted" style="font-size:11.5px;font-weight:400">・登録 ${esc(d.paired_at.slice(0, 10))}${d.last_used_at ? `・最終利用 ${esc(jst(d.last_used_at).slice(0, 16).replace('T', ' '))}` : ''}</span></span>
-            <button type="button" class="btn btn-ghost" data-revoke="${d.id}" style="font-size:12px;padding:4px 10px;color:#b42318">登録を取り消す</button>
-          </div>`).join('') : '<p class="muted" style="font-size:13px;margin:0">まだ登録された端末はありません。</p>';
-        devEl.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', async () => {
-          if (!confirm('この端末の登録を取り消しますか？（その端末からは打刻できなくなります）')) return;
-          const res = await fetch(`/api/provider/attendance/devices/${b.dataset.revoke}`, { method: 'DELETE', headers: H() });
-          showToast(res.ok ? '登録を取り消しました' : '取り消せませんでした'); loadSetup();
-        }));
-        const pinsEl = document.getElementById('att-pins');
         const staff = staffRes.ok ? await staffRes.json() : [];
-        pinsEl.innerHTML = staff.length ? staff.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;flex-wrap:wrap">
+
+        // ①暗証番号
+        const pinsEl = document.getElementById('att-pins');
+        const pinCount = staff.filter(s => s.has_attendance_pin).length;
+        stepState('att-step1-state', staff.length && pinCount === staff.length, staff.length ? `${pinCount} / ${staff.length}人 設定済み` : 'スタッフ未登録');
+        pinsEl.innerHTML = staff.length ? staff.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;flex-wrap:wrap;margin-bottom:6px">
             <span style="flex:1;font-size:13px;font-weight:700">${esc(s.name)}</span>
             <span style="font-size:11.5px;font-weight:700;${s.has_attendance_pin ? 'color:#23784a' : 'color:#9ca3af'}">${s.has_attendance_pin ? '設定済み' : '未設定'}</span>
             <input type="password" inputmode="numeric" maxlength="6" data-pin-input="${s.id}" placeholder="4〜6桁" autocomplete="new-password" style="width:96px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />
@@ -1920,23 +2025,106 @@ export default function ProviderDashboardPage() {
         pinsEl.querySelectorAll('[data-pin-save]').forEach(b => b.addEventListener('click', async () => {
           const pin = pinsEl.querySelector(`[data-pin-input="${b.dataset.pinSave}"]`).value.trim();
           if (!/^\d{4,6}$/.test(pin)) { showToast('暗証番号は4〜6桁の数字にしてください'); return; }
-          const res = await fetch('/api/provider/attendance/pin', { method: 'POST', headers: HJ(), body: JSON.stringify({ staff_id: b.dataset.pinSave, pin }) });
+          const res = await guarded(() => fetch('/api/provider/attendance/pin', { method: 'POST', headers: HU(), body: JSON.stringify({ staff_id: b.dataset.pinSave, pin }) }));
           const d = await res.json().catch(() => ({}));
-          showToast(res.ok ? '暗証番号を設定しました' : 'エラー: ' + (d.error || '不明')); if (res.ok) loadSetup();
+          showToast(res.ok ? '暗証番号を設定しました' : (d.error || '設定できませんでした')); if (res.ok) loadSetup();
         }));
+
+        // ②勤怠の管理者
+        const adminsEl = document.getElementById('att-admins');
+        const admins = staff.filter(s => s.attendance_admin && s.has_attendance_pin);
+        stepState('att-step2-state', admins.length > 0, admins.length ? `${admins.length}人` : '未設定');
+        adminsEl.innerHTML = staff.length ? staff.map(s => `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;font-size:13px;${s.has_attendance_pin ? 'cursor:pointer' : 'opacity:.55'}">
+            <input type="checkbox" data-admin-toggle="${s.id}" ${s.attendance_admin ? 'checked' : ''} ${s.has_attendance_pin ? '' : 'disabled'} style="width:18px;height:18px" />
+            <span style="flex:1;font-weight:700">${esc(s.name)}</span>
+            <span class="muted" style="font-size:11.5px">${s.has_attendance_pin ? (s.attendance_admin ? '管理者' : '') : '先に暗証番号を設定'}</span>
+          </label>`).join('') + '<p class="muted" style="font-size:11.5px;margin:4px 0 0">管理者全員が暗証番号を忘れた場合は、Finemeの運営までご連絡ください。</p>' : '';
+        adminsEl.querySelectorAll('[data-admin-toggle]').forEach(cb => cb.addEventListener('change', async () => {
+          const res = await guarded(() => fetch('/api/provider/attendance/admins', { method: 'POST', headers: HU(), body: JSON.stringify({ staff_id: cb.dataset.adminToggle, admin: cb.checked }) }));
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { cb.checked = !cb.checked; showToast(d.error || '変更できませんでした'); return; }
+          showToast(cb.checked ? '勤怠の管理者にしました' : '勤怠の管理者から外しました');
+          loadSetup();
+        }));
+
+        // ③打刻用の端末
+        const devEl = document.getElementById('att-devices');
+        const active = devices.filter(d => !d.revoked_at && d.paired_at);
+        stepState('att-step3-state', active.length > 0, active.length ? `${active.length}台` : '未登録');
+        devEl.innerHTML = active.length ? active.map(d => `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px">
+            <span style="flex:1;font-size:13px;font-weight:700">${esc(d.name)}<span class="muted" style="font-size:11.5px;font-weight:400">・登録 ${esc(d.paired_at.slice(0, 10))}${d.last_used_at ? `・最終利用 ${esc(jst(d.last_used_at).slice(0, 16).replace('T', ' '))}` : ''}</span></span>
+            <button type="button" class="btn btn-ghost" data-revoke="${d.id}" style="font-size:12px;padding:4px 10px;color:#b42318">登録を取り消す</button>
+          </div>`).join('') : '<p class="muted" style="font-size:13px;margin:0">まだ登録された端末はありません。</p>';
+        devEl.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('この端末の登録を取り消しますか？（その端末からは打刻できなくなります）')) return;
+          const res = await guarded(() => fetch(`/api/provider/attendance/devices/${b.dataset.revoke}`, { method: 'DELETE', headers: HU() }));
+          const d = await res.json().catch(() => ({}));
+          showToast(res.ok ? '登録を取り消しました' : (d.error || '取り消せませんでした')); loadSetup();
+        }));
+        return active.length;
       }
-      document.getElementById('att-device-add')?.addEventListener('click', async () => {
-        const res = await fetch('/api/provider/attendance/devices', { method: 'POST', headers: HJ(), body: JSON.stringify({ name: '店頭タブレット' }) });
-        const d = await res.json().catch(() => ({}));
-        const el = document.getElementById('att-device-code');
-        if (!res.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
-        el.innerHTML = `<div style="padding:16px;border:2px dashed #c9a84c;border-radius:12px;text-align:center;background:#fffdf7">
-            <div style="font-size:12.5px;color:#84651a;font-weight:700">タブレットで入力する登録コード（10分間有効）</div>
-            <div style="font-size:40px;font-weight:800;letter-spacing:.25em;font-variant-numeric:tabular-nums;margin:6px 0">${esc(d.pairing_code)}</div>
-            <div class="muted" style="font-size:12px">タブレットで www.fineme.me/attendance-kiosk を開いて入力してください。登録が済んだら「端末の一覧を更新」を押してください。</div>
-            <button type="button" class="btn btn-ghost" data-att-refresh style="font-size:12px;margin-top:8px">端末の一覧を更新</button>
-          </div>`;
-        el.querySelector('[data-att-refresh]').addEventListener('click', () => { el.innerHTML = ''; loadSetup(); });
+
+      // 端末の登録：①今使っているこの端末をそのまま打刻用にする ②別の端末でQRを読み取る
+      document.getElementById('att-device-add')?.addEventListener('click', () => {
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><h3 style="margin:0;font-size:16px">打刻用の端末を登録する</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <label style="display:block;font-size:12px;font-weight:700;margin:12px 0 4px">端末の名前（任意）</label>
+          <input type="text" data-name maxlength="40" placeholder="例：受付のiPad" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box" />
+          <div data-body style="display:grid;gap:8px;margin-top:14px">
+            <button type="button" class="btn" data-this style="text-align:left;padding:12px 14px;line-height:1.5"><b>この端末を打刻用にする</b><br><span style="font-size:12px;font-weight:400">今この画面を開いている端末を、お店に置いて打刻に使う場合</span></button>
+            <button type="button" class="btn btn-ghost" data-other style="text-align:left;padding:12px 14px;line-height:1.5"><b>別の端末を登録する</b><br><span style="font-size:12px;font-weight:400">お店のタブレットなどで、表示されるQRコードを読み取るだけ</span></button>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        let poll = null;
+        const close = () => { clearInterval(poll); ov.remove(); };
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('[data-x]').addEventListener('click', close);
+        const issue = async () => {
+          const name = ov.querySelector('[data-name]').value.trim() || '打刻用の端末';
+          const res = await guarded(() => fetch('/api/provider/attendance/devices', { method: 'POST', headers: HU(), body: JSON.stringify({ name }) }));
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(d.error || '登録を始められませんでした'); return null; }
+          return d;
+        };
+        ov.querySelector('[data-this]').addEventListener('click', async () => {
+          const d = await issue();
+          if (!d) return;
+          location.href = `/attendance-kiosk?code=${encodeURIComponent(d.pairing_code)}`;
+        });
+        ov.querySelector('[data-other]').addEventListener('click', async () => {
+          const d = await issue();
+          if (!d) return;
+          const url = `${location.origin}/attendance-kiosk?code=${d.pairing_code}`;
+          let img = '';
+          try {
+            const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+            img = await QRCode.toDataURL(url, { width: 336, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } });
+          } catch {}
+          ov.querySelector('[data-body]').innerHTML = `
+            <div class="att-qr">
+              ${img ? `<img src="${img}" alt="登録用のQRコード" />` : ''}
+              <div>
+                <div style="font-size:13px;font-weight:700;line-height:1.6">お店の端末のカメラでQRコードを読み取ってください</div>
+                <div class="muted" style="font-size:12px;line-height:1.7;margin-top:4px">開いた画面で自動的に登録されます（10分間有効）。<br>カメラが使えない場合は、その端末で <b>${esc(location.host)}/attendance-kiosk</b> を開き、次の番号を入れてください。</div>
+                <div class="att-code" style="margin-top:6px">${esc(d.pairing_code)}</div>
+              </div>
+            </div>
+            <p data-wait class="muted" style="font-size:12.5px;margin:4px 0 0">登録を待っています…</p>`;
+          const before = Date.now();
+          poll = setInterval(async () => {
+            if (Date.now() - before > 10 * 60 * 1000) { clearInterval(poll); const w = ov.querySelector('[data-wait]'); if (w) w.textContent = '有効期限が切れました。閉じてもう一度登録してください'; return; }
+            const r = await fetch('/api/provider/attendance/devices', { headers: H() });
+            const list = r.ok ? await r.json() : [];
+            if (list.some(x => x.id === d.id && x.paired_at)) {
+              clearInterval(poll);
+              ov.querySelector('[data-body]').innerHTML = '<div style="padding:18px;border-radius:12px;background:#f0fdf4;color:#166534;font-weight:700;text-align:center">登録できました。その端末で打刻できます。</div>';
+              loadSetup();
+            }
+          }, 3000);
+        });
       });
 
       monthEl?.addEventListener('change', loadRecords);
@@ -12880,6 +13068,8 @@ export default function ProviderDashboardPage() {
             店舗のみ表示。 */}
         {/* 勤怠（でお要望2026-10-14）：店頭タブレット1台で打刻。打刻は消さず、修正は取り消し＋追加で残す */}
         <div className="tab-pane" id="tab-attendance">
+          {/* 勤怠の管理者のロック状態（でお要望 2026-10-16：管理画面に入れれば誰でも直せる状態をやめる） */}
+          <div id="att-lockbar" style={{ marginBottom: '16px' }}></div>
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0, fontSize: '16px', flex: 1 }}>勤怠の記録</h2>
@@ -12893,19 +13083,29 @@ export default function ProviderDashboardPage() {
             <div id="att-days"></div>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px' }}>打刻の準備</h2>
-            <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>打刻は店頭のタブレットだけでできます（スタッフ個人のスマホからはできません）。①打刻用の端末を登録 → ②スタッフごとに暗証番号を設定 → ③タブレットで名前を選び、暗証番号を入れて打刻、の流れです。打刻の時刻はタブレットの時計ではなくサーバーの時刻で記録します。</p>
-            <h3 style={{ margin: '4px 0 0', fontSize: '14px' }}>打刻用の端末</h3>
-            <div id="att-devices">読み込み中…</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <button type="button" className="btn" id="att-device-add">打刻用の端末を追加</button>
-              <span className="muted" style={{ fontSize: '12px' }}>タブレットで <a href="/attendance-kiosk" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>www.fineme.me/attendance-kiosk</a> を開き、表示される登録コードを入力します。</span>
+          {/* 打刻の準備（でお指摘 2026-10-16：端末の登録が分かりづらい）。
+              ①暗証番号 → ②勤怠の管理者 → ③打刻用の端末 の順に、できたかどうかが一目で分かる形にした。 */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px' }} id="att-setup">
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>打刻の準備</h2>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>打刻は、お店で登録した端末（タブレット・PC・スマホ）からだけできます。スタッフ個人のスマホからはできません。時刻は端末の時計ではなくサーバーの時刻で記録します。</p>
             </div>
-            <div id="att-device-code"></div>
-            <h3 style={{ margin: '8px 0 0', fontSize: '14px' }}>スタッフの暗証番号</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>4〜6桁の数字。本人にだけ伝えてください。5回続けて間違えると10分間打刻できなくなります。</p>
-            <div id="att-pins">読み込み中…</div>
+            <div className="att-step">
+              <div className="att-step-head"><span className="att-step-num">1</span><b>スタッフの暗証番号</b><span id="att-step1-state" className="att-step-state"></span></div>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px', lineHeight: 1.6 }}>4〜6桁の数字。打刻のときに使います。本人にだけ伝えてください。5回続けて間違えると10分間使えなくなります。</p>
+              <div id="att-pins">読み込み中…</div>
+            </div>
+            <div className="att-step">
+              <div className="att-step-head"><span className="att-step-num">2</span><b>勤怠の管理者</b><span id="att-step2-state" className="att-step-state"></span></div>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px', lineHeight: 1.6 }}>打刻の修正・端末の登録・暗証番号の変更ができる人です。管理者が自分の暗証番号でロックを解除した時だけ操作できます（15分で自動的にロック）。直した人の名前は記録に残り、自分の打刻はほかの管理者にしか直せません。</p>
+              <div id="att-admins">読み込み中…</div>
+            </div>
+            <div className="att-step">
+              <div className="att-step-head"><span className="att-step-num">3</span><b>打刻用の端末</b><span id="att-step3-state" className="att-step-state"></span></div>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px', lineHeight: 1.6 }}>お店に置く端末を登録します。今この画面を開いている端末をそのまま使うか、別の端末でQRコードを読み取るだけで登録できます。</p>
+              <div id="att-devices">読み込み中…</div>
+              <button type="button" className="btn" id="att-device-add" style={{ marginTop: '8px' }}>打刻用の端末を登録する</button>
+            </div>
           </div>
         </div>
 

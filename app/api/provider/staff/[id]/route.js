@@ -54,6 +54,13 @@ async function __DELETE(request, { params }) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // 勤怠の管理者は、勤怠タブで管理者を外してから削除する（削除で管理者が0人になると、
+  // 管理画面に入れる人なら誰でも勤怠を直せる状態に戻ってしまうため）
+  const { data: target } = await supabase.from('provider_staff').select('attendance_admin').eq('id', id).eq('provider_id', provider.id).maybeSingle();
+  if (target?.attendance_admin) {
+    return Response.json({ error: 'このスタッフは勤怠の管理者です。勤怠タブで管理者を外してから削除してください' }, { status: 409 });
+  }
+
   const { error } = await supabase
     .from('provider_staff')
     .delete()
