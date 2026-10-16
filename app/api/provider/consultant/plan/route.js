@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
-import { CONSULTANT_ROLE, buildContext, tabGuide, STAGE_KEYS } from '@/lib/consultant-prompt';
+import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide, STAGE_KEYS } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -141,7 +141,7 @@ export async function POST(request) {
         cadence,
         due_date: due,
         period_key: cadence === 'once' ? null : keys[cadence],
-        tab: VALID_TABS.includes(t.tab) ? t.tab : null,
+        tab: VALID_TABS.includes(t.tab) ? fixTaskTab(title, t.tab) : null,
         source: 'plan',
       });
     }

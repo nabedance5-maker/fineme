@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
-import { CONSULTANT_ROLE, buildContext, tabGuide } from '@/lib/consultant-prompt';
+import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
 import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
 
@@ -49,7 +49,7 @@ async function runTool(name, input, ctx) {
     const { error } = await supabase.from('provider_consultant_tasks').insert({
       provider_id: provider.id, title, why: clean(input.why, 200) || null, cadence, due_date: due,
       period_key: cadence === 'once' ? null : periodKeys()[cadence],
-      tab: VALID_TABS.includes(input.tab) ? input.tab : null, source: 'chat',
+      tab: VALID_TABS.includes(input.tab) ? fixTaskTab(title, input.tab) : null, source: 'chat',
     });
     if (error) return '記録に失敗しました';
     ctx.changed = true;
