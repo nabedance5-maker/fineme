@@ -326,6 +326,25 @@ const DASHBOARD_CSS = `
       .cp-f input, .cp-f select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13.5px; font-weight: 400; color: #1a1410; background: #fff; min-width: 0; }
       .cp-wide { grid-column: 1 / -1; }
       @media (max-width: 480px) { .cp-row > span { flex-basis: 84px; } }
+      /* シフトカレンダーの表形式（スタッフ×日付。2026-10-16） */
+      .shift-view-toggle { display: inline-flex; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; overflow: hidden; }
+      .shift-view-toggle button { border: 0; background: #fff; padding: 5px 12px; font-size: 12px; font-weight: 700; color: rgba(26,20,16,0.6); cursor: pointer; }
+      .shift-view-toggle button[aria-selected="true"] { background: #1a1410; color: #e8cf7e; }
+      .shift-tbl-wrap { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 10px; }
+      .shift-tbl { border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+      .shift-tbl th, .shift-tbl td { border-right: 1px solid #eef0f2; border-bottom: 1px solid #eef0f2; padding: 6px 6px; text-align: center; white-space: nowrap; min-width: 88px; }
+      .shift-tbl thead th { position: sticky; top: 0; background: #fafaf8; font-weight: 700; z-index: 1; }
+      .shift-tbl .st-name { position: sticky; left: 0; background: #fff; text-align: left; min-width: 104px; max-width: 140px; font-weight: 700; z-index: 2; white-space: normal; line-height: 1.35; }
+      .shift-tbl thead .st-name { background: #fafaf8; z-index: 3; }
+      .shift-tbl .st-sub td, .shift-tbl .st-sub th { background: #fcfbf7; font-size: 11.5px; color: rgba(26,20,16,0.7); }
+      .shift-tbl td.st-cell { cursor: pointer; }
+      .shift-tbl td.st-cell:hover { background: rgba(201,168,76,0.08); }
+      .shift-tbl td.st-ok { color: #1a1410; font-weight: 700; }
+      .shift-tbl td.st-wish { color: #2563eb; }
+      .shift-tbl td.st-off { background: #f1f2f4; color: #6b7280; }
+      .shift-tbl td.st-leave { background: #ecfdf5; color: #047857; font-weight: 700; }
+      .shift-tbl td.st-closed, .shift-tbl th.st-closed { background: #e5e7eb; color: #9ca3af; }
+      .shift-tbl .st-today { box-shadow: inset 0 0 0 2px #c9a84c; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -3447,20 +3466,94 @@ export default function ProviderDashboardPage() {
         const last = new Date(calYear, calMonth + 1, 0).getDate();
         const from = `${calYear}-${pad2(calMonth + 1)}-01`;
         const to = `${calYear}-${pad2(calMonth + 1)}-${pad2(last)}`;
-        const [eRes, rRes] = await Promise.all([
+        const [eRes, rRes, lRes] = await Promise.all([
           fetch(`/api/provider/shift-entries?from=${from}&to=${to}`, { headers: authHeadersShift() }),
           fetch(`/api/provider/shift-requests?from=${from}&to=${to}`, { headers: authHeadersShift() }),
+          // 承認済みの有給（勤怠機能を使っていない店舗では取れないので、失敗しても表示は続ける）
+          fetch(`/api/provider/attendance?from=${from}&to=${to}`, { headers: authHeadersShift() }).catch(() => null),
           loadClosedInfo(),
+          shiftView === 'table' && !shiftStaffList.length ? loadStaffLinks() : null,
         ]);
         if (!eRes.ok) { grid.innerHTML = authErrorHtml(eRes); return; }
         calEntries = await eRes.json();
         calRequests = rRes.ok ? await rRes.json() : [];
+        calLeaves = lRes && lRes.ok ? ((await lRes.json()).leaves || []) : [];
         renderCalendar();
+      }
+
+      // 表示の切り替え：カレンダー（日ごとの人数）／表（スタッフ×日付の勤務時間）。選んだ表示は端末に覚える
+      const SHIFT_VIEW_KEY = 'fineme:shift-cal-view';
+      let shiftView = (() => { try { return localStorage.getItem(SHIFT_VIEW_KEY) === 'table' ? 'table' : 'calendar'; } catch { return 'calendar'; } })();
+      let calLeaves = [];
+      function syncShiftViewButtons() {
+        document.querySelectorAll('[data-shift-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.shiftView === shiftView)));
+        const hint = document.getElementById('shift-cal-hint');
+        if (hint) hint.textContent = shiftView === 'table'
+          ? 'スタッフごとの勤務時間を一覧で確認できます。マスをタップすると、その日の希望と確定シフトを確認・編集できます。'
+          : '日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。';
+        const legend = document.getElementById('shift-cal-legend');
+        if (legend) legend.innerHTML = shiftView === 'table'
+          ? '<b style="color:#1a1410">黒</b>＝確定シフト　<span style="color:#2563eb;font-weight:700">青</span>＝出勤希望（確定前）　<span style="background:#f1f2f4;padding:0 4px">休</span>＝休み希望　<span style="background:#ecfdf5;color:#047857;padding:0 4px;font-weight:700">有給</span>＝承認済みの有給'
+          : '<span style="color:#059669;font-weight:700">■</span> 確定シフトの人数　<span style="color:#2563eb;font-weight:700">■</span> 出勤希望の人数（確定前）';
+      }
+      document.querySelectorAll('[data-shift-view]').forEach(b => b.addEventListener('click', async () => {
+        shiftView = b.dataset.shiftView;
+        try { localStorage.setItem(SHIFT_VIEW_KEY, shiftView); } catch {}
+        syncShiftViewButtons();
+        if (shiftView === 'table' && !shiftStaffList.length) await loadStaffLinks();
+        renderCalendar();
+      }));
+      syncShiftViewButtons();
+
+      function renderShiftTable() {
+        const grid = document.getElementById('shift-cal-grid');
+        const last = new Date(calYear, calMonth + 1, 0).getDate();
+        const todayStr = shiftTodayStr();
+        const dates = Array.from({ length: last }, (_, i) => `${calYear}-${pad2(calMonth + 1)}-${pad2(i + 1)}`);
+        if (!shiftStaffList.length) { grid.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'; return; }
+        const key = (sid, d) => `${sid}|${d}`;
+        const ent = {}, req = {}, leave = {};
+        calEntries.forEach(e => { (ent[key(e.staff_id, e.date)] = ent[key(e.staff_id, e.date)] || []).push(e); });
+        calRequests.forEach(r => { req[key(r.staff_id, r.date)] = r; });
+        calLeaves.forEach(l => { leave[key(l.staff_id, l.date)] = l; });
+        const short = (a, b) => rangeLabel(a, b, '-');
+        const head = dates.map(d => {
+          const wd = new Date(d + 'T00:00:00Z').getUTCDay();
+          const color = wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151';
+          return `<th class="${isShiftClosed(d) ? 'st-closed' : ''}${d === todayStr ? ' st-today' : ''}" style="color:${isShiftClosed(d) ? '' : color}">${Number(d.slice(8))}日（${SHIFT_WEEKDAY_JA[wd]}）${isShiftClosed(d) ? '<div style="font-size:10px;font-weight:400">定休日</div>' : ''}</th>`;
+        }).join('');
+        const countRow = dates.map(d => `<td class="${isShiftClosed(d) ? 'st-closed' : ''}">${calEntries.filter(e => e.date === d).reduce((set, e) => set.add(e.staff_id), new Set()).size || '—'}${calEntries.some(e => e.date === d) ? '名' : ''}</td>`).join('');
+        const rows = shiftStaffList.map(st => `<tr><th class="st-name">${esc(st.name)}</th>${dates.map(d => {
+          const k = key(st.id, d);
+          const lv = leave[k];
+          const es = (ent[k] || []).slice().sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
+          const rq = req[k];
+          const note = rq?.note ? ` title="${esc(rq.note)}"` : '';
+          let cls = 'st-cell', body = '';
+          if (lv && lv.unit === 'full') { cls += ' st-leave'; body = '有給'; }
+          else if (es.length) { cls += ' st-ok'; body = es.map(e => short(e.start_time, e.end_time)).join('<br>') + (lv ? `<div style="font-size:10px;color:#047857">${lv.unit === 'am' ? '午前半休' : '午後半休'}</div>` : ''); }
+          else if (rq?.type === 'off') { cls += ' st-off'; body = '休'; }
+          else if (rq?.type === 'work') { cls += ' st-wish'; body = short(rq.start_time, rq.end_time); }
+          else if (isShiftClosed(d)) { cls += ' st-closed'; body = ''; }
+          else body = '<span style="color:#d1d5db">—</span>';
+          if (rq?.note) body += '<span style="color:#b45309;font-weight:800">＊</span>';
+          return `<td class="${cls}${d === todayStr ? ' st-today' : ''}" data-cal-date="${d}"${note}>${body}</td>`;
+        }).join('')}</tr>`).join('');
+        grid.innerHTML = `<div class="shift-tbl-wrap"><table class="shift-tbl">
+            <thead><tr><th class="st-name">スタッフ</th>${head}</tr></thead>
+            <tbody><tr class="st-sub"><th class="st-name">出勤（確定）</th>${countRow}</tr>${rows}</tbody>
+          </table></div>`;
+        grid.querySelectorAll('[data-cal-date]').forEach(c => c.addEventListener('click', () => showDayModal(c.dataset.calDate)));
+        // 今日の列が見えるように横スクロールしておく
+        const wrap = grid.querySelector('.shift-tbl-wrap');
+        const todayTh = grid.querySelector('thead .st-today');
+        if (wrap && todayTh) wrap.scrollLeft = Math.max(0, todayTh.offsetLeft - (grid.querySelector('thead .st-name')?.offsetWidth || 120));
       }
 
       function renderCalendar() {
         const grid = document.getElementById('shift-cal-grid');
         if (!grid) return;
+        if (shiftView === 'table') { renderShiftTable(); return; }
         const firstWd = new Date(calYear, calMonth, 1).getDay();
         const last = new Date(calYear, calMonth + 1, 0).getDate();
         const todayStr = shiftTodayStr();
@@ -13614,7 +13707,14 @@ export default function ProviderDashboardPage() {
 
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
-              <h2 style={{ margin: 0, fontSize: '16px' }}>シフトカレンダー</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h2 style={{ margin: 0, fontSize: '16px' }}>シフトカレンダー</h2>
+                {/* 表示の切り替え（でお要望 2026-10-16：hacomonoのようなスタッフ×日付の表形式も） */}
+                <div className="shift-view-toggle" role="tablist" aria-label="表示の切り替え">
+                  <button type="button" data-shift-view="calendar" role="tab">カレンダー</button>
+                  <button type="button" data-shift-view="table" role="tab">表</button>
+                </div>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button type="button" className="btn btn-ghost" id="shift-cal-prev" style={{ padding: '4px 12px' }} aria-label="前の月">‹</button>
                 <strong id="shift-cal-title" style={{ minWidth: '92px', textAlign: 'center', fontSize: '14px' }}></strong>
@@ -13622,9 +13722,9 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="shift-cal-today" style={{ padding: '4px 10px', fontSize: '12px' }}>今月</button>
               </div>
             </div>
-            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。</p>
+            <p className="muted" id="shift-cal-hint" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。</p>
             <div id="shift-cal-grid">読み込み中…</div>
-            <p className="muted" style={{ fontSize: '11px', margin: 0 }}><span style={{ color: '#059669', fontWeight: 700 }}>■</span> 確定シフトの人数　<span style={{ color: '#2563eb', fontWeight: 700 }}>■</span> 出勤希望の人数（確定前）</p>
+            <p className="muted" id="shift-cal-legend" style={{ fontSize: '11px', margin: 0 }}></p>
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px' }} id="shift-detail-section">
