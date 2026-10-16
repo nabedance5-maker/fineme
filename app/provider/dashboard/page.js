@@ -2204,10 +2204,12 @@ export default function ProviderDashboardPage() {
         const cell = (s, d) => {
           const r = reqMap[s.id]?.[d];
           if (!r) return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#d1d5db;border-bottom:1px solid #f3f4f6">—</td>`;
-          if (r.type === 'work') return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#2563eb;font-weight:700;white-space:nowrap;border-bottom:1px solid #f3f4f6">${esc(rangeLabel(r.start_time, r.end_time))}</td>`;
-          return `<td style="padding:4px 6px;text-align:center;font-size:12px;color:#dc2626;font-weight:700;border-bottom:1px solid #f3f4f6">休</td>`;
+          // コメント付きの希望は「＊」を付け、セルに触れると内容が出る（でお要望 2026-10-16）
+          const mark = r.note ? `<span title="${esc(r.note)}" style="color:#b45309;font-weight:800;margin-left:2px;cursor:help">＊</span>` : '';
+          if (r.type === 'work') return `<td title="${esc(r.note || '')}" style="padding:4px 6px;text-align:center;font-size:11px;color:#2563eb;font-weight:700;white-space:nowrap;border-bottom:1px solid #f3f4f6">${esc(rangeLabel(r.start_time, r.end_time))}${mark}</td>`;
+          return `<td title="${esc(r.note || '')}" style="padding:4px 6px;text-align:center;font-size:12px;color:#dc2626;font-weight:700;border-bottom:1px solid #f3f4f6">休${mark}</td>`;
         };
-        return renderStaffDateGrid(dates, cell) + '<p class="muted" style="font-size:11px;margin-top:6px">青=出勤希望時間／赤「休」=休み希望／グレー「—」=未提出</p>';
+        return renderStaffDateGrid(dates, cell) + '<p class="muted" style="font-size:11px;margin-top:6px">青=出勤希望時間／赤「休」=休み希望／グレー「—」=未提出／「＊」=スタッフのコメントあり（下に一覧）</p>';
       }
       function renderShiftEntriesGrid(dates, entries) {
         const map = {};
@@ -3027,8 +3029,10 @@ export default function ProviderDashboardPage() {
         // 「表でまとめて見たい」であり、備考の文章までは表のセルに収まらないため）
         const withNote = requests.filter(r => r.note);
         if (withNote.length) {
-          el.innerHTML += `<div style="margin-top:10px">${withNote.map(r => `
-            <p class="muted" style="font-size:12px;margin:2px 0">${esc(nameOf(r.staff_id))}・${esc(r.date)}：${esc(r.note)}</p>
+          el.innerHTML += `<div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(180,83,9,.25);border-radius:10px;background:#fffbeb">
+            <div style="font-size:12px;font-weight:800;color:#b45309;margin-bottom:4px">スタッフのコメント（${withNote.length}件）</div>
+            ${withNote.slice().sort((a, b) => a.date.localeCompare(b.date)).map(r => `
+            <p style="font-size:12.5px;margin:3px 0;line-height:1.6"><b>${esc(nameOf(r.staff_id))}</b>・${esc(r.date.slice(5).replace('-', '/'))}（${r.type === 'work' ? esc(rangeLabel(r.start_time, r.end_time)) : '休み'}）：${esc(r.note)}</p>
           `).join('')}</div>`;
         }
       }

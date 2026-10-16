@@ -73,6 +73,8 @@ export default function StaffShiftPage({ params }) {
   const [multiMode, setMultiMode] = useState(false);
   const [multiDates, setMultiDates] = useState([]);
   const [multiType, setMultiType] = useState('work');
+  const [multiNote, setMultiNote] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
 
   // 期間ごとの提出リンク（?period=）で開かれたらその期間を、無ければ未提出の直近の期間を開く
   const [periodId, setPeriodId] = useState(() => {
@@ -144,6 +146,7 @@ export default function StaffShiftPage({ params }) {
         body: JSON.stringify({
           period_id: data.period.id, dates: multiDates, type: effMultiType,
           start_time: effMultiType === 'work' ? editStart : null, end_time: effMultiType === 'work' ? editEnd : null,
+          ...(multiNote.trim() ? { note: multiNote.trim() } : {}),
         }),
       });
       if (res.ok) {
@@ -151,6 +154,7 @@ export default function StaffShiftPage({ params }) {
         const savedDates = new Set(multiDates);
         setData(prev => ({ ...prev, requests: [...(prev.requests || []).filter(r => !savedDates.has(r.date)), ...saved] }));
         setMultiDates([]);
+        setMultiNote('');
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 1200);
       } else {
@@ -184,6 +188,7 @@ export default function StaffShiftPage({ params }) {
     if (multiMode) { toggleMultiDate(date); return; }
     setSelectedDate(date);
     const existing = requestsByDate[date];
+    setNoteDraft(existing?.note || '');
     if (existing?.type === 'work') {
       setEditStart(existing.start_time || '10:00');
       setEditEnd(existing.end_time || '18:00');
@@ -196,13 +201,13 @@ export default function StaffShiftPage({ params }) {
   // 選んだ瞬間に自動保存する（でお指摘2026-09-14：日付ごとの提出ボタンが手間だった）。
   // 保存の度に一覧を作り直すと選択中のパネルが消えてしまうため、dataは部分的に
   // 更新するだけにして、selectedDateは保持する。
-  async function autoSave(date, type, start, end) {
+  async function autoSave(date, type, start, end, note) {
     setSaving(true);
     try {
       const res = await fetch(`/api/staff-shift/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period_id: data.period.id, date, type, start_time: start, end_time: end }),
+        body: JSON.stringify({ period_id: data.period.id, date, type, start_time: start, end_time: end, ...(note !== undefined ? { note } : {}) }),
       });
       if (res.ok) {
         const saved = await res.json();
@@ -429,6 +434,8 @@ export default function StaffShiftPage({ params }) {
                 </>
               )}
 
+              <label style={labelStyle}>コメント（任意・選んだ日すべてに付きます）</label>
+              <input type="text" value={multiNote} maxLength={200} onChange={e => setMultiNote(e.target.value)} placeholder="例：学校のため午前は不可" style={{ ...selectStyle, width: '100%', marginBottom: '12px' }} />
               <button type="button" disabled={saving || !multiDates.length} onClick={saveMulti} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', background: '#c9a84c', color: '#0a0f1e', fontWeight: '800', fontSize: '14px', cursor: saving || !multiDates.length ? 'not-allowed' : 'pointer', opacity: !multiDates.length ? 0.4 : 1, marginBottom: '8px' }}>
                 {multiDates.length ? `選んだ${multiDates.length}日に${effMultiType === 'work' ? `${rangeLabel(editStart, editEnd)}で出勤希望を` : '休み希望を'}まとめて保存` : '日付を選んでください'}
               </button>
@@ -477,6 +484,14 @@ export default function StaffShiftPage({ params }) {
               </>}
 
               {selectedReq && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={labelStyle}>この日へのコメント（任意）</label>
+                  <textarea value={noteDraft} maxLength={200} rows={2} onChange={e => setNoteDraft(e.target.value)} placeholder="例：18時までに帰りたいです／病院のため午後から" style={{ ...selectStyle, width: '100%', fontSize: '14px', resize: 'vertical', fontFamily: 'inherit' }} />
+                  <button type="button" disabled={saving || noteDraft === (selectedReq.note || '')} onClick={() => autoSave(selectedDate, selectedReq.type, selectedReq.start_time, selectedReq.end_time, noteDraft)}
+                    style={{ marginTop: '6px', padding: '8px 14px', borderRadius: '8px', border: 'none', background: '#c9a84c', color: '#0a0f1e', fontWeight: 800, fontSize: '13px', cursor: 'pointer', opacity: noteDraft === (selectedReq.note || '') ? 0.4 : 1 }}>コメントを保存</button>
+                </div>
+              )}
+              {selectedReq && (
                 <button type="button" disabled={saving} onClick={() => clearDay(selectedDate)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid rgba(248,113,113,0.4)', background: 'none', color: '#f87171', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                   この日の希望を取り消す
                 </button>
@@ -491,7 +506,7 @@ export default function StaffShiftPage({ params }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
               {data.requests.slice().sort((a, b) => a.date.localeCompare(b.date)).map(r => (
                 <div key={r.id} onClick={() => openDay(r.date)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: 'rgba(10,15,30,0.4)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
-                  <span style={{ flex: 1 }}>{r.date}　{r.type === 'work' ? `出勤 ${rangeLabel(r.start_time, r.end_time)}` : '休み希望'}</span>
+                  <span style={{ flex: 1 }}>{r.date}　{r.type === 'work' ? `出勤 ${rangeLabel(r.start_time, r.end_time)}` : '休み希望'}{r.note && <span style={{ display: 'block', fontSize: '11.5px', color: 'rgba(232,228,220,0.65)', marginTop: '2px' }}>コメント：{r.note}</span>}</span>
                 </div>
               ))}
             </div>

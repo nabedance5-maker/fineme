@@ -135,14 +135,21 @@ export async function POST(request, { params }) {
   // 同じ日にwork/off両方が残るのはおかしいため、逆typeの既存希望があれば消してから保存する
   // （カレンダーで日付をタップして出勤/休みを選び直す新UIでは、両方残ると混乱するため）
   const otherType = type === 'work' ? 'off' : 'work';
+  // コメント（note）は、送られてきた時だけ書き換える。出勤⇔休みを選び直した時は前のコメントを引き継ぐ
+  // （でお要望 2026-10-16：各シフトにコメントを付けたい。時間を変えるたびに消えないように）
+  const { data: prevRows } = await supabase.from('provider_shift_requests').select('date, note').eq('period_id', period_id).eq('staff_id', staff.id).in('date', dates);
+  const prevNote = {};
+  (prevRows || []).forEach(r => { if (r.note) prevNote[r.date] = r.note; });
   await supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id).in('date', dates).eq('type', otherType);
 
   const now = new Date().toISOString();
+  const noteGiven = note !== undefined;
+  const cleanNote = noteGiven ? (String(note || '').trim().slice(0, 200) || null) : null;
   const rows = dates.map(d => ({
     period_id, staff_id: staff.id, date: d, type,
     start_time: type === 'work' ? start_time : null,
     end_time: type === 'work' ? end_time : null,
-    note: note || null,
+    note: noteGiven ? cleanNote : (prevNote[d] || null),
     updated_at: now,
   }));
   const { data, error } = await supabase
