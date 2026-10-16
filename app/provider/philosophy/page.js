@@ -21,14 +21,14 @@ export default function ProviderPhilosophyPage() {
           font-size: 18px; font-weight: 800; line-height: 1.9; color: #fff;
           border-left: 4px solid #c9a84c; padding-left: 20px; margin: 0 0 20px;
         }
-        .phil-quote span { color: #c9a84c; }
+        .phil-quote span { color: #fff; text-decoration: underline; text-decoration-color: #c9a84c; text-underline-offset: 5px; }
         .phil-card { padding: 28px; margin-bottom: 16px; }
-        .phil-card h2 { font-size: 17px; font-weight: 800; color: #0a0f1e; margin: 0 0 18px; }
-        .phil-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+        .phil-card h2 { font-size: 17px; font-weight: 800; color: #fff; margin: 0 0 18px; }
+        .phil-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
         .phil-item:last-child { border-bottom: none; }
         .phil-icon { font-size: 26px; flex-shrink: 0; width: 36px; text-align: center; }
-        .phil-body h3 { font-size: 15px; font-weight: 800; margin: 0 0 6px; color: #0a0f1e; }
-        .phil-body p { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.7; }
+        .phil-body h3 { font-size: 15px; font-weight: 800; margin: 0 0 6px; color: #fff; }
+        .phil-body p { font-size: 13.5px; color: #fff; margin: 0; line-height: 1.7; }
         .phil-matching {
           background: rgba(201,168,76,0.06);
           border: 1px solid rgba(201,168,76,0.3);
@@ -36,13 +36,13 @@ export default function ProviderPhilosophyPage() {
           padding: 20px;
           margin: 16px 0 0;
         }
-        .phil-matching h3 { font-size: 14px; font-weight: 800; color: #92721c; margin: 0 0 10px; }
-        .phil-matching p { font-size: 13px; color: #374151; margin: 0; line-height: 1.7; }
+        .phil-matching h3 { font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 10px; }
+        .phil-matching p { font-size: 13.5px; color: #fff; margin: 0; line-height: 1.7; }
         .phil-chip {
           display: inline-block;
           background: rgba(201,168,76,0.12);
           border: 1px solid rgba(201,168,76,0.4);
-          color: #92721c;
+          color: #fff;
           font-size: 12px; font-weight: 700;
           padding: 4px 12px; border-radius: 99px; margin: 4px 4px 0 0;
         }
@@ -51,18 +51,18 @@ export default function ProviderPhilosophyPage() {
         }
         .phil-flow-step {
           display: flex; align-items: flex-start; gap: 14px; padding: 14px 0;
-          border-bottom: 1px dashed #e5e7eb;
+          border-bottom: 1px dashed rgba(255,255,255,0.18);
         }
         .phil-flow-step:last-child { border-bottom: none; }
         .phil-flow-num {
           width: 28px; height: 28px; border-radius: 50%;
-          background: #0a0f1e; color: #c9a84c;
+          background: #c9a84c; color: #fff;
           font-size: 13px; font-weight: 800;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0; margin-top: 2px;
         }
-        .phil-flow-body { font-size: 13px; color: #374151; line-height: 1.7; }
-        .phil-flow-body strong { color: #0a0f1e; font-weight: 800; }
+        .phil-flow-body { font-size: 13.5px; color: #fff; line-height: 1.7; }
+        .phil-flow-body strong { color: #fff; font-weight: 800; }
         .phil-dark {
           background: linear-gradient(135deg, #0a0f1e, #1a1f3e);
           border-radius: 16px; padding: 28px 32px; margin-bottom: 16px;
@@ -74,8 +74,8 @@ export default function ProviderPhilosophyPage() {
         }
       `}</style>
       <div className="container stack" style={{ maxWidth: '780px' }}>
-        <h1 className="section-title">Finemeの考え方</h1>
-        <p className="muted" style={{ marginTop: '-4px' }}>掲載店舗の皆さまへ</p>
+        <h1 className="section-title" style={{ color: '#fff' }}>Finemeの考え方</h1>
+        <p style={{ marginTop: '-4px', color: '#fff' }}>掲載店舗の皆さまへ</p>
 
         {/* でお指摘（2026-10-16）：旧来の「診断→マッチングで新しい人に出会う」前提の内容を、
             今の店舗SaaS（リピーター作り＋AI専属コンサル）に合わせて書き直した */}
@@ -85,7 +85,7 @@ export default function ProviderPhilosophyPage() {
             人に優しくなれる余白をつくり、<br />
             世界は少しずつ<span>愛で満たされていく</span>。」
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '14px', lineHeight: '1.9', margin: 0 }}>
+          <p style={{ color: '#fff', fontSize: '14px', lineHeight: '1.9', margin: 0 }}>
             その自信は、一度の施術ではなく、<strong style={{ color: '#fff' }}>通い続ける中で少しずつ育つもの</strong>です。<br />
             だからFinemeは、新しいお客様を集める仕組みではなく、<strong style={{ color: '#fff' }}>来てくださったお客様に、また来たいと思ってもらうための道具</strong>として作っています。
           </p>
@@ -153,19 +153,19 @@ export default function ProviderPhilosophyPage() {
 
         {/* ビジョン */}
         <div className="phil-dark">
-          <p style={{ color: '#c9a84c', fontSize: '13px', fontWeight: 700, margin: '0 0 8px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Vision</p>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: '0 0 8px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Vision</p>
           <p style={{ color: '#fff', fontSize: '18px', fontWeight: 800, margin: '0 0 12px', lineHeight: 1.6 }}>
             外見を理由に、人生を諦めなくていい世界をつくる。
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.8', margin: 0 }}>
+          <p style={{ color: '#fff', fontSize: '13px', lineHeight: '1.8', margin: 0 }}>
             あなたのお店に通う時間が、誰かの自信を少しずつ育てていきます。<br />
             Finemeは、その「通い続ける関係」を支える道具でありたいと考えています。
           </p>
         </div>
 
         <div className="cluster" style={{ gap: '10px', justifyContent: 'center' }}>
-          <a className="btn" href="/provider/dashboard">ダッシュボードへ戻る</a>
-          <a className="btn btn-ghost" href="/provider/dashboard?tab=scripts">接客の引き出しを開く</a>
+          <a className="btn" href="/provider/dashboard" style={{ color: '#fff' }}>ダッシュボードへ戻る</a>
+          <a className="btn btn-ghost" href="/provider/dashboard?tab=scripts" style={{ color: '#fff' }}>接客の引き出しを開く</a>
         </div>
       </div>
     </main>
