@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { rangeLabel, toMin } from '@/lib/time-span';
+import PaidLeave from './PaidLeave';
 
 // スタッフ本人が各自のスマホから出勤・休み希望を提出するページ（でお要望2026-09-13）。
 // Finemeアカウント不要。provider_staff.shift_access_token（推測不可能なUUID）付きの
@@ -518,6 +519,7 @@ export default function StaffShiftPage({ params }) {
           </div>
         </>
       )}
+      <PaidLeave token={token} cardStyle={cardStyle} labelStyle={labelStyle} inputStyle={selectStyle} />
     </div>
   );
 }

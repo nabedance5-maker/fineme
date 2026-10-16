@@ -31,13 +31,21 @@ async function __POST(request, { params }) {
   const { data: period } = await supabase.from('provider_shift_periods').select('*').eq('id', params.id).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
 
-  const [{ data: settings }, { data: requests }, { data: priorities }, { data: dayPatternRows }, { data: patternRows }] = await Promise.all([
+  const [{ data: settings }, { data: rawRequests }, { data: priorities }, { data: dayPatternRows }, { data: patternRows }, { data: leaves }] = await Promise.all([
     supabase.from('provider_shift_settings').select('rule_type').eq('provider_id', provider.id).single(),
     supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('period_id', period.id),
     supabase.from('provider_shift_priorities').select('staff_id, priority_score').eq('provider_id', provider.id),
     supabase.from('provider_shift_period_day_patterns').select('date, pattern_id').eq('period_id', period.id),
     supabase.from('provider_shift_patterns').select('id, slots').eq('provider_id', provider.id),
+    supabase.from('provider_paid_leave_requests').select('staff_id, date, unit').eq('provider_id', provider.id).eq('status', 'approved').gte('date', period.period_start).lte('date', period.period_end),
   ]);
+  // 承認済みの有給（1日）の日は、休み希望と同じ扱いにして自動作成で入れない（でお要望 2026-10-16）。
+  // 半休の日は出勤希望のまま残す（時間は店舗が調整する）。
+  const leaveKeys = new Set((leaves || []).filter(l => l.unit === 'full').map(l => `${l.staff_id}|${l.date}`));
+  const requests = [
+    ...(rawRequests || []).filter(r => !leaveKeys.has(`${r.staff_id}|${r.date}`)),
+    ...[...leaveKeys].map(k => { const [staff_id, date] = k.split('|'); return { staff_id, date, type: 'off', start_time: null, end_time: null }; }),
+  ];
 
   const dayPatterns = {};
   (dayPatternRows || []).forEach(r => { dayPatterns[r.date] = r.pattern_id; });

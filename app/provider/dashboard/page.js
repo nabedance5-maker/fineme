@@ -1806,10 +1806,15 @@ export default function ProviderDashboardPage() {
         const days = data.days.filter(d => !sel || d.staff_id === sel);
         const totals = {};
         days.forEach(d => {
-          const t = totals[d.staff_id] || (totals[d.staff_id] = { days: 0, work: 0, ot: 0, night: 0, late: 0, early: 0, issues: 0 });
+          const t = totals[d.staff_id] || (totals[d.staff_id] = { days: 0, work: 0, ot: 0, night: 0, late: 0, early: 0, issues: 0, leave: 0 });
           if (d.in) t.days++;
           t.work += d.work_min; t.ot += d.overtime_min; t.night += d.night_min;
           if (d.late_min > 0) t.late++; if (d.early_min > 0) t.early++; if (d.issues.length) t.issues++;
+        });
+        // 承認済みの有給（打刻の無い日も数える）
+        (data.leaves || []).filter(l => !sel || l.staff_id === sel).forEach(l => {
+          const t = totals[l.staff_id] || (totals[l.staff_id] = { days: 0, work: 0, ot: 0, night: 0, late: 0, early: 0, issues: 0, leave: 0 });
+          t.leave = Math.round((t.leave + Number(l.days)) * 10) / 10;
         });
         const rows = Object.entries(totals).map(([id, t]) => `<tr>
             <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(nameOf(id))}</td>
@@ -1819,10 +1824,11 @@ export default function ProviderDashboardPage() {
             <td style="padding:6px 8px;text-align:right">${hm(t.night)}</td>
             <td style="padding:6px 8px;text-align:right">${t.late}回</td>
             <td style="padding:6px 8px;text-align:right">${t.early}回</td>
+            <td style="padding:6px 8px;text-align:right">${t.leave ? `${t.leave}日` : '—'}</td>
             <td style="padding:6px 8px;text-align:right;${t.issues ? 'color:#b42318;font-weight:700' : ''}">${t.issues}件</td>
           </tr>`).join('');
         document.getElementById('att-summary').innerHTML = rows
-          ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px;min-width:560px;width:100%"><thead><tr style="color:#6b7280;font-size:11.5px;text-align:right"><th style="padding:6px 8px;text-align:left">スタッフ</th><th style="padding:6px 8px">勤務日数</th><th style="padding:6px 8px">実働</th><th style="padding:6px 8px">残業</th><th style="padding:6px 8px">深夜</th><th style="padding:6px 8px">遅刻</th><th style="padding:6px 8px">早退</th><th style="padding:6px 8px">要確認</th></tr></thead><tbody>${rows}</tbody></table></div>`
+          ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px;min-width:620px;width:100%"><thead><tr style="color:#6b7280;font-size:11.5px;text-align:right"><th style="padding:6px 8px;text-align:left">スタッフ</th><th style="padding:6px 8px">勤務日数</th><th style="padding:6px 8px">実働</th><th style="padding:6px 8px">残業</th><th style="padding:6px 8px">深夜</th><th style="padding:6px 8px">遅刻</th><th style="padding:6px 8px">早退</th><th style="padding:6px 8px">有給</th><th style="padding:6px 8px">要確認</th></tr></thead><tbody>${rows}</tbody></table></div>`
           : '<p class="muted" style="font-size:13px;margin:0">この月の打刻はまだありません。</p>';
         document.getElementById('att-days').innerHTML = days.length ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:12.5px;min-width:820px;width:100%">
             <thead><tr style="color:#6b7280;font-size:11px;text-align:left;border-bottom:1px solid #e5e7eb">
@@ -2130,7 +2136,124 @@ export default function ProviderDashboardPage() {
 
       monthEl?.addEventListener('change', loadRecords);
       filterEl?.addEventListener('change', () => data && render());
-      const loadTab = () => { loadRecords(); loadSetup(); };
+      // ── 有給休暇（でお要望 2026-10-16） ─────────────────────────────
+      const PL_UNIT = { full: '1日', am: '午前半休', pm: '午後半休' };
+      const PL_STATUS = { pending: '承認待ち', approved: '承認済み', rejected: '却下', cancelled: '取り消し' };
+      const plDate = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+      let plData = null;
+      async function loadPaidLeave() {
+        const pend = document.getElementById('pl-pending');
+        if (!pend) return;
+        const res = await fetch('/api/provider/attendance/paid-leave', { headers: H() });
+        if (!res.ok) { pend.innerHTML = authErrorHtml(res); return; }
+        plData = await res.json();
+        const nameOf2 = id => plData.staff.find(s => s.id === id)?.name || '(不明)';
+        const pending = plData.requests.filter(r => r.status === 'pending').sort((a, b) => a.date.localeCompare(b.date));
+        pend.innerHTML = pending.length
+          ? `<div style="padding:12px 14px;border:1px solid rgba(217,119,6,.4);border-radius:12px;background:#fffbeb"><div style="font-size:12.5px;font-weight:800;color:#92400e;margin-bottom:6px">承認待ちの申請（${pending.length}件）</div>${pending.map(r => {
+              const st = plData.staff.find(s => s.id === r.staff_id)?.summary;
+              return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(217,119,6,.15)">
+                <span style="flex:1;min-width:200px;font-size:13px"><b>${esc(nameOf2(r.staff_id))}</b>・${plDate(r.date)}（${PL_UNIT[r.unit]}）${r.reason ? `<span class="muted" style="font-size:12px">・${esc(r.reason)}</span>` : ''}<span class="muted" style="display:block;font-size:11.5px">残り${st ? st.remaining : '—'}日</span></span>
+                <button type="button" class="btn" data-pl-approve="${r.id}" style="font-size:12px;padding:5px 12px">承認</button>
+                <button type="button" class="btn btn-ghost" data-pl-reject="${r.id}" style="font-size:12px;padding:5px 12px">却下</button>
+              </div>`;
+            }).join('')}</div>`
+          : '<p class="muted" style="font-size:13px;margin:0">承認待ちの申請はありません。</p>';
+        const decide = async (id, status) => {
+          let note = '';
+          if (status === 'rejected') { const n = prompt('却下の理由（スタッフに伝わります・任意）', ''); if (n === null) return; note = n; }
+          const r = await guarded(() => fetch(`/api/provider/attendance/paid-leave/requests/${id}`, { method: 'PATCH', headers: HU(), body: JSON.stringify({ status, note }) }));
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '処理できませんでした'); return; }
+          showToast(status === 'approved' ? '承認しました' : status === 'rejected' ? '却下しました' : '取り消しました');
+          loadPaidLeave(); loadRecords();
+        };
+        pend.querySelectorAll('[data-pl-approve]').forEach(b => b.addEventListener('click', () => decide(b.dataset.plApprove, 'approved')));
+        pend.querySelectorAll('[data-pl-reject]').forEach(b => b.addEventListener('click', () => decide(b.dataset.plReject, 'rejected')));
+
+        const staffEl = document.getElementById('pl-staff');
+        staffEl.innerHTML = plData.staff.length ? `<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px;min-width:620px;width:100%;font-variant-numeric:tabular-nums">
+            <thead><tr style="color:#6b7280;font-size:11.5px;text-align:right"><th style="padding:6px 8px;text-align:left">スタッフ</th><th style="padding:6px 8px">残り</th><th style="padding:6px 8px">付与（有効）</th><th style="padding:6px 8px">取得</th><th style="padding:6px 8px">承認待ち</th><th style="padding:6px 8px;text-align:left">年5日の取得義務</th><th style="padding:6px 8px"></th></tr></thead>
+            <tbody>${plData.staff.map(s => {
+              const m = s.summary; const ob = m.obligation;
+              const obText = ob ? (ob.need > 0 ? `<span style="color:#b42318;font-weight:700">あと${ob.need}日</span><span class="muted" style="font-size:11.5px">（${ob.deadline.replace(/-/g, '/')}まで）</span>` : '<span style="color:#166534;font-weight:700">達成</span>') : '<span class="muted" style="font-size:11.5px">対象外</span>';
+              return `<tr style="border-top:1px solid #f3f4f6">
+                <td style="padding:6px 8px;font-weight:700;white-space:nowrap">${esc(s.name)}</td>
+                <td style="padding:6px 8px;text-align:right;font-weight:800">${m.remaining}日</td>
+                <td style="padding:6px 8px;text-align:right">${m.granted}日</td>
+                <td style="padding:6px 8px;text-align:right">${m.used}日</td>
+                <td style="padding:6px 8px;text-align:right">${m.pending}日</td>
+                <td style="padding:6px 8px;white-space:nowrap">${obText}</td>
+                <td style="padding:6px 8px;text-align:right;white-space:nowrap"><button type="button" class="btn btn-ghost" data-pl-grant="${s.id}" style="font-size:11.5px;padding:4px 10px">付与を登録</button> <button type="button" class="btn btn-ghost" data-pl-grants="${s.id}" style="font-size:11.5px;padding:4px 10px">付与の記録</button></td>
+              </tr>`;
+            }).join('')}</tbody></table></div>
+            <p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.6">年5日の取得義務：10日以上付与した人は、付与日から1年以内に5日以上取得させる必要があります（労働基準法）。</p>`
+          : '<p class="muted" style="font-size:13px;margin:0">スタッフが登録されていません。</p>';
+        staffEl.querySelectorAll('[data-pl-grant]').forEach(b => b.addEventListener('click', () => openGrant(b.dataset.plGrant)));
+        staffEl.querySelectorAll('[data-pl-grants]').forEach(b => b.addEventListener('click', () => openGrantList(b.dataset.plGrants)));
+
+        const hist = plData.requests.filter(r => r.status !== 'pending').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 60);
+        const histEl = document.getElementById('pl-history');
+        histEl.innerHTML = hist.length ? hist.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;flex-wrap:wrap">
+            <span style="flex:1;min-width:200px"><b>${esc(nameOf2(r.staff_id))}</b>・${plDate(r.date)}（${PL_UNIT[r.unit]}）・${PL_STATUS[r.status]}${r.decided_by ? `<span class="muted">（${esc(r.decided_by)}）</span>` : ''}${r.decision_note ? `<span class="muted">・${esc(r.decision_note)}</span>` : ''}</span>
+            ${r.status === 'approved' ? `<button type="button" class="btn btn-ghost" data-pl-cancel="${r.id}" style="font-size:11.5px;padding:3px 10px">承認を取り消す</button>` : ''}
+          </div>`).join('') : '<p class="muted" style="font-size:12.5px;margin:0">まだ履歴はありません。</p>';
+        histEl.querySelectorAll('[data-pl-cancel]').forEach(b => b.addEventListener('click', () => { if (confirm('この有給の承認を取り消しますか？（残り日数に戻ります）')) decide(b.dataset.plCancel, 'cancelled'); }));
+      }
+
+      function openGrant(staffId) {
+        const st = plData?.staff.find(s => s.id === staffId);
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:420px">
+          <h3 style="margin:0 0 10px;font-size:16px">${esc(st?.name || '')}さんに有給を付与</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="form-field" style="margin:0"><label>付与日</label><input type="date" data-on value="${plData.today}" /></div>
+            <div class="form-field" style="margin:0"><label>日数</label><input type="number" data-days min="0.5" max="40" step="0.5" placeholder="例：10" /></div>
+          </div>
+          <div class="form-field" style="margin:8px 0 0"><label>メモ（任意）</label><input type="text" data-note maxlength="100" placeholder="例：入社6か月" /></div>
+          <p class="muted" style="font-size:11.5px;line-height:1.7;margin:8px 0 0">法定の付与日数の目安（週5日以上または週30時間以上の場合）：勤続6か月 10日／1年6か月 11日／2年6か月 12日／3年6か月 14日／4年6か月 16日／5年6か月 18日／6年6か月以降 20日。週の所定日数が少ない人は比例して少なくなります。</p>
+          <p data-msg style="color:#b42318;font-size:12px;margin:6px 0 0;min-height:1em"></p>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px"><button type="button" class="btn btn-ghost" data-cancel>やめる</button><button type="button" class="btn" data-ok>付与する</button></div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('[data-cancel]').addEventListener('click', close);
+        ov.querySelector('[data-ok]').addEventListener('click', async () => {
+          const body = { staff_id: staffId, granted_on: ov.querySelector('[data-on]').value, days: ov.querySelector('[data-days]').value, note: ov.querySelector('[data-note]').value };
+          const r = await guarded(() => fetch('/api/provider/attendance/paid-leave/grants', { method: 'POST', headers: HU(), body: JSON.stringify(body) }));
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { ov.querySelector('[data-msg]').textContent = d.error || '登録できませんでした'; return; }
+          close(); showToast('有給を付与しました'); loadPaidLeave();
+        });
+      }
+
+      function openGrantList(staffId) {
+        const st = plData?.staff.find(s => s.id === staffId);
+        const list = (plData?.grants || []).filter(g => g.staff_id === staffId);
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:460px">
+          <div style="display:flex;justify-content:space-between;gap:8px"><h3 style="margin:0;font-size:16px">${esc(st?.name || '')}さんの付与の記録</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <div style="margin-top:10px">${list.length ? list.map(g => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+            <span style="flex:1"><b>${esc(g.granted_on)}</b>・${g.days}日<span class="muted" style="font-size:11.5px">（${esc(g.expires_on)}まで${g.expires_on < plData.today ? '・失効' : ''}${g.note ? `・${esc(g.note)}` : ''}）</span></span>
+            <button type="button" class="btn btn-ghost" data-del="${g.id}" style="font-size:11.5px;padding:3px 10px;color:#b42318">取り消す</button></div>`).join('') : '<p class="muted" style="font-size:13px">まだ付与の記録はありません。</p>'}</div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        ov.querySelector('[data-x]').addEventListener('click', close);
+        ov.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('この付与の登録を取り消しますか？（入力間違いの修正用）')) return;
+          const r = await guarded(() => fetch(`/api/provider/attendance/paid-leave/grants/${b.dataset.del}`, { method: 'DELETE', headers: HU() }));
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '取り消せませんでした'); return; }
+          close(); showToast('付与の登録を取り消しました'); loadPaidLeave();
+        }));
+      }
+
+      const loadTab = () => { loadRecords(); loadSetup(); loadPaidLeave(); };
       document.querySelectorAll('[data-tab="attendance"]').forEach(btn => btn.addEventListener('click', loadTab));
       if (new URLSearchParams(location.search).get('tab') === 'attendance') loadTab();
     })();
@@ -13238,6 +13361,20 @@ export default function ProviderDashboardPage() {
             <div id="att-summary">読み込み中…</div>
             <h3 style={{ margin: '8px 0 0', fontSize: '14px' }}>日ごとの記録</h3>
             <div id="att-days"></div>
+          </div>
+
+          {/* 有給休暇（でお要望 2026-10-16）：スタッフはシフト提出画面から申請 → 勤怠の管理者が承認・却下。
+              付与は管理者が登録（付与日から2年で失効）。年5日の取得義務の残りも表示する。 */}
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>有給休暇</h2>
+            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: 1.7 }}>スタッフはシフト提出のリンクから有給を申請できます。承認・却下と付与の登録は、勤怠の管理者がロックを解除して行います。付与した有給は付与日から2年で失効します。</p>
+            <div id="pl-pending">読み込み中…</div>
+            <h3 style={{ margin: '6px 0 0', fontSize: '14px' }}>スタッフごとの有給</h3>
+            <div id="pl-staff"></div>
+            <details>
+              <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>最近の申請の履歴</summary>
+              <div id="pl-history" style={{ marginTop: '8px' }}></div>
+            </details>
           </div>
 
           {/* 打刻の準備（でお指摘 2026-10-16：端末の登録が分かりづらい）。
