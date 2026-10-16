@@ -13262,7 +13262,8 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card" style={{ padding: '20px' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: '15px' }}>Finemeからのメッセージ</h3>
-            <p className="muted" style={{ margin: '0', lineHeight: '1.7' }}>順位は出しません。「合う人に届く」ことを大切にしています。<br />スコアは<strong>①AIマッチング</strong>（プロフィール文章をAIが読み取りユーザーの診断結果と照合）・<strong>②ページの充実度</strong>（写真・サービス・Before/After・スタッフ）・<strong>③ユーザーの変容軸との一致</strong>の3層で決まります。どれか1つではなく、ページ全体を丁寧に作ることが「合う人に届く」近道です。</p>
+            {/* でお指摘（2026-10-16）：旧来の「診断→マッチングで合う人に届く」前提の文言が、今の店舗SaaS（リピーター作り＋AI専属コンサル）に合っていなかった */}
+            <p className="muted" style={{ margin: '0', lineHeight: '1.8' }}>Finemeは、<strong>一度来てくださったお客様に、また来たいと思ってもらうための道具</strong>です。<br />新しいお客様を奪い合うのではなく、来店前に前回の記録を見て、会計時に次回をご案内し、ちょうどいい時期に声をかける。その積み重ねを、AI専属コンサルと一緒に毎日回していきます。</p>
             <a href="/provider/philosophy" className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '12px', display: 'inline-block' }}>Finemeの考え方を見る</a>
           </div>
 

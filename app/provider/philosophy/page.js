@@ -1,9 +1,9 @@
 export const metadata = {
-  title: 'Finemeの掲載理念',
-  description: 'Finemeはなぜ「診断→マッチング→変容」という設計なのか。掲載者（ガイド）の役割と、HOT PEPPERとの本質的な違いを解説します。',
+  title: 'Finemeの考え方',
+  description: 'Finemeは、一度来てくださったお客様に、また来たいと思ってもらうための店舗の道具です。大切にしていることと、毎日の回し方を掲載店舗の皆さまにお伝えします。',
   openGraph: {
-    title: 'Finemeの掲載理念 | Fineme',
-    description: '掲載者（ガイド）の役割と、診断→マッチング→変容という設計の理由。',
+    title: 'Finemeの考え方 | Fineme',
+    description: '来てくださったお客様を常連に。記録・次回のご案内・ちょうどいい声かけを、AI専属コンサルと一緒に。',
   },
 };
 
@@ -75,96 +75,79 @@ export default function ProviderPhilosophyPage() {
       `}</style>
       <div className="container stack" style={{ maxWidth: '780px' }}>
         <h1 className="section-title">Finemeの考え方</h1>
-        <p className="muted" style={{ marginTop: '-4px' }}>掲載者（ガイド）の皆さんへ</p>
+        <p className="muted" style={{ marginTop: '-4px' }}>掲載店舗の皆さまへ</p>
 
-        {/* フィロソフィーヒーロー */}
+        {/* でお指摘（2026-10-16）：旧来の「診断→マッチングで新しい人に出会う」前提の内容を、
+            今の店舗SaaS（リピーター作り＋AI専属コンサル）に合わせて書き直した */}
         <div className="phil-hero">
           <p className="phil-quote">
             「外見を整えることで生まれる小さな自信が、<br />
             人に優しくなれる余白をつくり、<br />
             世界は少しずつ<span>愛で満たされていく</span>。」
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', lineHeight: '1.8', margin: 0 }}>
-            Finemeは、外見磨きのサービスを「予約できる場所」として作っていません。<br />
-            変わりたいと思っている人が<strong style={{ color: '#fff' }}>「地図」と「羅針盤」を手に入れ、変容の旅を始める入口</strong>として設計されています。
+          <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '14px', lineHeight: '1.9', margin: 0 }}>
+            その自信は、一度の施術ではなく、<strong style={{ color: '#fff' }}>通い続ける中で少しずつ育つもの</strong>です。<br />
+            だからFinemeは、新しいお客様を集める仕組みではなく、<strong style={{ color: '#fff' }}>来てくださったお客様に、また来たいと思ってもらうための道具</strong>として作っています。
           </p>
         </div>
 
-        {/* ユーザーがFinemeに来るまでの流れ */}
         <div className="card phil-card">
-          <h2>ユーザーがあなたに出会うまでの流れ</h2>
-          <div className="phil-flow">
-            <div className="phil-flow-step">
-              <div className="phil-flow-num">1</div>
-              <div className="phil-flow-body">
-                <strong>Me Scan（外見診断）</strong> を受ける<br />
-                体型・眉・服・髪・肌・脱毛・歯・爪の8軸で現在地を可視化。変わりたい理由・シーン・ビジョンも入力する。
-              </div>
-            </div>
-            <div className="phil-flow-step">
-              <div className="phil-flow-num">2</div>
-              <div className="phil-flow-body">
-                <strong>New Me Navi（変容ナビ）</strong> を受け取る<br />
-                8軸レーダーチャートで「現在地×理想」を可視化。ユーザーが「自分のどこから手をつけるべきか」を自覚する。
-              </div>
-            </div>
-            <div className="phil-flow-step">
-              <div className="phil-flow-num">3</div>
-              <div className="phil-flow-body">
-                <strong>Fineme Compass（最初の一手）</strong> が提示される<br />
-                「あなたの変容の起点はここだ」という1軸が、診断結果から自動選定される。
-              </div>
-            </div>
-            <div className="phil-flow-step">
-              <div className="phil-flow-num">4</div>
-              <div className="phil-flow-body">
-                <strong>あなたのページに辿り着く</strong><br />
-                Compassが示した軸に沿って、診断結果との相性スコアが高いガイドが表示される。ここで初めてあなたに出会う。
-              </div>
+          <h2>Finemeが大切にしていること</h2>
+          <div className="phil-item">
+            <div className="phil-body">
+              <h3>新しいお客様の取り合いより、来てくれたお客様を常連に</h3>
+              <p>2回目に来てもらえるか、通う間隔が空いた時に戻ってきてもらえるか。お店の売上を支えるのは、ここです。Finemeの機能は、すべてこの「リピート」に向けて作っています。</p>
             </div>
           </div>
-
-          <div className="phil-matching">
-            <h3>マッチングスコアの仕組み</h3>
-            <p>Finemeは人気順でも価格順でもなく、<strong>「ユーザーとの相性スコア」</strong>で表示順が変わります。スコアの核心は<strong>AIによるプロフィール解析</strong>です。</p>
-            <p style={{ marginTop: '10px', fontSize: '13px', color: '#374151', lineHeight: '1.7' }}>
-              ダッシュボード「サービス設定」タブの「AIマッチングプロフィール」に以下の4項目を文章で記入し、「AIで分析する」ボタンを押してください。Claudeがその文章を読み取り、ユーザーとの相性を自動で判定します。
-            </p>
-            <div style={{ marginTop: '10px' }}>
-              <span className="phil-chip">よく来るお客様の状況・背景</span>
-              <span className="phil-chip">来る前の典型的な状態</span>
-              <span className="phil-chip">よく起きる変化のパターン</span>
-              <span className="phil-chip">特に向いている人・状況</span>
+          <div className="phil-item">
+            <div className="phil-body">
+              <h3>記録が、次の接客を良くする</h3>
+              <p>カルテや来店の記録は、残すだけでは意味がありません。来店前に前回の内容と「今日聞くこと」が出て、会計時に次回の目安と一言が出る。記録を、その日の接客に返す形にしています。</p>
             </div>
-            <p style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', lineHeight: '1.7' }}>
-              AIが分析したプロフィールは、ユーザーの診断結果（変わりたいきっかけ・過去の失敗パターン・変容軸）と照合されます。チェックボックスよりも文章のほうが精度の高いマッチングが実現します。プロフィールを更新したら再度AIで分析してください。
-            </p>
+          </div>
+          <div className="phil-item">
+            <div className="phil-body">
+              <h3>お知らせは、次の行動につながる形で</h3>
+              <p>次の来店の目安や、しばらく間が空いたお客様への声かけは、お店のLINEから届き、そのまま予約できるボタンが付きます。お客様にとっても、お店にとっても、手間を一つ減らすことを大切にしています。</p>
+            </div>
+          </div>
+          <div className="phil-item">
+            <div className="phil-body">
+              <h3>AIは、相談相手であり、手を動かす係</h3>
+              <p>AI専属コンサルは、お店の実際の数字と目標から「今日やること」を出し、声かけの文面づくりや送信まで手伝います。助言だけで終わらせず、実行まで一緒に進めます。</p>
+            </div>
+          </div>
+          <div className="phil-item">
+            <div className="phil-body">
+              <h3>予約の手数料はいただきません</h3>
+              <p>Finemeは予約を売る広告ではなく、お店を運営するための道具です。月額のご利用料のほかに、予約1件ごとの手数料はかかりません（オンライン決済をご利用の場合のみ、決済手数料がかかります）。</p>
+            </div>
           </div>
         </div>
 
-        {/* ガイドとしてのあなたへ */}
         <div className="card phil-card">
-          <h2>あなたは「出品者」ではなく「ガイド」です</h2>
-          <div className="phil-item">
-            <span className="phil-icon"></span>
-            <div className="phil-body">
-              <h3>ユーザーは答えを探しているのではない</h3>
-              <p>診断を受けたユーザーはすでに「変わりたい理由」を言語化しています。あなたの役割はサービスを売ることではなく、その人の変容の旅に寄り添う「ガイド」として機能することです。</p>
+          <h2>毎日の回し方</h2>
+          <div className="phil-flow">
+            <div className="phil-flow-step">
+              <div className="phil-flow-num">1</div>
+              <div className="phil-flow-body"><strong>朝、AI専属コンサルの「今日やること」を見る</strong><br />声をかけるお客様や、回数券の残りが少ないお客様など、今日やると効くことが並びます。</div>
+            </div>
+            <div className="phil-flow-step">
+              <div className="phil-flow-num">2</div>
+              <div className="phil-flow-body"><strong>来店前に「接客の引き出し」を開く</strong><br />前回の記録、間隔、今日聞くことを確認してからお迎えします。</div>
+            </div>
+            <div className="phil-flow-step">
+              <div className="phil-flow-num">3</div>
+              <div className="phil-flow-body"><strong>施術後はカルテを残し、会計時に次回をご案内</strong><br />次回の目安日と一言が出るので、その場で次回の予約を入れられます。</div>
+            </div>
+            <div className="phil-flow-step">
+              <div className="phil-flow-num">4</div>
+              <div className="phil-flow-body"><strong>あとは自動で</strong><br />予約の前日のご案内、来店後のクチコミのお願い、来店の目安を過ぎたお客様へのお知らせは、Finemeが自動で送ります。</div>
             </div>
           </div>
-          <div className="phil-item">
-            <span className="phil-icon">️</span>
-            <div className="phil-body">
-              <h3>体験談は「レビュー」ではなく「変容の記録」</h3>
-              <p>Finemeの体験談機能は、ユーザーが「変わった証拠」を残す場所です。星評価より「あなたのどこがどう変わったか」という言葉が、次のユーザーの背中を押します。</p>
-            </div>
-          </div>
-          <div className="phil-item">
-            <span className="phil-icon"></span>
-            <div className="phil-body">
-              <h3>紹介した仲間の掲載が続く限り報酬が発生する</h3>
-              <p>あなたのFN番号を他の事業者に共有し、その方がFinemeに掲載し続ける間、毎月¥500の紹介報酬が発生します。掲載料を紹介報酬で相殺・プラスにすることも可能です。</p>
-            </div>
+          <div className="phil-matching">
+            <h3>新しいお客様との出会いについて</h3>
+            <p>Finemeには外見診断（Me Scan）を受けた方が、相性の良いお店を見つける仕組みもあります。公開ページのアピールや「AIマッチングプロフィール」を書いておくと、診断結果と照らして合う方に表示されます。ただし、Finemeは新規集客をお約束するものではありません。来てくださったお客様を常連にすることが、いちばん確実な近道です。</p>
           </div>
         </div>
 
@@ -175,14 +158,14 @@ export default function ProviderPhilosophyPage() {
             外見を理由に、人生を諦めなくていい世界をつくる。
           </p>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.8', margin: 0 }}>
-            あなたが持つ技術・経験・視点は、誰かの「新しい自分」への入口になります。<br />
-            Finemeは、その出会いを「相性」で設計するプラットフォームです。
+            あなたのお店に通う時間が、誰かの自信を少しずつ育てていきます。<br />
+            Finemeは、その「通い続ける関係」を支える道具でありたいと考えています。
           </p>
         </div>
 
         <div className="cluster" style={{ gap: '10px', justifyContent: 'center' }}>
           <a className="btn" href="/provider/dashboard">ダッシュボードへ戻る</a>
-          <a className="btn btn-ghost" href="/provider/dashboard">公開設定を見直す</a>
+          <a className="btn btn-ghost" href="/provider/dashboard?tab=scripts">接客の引き出しを開く</a>
         </div>
       </div>
     </main>
