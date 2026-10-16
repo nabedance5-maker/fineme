@@ -382,6 +382,11 @@ const DASHBOARD_CSS = `
       .shift-tbl .st-req { color: #2563eb; }
       .shift-tbl .st-req-off { color: #6b7280; font-weight: 700; }
       .shift-tbl .st-none { color: #d1d5db; }
+      /* 顧客一覧の絞り込み（2026-10-17） */
+      .cf-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; background: #fff; }
+      .cf-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: #1a1410; }
+      .cf-panel select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .cf-panel select.is-on { border-color: #c9a84c; background: rgba(201,168,76,0.1); font-weight: 700; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -6445,11 +6450,78 @@ export default function ProviderDashboardPage() {
         return /^\d+$/.test(digits) && String(no).includes(digits.replace(/^0+(?=\d)/, ''));
       }
 
+      // ── 詳しい絞り込み（でお要望 2026-10-17） ──
+      const CF_IDS = ['cf-kind', 'cf-line', 'cf-visits', 'cf-last', 'cf-next', 'cf-staff', 'cf-pkg', 'cf-mem', 'cf-bday', 'cf-gender', 'cf-note'];
+      const cfVal = id => document.getElementById(id)?.value || '';
+      function cfActiveCount() { return CF_IDS.filter(id => cfVal(id)).length; }
+      function passesExtraFilters(c, isManual) {
+        const v = Object.fromEntries(CF_IDS.map(id => [id, cfVal(id)]));
+        if (v['cf-kind'] === 'member' && isManual) return false;
+        if (v['cf-kind'] === 'manual' && !isManual) return false;
+        const lineStore = !isManual && !!c.line_store, lineAny = !isManual && !!c.line_any;
+        if (v['cf-line'] === 'store' && !lineStore) return false;
+        if (v['cf-line'] === 'any' && !lineAny) return false;
+        if (v['cf-line'] === 'none' && lineAny) return false;
+        const visits = isManual ? 0 : (c.visitCount || 0);
+        if (v['cf-visits'] === '0' && visits !== 0) return false;
+        if (v['cf-visits'] === '1' && visits !== 1) return false;
+        if (v['cf-visits'] === '2-4' && (visits < 2 || visits > 4)) return false;
+        if (v['cf-visits'] === '5+' && visits < 5) return false;
+        const since = !isManual && c.last_visit ? Math.floor((Date.now() - new Date(c.last_visit).getTime()) / 86400000) : null;
+        if (v['cf-last'] === 'none' && since !== null) return false;
+        if (v['cf-last'] === '30' && !(since !== null && since <= 30)) return false;
+        if (v['cf-last'] === '60' && !(since !== null && since > 30 && since <= 60)) return false;
+        if (v['cf-last'] === '90' && !(since !== null && since > 60 && since <= 90)) return false;
+        if (v['cf-last'] === '91+' && !(since !== null && since > 90)) return false;
+        const booked = !isManual && !!c.next_booked_date;
+        if (v['cf-next'] === 'yes' && !booked) return false;
+        if (v['cf-next'] === 'no' && booked) return false;
+        const staffId = isManual ? null : (c.assignedStaffId || null);
+        if (v['cf-staff'] === 'none' && staffId) return false;
+        if (v['cf-staff'] && v['cf-staff'] !== 'none' && staffId !== v['cf-staff']) return false;
+        const pk = isManual ? 0 : (c.packages_active || 0);
+        if (v['cf-pkg'] === 'yes' && !pk) return false;
+        if (v['cf-pkg'] === 'low' && !(!isManual && c.package_low)) return false;
+        if (v['cf-pkg'] === 'no' && pk) return false;
+        const mem = !isManual && !!c.membership_active;
+        if (v['cf-mem'] === 'yes' && !mem) return false;
+        if (v['cf-mem'] === 'no' && mem) return false;
+        if (v['cf-bday']) {
+          const m = c.birthday ? Number(c.birthday.slice(5, 7)) : null;
+          const now = new Date(Date.now() + 9 * 3600000).getUTCMonth() + 1;
+          const want = v['cf-bday'] === 'this' ? now : (now % 12) + 1;
+          if (m !== want) return false;
+        }
+        if (v['cf-gender'] === 'unknown' && c.gender) return false;
+        if (v['cf-gender'] && v['cf-gender'] !== 'unknown' && c.gender !== v['cf-gender']) return false;
+        const hasNote = isManual ? !!c.memo : !!c.hasStoreNote;
+        if (v['cf-note'] === 'yes' && !hasNote) return false;
+        if (v['cf-note'] === 'no' && hasNote) return false;
+        return true;
+      }
+      function syncCfUi() {
+        const n = cfActiveCount();
+        const t = document.getElementById('cf-toggle');
+        if (t) t.textContent = n ? `絞り込み（${n}）` : '絞り込み';
+        CF_IDS.forEach(id => document.getElementById(id)?.classList.toggle('is-on', !!cfVal(id)));
+      }
+      document.getElementById('cf-toggle')?.addEventListener('click', () => { const p = document.getElementById('cf-panel'); if (p) p.hidden = !p.hidden; });
+      CF_IDS.forEach(id => document.getElementById(id)?.addEventListener('change', () => { syncCfUi(); render(); }));
+      document.getElementById('cf-clear')?.addEventListener('click', () => { CF_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); syncCfUi(); render(); });
+      function fillCfStaff() {
+        const sel = document.getElementById('cf-staff');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">すべて</option><option value="none">担当なし</option>' + (staffList || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+        sel.value = cur;
+      }
+
       function currentFilteredMemberRows(filterOverride, kwOverride) {
         const filter = filterOverride !== undefined ? filterOverride : (filterSel?.value || 'all');
         const kw = kwOverride !== undefined ? kwOverride : (searchInput?.value || '').trim().toLowerCase();
         return allItems.filter(c => {
           if (kw && !matchesCustomer(kw, c.customer_name, c.member_number, c.phone)) return false;
+          if (filterOverride === undefined && !passesExtraFilters(c, false)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
           if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
@@ -6466,7 +6538,7 @@ export default function ProviderDashboardPage() {
         // 休眠・超過フィルターは非会員には概念自体が無いため、絞り込み中は一覧から外す
         // （「全て」の時だけ非会員も並べる）
         const manualRows = filter === 'all'
-          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number, m.phone))
+          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number, m.phone) && passesExtraFilters(m, true))
           : [];
         const sortMode = sortSel?.value || 'registered';
         const items = sortMode.startsWith('registered')
@@ -7668,6 +7740,7 @@ export default function ProviderDashboardPage() {
           ]);
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           staffList = staffRes.ok ? await staffRes.json() : [];
+          fillCfStaff();
           allItems = await res.json();
           updateFilterCounts();
 
@@ -14874,7 +14947,7 @@ export default function ProviderDashboardPage() {
             <div id="customers-dormant-upsell"></div>
             <div id="customers-overdue-panel"></div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
-              <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
+              <label className="muted" style={{ fontSize: '13px' }}>状態：</label>
               <select id="customers-filter">
                 <option value="all">すべて</option>
                 <option value="user-overdue">ユーザー想定超過のみ</option>
@@ -14890,6 +14963,22 @@ export default function ProviderDashboardPage() {
                 <option value="name">名前順</option>
               </select>
               <input id="karte-search" type="text" placeholder="名前・会員番号・電話番号で検索" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
+              <button type="button" className="btn btn-ghost" id="cf-toggle" style={{ fontSize: '12.5px', padding: '7px 12px' }}>絞り込み</button>
+            </div>
+            {/* 顧客一覧の絞り込み（でお要望 2026-10-17：LINE連携中のお客様など、もっと色々な条件で） */}
+            <div id="cf-panel" className="cf-panel" hidden>
+              <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="manual">非会員</option></select></label>
+              <label>LINE<select id="cf-line"><option value="">すべて</option><option value="store">お店のLINEと連携中</option><option value="any">LINEで連絡できる</option><option value="none">LINEで連絡できない</option></select></label>
+              <label>来店回数<select id="cf-visits"><option value="">すべて</option><option value="0">来店なし</option><option value="1">1回</option><option value="2-4">2〜4回</option><option value="5+">5回以上</option></select></label>
+              <label>最終来店<select id="cf-last"><option value="">すべて</option><option value="30">30日以内</option><option value="60">31〜60日前</option><option value="90">61〜90日前</option><option value="91+">91日以上前</option><option value="none">来店なし</option></select></label>
+              <label>次回予約<select id="cf-next"><option value="">すべて</option><option value="yes">あり</option><option value="no">なし</option></select></label>
+              <label>担当スタッフ<select id="cf-staff"><option value="">すべて</option><option value="none">担当なし</option></select></label>
+              <label>回数券<select id="cf-pkg"><option value="">すべて</option><option value="yes">有効な回数券あり</option><option value="low">残り1回以下</option><option value="no">なし</option></select></label>
+              <label>会員プラン（月額）<select id="cf-mem"><option value="">すべて</option><option value="yes">入会中</option><option value="no">なし</option></select></label>
+              <label>誕生月<select id="cf-bday"><option value="">すべて</option><option value="this">今月</option><option value="next">来月</option></select></label>
+              <label>性別<select id="cf-gender"><option value="">すべて</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他</option><option value="unknown">未登録</option></select></label>
+              <label>固定メモ<select id="cf-note"><option value="">すべて</option><option value="yes">あり</option><option value="no">なし</option></select></label>
+              <button type="button" className="btn btn-ghost" id="cf-clear" style={{ fontSize: '12px', padding: '6px 12px', alignSelf: 'flex-end' }}>条件をクリア</button>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>

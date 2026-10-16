@@ -35,10 +35,10 @@ export async function GET(request) {
   try { numbers = (await ensureCustomerNumbers(supabase, provider.id, { manualIds })).manual; } catch { /* 番号が振れなくても一覧は返す */ }
   // 基本情報の電話番号（電話番号で検索できるように。でお要望 2026-10-16）
   const { data: profs } = rows.length
-    ? await supabase.from('provider_customer_profiles').select('manual_customer_id, phone').eq('provider_id', provider.id).in('manual_customer_id', rows.map(r => r.id))
+    ? await supabase.from('provider_customer_profiles').select('manual_customer_id, phone, gender, birthday').eq('provider_id', provider.id).in('manual_customer_id', rows.map(r => r.id))
     : { data: [] };
-  const phoneOf = Object.fromEntries((profs || []).filter(p => p.phone).map(p => [p.manual_customer_id, p.phone]));
-  return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null, phone: phoneOf[r.id] || null })));
+  const profOf = Object.fromEntries((profs || []).map(p => [p.manual_customer_id, p]));
+  return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null, phone: profOf[r.id]?.phone || null, gender: profOf[r.id]?.gender || null, birthday: profOf[r.id]?.birthday || null })));
 }
 
 async function __POST(request) {

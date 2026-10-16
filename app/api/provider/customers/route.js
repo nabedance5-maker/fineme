@@ -127,15 +127,19 @@ export async function GET(request) {
     { data: diagnosisRows },
     { data: profileRows },
     { data: mirrorRows },
+    { data: lineLinkRows },
+    { data: pkgRows },
+    { data: memRows },
+    { data: futureRows },
   ] = await Promise.all([
-    supabase.from('profiles').select('id, display_name').in('id', userIds),
+    supabase.from('profiles').select('id, display_name, line_user_id, birthday').in('id', userIds),
     supabase.from('provider_recommended_frequencies').select('axis, frequency_weeks, frequency_months').eq('provider_id', provider.id),
     supabase.from('provider_customer_notes').select('user_id, note, assigned_staff_id').eq('provider_id', provider.id).in('user_id', userIds),
     supabase.from('provider_dormant_settings').select('no_visit_days').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_staff').select('id, name').eq('provider_id', provider.id),
     supabase.from('user_service_log_visits').select('log_id').in('log_id', logIds),
     supabase.from('diagnosis_results').select('user_id, result').in('user_id', userIds),
-    supabase.from('provider_customer_profiles').select('user_id, phone, last_name, first_name').eq('provider_id', provider.id).in('user_id', userIds),
+    supabase.from('provider_customer_profiles').select('user_id, phone, last_name, first_name, gender, birthday').eq('provider_id', provider.id).in('user_id', userIds),
     // report_content全体は大きいので、一覧に使う2項目だけ取り出す（でお報告 2026-10-16：一覧の表示が遅い）
     supabase.from('mirror_sessions')
       .select('user_id, created_at, visual_score:report_content->visual_score, visual_tier:report_content->>visual_tier')
@@ -143,6 +147,11 @@ export async function GET(request) {
       .eq('paid', true)
       .not('report_content', 'is', null)
       .order('created_at', { ascending: false }),
+    // 顧客一覧の絞り込み用（でお要望 2026-10-17：LINE連携中・回数券・会員プラン・次回予約など）
+    supabase.from('provider_customer_line_links').select('user_id').eq('provider_id', provider.id).in('user_id', userIds),
+    supabase.from('customer_packages').select('id, user_id, total_sessions, expires_at, package_type, subscription_status').eq('provider_id', provider.id).in('user_id', userIds),
+    supabase.from('provider_memberships').select('user_id, status').eq('provider_id', provider.id).eq('status', 'active').in('user_id', userIds),
+    supabase.from('reservations').select('user_id, reserved_date, confirmed_date').eq('provider_id', provider.id).in('status', ['pending', 'approved', 'counter_proposed']).in('user_id', userIds).gte('reserved_date', new Date(Date.now() - 31 * 86400000).toISOString().slice(0, 10)),
   ]);
 
   let numberMap = {};
@@ -187,6 +196,44 @@ export async function GET(request) {
     };
   });
 
+  // 絞り込み用の属性
+  const todayJst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  const storeLine = new Set((lineLinkRows || []).map(x => x.user_id));
+  const finemeLine = new Set((profiles || []).filter(p => p.line_user_id).map(p => p.id));
+  const genderMap = {}, birthdayMap = {};
+  (profiles || []).forEach(p => { if (p.birthday) birthdayMap[p.id] = p.birthday; });
+  (profileRows || []).forEach(p => { if (p.gender) genderMap[p.user_id] = p.gender; if (p.birthday) birthdayMap[p.user_id] = p.birthday; });
+  const livePkgs = (pkgRows || []).filter(p => (!p.expires_at || p.expires_at.slice(0, 10) >= todayJst) && p.subscription_status !== 'canceled');
+  const { data: usageRows } = livePkgs.length
+    ? await supabase.from('package_usages').select('customer_package_id').in('customer_package_id', livePkgs.map(p => p.id)).is('undone_at', null)
+    : { data: [] };
+  const usedOf = {};
+  (usageRows || []).forEach(u => { usedOf[u.customer_package_id] = (usedOf[u.customer_package_id] || 0) + 1; });
+  const pkgInfo = {};
+  livePkgs.forEach(p => {
+    const remaining = p.package_type === 'unlimited' ? null : Math.max(0, (p.total_sessions || 0) - (usedOf[p.id] || 0));
+    if (remaining === 0) return;
+    const cur = pkgInfo[p.user_id] || (pkgInfo[p.user_id] = { count: 0, low: false });
+    cur.count++;
+    if (remaining != null && remaining <= 1) cur.low = true;
+  });
+  const memberActive = new Set((memRows || []).map(m => m.user_id));
+  const nextBooked = {};
+  (futureRows || []).forEach(r => {
+    const d = r.confirmed_date || r.reserved_date;
+    if (d >= todayJst && (!nextBooked[r.user_id] || d < nextBooked[r.user_id])) nextBooked[r.user_id] = d;
+  });
+  const attrsOf = uid => ({
+    line_store: storeLine.has(uid),
+    line_any: storeLine.has(uid) || finemeLine.has(uid),
+    gender: genderMap[uid] || null,
+    birthday: birthdayMap[uid] || null,
+    packages_active: pkgInfo[uid]?.count || 0,
+    package_low: !!pkgInfo[uid]?.low,
+    membership_active: memberActive.has(uid),
+    next_booked_date: nextBooked[uid] || null,
+  });
+
   const result = logs.map(l => {
     const assignedStaffId = assignedStaffMap[l.user_id] || null;
     return {
@@ -205,6 +252,7 @@ export async function GET(request) {
       assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,
       phone: phoneMap[l.user_id] || null,
       registered_at: new Date(firstSeen[l.user_id]).toISOString(),
+      ...attrsOf(l.user_id),
     };
   });
   // New Me Logを連携していないが、予約・入会・回数券・カルテ等でつながっているお客様も一覧に出す
@@ -226,6 +274,7 @@ export async function GET(request) {
       assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,
       phone: phoneMap[r.user_id] || r.phone || null,
       registered_at: r.created_at,
+      ...attrsOf(r.user_id),
     });
   });
 
