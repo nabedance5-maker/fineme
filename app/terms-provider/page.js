@@ -42,6 +42,20 @@ export default function TermsProviderPage() {
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>第3条の2（オンライン決済・代理受領・返金・チャージバック）</h2>
+          <ul className="stack" style={{ gap: 6 }}>
+            <li><strong>代理受領：</strong>掲載者は当サービスに対し、お客様がFineme経由で行うオンライン決済（請求・回数券・会員プラン・予約デポジット・POS等）の代金を、決済代行会社Stripeを通じて掲載者に代わって受け取る権限を与えます。お客様が当サービスに支払った時点で、お客様の掲載者に対する支払いは完了したものとします。</li>
+            <li><strong>入金：</strong>受け取った代金は、決済手数料（4.5%）を差し引いて、Stripeを通じて掲載者が登録した口座へ入金します。入金の時期はStripeの入金スケジュールに従います。</li>
+            <li><strong>提供責任：</strong>決済の対象となる商品・サービス（施術・回数券・会員プラン等）は掲載者が提供します。提供の内容・品質・説明・解約や中途解約への対応は掲載者の責任で行ってください。</li>
+            <li><strong>返金：</strong>返金するかどうかは掲載者が判断し、その責任を負います。返金は掲載者の依頼を受けて当サービスが行います（予約デポジットの、キャンセル・お断り時の自動返金を除く）。返金した額は掲載者の負担とし、決済手数料は返還しません。</li>
+            <li><strong>チャージバック：</strong>お客様のカード会社等から不正利用・不審請求の申し立てを受けた場合、掲載者は当サービスの求めに応じて、取引の証拠（予約・来店の記録、契約書、やり取りの記録等）を速やかに提出してください。最終的に取り消された代金と、申し立てに伴う手数料は掲載者の負担とします。</li>
+            <li><strong>差し引き・請求：</strong>掲載者が負担すべき返金額・取り消された代金・手数料は、当サービスが今後の入金から差し引くか、月額掲載料とあわせて請求できるものとします。</li>
+            <li><strong>保留・停止：</strong>不正利用の疑いがある場合や、前項の負担が支払われない場合、当サービスは入金を一時的に保留したり、決済機能の利用を止めたりすることがあります。</li>
+            <li><strong>Stripeの規約：</strong>掲載者は、Stripeの連結アカウント契約（<a href="https://stripe.com/jp/legal/connect-account" target="_blank" rel="noopener noreferrer">Stripe Connected Account Agreement</a>）に同意し、Stripeが求める本人確認等に協力してください。</li>
+          </ul>
+        </section>
+
+        <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>第4条（解約）</h2>
           <ul className="stack" style={{ gap: 6 }}>
             <li>解約はマイページより月末までにお手続きいただくと、翌月から課金が停止します。</li>
@@ -137,7 +151,7 @@ export default function TermsProviderPage() {
           <p>本規約は日本法に準拠します。当サービスに関する紛争は、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09　／　改定日: 2026-10-13（第7条の2 店舗運営機能に登録するお客様の情報 を追加）　／　版: {PROVIDER_TERMS_VERSION}</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09　／　改定日: 2026-10-16（第3条の2 オンライン決済・代理受領・返金・チャージバック を追加）　／　版: {PROVIDER_TERMS_VERSION}</p>
       </div>
     </main>
   );

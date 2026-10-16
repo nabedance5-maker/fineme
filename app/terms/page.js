@@ -47,6 +47,14 @@ export default function TermsPage() {
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>第4条の2（オンライン決済）</h2>
+          <ul className="stack" style={{ gap: 6 }}>
+            <li>Fineme上で掲載店舗の商品・サービス（回数券・会員プラン・予約デポジット等）の代金を支払う場合、当サービスは掲載店舗に代わって代金を受け取ります。当サービスへの支払いをもって、掲載店舗への支払いは完了します。</li>
+            <li>商品・サービスの提供・返金・解約は、各掲載店舗の定めに従います。返金を希望する場合は、まず掲載店舗にご連絡ください。</li>
+          </ul>
+        </section>
+
+        <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>第5条（禁止事項）</h2>
           <ul className="stack" style={{ gap: 6 }}>
             <li>法令または公序良俗に反する行為</li>
@@ -83,7 +91,7 @@ export default function TermsPage() {
           <p>本規約は日本法に準拠します。当サービスに関する紛争は、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09　／　改定日: 2026-10-16（第4条の2 オンライン決済 を追加）</p>
       </div>
     </main>
   );
