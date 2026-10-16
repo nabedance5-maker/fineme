@@ -49,6 +49,44 @@ function computeStatus(log, noVisitDays) {
   return 'active';
 }
 
+// New Me Log以外でこの店舗とつながっている会員（予約・オンライン入会・回数券・カルテ・基本情報）
+async function loadNonLogCustomers(provider, logUserIds) {
+  const [res, mem, pkg, kar, prof] = await Promise.all([
+    supabase.from('reservations').select('user_id, user_name, status, reserved_date, confirmed_date, created_at').eq('provider_id', provider.id).not('user_id', 'is', null).limit(5000),
+    supabase.from('provider_memberships').select('user_id, last_name, first_name, phone, created_at, status').eq('provider_id', provider.id).neq('status', 'draft'),
+    supabase.from('customer_packages').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null),
+    supabase.from('provider_karte_entries').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null).limit(5000),
+    supabase.from('provider_customer_profiles').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null),
+  ]);
+  const by = {};
+  const phones = {};
+  const touch = (uid, at, name) => {
+    if (!uid || logUserIds.has(uid)) return;
+    const r = by[uid] || (by[uid] = { user_id: uid, created_at: at, customer_name: name || null, last_visit: null, visitCount: 0 });
+    if (at && at < r.created_at) r.created_at = at;
+    if (!r.customer_name && name) r.customer_name = name;
+  };
+  (res.data || []).forEach(x => {
+    touch(x.user_id, x.created_at, x.user_name);
+    const r = by[x.user_id];
+    if (r && x.status === 'visited') {
+      r.visitCount++;
+      const d = x.confirmed_date || x.reserved_date;
+      if (d && (!r.last_visit || d > r.last_visit)) r.last_visit = d;
+    }
+  });
+  (mem.data || []).forEach(x => { touch(x.user_id, x.created_at, [x.last_name, x.first_name].filter(Boolean).join(' ')); if (x.phone) phones[x.user_id] = x.phone; });
+  (pkg.data || []).forEach(x => touch(x.user_id, x.created_at));
+  (kar.data || []).forEach(x => touch(x.user_id, x.created_at));
+  (prof.data || []).forEach(x => touch(x.user_id, x.created_at));
+  const rows = Object.values(by).map(r => ({
+    id: `nolog-${r.user_id}`, user_id: r.user_id, axis: null, name: null, last_visit: r.last_visit, next_visit: null,
+    frequency_weeks: null, frequency_months: null, cost: null, created_at: r.created_at,
+    customer_name: r.customer_name, visitCount: r.visitCount, no_log: true,
+  }));
+  return { rows, phones };
+}
+
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -63,7 +101,8 @@ export async function GET(request) {
     .order('next_visit', { ascending: true, nullsFirst: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  if (!logs?.length) return Response.json([]);
+  const extras = await loadNonLogCustomers(provider, new Set((logs || []).map(l => l.user_id)));
+  if (!logs?.length && !extras.rows.length) return Response.json([]);
 
   // 会員番号は連携した順（最初のログ作成日）に採番する
   const firstSeen = {};
@@ -72,8 +111,11 @@ export async function GET(request) {
     const t = new Date(l.created_at).getTime();
     if (firstSeen[l.user_id] === undefined || t < firstSeen[l.user_id]) firstSeen[l.user_id] = t;
   });
+  extras.rows.forEach(r => { firstSeen[r.user_id] = new Date(r.created_at).getTime(); });
   const userIds = Object.keys(firstSeen).sort((a, b) => firstSeen[a] - firstSeen[b]);
+  const logUserIds = new Set(logs.map(l => l.user_id));
   const logIds = logs.map(l => l.id);
+  if (!logIds.length) logIds.push('00000000-0000-0000-0000-000000000000');
 
   const [
     { data: profiles },
@@ -83,6 +125,7 @@ export async function GET(request) {
     { data: staffRows },
     { data: visitRows },
     { data: diagnosisRows },
+    { data: profileRows },
     { data: mirrorRows },
   ] = await Promise.all([
     supabase.from('profiles').select('id, display_name').in('id', userIds),
@@ -92,8 +135,10 @@ export async function GET(request) {
     supabase.from('provider_staff').select('id, name').eq('provider_id', provider.id),
     supabase.from('user_service_log_visits').select('log_id').in('log_id', logIds),
     supabase.from('diagnosis_results').select('user_id, result').in('user_id', userIds),
+    supabase.from('provider_customer_profiles').select('user_id, phone, last_name, first_name').eq('provider_id', provider.id).in('user_id', userIds),
+    // report_content全体は大きいので、一覧に使う2項目だけ取り出す（でお報告 2026-10-16：一覧の表示が遅い）
     supabase.from('mirror_sessions')
-      .select('user_id, report_content, created_at')
+      .select('user_id, created_at, visual_score:report_content->visual_score, visual_tier:report_content->>visual_tier')
       .in('user_id', userIds)
       .eq('paid', true)
       .not('report_content', 'is', null)
@@ -105,6 +150,14 @@ export async function GET(request) {
 
   const nameMap = {};
   (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
+  // 店舗が登録した基本情報（氏名・電話）を優先する
+  const phoneMap = {};
+  (profileRows || []).forEach(p => {
+    if (p.phone) phoneMap[p.user_id] = p.phone;
+    const full = [p.last_name, p.first_name].filter(Boolean).join(' ');
+    if (full) nameMap[p.user_id] = full;
+  });
+  Object.entries(extras.phones).forEach(([uid, ph]) => { if (!phoneMap[uid]) phoneMap[uid] = ph; });
   const recommended = {};
   (recFreqRows || []).forEach(r => { recommended[r.axis] = r; });
   const noteMap = {};
@@ -129,8 +182,8 @@ export async function GET(request) {
   (mirrorRows || []).forEach(m => {
     if (mirrorByUser[m.user_id]) return;
     mirrorByUser[m.user_id] = {
-      visualScore: m.report_content?.visual_score ?? null,
-      visualTier: m.report_content?.visual_tier || null,
+      visualScore: m.visual_score ?? null,
+      visualTier: m.visual_tier || null,
     };
   });
 
@@ -150,7 +203,30 @@ export async function GET(request) {
       mirror: mirrorByUser[l.user_id] || null,
       assignedStaffId,
       assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,
+      phone: phoneMap[l.user_id] || null,
+      registered_at: new Date(firstSeen[l.user_id]).toISOString(),
     };
+  });
+  // New Me Logを連携していないが、予約・入会・回数券・カルテ等でつながっているお客様も一覧に出す
+  // （でお指摘 2026-10-16：顧客情報が見えない。一覧がNew Me Log連携者だけだった）
+  extras.rows.forEach(r => {
+    const assignedStaffId = assignedStaffMap[r.user_id] || null;
+    result.push({
+      ...r,
+      customer_name: nameMap[r.user_id] || r.customer_name || '(名前未設定)',
+      member_number: numberMap[r.user_id] ?? null,
+      userOverdueDays: null,
+      storeOverdueDays: null,
+      hasStoreNote: !!noteMap[r.user_id],
+      status: computeStatus(r, noVisitDays),
+      meScanDone: meScanDoneSet.has(r.user_id),
+      meScanType: typeMap[r.user_id] || null,
+      mirror: mirrorByUser[r.user_id] || null,
+      assignedStaffId,
+      assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,
+      phone: phoneMap[r.user_id] || r.phone || null,
+      registered_at: r.created_at,
+    });
   });
 
   const { searchParams } = new URL(request.url);

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { ensureCustomerNumbers } from '@/lib/customer-numbers';
 import { withAudit } from '@/lib/activity-log';
+import { normalizeProfile } from '@/lib/customer-profile';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -32,7 +33,12 @@ export async function GET(request) {
   const manualIds = rows.filter(r => !r.linked_user_id).map(r => r.id).reverse();
   let numbers = {};
   try { numbers = (await ensureCustomerNumbers(supabase, provider.id, { manualIds })).manual; } catch { /* 番号が振れなくても一覧は返す */ }
-  return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null })));
+  // 基本情報の電話番号（電話番号で検索できるように。でお要望 2026-10-16）
+  const { data: profs } = rows.length
+    ? await supabase.from('provider_customer_profiles').select('manual_customer_id, phone').eq('provider_id', provider.id).in('manual_customer_id', rows.map(r => r.id))
+    : { data: [] };
+  const phoneOf = Object.fromEntries((profs || []).filter(p => p.phone).map(p => [p.manual_customer_id, p.phone]));
+  return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null, phone: phoneOf[r.id] || null })));
 }
 
 async function __POST(request) {
@@ -41,7 +47,7 @@ async function __POST(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { display_name, memo } = await request.json();
+  const { display_name, memo, phone } = await request.json();
   if (!display_name?.trim()) return Response.json({ error: 'お名前は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -53,7 +59,10 @@ async function __POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   let memberNumber = null;
   try { memberNumber = (await ensureCustomerNumbers(supabase, provider.id, { manualIds: [data.id] })).manual[data.id] ?? null; } catch { /* 次回の一覧取得で採番される */ }
-  return Response.json({ ...data, member_number: memberNumber });
+  // 追加時に電話番号を入れた場合は、基本情報に保存する
+  const ph = normalizeProfile({ phone }).phone;
+  if (ph) await supabase.from('provider_customer_profiles').insert({ provider_id: provider.id, manual_customer_id: data.id, phone: ph, updated_by: '非会員の追加' });
+  return Response.json({ ...data, member_number: memberNumber, phone: ph || null });
 }
 
 export const POST = withAudit(__POST);

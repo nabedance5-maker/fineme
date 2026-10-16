@@ -6341,9 +6341,13 @@ export default function ProviderDashboardPage() {
       // 用意して「放っておいても目に付く」状態にする（デフォルトのnext_visit昇順に加え、
       // 最終来店が古い順を選べば、来なくなった順に自然と上に出てくる）。
       function applySortOrder(items) {
-        const sortMode = sortSel?.value || 'next_visit';
+        const sortMode = sortSel?.value || 'registered';
         const sorted = [...items];
-        if (sortMode === 'last_visit_old') {
+        // 登録した順（でお要望 2026-10-16・既定）：会員は初めてこのお店とつながった日時、非会員は追加した日時
+        const regAt = c => new Date(c.registered_at || c.created_at || 0).getTime();
+        if (sortMode === 'registered') sorted.sort((a, b) => regAt(a) - regAt(b));
+        else if (sortMode === 'registered_desc') sorted.sort((a, b) => regAt(b) - regAt(a));
+        else if (sortMode === 'last_visit_old') {
           sorted.sort((a, b) => {
             const at = a.last_visit ? new Date(a.last_visit).getTime() : -Infinity;
             const bt = b.last_visit ? new Date(b.last_visit).getTime() : -Infinity;
@@ -6382,9 +6386,12 @@ export default function ProviderDashboardPage() {
       // ページ、対象者の絞り込み方が無い」。一斉メール配信タブ自身に絞り込みUIを追加した）。
       // 会員番号（店舗内連番）。表示は0埋め4桁、検索は「12」「0012」「No.12」「#12」のどれでも当たる。
       function fmtNo(n) { return n == null ? '' : 'No.' + String(n); }
-      function matchesCustomer(kw, name, no) {
+      function matchesCustomer(kw, name, no, phone) {
         if (!kw) return true;
         if ((name || '').toLowerCase().includes(kw)) return true;
+        // 電話番号：ハイフン・空白・全角を無視して、3桁以上の数字の並びで一致を探す（でお要望 2026-10-16）
+        const kwDigits = kw.replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
+        if (phone && kwDigits.length >= 3 && String(phone).replace(/\D/g, '').includes(kwDigits)) return true;
         if (no == null) return false;
         const digits = kw.replace(/^(no\.?|#|会員番号)\s*/i, '').replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
         return /^\d+$/.test(digits) && String(no).includes(digits.replace(/^0+(?=\d)/, ''));
@@ -6394,7 +6401,7 @@ export default function ProviderDashboardPage() {
         const filter = filterOverride !== undefined ? filterOverride : (filterSel?.value || 'all');
         const kw = kwOverride !== undefined ? kwOverride : (searchInput?.value || '').trim().toLowerCase();
         return allItems.filter(c => {
-          if (kw && !matchesCustomer(kw, c.customer_name, c.member_number)) return false;
+          if (kw && !matchesCustomer(kw, c.customer_name, c.member_number, c.phone)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
           if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
@@ -6411,9 +6418,12 @@ export default function ProviderDashboardPage() {
         // 休眠・超過フィルターは非会員には概念自体が無いため、絞り込み中は一覧から外す
         // （「全て」の時だけ非会員も並べる）
         const manualRows = filter === 'all'
-          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number))
+          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number, m.phone))
           : [];
-        const items = [...applySortOrder(memberRows), ...manualRows];
+        const sortMode = sortSel?.value || 'registered';
+        const items = sortMode.startsWith('registered')
+          ? applySortOrder([...memberRows, ...manualRows])
+          : [...applySortOrder(memberRows), ...manualRows];
         updateBroadcastCount();
         if (!items.length) {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
@@ -6444,9 +6454,9 @@ export default function ProviderDashboardPage() {
       function custRowHtml(c, isManual) {
         const name = isManual ? c.display_name : c.customer_name;
         const ds = isManual ? null : daysSince(c.last_visit);
-        const sub = isManual
-          ? '非会員（Fineme未登録）'
-          : [ds != null ? `最終来店 ${ds}日前` : '来店記録なし', c.next_visit ? `次回目安 ${fmtDate(c.next_visit)}` : ''].filter(Boolean).join('・');
+        const sub = (isManual
+          ? ['非会員（Fineme未登録）']
+          : [ds != null ? `最終来店 ${ds}日前` : '来店記録なし', c.next_visit ? `次回目安 ${fmtDate(c.next_visit)}` : '']).concat(c.phone ? [c.phone] : []).filter(Boolean).join('・');
         return `
           <div class="fx-cust-row" data-cust-open="${isManual ? c.id : c.user_id}" data-cust-type="${isManual ? 'manual' : 'member'}">
             <span class="fx-avatar">${esc((name || '客').trim().charAt(0))}</span>
@@ -6769,7 +6779,7 @@ export default function ProviderDashboardPage() {
           custModalBadgesEl.innerHTML = `
             ${custChipHtml(c)}
             ${c.member_number != null ? `<span class="fx-chip fx-chip-quiet">会員番号 ${c.member_number}</span>` : ''}
-            <span class="fx-chip fx-chip-quiet">${axisLabel}</span>
+            ${c.axis ? `<span class="fx-chip fx-chip-quiet">${axisLabel}</span>` : '<span class="fx-chip fx-chip-quiet">New Me Log未連携</span>'}
             ${c.meScanType?.fullName ? `<span class="fx-chip fx-chip-quiet" title="Me Scanタイプ">${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span class="fx-chip fx-chip-quiet">Me Scan済</span>' : ''}
             ${c.mirror?.visualTier ? `<span class="fx-chip fx-chip-quiet">Mirror：${esc(c.mirror.visualTier)}</span>` : ''}
           `;
@@ -7536,12 +7546,14 @@ export default function ProviderDashboardPage() {
       manualAddBtn?.addEventListener('click', async () => {
         const display_name = manualNameInput?.value || '';
         if (!display_name.trim()) { showToast('お名前を入力してください'); return; }
+        const manualPhoneInput = document.getElementById('manual-phone-input');
         const res = await fetch('/api/provider/customers/manual', {
-          method: 'POST', headers: authHeaders(), body: JSON.stringify({ display_name, memo: manualMemoInput?.value || '' }),
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ display_name, memo: manualMemoInput?.value || '', phone: manualPhoneInput?.value || '' }),
         });
         if (res.ok) {
           if (manualNameInput) manualNameInput.value = '';
           if (manualMemoInput) manualMemoInput.value = '';
+          if (manualPhoneInput) manualPhoneInput.value = '';
           showToast('非会員のお客様を作成しました');
           loadManualCustomers();
         } else { const d = await res.json(); showToast('エラー: ' + (d.error || '不明')); }
@@ -14551,6 +14563,19 @@ export default function ProviderDashboardPage() {
 
         {/* New Me Log：紐づいている顧客の一覧 */}
         <div className="tab-pane" id="tab-customers">
+          {/* 非会員のお客様の追加は一覧の上に（でお指摘 2026-10-16：ページの上部にないとだめ） */}
+          <div className="card" style={{ padding: '16px 24px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              <h2 style={{ margin: 0, fontSize: '15px' }}>＋ 非会員のお客様を追加</h2>
+              <span className="muted" style={{ fontSize: '12px' }}>Finemeに登録していないお客様も一覧に並びます。後から会員と分かったら、お客様を開いて「会員と紐付ける」で記録を引き継げます。</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
+              <input id="manual-phone-input" type="tel" inputMode="tel" placeholder="電話番号（任意）" style={{ flex: '1 1 140px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
+              <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 180px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
+              <button type="button" id="manual-add-btn" className="btn">追加する</button>
+            </div>
+          </div>
           <div className="card" style={{ padding: '24px' }}>
             <div id="customers-cap-banner"></div>
             <div id="customers-dormant-upsell"></div>
@@ -14564,29 +14589,18 @@ export default function ProviderDashboardPage() {
                 <option value="dormant">休眠のみ</option>
               </select>
               <label className="muted" style={{ fontSize: '13px', marginLeft: '4px' }}>並び替え：</label>
-              <select id="customers-sort">
+              <select id="customers-sort" defaultValue="registered">
+                <option value="registered">登録した順</option>
+                <option value="registered_desc">登録が新しい順</option>
                 <option value="next_visit">次回目安が近い順</option>
                 <option value="last_visit_old">最終来店が古い順</option>
                 <option value="name">名前順</option>
               </select>
-              <input id="karte-search" type="text" placeholder="お客様の名前・会員番号で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
+              <input id="karte-search" type="text" placeholder="名前・会員番号・電話番号で検索" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
 
-          <div className="card" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '12px' }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>非会員のお客様を追加</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                Finemeに登録していないお客様も、上の一覧に「非会員」として並びます。後から会員だと分かった場合は、そのお客様を開いて「会員と紐付ける」で名前か会員番号から検索して選ぶと、記録がそのお客様に引き継がれます。
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
-              <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 200px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
-              <button type="button" id="manual-add-btn" className="btn">＋ 新規作成</button>
-            </div>
-          </div>
         </div>
 
         {/* 顧客詳細ポップアップ・声かけメッセージ入力は、以前は顧客管理タブ（.tab-pane#tab-customers）の

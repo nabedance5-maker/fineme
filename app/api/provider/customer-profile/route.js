@@ -86,7 +86,7 @@ export async function GET(request) {
       supabase.from('profiles').select('last_name, first_name, phone, birthday').eq('id', target.user_id).maybeSingle(),
       supabase.auth.admin.getUserById(target.user_id).catch(() => ({ data: null })),
     ]);
-    fill(normalizeProfile({ last_name: pr?.last_name, first_name: pr?.first_name, phone: pr?.phone, birthday: pr?.birthday, email: authRes?.data?.user?.email }), 'Fineme会員情報');
+    fill(normalizeProfile({ last_name: pr?.last_name, first_name: pr?.first_name, phone: pr?.phone, birthday: pr?.birthday, email: /@line\.fineme\.me$/i.test(authRes?.data?.user?.email || '') ? null : authRes?.data?.user?.email }), 'Fineme会員情報');
   }
 
   const payments = await Promise.all(memberships.map(async m => ({
