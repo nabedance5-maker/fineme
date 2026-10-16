@@ -3483,7 +3483,8 @@ export default function ProviderDashboardPage() {
 
       // 表示の切り替え：カレンダー（日ごとの人数）／表（スタッフ×日付の勤務時間）。選んだ表示は端末に覚える
       const SHIFT_VIEW_KEY = 'fineme:shift-cal-view';
-      let shiftView = (() => { try { return localStorage.getItem(SHIFT_VIEW_KEY) === 'table' ? 'table' : 'calendar'; } catch { return 'calendar'; } })();
+      // 既定は表（でお要望2026-10-16）。店舗がカレンダーを選んだ場合だけ、その選択を覚えておく。
+      let shiftView = (() => { try { return localStorage.getItem(SHIFT_VIEW_KEY) === 'calendar' ? 'calendar' : 'table'; } catch { return 'table'; } })();
       let calLeaves = [];
       function syncShiftViewButtons() {
         document.querySelectorAll('[data-shift-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.shiftView === shiftView)));
@@ -13723,8 +13724,8 @@ export default function ProviderDashboardPage() {
                 <h2 style={{ margin: 0, fontSize: '16px' }}>シフトカレンダー</h2>
                 {/* 表示の切り替え（でお要望 2026-10-16：hacomonoのようなスタッフ×日付の表形式も） */}
                 <div className="shift-view-toggle" role="tablist" aria-label="表示の切り替え">
-                  <button type="button" data-shift-view="calendar" role="tab">カレンダー</button>
                   <button type="button" data-shift-view="table" role="tab">表</button>
+                  <button type="button" data-shift-view="calendar" role="tab">カレンダー</button>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
