@@ -345,6 +345,30 @@ const DASHBOARD_CSS = `
       .shift-tbl td.st-leave { background: #ecfdf5; color: #047857; font-weight: 700; }
       .shift-tbl td.st-closed, .shift-tbl th.st-closed { background: #e5e7eb; color: #9ca3af; }
       .shift-tbl .st-today { box-shadow: inset 0 0 0 2px #c9a84c; }
+      /* グループレッスン：部屋ごとの列でカードを並べる（2026-10-16・hacomonoの予約画面と同じ形） */
+      .lb-wrap { display: block; }
+      .lb-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+      .lb-main { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(26,20,16,0.7); margin-left: auto; cursor: pointer; }
+      .lb-scroll { overflow-x: auto; }
+      .lb-grid { display: grid; gap: 8px; min-width: calc(var(--lb-cols) * 150px); }
+      .lb-row { display: grid; grid-template-columns: repeat(var(--lb-cols), minmax(140px, 1fr)); gap: 8px; }
+      .lb-head { position: sticky; top: 0; z-index: 1; }
+      .lb-room { background: #f3f1ea; border-radius: 8px; padding: 8px; text-align: center; font-size: 12.5px; font-weight: 800; color: rgba(26,20,16,0.75); }
+      .lb-cell { min-height: 110px; border-radius: 10px; background: #faf9f5; display: flex; flex-direction: column; gap: 6px; padding: 6px; cursor: pointer; }
+      .lb-cell:hover .lb-empty { color: #8a6a17; }
+      .lb-empty { margin: auto; color: rgba(26,20,16,0.25); font-size: 13px; font-weight: 700; }
+      .lb-card { position: relative; background: #fff; border: 1px solid rgba(26,20,16,0.1); border-radius: 10px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+      .lb-card:hover { border-color: #c9a84c; }
+      .lb-card.is-closed { opacity: .55; }
+      .lb-time { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .lb-photo { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+      .lb-initial { display: inline-flex; align-items: center; justify-content: center; background: #efe9da; color: #8a6a17; font-weight: 800; font-size: 18px; }
+      .lb-staff { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+      .lb-tag { font-size: 11px; font-weight: 800; color: #fff; padding: 2px 10px; border-radius: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lb-remain { font-size: 11px; color: rgba(26,20,16,0.6); font-variant-numeric: tabular-nums; }
+      .lb-flag { position: absolute; top: 0; right: 0; background: #b42318; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 0 10px 0 8px; }
+      #lb-tools { margin-top: 16px; }
+      .lb-tools-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -4454,6 +4478,8 @@ export default function ProviderDashboardPage() {
       // 無条件に動くIIFEが増えるたびに、カレンダーを開くだけでも無関係な通信が
       // 積み重なっていた。タブを開くまで発火しないように変更）。
       document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', () => { loadStaffOptionsForClasses(); loadClasses(); }, { once: false }));
+      // 予約カレンダーのグループレッスン画面からも同じクラス管理を使う（でお要望 2026-10-16）
+      window.__pdLoadClasses = () => { loadStaffOptionsForClasses(); loadClasses(); };
       if (new URLSearchParams(location.search).get('tab') === 'classes') { loadStaffOptionsForClasses(); loadClasses(); }
     })();
 
@@ -10866,6 +10892,7 @@ export default function ProviderDashboardPage() {
         const prevScrollTop = gridWrapEl.scrollTop;
         const prevScrollLeft = gridWrapEl.scrollLeft;
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
+        if (viewMode === 'class') { renderClassBoard(items); return; }
         // 定休日・臨時休業日はシンプルに「定休日です」とだけ出す（でお要望2026-09-28。
         // hacomonoの表示にならい、既に予約が入っている日は通常のグリッドのまま見せる）。
         if (!items.length && isDateClosed(selectedDate)) {
@@ -10919,6 +10946,111 @@ export default function ProviderDashboardPage() {
       // 現在時刻の線を毎分更新する（データの再取得はせず表示中のキャッシュから
       // 再描画するだけの軽い処理。ユーザーのスクロール位置は保つ）。
       setInterval(() => { if (selectedDate === todayStr) renderDesktopGrid({ preserveScroll: true }); }, 60000);
+
+      // ── グループレッスン：部屋ごとの列で開催回をカードで並べる（でお要望 2026-10-16・hacomonoの予約画面と同じ形） ──
+      // 列＝部屋・場所、行＝開始時刻。カードに時刻・講師（写真）・レッスン名・残り枠。空いているマスを押すと、
+      // その部屋・時刻でレッスンの開催回を追加できる。同じ画面の下でレッスンの作成・編集とイベントの出欠も扱う。
+      const LESSON_COLORS = ['#1a1410', '#2f4f8f', '#7c3aed', '#b45309', '#047857', '#be185d', '#0e7490'];
+      function lessonColor(classId) {
+        const i = classList.findIndex(c => c.id === classId);
+        return LESSON_COLORS[(i < 0 ? 0 : i) % LESSON_COLORS.length];
+      }
+      function renderClassBoard(items) {
+        const sessions = items.filter(r => r._isClassSession).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+        const roomsOn = resourceFeatureOn && resourceList.length > 0;
+        const rooms = roomsOn ? resourceList.map(r => ({ id: r.id, name: r.name })) : [];
+        if (!roomsOn || sessions.some(s => !s.resource_id || !rooms.some(r => r.id === s.resource_id))) rooms.push({ id: null, name: roomsOn ? '場所未設定' : 'レッスン' });
+        const times = [...new Set(sessions.map(s => String(s.time).slice(0, 5)))];
+        const staffById = Object.fromEntries((staffList || []).map(s => [s.id, s]));
+        const card = s => {
+          const cls = classList.find(c => c.id === s.class_id);
+          const st = staffById[s.staff_id || cls?.instructor_staff_id];
+          const color = lessonColor(s.class_id);
+          const full = s.remaining <= 0;
+          return `<div class="lb-card${!s.is_open ? ' is-closed' : ''}" data-cal-open="${s.id}">
+              ${full ? '<span class="lb-flag">満席</span>' : ''}
+              <div class="lb-time">${esc(String(s.time).slice(0, 5))}${s.end_time ? ` - ${esc(String(s.end_time).slice(0, 5))}` : ''}</div>
+              ${st?.photo_url ? `<img class="lb-photo" src="${esc(st.photo_url)}" alt="" />` : `<span class="lb-photo lb-initial">${esc((st?.name || cls?.name || '・').trim().charAt(0))}</span>`}
+              <div class="lb-staff">${esc(st?.name || '講師未設定')}</div>
+              <span class="lb-tag" style="background:${color}">${esc(s.class_name || cls?.name || 'レッスン')}</span>
+              <div class="lb-remain">${!s.is_open ? '締切中・' : ''}残り${s.remaining}/${s.capacity}</div>
+            </div>`;
+        };
+        const rowsHtml = times.length ? times.map(t => `<div class="lb-row">${rooms.map(r => {
+            const here = sessions.filter(s => String(s.time).slice(0, 5) === t && ((s.resource_id || null) === r.id || (r.id === null && !rooms.some(x => x.id && x.id === s.resource_id))));
+            return `<div class="lb-cell" data-lb-add="${r.id || ''}" data-lb-time="${t}">${here.map(card).join('') || '<span class="lb-empty">＋</span>'}</div>`;
+          }).join('')}</div>`).join('')
+          : `<div class="lb-row">${rooms.map(r => `<div class="lb-cell" data-lb-add="${r.id || ''}" data-lb-time="10:00"><span class="lb-empty">＋ 開催回を追加</span></div>`).join('')}</div>`;
+        const isMain = dashboardPrefs?.calendar_default_view === 'class';
+        gridWrapEl.className = 'lb-wrap';
+        gridWrapEl.innerHTML = `
+          <div class="lb-toolbar">
+            <button type="button" class="btn" data-lb-new style="font-size:12px;padding:6px 12px">＋ 開催回を追加</button>
+            <button type="button" class="btn btn-ghost" data-lb-tools="classes" style="font-size:12px;padding:6px 12px">レッスンの作成・編集</button>
+            <button type="button" class="btn btn-ghost" data-lb-tools="events" style="font-size:12px;padding:6px 12px">イベント・出欠</button>
+            <label class="lb-main"><input type="checkbox" data-lb-main ${isMain ? 'checked' : ''} />予約カレンダーを開いた時、最初にグループレッスンを表示する</label>
+          </div>
+          ${!roomsOn ? '<p class="muted" style="font-size:12px;margin:0 0 8px">部屋・場所ごとに列を分けるには、「機能設定」で「部屋・設備の空き管理」をオンにして、部屋を登録してください。</p>' : ''}
+          <div class="lb-scroll"><div class="lb-grid" style="--lb-cols:${rooms.length}">
+            <div class="lb-row lb-head">${rooms.map(r => `<div class="lb-room">${esc(r.name)}</div>`).join('')}</div>
+            ${rowsHtml}
+          </div></div>
+          ${!sessions.length ? '<p class="muted" style="font-size:12.5px;margin:8px 0 0">この日のグループレッスンはまだありません。マスの「＋」か「＋ 開催回を追加」から作れます。</p>' : ''}
+          <div id="lb-tools"></div>`;
+        bindCalOpenHandlers(gridWrapEl);
+        gridWrapEl.querySelectorAll('[data-lb-add]').forEach(cell => cell.addEventListener('click', e => {
+          if (e.target.closest('[data-cal-open]')) return;
+          if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
+          const [h, m] = cell.dataset.lbTime.split(':').map(Number);
+          openManualCreate(selectedDate, h * 60 + m, cell.dataset.lbAdd || null, 'resource_id', 'class');
+        }));
+        gridWrapEl.querySelector('[data-lb-new]').addEventListener('click', () => {
+          if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
+          openManualCreate(selectedDate, 10 * 60, null, 'resource_id', 'class');
+        });
+        gridWrapEl.querySelectorAll('[data-lb-tools]').forEach(b => b.addEventListener('click', () => openLessonTools(b.dataset.lbTools)));
+        gridWrapEl.querySelector('[data-lb-main]').addEventListener('change', async e => {
+          const next = e.target.checked ? 'class' : 'combined';
+          const res = await fetch('/api/provider/dashboard-prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify({ calendar_default_view: next }) });
+          if (!res.ok) { e.target.checked = !e.target.checked; showToast('保存できませんでした'); return; }
+          const { prefs } = await res.json();
+          setDashboardPrefs(prefs);
+          showToast(e.target.checked ? '最初にグループレッスンを表示します' : '最初は通常の予約カレンダーを表示します');
+        });
+        if (lessonToolsOpen) openLessonTools(lessonToolsOpen, true);
+      }
+
+      // クラス管理タブ・出欠確認タブの中身を、この画面の下に借りてきて表示する（同じ機能を二重に作らない）
+      let lessonToolsOpen = null;
+      const borrowedPanes = {};
+      function returnBorrowed(key) {
+        const b = borrowedPanes[key];
+        if (!b) return;
+        const pane = document.getElementById(`tab-${key}`);
+        if (pane) b.nodes.forEach(n => pane.appendChild(n));
+        delete borrowedPanes[key];
+      }
+      function openLessonTools(key, keep) {
+        const holder = document.getElementById('lb-tools');
+        if (!holder) return;
+        if (!keep && lessonToolsOpen === key) { returnBorrowed(key); lessonToolsOpen = null; holder.innerHTML = ''; return; }
+        Object.keys(borrowedPanes).forEach(k => { if (k !== key) returnBorrowed(k); });
+        lessonToolsOpen = key;
+        const pane = document.getElementById(`tab-${key}`);
+        if (!borrowedPanes[key] && pane) borrowedPanes[key] = { nodes: [...pane.childNodes] };
+        holder.innerHTML = `<div class="lb-tools-head"><b>${key === 'classes' ? 'レッスンの作成・編集' : 'イベント・出欠'}</b><button type="button" class="btn btn-ghost" data-lb-tools-close style="font-size:12px;padding:4px 10px">閉じる</button></div>`;
+        (borrowedPanes[key]?.nodes || []).forEach(n => holder.appendChild(n));
+        holder.querySelector('[data-lb-tools-close]').addEventListener('click', async () => {
+          returnBorrowed(key); lessonToolsOpen = null; holder.innerHTML = '';
+          await loadResourcesAndFeatures(); await loadWeek();
+        });
+        if (key === 'classes') window.__pdLoadClasses?.(); else window.__pdLoadEvents?.();
+        if (!keep) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      // 本来のタブを開いた時は、借りている中身を元の場所に戻す
+      ['classes', 'events'].forEach(key => document.querySelectorAll(`[data-tab="${key}"]`).forEach(btn => btn.addEventListener('click', () => {
+        if (borrowedPanes[key]) { returnBorrowed(key); if (lessonToolsOpen === key) { lessonToolsOpen = null; const h = document.getElementById('lb-tools'); if (h) h.innerHTML = ''; } }
+      })));
 
       function renderViewToggle() {
         if (!viewToggleEl) return;
@@ -11224,7 +11356,7 @@ export default function ProviderDashboardPage() {
       );
       document.getElementById('cal-manual-member-clear')?.addEventListener('click', () => setManualSelectedMember(null, ''));
 
-      function openManualCreate(date, min, colId, colGroupKey) {
+      function openManualCreate(date, min, colId, colGroupKey, forceMode) {
         const clamped = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN - 30, roundToHalfHour(min)));
         const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
         manualCtx = { date, time, userId: null, mode: 'reservation' };
@@ -11269,7 +11401,9 @@ export default function ProviderDashboardPage() {
         if (manualModeBlockBtn) manualModeBlockBtn.style.display = (colGroupKey === 'resource_id' || isClassColumn) ? 'none' : '';
         if (manualModeReservationBtn) manualModeReservationBtn.style.display = isClassColumn ? 'none' : '';
         if (manualModeClassBtn) manualModeClassBtn.style.display = classList.length ? '' : 'none';
-        setManualMode(isClassColumn ? 'class' : 'reservation');
+        setManualMode(forceMode || (isClassColumn ? 'class' : 'reservation'));
+        // グループレッスンの部屋の列から開いた時は、その部屋を選んだ状態にする（resource_idの列）
+        if (forceMode === 'class' && manualResourceFieldEl) manualResourceFieldEl.style.display = resourceFeatureOn ? '' : 'none';
         if (manualModalEl) manualModalEl.style.display = 'flex';
         setTimeout(() => { if (isClassColumn) manualClassEl?.focus(); else manualNameEl?.focus(); }, 50);
       }
@@ -11594,7 +11728,7 @@ export default function ProviderDashboardPage() {
         if (!dashboardPrefs) await Promise.race([dashboardPrefsReady, new Promise(r => setTimeout(r, 6000))]);
         // 部屋・設備管理がONの店舗は、店舗設定の既定ビュー（スタッフ別/部屋別）を
         // 初回だけ適用する（でお要望2026-09-13：部屋別をメインにしたい店舗もある）。
-        if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
+        if (!viewModePicked && ['combined', 'staff', 'resource', 'class'].includes(dashboardPrefs?.calendar_default_view)) {
           viewMode = dashboardPrefs.calendar_default_view;
         }
         // 設定データ（スタッフ/部屋/クラス/機能/営業時間）と、その週の予約データは
@@ -11618,7 +11752,7 @@ export default function ProviderDashboardPage() {
       window.__calReloadWeek = loadWeek;
       // 後から届いた表示設定でカレンダーを描き直す（手で切り替えたビューはそのまま）
       window.__calApplyPrefs = () => {
-        if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
+        if (!viewModePicked && ['combined', 'staff', 'resource', 'class'].includes(dashboardPrefs?.calendar_default_view)) {
           viewMode = dashboardPrefs.calendar_default_view;
           renderViewToggle();
         }
@@ -12564,6 +12698,7 @@ export default function ProviderDashboardPage() {
       });
 
       document.querySelectorAll('[data-tab="events"]').forEach(btn => btn.addEventListener('click', loadEvents, { once: false }));
+      window.__pdLoadEvents = loadEvents;
       if (new URLSearchParams(location.search).get('tab') === 'events') loadEvents();
     })();
 

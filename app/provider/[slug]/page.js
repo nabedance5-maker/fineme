@@ -1084,13 +1084,16 @@ function ClassTab({ provider }) {
   const [bookingSlotId, setBookingSlotId] = useState(null);
   const [doneSlotIds, setDoneSlotIds] = useState([]);
   const [error, setError] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [pickedId, setPickedId] = useState(null);
 
   useEffect(() => {
     if (!provider?.slug) return;
     fetch(`/api/providers/${provider.slug}/classes`)
-      .then(r => r.ok ? r.json() : [])
+      .then(r => r.ok ? r.json() : { classes: [], rooms: [], sessions: [] })
       .then(setClasses)
-      .catch(() => setClasses([]));
+      .catch(() => setClasses({ classes: [], rooms: [], sessions: [] }));
   }, [provider?.slug]);
 
   useEffect(() => {
@@ -1146,59 +1149,101 @@ function ClassTab({ provider }) {
   }
 
   if (classes === null) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p>;
-  if (classes.length === 0) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能なクラスの開催回がありません。</p>;
+  const sessions = classes.sessions || [];
+  if (!sessions.length) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能なクラスの開催回がありません。</p>;
+
+  // でお要望（2026-10-16）：hacomonoの予約画面のように、日付を選ぶと部屋ごとの列に開催回のカードが並ぶ
+  const dates = [...new Set(sessions.map(x => x.date))].sort();
+  const day = selectedDate && dates.includes(selectedDate) ? selectedDate : dates[0];
+  const weekStart = Math.max(0, Math.min(weekOffset, Math.max(0, dates.length - 7)));
+  const visibleDates = dates.slice(weekStart, weekStart + 7);
+  const daySessions = sessions.filter(x => x.date === day).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
+  const roomList = [...(classes.rooms || [])];
+  if (!roomList.length || daySessions.some(x => !x.resource_id || !roomList.some(r => r.id === x.resource_id))) roomList.push({ id: null, name: roomList.length ? 'その他' : 'レッスン' });
+  const usedRooms = roomList.filter(r => daySessions.some(x => (x.resource_id || null) === r.id || (r.id === null && !roomList.some(rr => rr.id && rr.id === x.resource_id))));
+  const times = [...new Set(daySessions.map(x => String(x.start_time).slice(0, 5)))];
+  const fmtDay = d => { const dt = new Date(`${d}T00:00:00`); return { md: `${dt.getMonth() + 1}/${dt.getDate()}`, wd: WEEKDAY_JA_CLASS[dt.getDay()], dd: dt.getDate(), sun: dt.getDay() === 0, sat: dt.getDay() === 6 }; };
+  const COLORS = ['#1a1410', '#2f4f8f', '#7c3aed', '#b45309', '#047857', '#be185d', '#0e7490'];
+  const colorOf = id => COLORS[Math.max(0, (classes.classes || []).findIndex(c => c.id === id)) % COLORS.length];
+  const picked = sessions.find(x => x.id === pickedId) || null;
+  const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
+  const line = '1px solid color-mix(in srgb, var(--pv-text) 12%, transparent)';
 
   return (
-    <div style={{ maxWidth: '560px' }}>
-      <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', padding: '18px 20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-        <div style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)', marginBottom: '10px' }}>お名前・連絡先（開催回を選ぶとこの内容で予約されます）</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <input placeholder="お名前 *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input placeholder="メールアドレス" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ flex: 1, padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
-            <input placeholder="電話番号" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ flex: 1, padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
-          </div>
+    <div style={{ maxWidth: '900px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+        <button type="button" disabled={weekStart === 0} onClick={() => setWeekOffset(Math.max(0, weekStart - 7))} aria-label="前の日程" style={{ padding: '6px 10px', borderRadius: '8px', border: line, background: 'transparent', color: 'var(--pv-text)', opacity: weekStart === 0 ? 0.3 : 1, cursor: 'pointer' }}>‹</button>
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', flex: 1 }}>
+          {visibleDates.map(d => {
+            const f = fmtDay(d);
+            const on = d === day;
+            return (
+              <button key={d} type="button" onClick={() => { setSelectedDate(d); setPickedId(null); }}
+                style={{ flex: '0 0 auto', minWidth: '56px', padding: '7px 8px', borderRadius: '8px', border: on ? 'none' : line, background: on ? 'var(--pv-accent, #c9a84c)' : 'var(--pv-surface)', color: on ? 'var(--pv-on-accent, #0a0f1e)' : (f.sun ? '#f87171' : f.sat ? '#60a5fa' : 'var(--pv-text)'), fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>
+                {f.dd}（{f.wd}）
+              </button>
+            );
+          })}
         </div>
-        {error && <p style={{ color: '#f87171', fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
+        <button type="button" disabled={weekStart + 7 >= dates.length} onClick={() => setWeekOffset(weekStart + 7)} aria-label="次の日程" style={{ padding: '6px 10px', borderRadius: '8px', border: line, background: 'transparent', color: 'var(--pv-text)', opacity: weekStart + 7 >= dates.length ? 0.3 : 1, cursor: 'pointer' }}>›</button>
       </div>
+      <div style={{ background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', textAlign: 'center', fontWeight: 800, borderRadius: '8px', padding: '7px', fontSize: 'calc(13px * var(--pv-fs))', marginBottom: '10px' }}>{fmtDay(day).md}（{fmtDay(day).wd}）</div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {classes.map(c => (
-          <div key={c.id} style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', padding: '18px 20px', background: 'var(--pv-surface)' }}>
-            <p style={{ margin: '0 0 4px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: 800, color: 'color-mix(in srgb, var(--pv-text) 92%, transparent)' }}>{c.name}</p>
-            {c.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', lineHeight: 1.6 }}>{c.description}</p>}
-            {c.sessions.length === 0 ? (
-              <p style={{ margin: 0, fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能な開催回がありません。</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {c.sessions.map(s => {
-                  const d = new Date(`${s.date}T00:00:00`);
-                  const isDone = doneSlotIds.includes(s.id);
+      <div style={{ overflowX: 'auto', paddingBottom: '4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${usedRooms.length}, minmax(130px, 1fr))`, gap: '8px', minWidth: `${usedRooms.length * 138}px` }}>
+          {usedRooms.map(r => <div key={r.id || 'none'} style={{ textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: 700, color: muted, padding: '6px', borderBottom: line }}>{r.name}</div>)}
+          {times.map(t => usedRooms.map(r => {
+            const here = daySessions.filter(x => String(x.start_time).slice(0, 5) === t && ((x.resource_id || null) === r.id || (r.id === null && !roomList.some(rr => rr.id && rr.id === x.resource_id))));
+            return (
+              <div key={`${t}-${r.id || 'none'}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {here.map(x => {
+                  const full = x.remaining <= 0;
+                  const done = doneSlotIds.includes(x.id);
                   return (
-                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px' }}>
-                      <div>
-                        <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700, color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)' }}>{s.date}（{WEEKDAY_JA_CLASS[d.getDay()]}）{s.start_time?.slice(0, 5)}〜{s.end_time?.slice(0, 5)}</span>
-                        <span style={{ fontSize: 'calc(11.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', marginLeft: '8px' }}>残り{s.remaining}枠</span>
-                      </div>
-                      {isDone ? (
-                        <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 700, color: '#34d399' }}>✓ 予約済み</span>
-                      ) : (
-                        <button
-                          onClick={() => bookSession(s.id, c.name)}
-                          disabled={bookingSlotId === s.id}
-                          style={{ padding: '8px 16px', background: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', color: '#0a0f1e', border: 'none', borderRadius: '10px', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: bookingSlotId === s.id ? 0.6 : 1 }}
-                        >
-                          {bookingSlotId === s.id ? '予約中…' : '予約する'}
-                        </button>
-                      )}
-                    </div>
+                    <button key={x.id} type="button" disabled={full && !done} onClick={() => setPickedId(x.id)}
+                      style={{ position: 'relative', textAlign: 'center', padding: '12px 8px', borderRadius: '12px', border: pickedId === x.id ? '2px solid var(--pv-accent, #c9a84c)' : line, background: 'var(--pv-surface)', color: 'var(--pv-text)', cursor: full ? 'default' : 'pointer', opacity: full && !done ? 0.5 : 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                      {(full || done) && <span style={{ position: 'absolute', top: 0, right: 0, background: done ? '#34d399' : '#b42318', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '0 12px 0 8px' }}>{done ? '予約済み' : '満席'}</span>}
+                      <span style={{ fontWeight: 800, fontSize: 'calc(13px * var(--pv-fs))' }}>{String(x.start_time).slice(0, 5)}{x.end_time ? ` - ${String(x.end_time).slice(0, 5)}` : ''}</span>
+                      {x.staff?.photo_url
+                        ? <img src={x.staff.photo_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
+                        : <span style={{ width: '56px', height: '56px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'color-mix(in srgb, var(--pv-text) 10%, transparent)', fontWeight: 800, fontSize: '18px' }}>{(x.staff?.name || x.class_name || '・').trim().charAt(0)}</span>}
+                      <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 700 }}>{x.staff?.name || ''}</span>
+                      <span style={{ background: colorOf(x.class_id), color: '#fff', fontSize: '11px', fontWeight: 800, padding: '2px 10px', borderRadius: '4px', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.class_name}</span>
+                      {!full && <span style={{ fontSize: '11px', color: muted }}>残り{x.remaining}枠</span>}
+                    </button>
                   );
                 })}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          }))}
+        </div>
       </div>
+
+      {picked && (
+        <div style={{ marginTop: '16px', background: 'var(--pv-surface)', borderRadius: '16px', padding: '18px 20px', border: line }}>
+          <p style={{ margin: '0 0 2px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: 800 }}>{picked.class_name}</p>
+          <p style={{ margin: '0 0 10px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted }}>{fmtDay(picked.date).md}（{fmtDay(picked.date).wd}）{String(picked.start_time).slice(0, 5)}〜{String(picked.end_time || '').slice(0, 5)}{picked.staff?.name ? `・${picked.staff.name}` : ''}・残り{picked.remaining}枠</p>
+          {(classes.classes || []).find(c => c.id === picked.class_id)?.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, lineHeight: 1.6 }}>{(classes.classes || []).find(c => c.id === picked.class_id).description}</p>}
+          {doneSlotIds.includes(picked.id) ? (
+            <p style={{ margin: 0, fontWeight: 700, color: '#34d399' }}>予約しました。</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input placeholder="お名前 *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input placeholder="メールアドレス" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ flex: 1, minWidth: 0, padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
+                  <input placeholder="電話番号" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ flex: 1, minWidth: 0, padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
+                </div>
+              </div>
+              {error && <p style={{ color: '#f87171', fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
+              <button type="button" onClick={() => bookSession(picked.id, picked.class_name)} disabled={bookingSlotId === picked.id}
+                style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
+                {bookingSlotId === picked.id ? '予約中…' : 'このレッスンを予約する'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
