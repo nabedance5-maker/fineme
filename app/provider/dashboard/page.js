@@ -4193,6 +4193,9 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/classes', { headers: authH() });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         classesCache = await res.json();
+        // 部屋・場所の候補：これまでに使った場所の名前
+        const placeOpts = document.getElementById('cls-place-options');
+        if (placeOpts) placeOpts.innerHTML = [...new Set(classesCache.map(c => c.place).filter(Boolean))].map(x => `<option value="${esc(x)}"></option>`).join('');
         if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。「＋ クラスを追加」から作成してください。</p>'; return; }
         listEl.innerHTML = classesCache.map(c => `
           <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--color-bg);border-radius:10px" data-cls-row="${c.id}">
@@ -4217,6 +4220,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['capacity'].value = c.capacity || '';
           editForm.elements['price'].value = c.price ?? '';
           if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
+          if (editForm.elements['place']) editForm.elements['place'].value = c.place || '';
           editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
           if (newSessionFieldsEl) newSessionFieldsEl.style.display = 'none';
           editCard.scrollIntoView({ behavior: 'smooth' });
@@ -4259,6 +4263,7 @@ export default function ProviderDashboardPage() {
           capacity: fd.get('capacity'),
           price: fd.get('price'),
           instructor_staff_id: fd.get('instructor_staff_id') || null,
+          place: fd.get('place') || '',
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
@@ -10973,9 +10978,13 @@ export default function ProviderDashboardPage() {
       }
       function renderClassBoard(items) {
         const sessions = items.filter(r => r._isClassSession).sort((a, b) => String(a.time).localeCompare(String(b.time)));
-        const roomsOn = resourceFeatureOn && resourceList.length > 0;
-        const rooms = roomsOn ? resourceList.map(r => ({ id: r.id, name: r.name })) : [];
-        if (!roomsOn || sessions.some(s => !s.resource_id || !rooms.some(r => r.id === s.resource_id))) rooms.push({ id: null, name: roomsOn ? '場所未設定' : 'レッスン' });
+        // 列＝部屋・場所。開催回に部屋（部屋・設備）が付いていればその名前、無ければレッスンに設定した「部屋・場所」
+        // （でお要望 2026-10-16：機能設定の部屋・設備管理を使わなくても、レッスンの設定で場所を決めれば列になる）
+        const placeOf = s => (s.resource_id && resourceList.find(r => r.id === s.resource_id)?.name) || classList.find(c => c.id === s.class_id)?.place || '場所未設定';
+        const placeNames = [...new Set([...classList.map(c => c.place).filter(Boolean), ...sessions.map(placeOf)])];
+        if (!placeNames.length) placeNames.push('場所未設定');
+        const rooms = placeNames.map(n => ({ id: n, name: n }));
+        const roomsOn = rooms.some(r => r.name !== '場所未設定');
         const times = [...new Set(sessions.map(s => String(s.time).slice(0, 5)))];
         const staffById = Object.fromEntries((staffList || []).map(s => [s.id, s]));
         const card = s => {
@@ -10993,10 +11002,10 @@ export default function ProviderDashboardPage() {
             </div>`;
         };
         const rowsHtml = times.length ? times.map(t => `<div class="lb-row">${rooms.map(r => {
-            const here = sessions.filter(s => String(s.time).slice(0, 5) === t && ((s.resource_id || null) === r.id || (r.id === null && !rooms.some(x => x.id && x.id === s.resource_id))));
-            return `<div class="lb-cell" data-lb-add="${r.id || ''}" data-lb-time="${t}">${here.map(card).join('') || '<span class="lb-empty">＋</span>'}</div>`;
+            const here = sessions.filter(s => String(s.time).slice(0, 5) === t && placeOf(s) === r.name);
+            return `<div class="lb-cell" data-lb-add="${esc(r.name)}" data-lb-time="${t}">${here.map(card).join('') || '<span class="lb-empty">＋</span>'}</div>`;
           }).join('')}</div>`).join('')
-          : `<div class="lb-row">${rooms.map(r => `<div class="lb-cell" data-lb-add="${r.id || ''}" data-lb-time="10:00"><span class="lb-empty">＋ 開催回を追加</span></div>`).join('')}</div>`;
+          : `<div class="lb-row">${rooms.map(r => `<div class="lb-cell" data-lb-add="${esc(r.name)}" data-lb-time="10:00"><span class="lb-empty">＋ 開催回を追加</span></div>`).join('')}</div>`;
         const isMain = dashboardPrefs?.calendar_default_view === 'class';
         gridWrapEl.className = 'lb-wrap';
         gridWrapEl.innerHTML = `
@@ -11006,7 +11015,7 @@ export default function ProviderDashboardPage() {
             <button type="button" class="btn btn-ghost" data-lb-tools="events" style="font-size:12px;padding:6px 12px">イベント・出欠</button>
             <label class="lb-main"><input type="checkbox" data-lb-main ${isMain ? 'checked' : ''} />予約カレンダーを開いた時、最初にグループレッスンを表示する</label>
           </div>
-          ${!roomsOn ? '<p class="muted" style="font-size:12px;margin:0 0 8px">部屋・場所ごとに列を分けるには、「機能設定」で「部屋・設備の空き管理」をオンにして、部屋を登録してください。</p>' : ''}
+          ${!roomsOn ? '<p class="muted" style="font-size:12px;margin:0 0 8px">「レッスンの作成・編集」で各レッスンに部屋・場所を設定すると、場所ごとの列に分かれて並びます。</p>' : ''}
           <div class="lb-scroll"><div class="lb-grid" style="--lb-cols:${rooms.length}">
             <div class="lb-row lb-head">${rooms.map(r => `<div class="lb-room">${esc(r.name)}</div>`).join('')}</div>
             ${rowsHtml}
@@ -11018,7 +11027,12 @@ export default function ProviderDashboardPage() {
           if (e.target.closest('[data-cal-open]')) return;
           if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
           const [h, m] = cell.dataset.lbTime.split(':').map(Number);
-          openManualCreate(selectedDate, h * 60 + m, cell.dataset.lbAdd || null, 'resource_id', 'class');
+          const placeName = cell.dataset.lbAdd;
+          const res = resourceList.find(r => r.name === placeName);
+          openManualCreate(selectedDate, h * 60 + m, res ? res.id : null, 'resource_id', 'class');
+          // その場所に設定しているレッスンを選んだ状態にする
+          const cls = classList.find(c => c.place === placeName);
+          if (cls && manualClassEl) manualClassEl.value = cls.id;
         }));
         gridWrapEl.querySelector('[data-lb-new]').addEventListener('click', () => {
           if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
@@ -14163,6 +14177,8 @@ export default function ProviderDashboardPage() {
                 <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
                 <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
                 <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
+                {/* 部屋・場所（でお要望 2026-10-16）：予約カレンダー・お客様の予約画面で、この名前ごとの列に並ぶ */}
+                <div className="form-field"><label>部屋・場所（任意）</label><input name="place" list="cls-place-options" maxLength={40} placeholder="例：スタジオA・2階ホール" /><datalist id="cls-place-options"></datalist></div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
 
                 {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に

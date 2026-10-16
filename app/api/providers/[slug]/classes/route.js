@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
 
   const { data: classes } = await supabase
     .from('provider_classes')
-    .select('id, name, description, capacity, price, instructor_staff_id')
+    .select('id, name, description, capacity, price, instructor_staff_id, place')
     .eq('provider_id', provider.id)
     .eq('active', true)
     .order('sort_order');
@@ -51,6 +51,7 @@ export async function GET(request, { params }) {
   // 非公開のスタッフは名前・写真を出さない
   const staffOf = Object.fromEntries((staffRes.data || []).filter(s => s.is_public !== false).map(s => [s.id, { name: s.name, photo_url: s.photo_url || null }]));
   const classOf = Object.fromEntries(classes.map(c => [c.id, c]));
+  const resNameOf = Object.fromEntries((resRes.data || []).map(r => [r.id, r.name]));
 
   // でお要望（2026-10-16）：hacomonoのように、日付ごとに部屋の列で開催回をカードで並べて見せる。
   // 満席の回も「満席」として返す（並びが崩れないように）。
@@ -59,9 +60,11 @@ export async function GET(request, { params }) {
     start_time: s.start_time, end_time: s.end_time, capacity: s.capacity,
     remaining: Math.max(0, s.capacity - (bookedCount[s.id] || 0)),
     resource_id: s.resource_id || null,
+    // 列に使う部屋・場所：開催回の部屋（部屋・設備）→ レッスンに設定した部屋・場所
+    place: resNameOf[s.resource_id] || classOf[s.class_id]?.place || null,
     staff: staffOf[s.staff_id || classOf[s.class_id]?.instructor_staff_id] || null,
   }));
-  const rooms = (resRes.data || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map(r => ({ id: r.id, name: r.name }));
+  const rooms = [...new Set(flat.map(x => x.place).filter(Boolean))].map(n => ({ id: n, name: n }));
 
   return Response.json({
     classes: classes.map(c => ({ id: c.id, name: c.name, description: c.description, capacity: c.capacity, price: c.price ?? null })),

@@ -66,7 +66,7 @@ async function __POST(request) {
   { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
-  const { name, description, capacity, level_labels, instructor_staff_id, price } = body;
+  const { name, description, capacity, level_labels, instructor_staff_id, price, place } = body;
   if (!name?.trim()) return Response.json({ error: 'クラス名は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -78,6 +78,7 @@ async function __POST(request) {
       capacity: Number.isFinite(Number(capacity)) && capacity !== '' ? Number(capacity) : null,
       level_labels: Array.isArray(level_labels) ? level_labels : [],
       instructor_staff_id: instructor_staff_id || null,
+      place: String(place || '').trim().slice(0, 40) || null,
       price: Number.isFinite(Number(price)) && price !== '' ? Number(price) : null,
     })
     .select()

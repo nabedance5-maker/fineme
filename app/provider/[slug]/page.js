@@ -1159,8 +1159,9 @@ function ClassTab({ provider }) {
   const visibleDates = dates.slice(weekStart, weekStart + 7);
   const daySessions = sessions.filter(x => x.date === day).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
   const roomList = [...(classes.rooms || [])];
-  if (!roomList.length || daySessions.some(x => !x.resource_id || !roomList.some(r => r.id === x.resource_id))) roomList.push({ id: null, name: roomList.length ? 'その他' : 'レッスン' });
-  const usedRooms = roomList.filter(r => daySessions.some(x => (x.resource_id || null) === r.id || (r.id === null && !roomList.some(rr => rr.id && rr.id === x.resource_id))));
+  if (!roomList.length || daySessions.some(x => !x.place)) roomList.push({ id: null, name: roomList.length ? 'その他' : 'レッスン' });
+  const inRoom = (x, r) => (x.place || null) === r.id;
+  const usedRooms = roomList.filter(r => daySessions.some(x => inRoom(x, r)));
   const times = [...new Set(daySessions.map(x => String(x.start_time).slice(0, 5)))];
   const fmtDay = d => { const dt = new Date(`${d}T00:00:00`); return { md: `${dt.getMonth() + 1}/${dt.getDate()}`, wd: WEEKDAY_JA_CLASS[dt.getDay()], dd: dt.getDate(), sun: dt.getDay() === 0, sat: dt.getDay() === 6 }; };
   const COLORS = ['#1a1410', '#2f4f8f', '#7c3aed', '#b45309', '#047857', '#be185d', '#0e7490'];
@@ -1193,7 +1194,7 @@ function ClassTab({ provider }) {
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${usedRooms.length}, minmax(130px, 1fr))`, gap: '8px', minWidth: `${usedRooms.length * 138}px` }}>
           {usedRooms.map(r => <div key={r.id || 'none'} style={{ textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: 700, color: muted, padding: '6px', borderBottom: line }}>{r.name}</div>)}
           {times.map(t => usedRooms.map(r => {
-            const here = daySessions.filter(x => String(x.start_time).slice(0, 5) === t && ((x.resource_id || null) === r.id || (r.id === null && !roomList.some(rr => rr.id && rr.id === x.resource_id))));
+            const here = daySessions.filter(x => String(x.start_time).slice(0, 5) === t && inRoom(x, r));
             return (
               <div key={`${t}-${r.id || 'none'}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {here.map(x => {
