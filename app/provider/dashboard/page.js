@@ -9704,6 +9704,61 @@ export default function ProviderDashboardPage() {
     });
 
     // ── 売上管理 ──────────────────────────────────────────────
+    // ── Finemeへのご意見（でお要望2026-10-16） ─────────────────
+    (function setupFinemeFeedback() {
+      const form = document.getElementById('ff-form');
+      const historyEl = document.getElementById('ff-history');
+      if (!form || !historyEl) return;
+      const CATEGORY_LABEL_FF = { usability: '使い勝手', bug: '不具合', request: '機能の要望', other: 'その他' };
+      const STATUS_LABEL_FF = { new: '受付済み', in_progress: '対応中', done: '対応済み', wontfix: '今回は見送り' };
+      const escFf = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const headersFf = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` });
+
+      async function loadHistory() {
+        const res = await fetch('/api/provider/fineme-feedback', { headers: headersFf() }).catch(() => null);
+        if (!res || !res.ok) { historyEl.innerHTML = '<p class="muted" style="font-size:13px;">送信履歴を読み込めませんでした。</p>'; return; }
+        const rows = await res.json();
+        if (!rows.length) { historyEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ送信したご意見はありません。</p>'; return; }
+        historyEl.innerHTML = rows.map(r => `
+          <div style="border-top:1px solid rgba(26,20,16,0.08);padding:12px 0;">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;font-size:12px;">
+              <span style="padding:2px 8px;border-radius:99px;background:rgba(26,20,16,0.06);">${escFf(CATEGORY_LABEL_FF[r.category] || r.category)}</span>
+              ${r.tab ? `<span style="padding:2px 8px;border-radius:99px;background:rgba(201,168,76,0.14);color:#8a6a17;">${escFf(r.tab)}</span>` : ''}
+              <span style="font-weight:700;">${escFf(STATUS_LABEL_FF[r.status] || r.status)}</span>
+              <span class="muted" style="margin-left:auto;">${escFf(new Date(r.created_at).toLocaleDateString('ja-JP'))}</span>
+            </div>
+            <p style="margin:0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;">${escFf(r.message)}</p>
+            ${r.admin_note ? `<div style="margin-top:8px;padding:10px 12px;border-radius:8px;background:rgba(201,168,76,0.1);font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;"><strong style="display:block;font-size:12px;margin-bottom:2px;">運営からの返信</strong>${escFf(r.admin_note)}</div>` : ''}
+          </div>`).join('');
+      }
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const msgEl = document.getElementById('ff-msg');
+        const submitBtn = document.getElementById('ff-submit');
+        const message = document.getElementById('ff-message').value.trim();
+        if (!message) { msgEl.style.color = '#dc2626'; msgEl.textContent = 'ご意見の内容を入力してください'; return; }
+        submitBtn.disabled = true;
+        msgEl.textContent = '';
+        const res = await fetch('/api/provider/fineme-feedback', {
+          method: 'POST', headers: headersFf(),
+          body: JSON.stringify({ category: document.getElementById('ff-category').value, tab: document.getElementById('ff-tab').value, message }),
+        }).catch(() => null);
+        submitBtn.disabled = false;
+        if (!res || !res.ok) {
+          const d = res ? await res.json().catch(() => ({})) : {};
+          msgEl.style.color = '#dc2626'; msgEl.textContent = d.error || '送信に失敗しました。時間をおいてもう一度お試しください。';
+          return;
+        }
+        document.getElementById('ff-message').value = '';
+        msgEl.style.color = '#16a34a'; msgEl.textContent = 'ありがとうございます。運営に届きました。';
+        loadHistory();
+      });
+
+      document.querySelectorAll('[data-tab="fineme-feedback"]').forEach(btn => btn.addEventListener('click', loadHistory));
+      if (new URLSearchParams(location.search).get('tab') === 'fineme-feedback') loadHistory();
+    })();
+
     (function setupSales() {
       const t = getSupabaseToken();
       if (!t) return;
@@ -12587,6 +12642,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="tutorial" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
+                  <button className="tab-btn" data-tab="fineme-feedback">Finemeへのご意見</button>
                 </div>
                 {/* OFFの機能タブはJS側（機能フラグ振り分け）がここへ移動してくる。空欄でOK。 */}
                 <div className="pd-panel-section" data-panel="hidden" style={{ display: 'none' }}></div>
@@ -12662,6 +12718,51 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* タブ：Finemeへのご意見（でお要望2026-10-16）。使い勝手の生の声を運営管理画面
+            /admin/provider-feedback に溜めて対応する。運営の返信は下の送信履歴に表示される。 */}
+        <div className="tab-pane" id="tab-fineme-feedback">
+          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>Finemeへのご意見</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 16px', lineHeight: 1.7 }}>
+              使いにくいところ、分かりにくい画面、あったらうれしい機能など、どんな小さなことでもお送りください。いただいたご意見はすべて運営が読み、改善に使います。返信がある場合はこのページの送信履歴に表示されます。
+            </p>
+            <form id="ff-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ flex: '1 1 180px', minWidth: 0, marginBottom: 0 }}>
+                  <label htmlFor="ff-category">ご意見の種類</label>
+                  <select id="ff-category" defaultValue="usability">
+                    <option value="usability">使い勝手</option>
+                    <option value="bug">不具合</option>
+                    <option value="request">機能の要望</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+                <div className="form-field" style={{ flex: '1 1 220px', minWidth: 0, marginBottom: 0 }}>
+                  <label htmlFor="ff-tab">どの画面について（任意）</label>
+                  <select id="ff-tab" defaultValue="">
+                    <option value="">指定しない・全体</option>
+                    {TAB_CATALOG.filter(t => t.key !== 'fineme-feedback').map(t => (
+                      <option key={t.key} value={t.label}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label htmlFor="ff-message">ご意見</label>
+                <textarea id="ff-message" rows={6} maxLength={4000} placeholder="例：予約カレンダーで、スタッフの並び順を変えるボタンが見つけにくかったです。" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <button type="submit" className="btn" id="ff-submit">送信する</button>
+                <span id="ff-msg" style={{ fontSize: '13px' }}></span>
+              </div>
+            </form>
+          </div>
+          <div className="card" style={{ padding: '24px' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '15px' }}>送信履歴</h3>
+            <div id="ff-history"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
           </div>
         </div>
 
