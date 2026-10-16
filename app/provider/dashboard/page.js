@@ -6768,6 +6768,7 @@ export default function ProviderDashboardPage() {
         currentCustUid = uid;
         currentCustType = 'member';
         resetContracts();
+        loadCustActivity();
         applyPostureGating();
         custModalMemberSection.style.display = '';
         custModalManualSection.style.display = 'none';
@@ -6845,6 +6846,7 @@ export default function ProviderDashboardPage() {
         currentCustUid = id;
         currentCustType = 'manual';
         resetContracts();
+        loadCustActivity();
         applyPostureGating();
         custModalMemberSection.style.display = 'none';
         custModalManualSection.style.display = '';
@@ -6948,6 +6950,123 @@ export default function ProviderDashboardPage() {
           });
         }
       });
+
+      // ── 回数券・予約・グループレッスン・カード登録の有無（でお要望2026-10-16） ──
+      // 顧客情報の中で回数券（編集含む）・通常の予約・グループレッスンの予約を見られるように。
+      // カードは「登録されているか」だけを出す（番号はFinemeに保存しない）。
+      const custActivityEl = document.getElementById('cust-modal-activity');
+      const CA_STATUS = { pending: '返答待ち', approved: '確定', counter_proposed: '日時の再提案中', visited: '来店済み', rejected: 'お断り', cancelled: 'キャンセル', expired: '期限切れ', no_show: '無断キャンセル' };
+      const caEsc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const caHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` });
+      const caDate = d => { if (!d) return '日付未定'; const [y, m, dd] = String(d).slice(0, 10).split('-'); return `${Number(m)}/${Number(dd)}`; };
+      let caToken = 0;
+
+      function caResRow(v) {
+        const label = CA_STATUS[v.status] || v.status;
+        const title = v.class_name || v.menu || '予約';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;">
+          <span style="min-width:72px;font-weight:700;">${caEsc(caDate(v.date))}${v.time ? ' ' + caEsc(v.time) : ''}</span>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${caEsc(title)}${v.paid_by_package ? '（回数券）' : ''}</span>
+          <span style="font-size:11px;color:#6b7280;white-space:nowrap;">${caEsc(label)}</span>
+        </div>`;
+      }
+
+      function caResBlock(title, data, emptyText) {
+        const up = data.upcoming || [], past = data.past || [];
+        return `<details style="margin-top:8px;" ${up.length ? 'open' : ''}>
+          <summary style="cursor:pointer;font-size:13px;font-weight:700;">${title}（今後 ${up.length}件・過去 ${past.length}件）</summary>
+          <div style="margin-top:6px;">
+            ${up.length ? `<p style="font-size:11px;font-weight:700;color:#6b7280;margin:6px 0 2px;">今後</p>${up.map(caResRow).join('')}` : ''}
+            ${past.length ? `<p style="font-size:11px;font-weight:700;color:#6b7280;margin:10px 0 2px;">過去</p>${past.map(caResRow).join('')}` : ''}
+            ${!up.length && !past.length ? `<p class="muted" style="font-size:12px;margin:4px 0;">${emptyText}</p>` : ''}
+          </div>
+        </details>`;
+      }
+
+      function caPackageRow(p) {
+        const unlimited = p.package_type === 'unlimited';
+        const state = p.expired ? '期限切れ' : p.used_up ? '使い切り' : p.subscription_status === 'cancelled' ? '解約済み' : '利用中';
+        const expiryVal = p.expires_at ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(p.expires_at)) : '';
+        return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:8px;" data-ca-pkg="${p.id}">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:13px;">${caEsc(p.package_name || '回数券')}</strong>
+            <span style="font-size:11px;padding:1px 8px;border-radius:99px;background:${state === '利用中' ? 'rgba(22,163,74,0.12);color:#15803d' : '#f3f4f6;color:#6b7280'};">${state}</span>
+            <span style="margin-left:auto;font-size:13px;font-weight:800;">${unlimited ? '通い放題' : `残り ${p.remaining_sessions}回`}<span style="font-size:11px;font-weight:400;color:#6b7280;">${unlimited ? '' : ` / 消化 ${p.used_sessions}回`}</span></span>
+          </div>
+          <div style="font-size:11.5px;color:#6b7280;margin-top:4px;">購入 ${caEsc(caDate(p.purchased_at))}・有効期限 ${expiryVal ? caEsc(caDate(expiryVal)) : 'なし'}${p.last_used_at ? `・最後の消化 ${caEsc(caDate(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(p.last_used_at))))}` : ''}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+            ${!unlimited ? `<button type="button" class="fx-pill" data-ca-act="use">1回消化</button>` : ''}
+            ${p.last_usage_id ? `<button type="button" class="fx-pill" data-ca-act="undo">直近の消化を取り消す</button>` : ''}
+            <button type="button" class="fx-pill" data-ca-act="edit">編集</button>
+            ${p.package_type === 'subscription' && p.subscription_status !== 'cancelled' ? `<button type="button" class="fx-pill" data-ca-act="cancel" style="color:#dc2626;">自動付与を解約</button>` : ''}
+          </div>
+          <div data-ca-edit style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              ${!unlimited ? `<label style="font-size:11px;font-weight:700;">残り回数<br><input type="number" min="0" max="999" value="${p.remaining_sessions}" data-ca-remaining style="width:90px;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;"></label>` : ''}
+              <label style="font-size:11px;font-weight:700;">有効期限<br><input type="date" value="${expiryVal}" data-ca-expiry style="padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;"></label>
+              <button type="button" class="fx-pill-gold" data-ca-act="save">保存</button>
+            </div>
+            <p class="muted" style="font-size:11px;margin:6px 0 0;">有効期限を空欄にすると無期限になります。消化の履歴はそのまま残ります。</p>
+          </div>
+        </div>`;
+      }
+
+      async function caPackageAction(pkgId, act, box) {
+        let res;
+        if (act === 'edit') { const e = box.querySelector('[data-ca-edit]'); e.style.display = e.style.display === 'none' ? '' : 'none'; return; }
+        if (act === 'use') {
+          if (!confirm('この回数券を1回消化しますか？')) return;
+          res = await fetch(`/api/provider/customer-packages/${pkgId}/usages`, { method: 'POST', headers: caHeaders(), body: '{}' });
+        } else if (act === 'undo') {
+          if (!confirm('直近の消化を1回分取り消しますか？')) return;
+          res = await fetch(`/api/provider/customer-packages/${pkgId}/usages`, { method: 'DELETE', headers: caHeaders() });
+        } else if (act === 'cancel') {
+          if (!confirm('月額の自動付与を解約しますか？（次回以降のチケット付与が止まります）')) return;
+          res = await fetch(`/api/provider/customer-packages/${pkgId}`, { method: 'PATCH', headers: caHeaders(), body: JSON.stringify({ subscription_status: 'cancelled' }) });
+        } else if (act === 'save') {
+          const body = {};
+          const rem = box.querySelector('[data-ca-remaining]');
+          if (rem) body.remaining_sessions = Number(rem.value);
+          body.expires_at = box.querySelector('[data-ca-expiry]')?.value || null;
+          res = await fetch(`/api/provider/customer-packages/${pkgId}`, { method: 'PATCH', headers: caHeaders(), body: JSON.stringify(body) });
+        }
+        if (!res) return;
+        if (!res.ok) { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || res.status)); return; }
+        showToast(act === 'save' ? '回数券を更新しました' : act === 'use' ? '1回消化しました' : act === 'undo' ? '消化を取り消しました' : '解約しました');
+        loadCustActivity();
+      }
+
+      async function loadCustActivity() {
+        if (!custActivityEl || !currentCustUid) return;
+        const myToken = ++caToken;
+        custActivityEl.innerHTML = '<p class="muted" style="font-size:12px;">回数券・予約を読み込み中…</p>';
+        const q = currentCustType === 'manual' ? `manual_id=${encodeURIComponent(currentCustUid)}` : `user_id=${encodeURIComponent(currentCustUid)}`;
+        const res = await fetch(`/api/provider/customer-activity?${q}`, { headers: caHeaders() }).catch(() => null);
+        if (myToken !== caToken) return; // 別のお客様を開き直した
+        if (!res || !res.ok) { custActivityEl.innerHTML = '<p class="muted" style="font-size:12px;">回数券・予約を読み込めませんでした。</p>'; return; }
+        const d = await res.json();
+        const isManual = currentCustType === 'manual';
+        const card = d.has_card
+          ? `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(22,163,74,0.12);color:#15803d;">カード登録あり</span><span class="muted" style="font-size:11px;">${caEsc(d.card_source || '')}</span>`
+          : `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:#f3f4f6;color:#6b7280;">カード登録なし</span>`;
+        const pkgs = d.packages || [];
+        custActivityEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">${card}</div>
+          <details style="margin-top:4px;" ${pkgs.some(p => !p.expired && !p.used_up) ? 'open' : ''}>
+            <summary style="cursor:pointer;font-size:13px;font-weight:700;">回数券（${pkgs.length}件）</summary>
+            <div style="margin-top:8px;">
+              ${isManual ? '<p class="muted" style="font-size:12px;margin:4px 0;">回数券はFineme会員のお客様に発行できます。会員と紐付けると、ここに表示されます。</p>'
+                : pkgs.length ? pkgs.map(caPackageRow).join('') : '<p class="muted" style="font-size:12px;margin:4px 0;">回数券はまだありません。</p>'}
+            </div>
+          </details>
+          ${caResBlock('予約', d.reservations || {}, 'この店舗での予約はまだありません。')}
+          ${caResBlock('グループレッスン', d.lessons || {}, 'グループレッスンの予約はまだありません。')}
+          ${isManual && d.matched_by ? `<p class="muted" style="font-size:11px;margin:6px 0 0;">非会員のお客様の予約は、${caEsc(d.matched_by)}を表示しています。</p>` : ''}
+        `;
+        custActivityEl.querySelectorAll('[data-ca-pkg]').forEach(box => {
+          box.querySelectorAll('[data-ca-act]').forEach(btn => btn.addEventListener('click', () => caPackageAction(box.dataset.caPkg, btn.dataset.caAct, box)));
+        });
+      }
 
       // 契約書（店舗とお客様が交わした契約書のアップロード・保管）
       const custModalContractsToggle = document.getElementById('cust-modal-contracts-toggle');
@@ -14630,6 +14749,8 @@ export default function ProviderDashboardPage() {
             <div id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 12px' }}></div>
             {/* 顧客の基本情報（住所・電話・緊急連絡先・お支払い方法。でお要望 2026-10-16） */}
             <div id="cust-modal-profile" style={{ margin: '0 0 12px' }}></div>
+            {/* 回数券・予約・グループレッスン・カード登録の有無（でお要望 2026-10-16）。会員・非会員共通。 */}
+            <div id="cust-modal-activity" style={{ margin: '0 0 12px' }}></div>
 
             {/* 会員（New Me Log紐づき）用セクション */}
             <div id="cust-modal-member-section">
