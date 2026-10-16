@@ -74,10 +74,15 @@ export default function StaffShiftPage({ params }) {
   const [multiDates, setMultiDates] = useState([]);
   const [multiType, setMultiType] = useState('work');
 
-  async function load() {
+  // 期間ごとの提出リンク（?period=）で開かれたらその期間を、無ければ未提出の直近の期間を開く
+  const [periodId, setPeriodId] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('period') || '';
+  });
+  async function load(pid = periodId) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/staff-shift/${token}`);
+      const res = await fetch(`/api/staff-shift/${token}${pid ? `?period=${encodeURIComponent(pid)}` : ''}`);
       if (!res.ok) { setError('リンクが無効です。店舗にご確認ください。'); setLoading(false); return; }
       setData(await res.json());
     } catch {
@@ -85,7 +90,13 @@ export default function StaffShiftPage({ params }) {
     }
     setLoading(false);
   }
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  function switchPeriod(pid) {
+    setPeriodId(pid);
+    setMultiDates([]);
+    try { const u = new URL(window.location.href); u.searchParams.set('period', pid); window.history.replaceState(null, '', u); } catch {}
+    load(pid);
+  }
 
   const requestsByDate = useMemo(() => {
     const map = {};
@@ -235,7 +246,7 @@ export default function StaffShiftPage({ params }) {
       body: JSON.stringify({ period_id: data.period.id }),
     });
     setSubmittingAll(false);
-    if (res.ok) { setData(prev => ({ ...prev, submitted: true, period: { ...prev.period, locked: !!prev.period.pastDeadline } })); alert('提出が完了しました。ありがとうございました！'); }
+    if (res.ok) { setData(prev => ({ ...prev, submitted: true, period: { ...prev.period, locked: !!prev.period.pastDeadline }, periods: (prev.periods || []).map(p => (p.id === prev.period.id ? { ...p, submitted: true } : p)) })); alert('提出が完了しました。ありがとうございました！'); }
     else alert('送信に失敗しました');
   }
 
@@ -280,6 +291,26 @@ export default function StaffShiftPage({ params }) {
         )}
       </div>
 
+      {data.requested_closed && (
+        <p style={{ fontSize: '13px', color: '#c9a84c', margin: '0 0 12px' }}>このリンクの期間は、すでに希望の募集を締め切っています。{data.period ? '今募集中の期間を表示しています。' : ''}</p>
+      )}
+      {(data.periods || []).length > 1 && (
+        <div style={{ marginBottom: '16px' }}>
+          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'rgba(232,228,220,0.7)', fontWeight: 700 }}>募集中の期間（{data.periods.length}件）</p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {data.periods.map(p => {
+              const on = data.period?.id === p.id;
+              return (
+                <button key={p.id} type="button" onClick={() => !on && switchPeriod(p.id)}
+                  style={{ padding: '8px 12px', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700, cursor: on ? 'default' : 'pointer', border: on ? '1.5px solid #c9a84c' : '1px solid rgba(232,228,220,0.25)', background: on ? 'rgba(201,168,76,0.15)' : 'transparent', color: '#e8e4dc', textAlign: 'left', lineHeight: 1.5 }}>
+                  {p.period_start.slice(5).replace('-', '/')}〜{p.period_end.slice(5).replace('-', '/')}
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: p.submitted ? '#4ade80' : '#c9a84c' }}>{p.submitted ? '提出済み' : '未提出'}{p.request_deadline ? `・締切 ${p.request_deadline.slice(5).replace('-', '/')}` : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {!data.period ? (
         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.7)' }}>現在、希望を募集中の期間はありません。店舗からの案内をお待ちください。</p>
       ) : (

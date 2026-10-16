@@ -1,4 +1,4 @@
-// GET    /api/staff-shift/[token] → スタッフ本人向け：現在募集中の期間・自分の提出済み希望
+// GET    /api/staff-shift/[token]?period=ID → スタッフ本人向け：募集中の期間一覧と、選んだ期間の自分の希望
 // POST   /api/staff-shift/[token] → 希望を1件、選んだ瞬間に自動保存（type='work'|'off'）
 // DELETE /api/staff-shift/[token] → 保存済みの希望を1件取り消す
 //
@@ -46,15 +46,25 @@ export async function GET(request, { params }) {
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
 
-  // 募集中（collecting）の期間のうち、直近のものを対象にする
-  const { data: period } = await supabase
+  // 募集中（collecting）の期間を全て返し、?period= で指定された期間（無ければ、まだ提出していない
+  // 直近の期間 → 直近の期間）を開く。でお指摘（2026-10-16）：期間ごとにリンクを選べず使えなかった。
+  const { data: openPeriods } = await supabase
     .from('provider_shift_periods')
     .select('id, period_start, period_end, request_deadline, status, request_format')
     .eq('provider_id', staff.provider_id)
     .eq('status', 'collecting')
-    .order('period_start', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order('period_start', { ascending: true });
+  const periodsAll = openPeriods || [];
+  const { data: subs } = periodsAll.length
+    ? await supabase.from('provider_shift_submissions').select('period_id').eq('staff_id', staff.id).in('period_id', periodsAll.map(p => p.id))
+    : { data: [] };
+  const submittedSet = new Set((subs || []).map(x => x.period_id));
+  const wanted = new URL(request.url).searchParams.get('period');
+  const period = periodsAll.find(p => p.id === wanted)
+    || periodsAll.find(p => !submittedSet.has(p.id))
+    || periodsAll[0]
+    || null;
+  const requestedClosed = !!wanted && !periodsAll.some(p => p.id === wanted);
 
   let requests = [];
   let submitted = false;
@@ -73,6 +83,8 @@ export async function GET(request, { params }) {
     staff: { id: staff.id, name: staff.name, line_connected: !!staff.line_user_id },
     provider: { name: staff.providers?.name || '' },
     period: period ? { id: period.id, period_start: period.period_start, period_end: period.period_end, request_deadline: period.request_deadline, status: period.status, pastDeadline: isDeadlinePassed(period), locked: isDeadlinePassed(period) && submitted } : null,
+    periods: periodsAll.map(p => ({ id: p.id, period_start: p.period_start, period_end: p.period_end, request_deadline: p.request_deadline, submitted: submittedSet.has(p.id) })),
+    requested_closed: requestedClosed,
     rule: rule ? { ...rule, label: describeRule(rule) } : null,
     requests,
     submitted,

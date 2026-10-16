@@ -94,10 +94,11 @@ const DASHBOARD_CSS = `
       .tab-btn.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
       .pd-main { flex: 1; min-width: 0; margin-left: 244px; padding: 28px 32px; }
       .pd-page-root .card { background: #ffffff; border-color: rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); }
-      .pd-page-root .btn { background: var(--color-gold); color: var(--color-bg-dark); border-color: var(--color-gold); }
-      .pd-page-root .btn:hover { opacity: .88; box-shadow: var(--shadow-gold); }
-      .pd-page-root .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
-      .pd-page-root .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
+      /* body直下に出すポップアップ（.cal-modal-card）も管理画面と同じボタン配色にする（2026-10-16） */
+      .pd-page-root .btn, .cal-modal-card .btn { background: var(--color-gold); color: var(--color-bg-dark); border-color: var(--color-gold); }
+      .pd-page-root .btn:hover, .cal-modal-card .btn:hover { opacity: .88; box-shadow: var(--shadow-gold); }
+      .pd-page-root .btn-ghost, .cal-modal-card .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
+      .pd-page-root .btn-ghost:hover, .cal-modal-card .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
       .pd-page-root .section-title { color: #1a1410; }
       /* 予約カレンダー（2026-09-11〜12・hacomono参考）。日付ピルはPC・スマホ共通。
          グリッドはPC・スマホとも同一構造：横スクロールでスタッフ列を、グリッド内の
@@ -2270,24 +2271,11 @@ export default function ProviderDashboardPage() {
         });
       }
 
+      // スタッフ一覧（提出リンクは期間ごとに「提出リンクを送る」から出す。でお指摘 2026-10-16）
       async function loadStaffLinks() {
-        const el = document.getElementById('shift-staff-links');
-        if (!el) return;
         const res = await fetch('/api/provider/staff', { headers: authHeadersShift() });
-        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        if (!res.ok) return;
         shiftStaffList = await res.json();
-        if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'; return; }
-        el.innerHTML = shiftStaffList.map(s => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px">
-            <span style="flex:1;font-size:13px;font-weight:600">${esc(s.name)}</span>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-shift-copy="${s.shift_access_token}">リンクをコピー</button>
-          </div>
-        `).join('');
-        el.querySelectorAll('[data-shift-copy]').forEach(btn => btn.addEventListener('click', async () => {
-          const url = `${location.origin}/staff-shift/${btn.dataset.shiftCopy}`;
-          try { await navigator.clipboard.writeText(url); showToast('リンクをコピーしました'); }
-          catch { showToast(url); }
-        }));
         // シフト表の手動追加フォームのスタッフ選択肢もここで揃える
         const entryStaffSel = document.getElementById('shift-entry-staff');
         if (entryStaffSel) entryStaffSel.innerHTML = shiftStaffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
@@ -2702,7 +2690,7 @@ export default function ProviderDashboardPage() {
         const periods = await res.json();
         shiftPeriods = periods;
         if (!periods.length) {
-          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだ期間がありません。下の「設定」の「期間を作成」から追加してください。</p>';
+          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだシフトがありません。上の「＋ 新しいシフトを作る」から始めてください。</p>';
           currentPeriodId = null;
           setDetailBody(false);
           return;
@@ -2711,7 +2699,7 @@ export default function ProviderDashboardPage() {
           <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">対象の期間</label>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <select id="shift-period-select" style="flex:1;min-width:200px;padding:9px 10px;font-size:14px;border:1.5px solid #c9a84c;border-radius:8px;background:#fff;color:#111827">
-              ${periods.map(p => `<option value="${p.id}">${esc(p.period_start)} 〜 ${esc(p.period_end)}</option>`).join('')}
+              ${periods.map(p => `<option value="${p.id}">${esc(p.period_start)} 〜 ${esc(p.period_end)}（${PERIOD_STATUS_LABEL[p.status] || p.status}）</option>`).join('')}
             </select>
             <span id="shift-period-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
           </div>
@@ -2748,19 +2736,183 @@ export default function ProviderDashboardPage() {
         }
         if (target) await selectPeriod(target.id, target.status, target.period_start, target.period_end);
       }
-      document.getElementById('shift-period-add-btn')?.addEventListener('click', async () => {
-        const period_start = document.getElementById('shift-period-start')?.value;
-        const period_end = document.getElementById('shift-period-end')?.value;
-        const request_deadline = document.getElementById('shift-period-deadline')?.value || null;
-        const notify_days_before = document.getElementById('shift-period-notify-new')?.value || '1,0';
-        if (!period_start || !period_end) { showToast('開始日・終了日を入力してください'); return; }
-        const res = await fetch('/api/provider/shift-periods', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-          body: JSON.stringify({ period_start, period_end, request_deadline, notify_days_before }),
+      // ── 新しいシフトを作る（でお指摘 2026-10-16：「期間を作成」を最初にやるのが分かりづらい） ──
+      // 1つのボタンから「期間 → 提出のしかた → スタッフへのお知らせ」を順にたどる。
+      const ymd = d => d.toISOString().slice(0, 10);
+      const addDaysStr = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return ymd(d); };
+      const mdShort = s => (s ? `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}` : '');
+      function periodPresets() {
+        const t = shiftTodayStr();
+        const [y, m] = t.split('-').map(Number);
+        const nmStart = ymd(new Date(Date.UTC(y, m, 1)));
+        const nmEnd = ymd(new Date(Date.UTC(y, m + 1, 0)));
+        const day = new Date(t + 'T00:00:00Z').getUTCDay();
+        const nextMon = addDaysStr(t, ((8 - day) % 7) || 7);
+        const d16 = Number(t.slice(8, 10)) < 16;
+        const halfStart = d16 ? `${t.slice(0, 7)}-16` : nmStart;
+        const halfEnd = d16 ? ymd(new Date(Date.UTC(y, m, 0))) : `${nmStart.slice(0, 7)}-15`;
+        return [
+          { key: 'month', label: `来月（${mdShort(nmStart)}〜${mdShort(nmEnd)}）`, start: nmStart, end: nmEnd },
+          { key: 'half', label: `次の半月（${mdShort(halfStart)}〜${mdShort(halfEnd)}）`, start: halfStart, end: halfEnd },
+          { key: 'two', label: `次の2週間（${mdShort(nextMon)}〜${mdShort(addDaysStr(nextMon, 13))}）`, start: nextMon, end: addDaysStr(nextMon, 13) },
+        ];
+      }
+
+      async function openShiftWizard() {
+        if (!shiftStaffList.length) await loadStaffLinks();
+        const presets = periodPresets();
+        let fmtDefault = { mode: 'free', max_off_days: null };
+        try {
+          const r = await fetch('/api/provider/shift-settings', { headers: authHeadersShift() });
+          if (r.ok) { const d = await r.json(); if (d.request_format?.default) fmtDefault = d.request_format.default; }
+        } catch {}
+        const st = { step: 1, start: presets[0].start, end: presets[0].end, deadline: addDaysStr(presets[0].start, -7), notify: '1,0', mode: fmtDefault.mode, maxOff: fmtDefault.max_off_days, period: null };
+        if (st.deadline < shiftTodayStr()) st.deadline = '';
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        const STEPS = ['期間', '提出のしかた', 'スタッフに知らせる'];
+        const head = () => `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <h3 style="margin:0;font-size:16px">新しいシフトを作る</h3>
+            <button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <div style="display:flex;gap:6px;margin:12px 0 14px">${STEPS.map((l, i) => `<div style="flex:1;text-align:center;font-size:11.5px;font-weight:700;padding-top:6px;border-top:3px solid ${i + 1 <= st.step ? '#c9a84c' : '#e5e7eb'};color:${i + 1 === st.step ? '#1a1410' : '#9ca3af'}">${i + 1}. ${l}</div>`).join('')}</div>`;
+        function render() {
+          let body = '';
+          if (st.step === 1) {
+            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 8px">どの期間のシフトを作りますか？</p>
+              <div style="display:grid;gap:6px;margin-bottom:12px">${presets.map(p => `<button type="button" class="btn ${st.start === p.start && st.end === p.end ? '' : 'btn-ghost'}" data-preset="${p.key}" style="text-align:left;font-size:13px">${esc(p.label)}</button>`).join('')}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="form-field" style="margin:0"><label>開始日</label><input type="date" data-start value="${st.start}" /></div>
+                <div class="form-field" style="margin:0"><label>終了日</label><input type="date" data-end value="${st.end}" /></div>
+              </div>
+              <div class="form-field" style="margin:10px 0 0"><label>希望の提出締切（任意）</label><input type="date" data-deadline value="${st.deadline}" /></div>
+              <p class="muted" style="font-size:11.5px;margin:4px 0 0;line-height:1.6">締切の前日と当日の朝に、未提出の人数をお店のLINEに知らせます。締切後は、提出済みのスタッフは内容を変えられなくなります。</p>`;
+          } else if (st.step === 2) {
+            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 8px">スタッフにどう希望を出してもらいますか？</p>
+              <div style="display:grid;gap:6px">${Object.entries(REQUEST_MODES).map(([k, v]) => `<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid ${st.mode === k ? '#c9a84c' : '#e5e7eb'};border-radius:10px;cursor:pointer;font-size:13px;line-height:1.5"><input type="radio" name="wz-mode" value="${k}" ${st.mode === k ? 'checked' : ''} style="margin-top:3px" /><span><b>${esc(v)}</b><br><span class="muted" style="font-size:12px">${k === 'free' ? '出たい日・休みたい日を自由に選べます' : k === 'off_only' ? '休みたい日だけ出してもらい、それ以外の日に労働条件の範囲内で配置します（正社員向け）' : '出られる日と時間帯を出してもらい、その中でだけ配置します（パート・アルバイト向け）'}</span></span></label>`).join('')}</div>
+              <div data-max-wrap style="display:${st.mode === 'work_time' ? 'none' : 'flex'};align-items:center;gap:6px;margin-top:10px;font-size:13px">休み希望は<input type="number" data-maxoff min="0" max="31" value="${st.maxOff ?? ''}" placeholder="上限なし" style="width:84px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日まで</div>
+              <p class="muted" style="font-size:11.5px;margin:10px 0 0;line-height:1.6">雇用形態ごと・スタッフごとに変えたい場合は、作成後に「希望の提出のしかた」の「変更する」から設定できます。</p>`;
+          } else {
+            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 4px">${mdShort(st.period.period_start)}〜${mdShort(st.period.period_end)}のシフトを作りました</p>
+              <p class="muted" style="font-size:12.5px;margin:0 0 10px;line-height:1.6">最後に、スタッフへ希望の提出をお願いします。リンクはこの期間専用です。</p>
+              <div data-links>読み込み中…</div>`;
+          }
+          const foot = st.step === 1
+            ? `<button type="button" class="btn" data-next>次へ</button>`
+            : st.step === 2
+              ? `<button type="button" class="btn btn-ghost" data-back>戻る</button><button type="button" class="btn" data-create>この内容で作る</button>`
+              : `<button type="button" class="btn" data-done>完了</button>`;
+          ov.innerHTML = `<div class="cal-modal-card" style="max-width:540px">${head()}${body}<p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">${foot}</div></div>`;
+          ov.querySelector('[data-x]').addEventListener('click', close);
+          const msg = t => { ov.querySelector('[data-msg]').textContent = t; };
+          if (st.step === 1) {
+            ov.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+              const p = presets.find(x => x.key === b.dataset.preset);
+              st.start = p.start; st.end = p.end;
+              const dl = addDaysStr(p.start, -7); st.deadline = dl >= shiftTodayStr() ? dl : '';
+              render();
+            }));
+            ov.querySelector('[data-next]').addEventListener('click', () => {
+              st.start = ov.querySelector('[data-start]').value; st.end = ov.querySelector('[data-end]').value; st.deadline = ov.querySelector('[data-deadline]').value;
+              if (!st.start || !st.end) { msg('開始日と終了日を入れてください'); return; }
+              if (st.end < st.start) { msg('終了日は開始日より後にしてください'); return; }
+              if (st.deadline && st.deadline >= st.start) { msg('締切は開始日より前の日にしてください'); return; }
+              st.step = 2; render();
+            });
+          } else if (st.step === 2) {
+            ov.querySelectorAll('input[name="wz-mode"]').forEach(r => r.addEventListener('change', () => { st.mode = r.value; render(); }));
+            ov.querySelector('[data-back]').addEventListener('click', () => { st.step = 1; render(); });
+            ov.querySelector('[data-create]').addEventListener('click', async e => {
+              const raw = ov.querySelector('[data-maxoff]')?.value ?? '';
+              st.maxOff = st.mode === 'work_time' || raw === '' ? null : Number(raw);
+              e.currentTarget.disabled = true;
+              const res = await fetch('/api/provider/shift-periods', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+                body: JSON.stringify({ period_start: st.start, period_end: st.end, request_deadline: st.deadline || null, notify_days_before: st.notify, request_format: { default: { mode: st.mode, max_off_days: st.maxOff }, by_employment_type: {}, by_staff: {} } }),
+              });
+              const d = await res.json().catch(() => ({}));
+              if (!res.ok) { e.currentTarget.disabled = false; msg(d.error || '作成できませんでした'); return; }
+              st.period = d; st.step = 3; render();
+              currentPeriodId = d.id;
+              loadPeriods(); loadCalendar();
+              renderLinksInto(ov.querySelector('[data-links]'), d);
+            });
+          } else {
+            ov.querySelector('[data-done]').addEventListener('click', () => { close(); document.getElementById('shift-detail-section')?.scrollIntoView({ behavior: 'smooth' }); });
+          }
+        }
+        render();
+      }
+      document.getElementById('shift-wizard-btn')?.addEventListener('click', openShiftWizard);
+
+      // この期間の提出リンク：スタッフごとにコピー・まとめてコピー・LINEで送る
+      async function renderLinksInto(el, period) {
+        if (!el) return;
+        if (!shiftStaffList.length) await loadStaffLinks();
+        const subRes = await fetch(`/api/provider/shift-submissions?periodId=${period.id}`, { headers: authHeadersShift() });
+        const submitted = new Set((subRes.ok ? await subRes.json() : []).map(x => x.staff_id));
+        const linkOf = s => `${location.origin}/staff-shift/${s.shift_access_token}?period=${period.id}`;
+        if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'; return; }
+        const lineCount = shiftStaffList.filter(s => s.line_user_id && !submitted.has(s.id)).length;
+        const collecting = period.status === 'collecting';
+        el.innerHTML = `
+          ${collecting ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button type="button" class="btn" data-send-line ${lineCount ? '' : 'disabled'} style="font-size:12.5px">未提出の人にLINEで送る（${lineCount}人）</button>
+            <button type="button" class="btn btn-ghost" data-copy-all style="font-size:12.5px">全員分のリンクをまとめてコピー</button>
+          </div>` : '<p class="muted" style="font-size:12.5px;margin:0 0 8px">この期間は希望の募集を締め切っています。</p>'}
+          <div style="display:grid;gap:6px">${shiftStaffList.map(s => `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;flex-wrap:wrap">
+              <span style="flex:1;font-size:13px;font-weight:700">${esc(s.name)}</span>
+              <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;${submitted.has(s.id) ? 'background:#dcfce7;color:#166534' : 'background:#f3f4f6;color:#6b7280'}">${submitted.has(s.id) ? '提出済み' : '未提出'}</span>
+              <span class="muted" style="font-size:11px">${s.line_user_id ? 'LINE連携済み' : 'LINE未連携'}</span>
+              ${collecting ? `<button type="button" class="btn btn-ghost" data-copy-one="${s.id}" style="font-size:12px;padding:4px 10px">リンクをコピー</button>` : ''}
+            </div>`).join('')}</div>
+          <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">LINE未連携の人には、コピーしたリンクを個別に送ってください。スタッフが提出画面の「LINEで受け取る」を押すと、次回からLINEで送れます。</p>`;
+        const copy = async text => { try { await navigator.clipboard.writeText(text); showToast('コピーしました'); } catch { showToast('コピーできませんでした'); } };
+        el.querySelectorAll('[data-copy-one]').forEach(b => b.addEventListener('click', () => copy(linkOf(shiftStaffList.find(x => x.id === b.dataset.copyOne)))));
+        el.querySelector('[data-copy-all]')?.addEventListener('click', () => copy(
+          `${mdShort(period.period_start)}〜${mdShort(period.period_end)}のシフト希望の提出をお願いします。${period.request_deadline ? `締切：${mdShort(period.request_deadline)}` : ''}\n` +
+          shiftStaffList.map(s => `${s.name}さん：${linkOf(s)}`).join('\n')));
+        el.querySelector('[data-send-line]')?.addEventListener('click', async e => {
+          e.currentTarget.disabled = true;
+          const res = await fetch(`/api/provider/shift-periods/${period.id}/send-links`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: '{}' });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(d.error || '送れませんでした'); e.currentTarget.disabled = false; return; }
+          showToast(`${d.sent.length}人にLINEで送りました${d.skipped.length ? `（送れなかった人：${d.skipped.join('・')}）` : ''}`);
         });
-        if (res.ok) { showToast('期間を作成しました'); await loadPeriods(); loadCalendar(); }
-        else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-      });
+      }
+      function openLinksPanel(period) {
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        ov.innerHTML = `<div class="cal-modal-card" style="max-width:540px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h3 style="margin:0;font-size:16px">提出リンク（${mdShort(period.period_start)}〜${mdShort(period.period_end)}）</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <div data-links style="margin-top:12px">読み込み中…</div></div>`;
+        document.body.appendChild(ov);
+        ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+        ov.querySelector('[data-x]').addEventListener('click', () => ov.remove());
+        renderLinksInto(ov.querySelector('[data-links]'), period);
+      }
+
+      // この期間の進み具合（希望を集める → 自動で作る → 確定）
+      function renderShiftFlow(submittedCount, entryCount) {
+        const el = document.getElementById('shift-flow');
+        const p = shiftPeriods.find(x => x.id === currentPeriodId);
+        if (!el || !p) return;
+        const total = shiftStaffList.length;
+        const stage = p.status === 'confirmed' ? 3 : (entryCount > 0 || p.status === 'draft') ? 2 : 1;
+        const box = (n, title, sub, action) => `<div style="flex:1;min-width:170px;padding:10px 12px;border-radius:10px;border:1.5px solid ${n === stage ? '#c9a84c' : n < stage ? '#86efac' : '#e5e7eb'};background:${n === stage ? 'rgba(201,168,76,.08)' : n < stage ? '#f0fdf4' : '#fff'}">
+            <div style="font-size:11.5px;font-weight:800;color:${n < stage ? '#166534' : n === stage ? '#84651a' : '#9ca3af'}">${n < stage ? '完了' : n === stage ? 'いまここ' : 'このあと'}</div>
+            <div style="font-size:13.5px;font-weight:800;margin-top:2px">${n}. ${title}</div>
+            <div class="muted" style="font-size:12px;margin-top:2px;line-height:1.5">${sub}</div>${action || ''}</div>`;
+        el.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${box(1, '希望を集める', `提出 ${submittedCount} / ${total}人${p.request_deadline ? `・締切 ${mdShort(p.request_deadline)}` : ''}`, `<button type="button" class="btn ${stage === 1 ? '' : 'btn-ghost'}" data-flow-links style="font-size:12px;padding:5px 12px;margin-top:8px">提出リンクを送る</button>`)}
+          ${box(2, '自動で作る', stage >= 2 ? `${entryCount}件のシフト${p.status === 'confirmed' ? '' : '（下で確認・調整）'}` : '希望が集まったら、下の「自動作成」を押す', '')}
+          ${box(3, '確認して確定', p.status === 'confirmed' ? '確定済み' : '問題がなければ「この期間を確定する」', '')}
+        </div>`;
+        el.querySelector('[data-flow-links]')?.addEventListener('click', () => openLinksPanel(p));
+      }
 
       // ── 期間の詳細（希望一覧・シフト表） ──
       async function selectPeriod(id, status, periodStart, periodEnd) {
@@ -2857,6 +3009,7 @@ export default function ProviderDashboardPage() {
         const requests = allRequests;
         const submissions = subRes.ok ? await subRes.json() : [];
         const submittedIds = new Set(submissions.map(s => s.staff_id));
+        renderShiftFlow(submittedIds.size, applyEntries.length);
 
         // 提出完了状況（でお要望2026-09-14：日付ごとの提出ボタンをやめた分、店舗側は
         // 誰が「これで完了です」を押したか一目で分かるようにする）
@@ -13115,6 +13268,16 @@ export default function ProviderDashboardPage() {
               ①月カレンダー（日付タップでその日のシフト編集ポップアップ）→②期間ごとの管理
               （希望一覧・シフト表・自動作成・確定）→③設定（提出リンク・期間作成・ルール・
               時間帯パターン・優先度）の順に並べ替え、初期設定系は折りたたみにした。 */}
+          {/* でお指摘（2026-10-16）：「期間を作成」を最初にやるのが分かりづらい。シフト作りの流れを
+              1つのボタンから順にたどれるようにした（期間 → 提出のしかた → スタッフへのお知らせ）。 */}
+          <div className="card" style={{ padding: '18px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', border: '1px solid rgba(201,168,76,.45)', background: 'rgba(201,168,76,.06)' }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800 }}>シフトを作る</div>
+              <div className="muted" style={{ fontSize: '12.5px', lineHeight: 1.7, marginTop: '2px' }}>期間を決める → スタッフに希望を出してもらう → 自動で作る → 確定する、の順に進みます。</div>
+            </div>
+            <button type="button" className="btn" id="shift-wizard-btn" style={{ fontSize: '14px', padding: '10px 18px' }}>＋ 新しいシフトを作る</button>
+          </div>
+
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
               <h2 style={{ margin: 0, fontSize: '16px' }}>シフトカレンダー</h2>
@@ -13131,9 +13294,11 @@ export default function ProviderDashboardPage() {
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px' }} id="shift-detail-section">
-            <h3 style={{ margin: 0, fontSize: '15px' }}>期間ごとのシフト作成</h3>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>作成中・作成済みのシフト</h3>
             <div id="shift-period-list">読み込み中…</div>
             <div id="shift-detail-body" className="stack" style={{ gap: '16px', display: 'none' }}>
+            {/* この期間でいまどこまで進んでいるか（希望を集める → 自動作成 → 確定） */}
+            <div id="shift-flow"></div>
             {/* 日付ごとのパターン割当（でお要望2026-09-14：1日ずつ作るのは大変なので、
                 日付を複数選んでパターンをまとめて一括適用できるように）。 */}
             <div id="shift-day-patterns-wrap" style={{ display: 'none' }}>
@@ -13186,27 +13351,6 @@ export default function ProviderDashboardPage() {
           </div>
 
           <h3 style={{ margin: '24px 0 10px', fontSize: '14px' }}>設定</h3>
-          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
-            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>スタッフの提出用リンク</summary>
-            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
-              <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>スタッフが各自のスマホから出勤・休み希望を提出できます。リンクをコピーして、LINE等で個別に送ってください。</p>
-              <div id="shift-staff-links" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
-            </div>
-          </details>
-
-          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
-            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>期間を作成</summary>
-            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>締切の何日前に通知（0=当日）</label><input type="text" id="shift-period-notify-new" defaultValue="1,0" placeholder="3,1,0" /></div>
-              <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
-            </div>
-            </div>
-          </details>
-
           <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
             <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>シフト作成ルール</summary>
             <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
