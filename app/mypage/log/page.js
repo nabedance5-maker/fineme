@@ -21,8 +21,8 @@ export default function NewMeLogPage() {
         .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
-        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
       `}</style>
     </main>
   );
