@@ -578,6 +578,24 @@ const DASHBOARD_CSS = `
       .cf-ed input[data-k="label"], .cf-ed textarea { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; font-family: inherit; }
       .cf-ed label { display: flex; gap: 4px; align-items: center; font-size: 12.5px; }
       .cf-ed .btn { font-size: 11.5px; padding: 4px 9px; }
+      /* レポート・データ出力（2026-10-19） */
+      #tab-reports { color: #1a1410; }
+      .rp-select, .rp-export input { padding: 7px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      #rp-body { display: grid; gap: 16px; }
+      .rp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+      .rp-kpis div { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; font-size: 12px; }
+      .rp-kpis b { font-size: 20px; font-variant-numeric: tabular-nums; } .rp-kpis em { font-style: normal; font-size: 11.5px; }
+      .rp-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+      .rp-chart { display: grid; gap: 6px; padding: 12px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; font-size: 13px; }
+      .rp-chart-scroll { overflow-x: auto; } .rp-chart svg { width: 100%; min-width: 260px; height: auto; display: block; }
+      .rp-table-wrap { overflow-x: auto; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; }
+      .rp-table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+      .rp-table th, .rp-table td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid rgba(26,20,16,0.08); }
+      .rp-table th:first-child, .rp-table td:first-child { text-align: left; position: sticky; left: 0; background: #fff; }
+      .rp-table th { font-size: 11.5px; background: #f8f6f1; }
+      .rp-export { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+      .rp-export label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 700; }
+      .rp-range { display: flex; gap: 10px; flex-wrap: wrap; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1237,6 +1255,65 @@ export default function ProviderDashboardPage() {
       });
     }
     applyMemberPerms(provider);
+
+    // ── レポート・データ出力（でお要望 2026-10-19：hacomono差分 #11） ──
+    (function setupReports() {
+      const box = document.getElementById('rp-body');
+      if (!box) return;
+      const yen = n => `¥${Number(n || 0).toLocaleString()}`;
+      const COLS = [['joined', '入会'], ['left', '退会'], ['members_end', '月末の会員数'], ['reservations', '予約'], ['visits', '来店'], ['cancels', 'キャンセル'], ['new_customers', '新しいお客様'], ['sales', '売上'], ['checkins', 'チェックイン'], ['packages', '回数券の販売']];
+      let rows = [];
+      async function load() {
+        box.innerHTML = '<p style="font-size:13px">読み込み中…</p>';
+        const n = document.getElementById('rp-months')?.value || '12';
+        const r = await fetch(`/api/provider/reports?months=${n}`, { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        if (!r.ok) { box.innerHTML = authErrorHtml(r); return; }
+        rows = (await r.json()).months;
+        render();
+      }
+      function chart(key, label, fmt) {
+        const max = Math.max(1, ...rows.map(x => x[key]));
+        const w = 640, h = 150, pad = 26, bw = (w - pad) / rows.length;
+        const bars = rows.map((x, i) => {
+          const bh = Math.round((x[key] / max) * (h - 40));
+          return `<g><rect x="${pad + i * bw + bw * 0.18}" y="${h - 20 - bh}" width="${bw * 0.64}" height="${bh}" rx="3" fill="#c9a84c"></rect>
+            ${x[key] ? `<text x="${pad + i * bw + bw / 2}" y="${h - 24 - bh}" text-anchor="middle" font-size="10" fill="#1a1410">${fmt(x[key])}</text>` : ''}
+            <text x="${pad + i * bw + bw / 2}" y="${h - 6}" text-anchor="middle" font-size="10" fill="#1a1410">${Number(x.month.slice(5))}月</text></g>`;
+        }).join('');
+        return `<div class="rp-chart"><b>${label}</b><div class="rp-chart-scroll"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}"><line x1="${pad}" y1="${h - 20}" x2="${w}" y2="${h - 20}" stroke="#d6d0c4"></line>${bars}</svg></div></div>`;
+      }
+      function render() {
+        const sum = k => rows.reduce((t, x) => t + x[k], 0);
+        const last = rows[rows.length - 1] || {};
+        box.innerHTML = `
+          <div class="rp-kpis">
+            <div><span>今の会員数</span><b>${last.members_end ?? 0}名</b></div>
+            <div><span>期間の入会</span><b>${sum('joined')}名</b><em>退会 ${sum('left')}名</em></div>
+            <div><span>期間の来店</span><b>${sum('visits').toLocaleString()}回</b><em>新しいお客様 ${sum('new_customers')}名</em></div>
+            <div><span>期間の売上</span><b>${yen(sum('sales'))}</b></div>
+          </div>
+          <div class="rp-charts">${chart('sales', '売上', v => (v >= 10000 ? `${Math.round(v / 1000) / 10}万` : v.toLocaleString()))}${chart('visits', '来店', v => v)}${chart('members_end', '月末の会員数', v => v)}</div>
+          <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>月</th>${COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead>
+          <tbody>${rows.slice().reverse().map(x => `<tr><td>${x.month.replace('-', '年')}月</td>${COLS.map(([k]) => `<td>${k === 'sales' ? yen(x[k]) : x[k]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+      }
+      document.getElementById('rp-months')?.addEventListener('change', load);
+      document.getElementById('rp-export-btn')?.addEventListener('click', async () => {
+        const type = document.getElementById('rp-type').value;
+        const from = document.getElementById('rp-from').value; const to = document.getElementById('rp-to').value;
+        const btn = document.getElementById('rp-export-btn'); btn.disabled = true;
+        const r = await fetch('/api/provider/export', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ type, from, to }) });
+        btn.disabled = false;
+        if (!r.ok) { const d = await r.json().catch(() => ({})); showToast(d.error || '出力できませんでした'); return; }
+        const blob = await r.blob();
+        const NAME = { customers: '顧客一覧', reservations: '予約', sales: '売上', memberships: '会員プラン', checkins: 'チェックイン' };
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `${NAME[type]}_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+        showToast('CSVを保存しました（出力したことは操作ログに残ります）');
+      });
+      document.getElementById('rp-type')?.addEventListener('change', e => { document.getElementById('rp-range').style.display = e.target.value === 'customers' || e.target.value === 'memberships' ? 'none' : ''; });
+      document.querySelectorAll('[data-tab="reports"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'reports') load();
+    })();
 
     // ── アンケート（でお要望 2026-10-19：hacomono差分 #9） ──
     (function setupSurveys() {
@@ -14367,6 +14444,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="sales">売上管理</button>
                   <button className="tab-btn" data-tab="invoices">請求</button>
                   <button className="tab-btn" data-tab="membership-billing" data-feature="membership_enrollment">月会費の支払い状況<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="reports">レポート・データ出力</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
@@ -17240,6 +17318,34 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* LTV/CAC：店舗単位の概算（メニュー別の紐づけデータが無いため店舗全体で算出） */}
+        {/* レポート・データ出力（でお要望 2026-10-19：hacomono差分 #11） */}
+        <div className="tab-pane" id="tab-reports">
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>レポート</h2>
+                <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>月ごとの会員・予約・来店・売上の推移です。売上は売上管理とレジで記録した金額の合計です。</p>
+              </div>
+              <select id="rp-months" defaultValue="12" aria-label="期間" className="rp-select"><option value="6">直近6か月</option><option value="12">直近12か月</option><option value="24">直近24か月</option></select>
+            </div>
+            <div id="rp-body"></div>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>データ出力（CSV）</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>Excelやスプレッドシートで開けるCSVで保存します。お客様の個人情報を含むため、出力した人と日時は操作ログに残ります。保存したファイルの扱いにはご注意ください。</p>
+            </div>
+            <div className="rp-export">
+              <label>出力するデータ<select id="rp-type" className="rp-select"><option value="customers">顧客一覧（基本情報・タイプ・タグ・来店回数）</option><option value="reservations">予約</option><option value="sales">売上</option><option value="memberships">会員プラン（入会・休会・退会）</option><option value="checkins">チェックイン</option></select></label>
+              <div id="rp-range" className="rp-range" style={{ display: 'none' }}>
+                <label>いつから<input type="date" id="rp-from" /></label>
+                <label>いつまで<input type="date" id="rp-to" /></label>
+              </div>
+              <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
+            </div>
+          </div>
+        </div>
+
         {/* アンケート（でお要望 2026-10-19：hacomono差分 #9） */}
         <div className="tab-pane" id="tab-surveys">
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
