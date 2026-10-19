@@ -2,21 +2,21 @@
 // 週次（月曜・seo-report後）。Search Consoleの成績から「惜しいページ」を抽出し、
 // タイトル/メタ/内部リンク/追記を自動改善して Supabase features を更新（SEOのAct自動化）。
 // 既定は「提案モード」（メールのみ・DB未変更）。?apply=1 または SEO_AUTO_APPLY=1 で本適用。
-// Schedule: "30 0 * * 1"
+// Schedule: "30 0 * * 1"（月曜 JST9:30。2026-10-19 でお指示で日次→週次に戻した）
 import Anthropic from '@anthropic-ai/sdk';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 const HOST = 'www.fineme.me';
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 
-const MAX_PAGES = 2;          // 1日あたり改善件数（毎日実行・少量ずつ）
+const MAX_PAGES = 10;         // 週1回の改善件数（旧: 毎日2件）
 const COOLDOWN_DAYS = 14;     // 同じページを短期間で再改稿しない（バックログを巡回）
 const MIN_IMPRESSIONS = 80;   // 「表示が付いている」下限（28日）
 const LOW_CTR = 0.012;        // 1.2%未満＝タイトル/メタが弱い候補
@@ -103,13 +103,13 @@ export async function GET(request) {
       .select('*').in('slug', scored.map(c => c.slug));
     const artBySlug = Object.fromEntries((poolArts || []).map(a => [a.slug, a]));
 
-    // 直近 COOLDOWN_DAYS 以内に改稿したページは今日は触らない（バックログを毎日巡回）
+    // 直近 COOLDOWN_DAYS 以内に改稿したページは今回は触らない（バックログを巡回）
     const candidates = scored
       .filter(c => artBySlug[c.slug] && !withinCooldown(artBySlug[c.slug].body, COOLDOWN_DAYS))
       .slice(0, MAX_PAGES);
 
     if (candidates.length === 0) {
-      await sendMail('【Fineme SEO】本日の改善対象なし', `<p>本日は改善条件（表示≥${MIN_IMPRESSIONS} かつ CTR<${LOW_CTR * 100}% or 8〜20位／直近${COOLDOWN_DAYS}日未改稿）に該当するページがありませんでした。</p>`);
+      await sendMail('【Fineme SEO】今週の改善対象なし', `<p>今週は改善条件（表示≥${MIN_IMPRESSIONS} かつ CTR<${LOW_CTR * 100}% or 8〜20位／直近${COOLDOWN_DAYS}日未改稿）に該当するページがありませんでした。</p>`);
       return Response.json({ candidates: 0 });
     }
 

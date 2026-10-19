@@ -122,7 +122,7 @@ export async function GET(request) {
 
 【直近7日の自動アクティビティ】既存記事改稿${improvedCount}件 / 自己観測issue:${seo.ok ? 0 : 1}
 
-【毎日自動で回っている施策】seo-improve(既存記事の改稿), provider-log-toolkit-announce(掲載店舗へのツール案内), auto-visited/index-submit/seo-bulk-submit(SEOインデックス系)。店舗SaaS営業そのもの（既存21社への有料転換提案・新規開拓）は自動化されておらず、でお手動が主。
+【自動で回っている施策】seo-improve(既存記事の改稿・週1回), provider-log-toolkit-announce(掲載店舗へのツール案内), auto-visited/index-submit/seo-bulk-submit(SEOインデックス系)。店舗SaaS営業そのもの（既存21社への有料転換提案・新規開拓）は自動化されておらず、でお手動が主。
 
 次を簡潔な日本語・HTMLの<p>/<ul>のみで出力：
 ■過去（ここまでの流れ）… トレンドから何が伸び/停滞しているか2〜3行。憶測でなく数字に基づく
@@ -165,7 +165,7 @@ export async function GET(request) {
       </table>
 
       <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
-      <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／第一フェーズ=店舗SaaS有料契約67社（2026-12-14期限）。毎日自動: seo-improve(改稿) / provider-log-toolkit-announce(掲載店舗案内) / auto-visited・index-submit・seo-bulk-submit(SEOインデックス)。</p>`;
+      <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／第一フェーズ=店舗SaaS有料契約67社（2026-12-14期限）。自動: seo-improve(改稿・週1) / provider-log-toolkit-announce(掲載店舗案内) / auto-visited・index-submit・seo-bulk-submit(SEOインデックス)。</p>`;
     await resend.emails.send({ from: 'Fineme 週報 <noreply@fineme.me>', to: OWNER_EMAIL, subject: `📊 Fineme 事業週報 ${today}｜店舗SaaS有料${providerPaid}社・購入${mirrorWeek}(7日)`, html });
   }
 
