@@ -482,6 +482,29 @@ const DASHBOARD_CSS = `
       .bc-h-list { display: grid; gap: 2px; font-size: 12.5px; max-height: 320px; overflow-y: auto; }
       .bc-h-list div { display: grid; grid-template-columns: minmax(100px, 1.2fr) 60px 1.6fr 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); }
       @media (max-width: 640px) { .bc-h-list div { grid-template-columns: 1fr 1fr; } }
+      /* メンバータイプ・タグ・保存した絞り込み（2026-10-19） */
+      .lbl-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+      .lbl-chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: #ece7dc; color: #1a1410; }
+      .lbl-chip.lbl-type { background: #1a1410; color: #fff; }
+      .lbl-manage { margin: 0 0 12px; padding: 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; background: #fff; }
+      .lbl-manage[hidden], .cf-panel[hidden] { display: none; }
+      .lbl-manage-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; color: #1a1410; }
+      .lbl-col { display: grid; gap: 6px; align-content: start; font-size: 13px; }
+      .lbl-note { font-size: 11.5px; color: #1a1410; }
+      .lbl-row { display: flex; gap: 8px; align-items: center; font-size: 12.5px; }
+      .lbl-row input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; }
+      .lbl-row .btn { font-size: 12px; padding: 5px 10px; }
+      .cf-seg-row { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; padding-top: 10px; border-top: 1px dashed rgba(26,20,16,0.15); }
+      .cf-seg-row label { min-width: 180px; }
+      .cf-seg-row input { flex: 1 1 200px; padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; }
+      .cf-seg-row .btn { font-size: 12px; padding: 6px 12px; }
+      .lbl-ed { display: grid; gap: 8px; margin: 0 0 12px; padding: 10px 12px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; font-size: 12.5px; }
+      .lbl-ed label { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+      .lbl-ed select { padding: 5px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .lbl-ed-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+      .lbl-ed-tags > span { font-weight: 700; margin-right: 2px; }
+      .lbl-tog { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(26,20,16,0.25); background: #fff; color: #1a1410; cursor: pointer; }
+      .lbl-tog[aria-pressed="true"] { background: #1a1410; color: #fff; border-color: #1a1410; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -6941,11 +6964,12 @@ export default function ProviderDashboardPage() {
       }
 
       // ── 詳しい絞り込み（でお要望 2026-10-17） ──
-      const CF_IDS = ['cf-kind', 'cf-line', 'cf-visits', 'cf-last', 'cf-next', 'cf-staff', 'cf-pkg', 'cf-mem', 'cf-bday', 'cf-gender', 'cf-note'];
+      const CF_IDS = ['cf-kind', 'cf-type', 'cf-tag', 'cf-line', 'cf-visits', 'cf-last', 'cf-next', 'cf-staff', 'cf-pkg', 'cf-mem', 'cf-bday', 'cf-gender', 'cf-note'];
       const cfVal = id => document.getElementById(id)?.value || '';
       function cfActiveCount() { return CF_IDS.filter(id => cfVal(id)).length; }
-      function passesExtraFilters(c, isManual) {
-        const v = Object.fromEntries(CF_IDS.map(id => [id, cfVal(id)]));
+      function passesExtraFilters(c, isManual, vals) {
+        const v = vals || Object.fromEntries(CF_IDS.map(id => [id, cfVal(id)]));
+        if (!passesLabelFilters(c, isManual, v)) return false;
         if (v['cf-kind'] === 'member' && isManual) return false;
         if (v['cf-kind'] === 'manual' && !isManual) return false;
         const lineStore = !isManual && !!c.line_store, lineAny = !isManual && !!c.line_any;
@@ -6989,6 +7013,165 @@ export default function ProviderDashboardPage() {
         if (v['cf-note'] === 'no' && hasNote) return false;
         return true;
       }
+      // ── メンバータイプ・タグ・保存した絞り込み（でお要望 2026-10-19：hacomono差分 #7） ──
+      let labelData = { types: [], tags: [], labels: [], segments: [] };
+      let labelByUser = {}, labelByManual = {};
+      function indexLabels() {
+        labelByUser = {}; labelByManual = {};
+        labelData.labels.forEach(l => { if (l.user_id) labelByUser[l.user_id] = l; if (l.manual_id) labelByManual[l.manual_id] = l; });
+      }
+      const labelOf = (c, isManual) => (isManual ? labelByManual[c.id] : labelByUser[c.user_id]) || { member_type_id: null, tag_ids: [] };
+      async function loadLabels() {
+        const r = await fetch('/api/provider/customer-labels', { headers: authHeaders() });
+        if (!r.ok) return;
+        labelData = await r.json();
+        indexLabels();
+        fillLabelSelects();
+        renderLabelManage();
+      }
+      const typeName = id => labelData.types.find(t => t.id === id)?.name;
+      const tagName = id => labelData.tags.find(t => t.id === id)?.name;
+      function labelChipsHtml(c, isManual) {
+        const l = labelOf(c, isManual);
+        const chips = [];
+        if (l.member_type_id && typeName(l.member_type_id)) chips.push(`<span class="lbl-chip lbl-type">${esc(typeName(l.member_type_id))}</span>`);
+        (l.tag_ids || []).forEach(t => { if (tagName(t)) chips.push(`<span class="lbl-chip">${esc(tagName(t))}</span>`); });
+        return chips.length ? `<span class="lbl-chips">${chips.join('')}</span>` : '';
+      }
+      function fillLabelSelects() {
+        const t = document.getElementById('cf-type');
+        if (t) { const cur = t.value; t.innerHTML = '<option value="">すべて</option><option value="none">未設定</option>' + labelData.types.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join(''); t.value = cur; }
+        const g = document.getElementById('cf-tag');
+        if (g) { const cur = g.value; g.innerHTML = '<option value="">すべて</option><option value="none">タグなし</option>' + labelData.tags.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join(''); g.value = cur; }
+        const s = document.getElementById('cf-seg');
+        if (s) s.innerHTML = '<option value="">選んでください</option>' + labelData.segments.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
+        const bf = document.getElementById('bc-filter');
+        if (bf) {
+          const cur = bf.value;
+          bf.querySelectorAll('optgroup[data-lbl]').forEach(o => o.remove());
+          const grp = (label, items, prefix) => items.length ? `<optgroup data-lbl label="${esc(label)}">${items.map(x => `<option value="${prefix}${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>` : '';
+          bf.insertAdjacentHTML('beforeend', grp('保存した絞り込み', labelData.segments, 'seg:') + grp('メンバータイプ', labelData.types, 'type:') + grp('タグ', labelData.tags, 'tag:'));
+          if ([...bf.options].some(o => o.value === cur)) bf.value = cur;
+        }
+      }
+      function passesLabelFilters(c, isManual, v) {
+        const l = labelOf(c, isManual);
+        if (v['cf-type'] === 'none' && l.member_type_id) return false;
+        if (v['cf-type'] && v['cf-type'] !== 'none' && l.member_type_id !== v['cf-type']) return false;
+        if (v['cf-tag'] === 'none' && (l.tag_ids || []).length) return false;
+        if (v['cf-tag'] && v['cf-tag'] !== 'none' && !(l.tag_ids || []).includes(v['cf-tag'])) return false;
+        return true;
+      }
+      // 保存した絞り込み：顧客一覧の条件（詳しい絞り込み・上の絞り込み・検索語）をまとめて保存
+      function currentSegmentFilters() {
+        return { cf: Object.fromEntries(CF_IDS.map(id => [id, cfVal(id)]).filter(([, x]) => x)), legacy: filterSel?.value || 'all', kw: (searchInput?.value || '').trim() };
+      }
+      function rowsForSegment(seg) {
+        const f = seg.filters || {};
+        const v = Object.fromEntries(CF_IDS.map(id => [id, f.cf?.[id] || '']));
+        const kw = String(f.kw || '').toLowerCase();
+        return allItems.filter(c => {
+          if (kw && !matchesCustomer(kw, c.customer_name, c.member_number, c.phone)) return false;
+          if (!passesExtraFilters(c, false, v)) return false;
+          if (f.legacy === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
+          if (f.legacy === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
+          if (f.legacy === 'dormant') return c.status === 'dormant' || c.status === 'churned';
+          return true;
+        });
+      }
+      document.getElementById('cf-seg')?.addEventListener('change', e => {
+        const seg = labelData.segments.find(x => x.id === e.target.value);
+        if (!seg) return;
+        const f = seg.filters || {};
+        CF_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = f.cf?.[id] || ''; });
+        if (filterSel) filterSel.value = f.legacy || 'all';
+        if (searchInput) searchInput.value = f.kw || '';
+        syncCfUi(); render();
+      });
+      document.getElementById('cf-seg-save')?.addEventListener('click', async () => {
+        const nameEl = document.getElementById('cf-seg-name');
+        const name = nameEl?.value.trim();
+        if (!name) { showToast('保存する名前を入れてください'); return; }
+        const r = await fetch('/api/provider/customer-labels', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ action: 'segment_add', name, filters: currentSegmentFilters() }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '保存できませんでした'); return; }
+        nameEl.value = ''; showToast(`「${name}」を保存しました。メッセージ配信の送る相手にも出ます`);
+        await loadLabels();
+        const s = document.getElementById('cf-seg'); if (s) s.value = d.id;
+      });
+      document.getElementById('cf-seg-del')?.addEventListener('click', async () => {
+        const s = document.getElementById('cf-seg');
+        const seg = labelData.segments.find(x => x.id === s?.value);
+        if (!seg) { showToast('削除する絞り込みを選んでください'); return; }
+        if (!confirm(`保存した絞り込み「${seg.name}」を削除しますか？`)) return;
+        await fetch('/api/provider/customer-labels', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ action: 'segment_delete', id: seg.id }) });
+        showToast('削除しました'); loadLabels();
+      });
+
+      // タイプ・タグの管理
+      async function lblPost(body, okText) {
+        const r = await fetch('/api/provider/customer-labels', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '保存できませんでした'); return null; }
+        if (okText) showToast(okText);
+        return d;
+      }
+      function renderLabelManage() {
+        const box = document.getElementById('lbl-manage-body');
+        if (!box) return;
+        const used = (id, key) => labelData.labels.filter(l => key === 'type' ? l.member_type_id === id : (l.tag_ids || []).includes(id)).length;
+        box.innerHTML = `
+          <div class="lbl-col">
+            <b>メンバータイプ</b><span class="lbl-note">お客様1人に1つ（例：一般・法人・学生）</span>
+            ${labelData.types.map(t => `<div class="lbl-row"><input value="${esc(t.name)}" data-lbl-type-name="${t.id}" maxlength="40"><span>${used(t.id, 'type')}名</span><button type="button" class="btn btn-ghost" data-lbl-type-del="${t.id}">削除</button></div>`).join('')}
+            <div class="lbl-row"><input id="lbl-type-new" placeholder="新しいタイプ名" maxlength="40"><button type="button" class="btn" id="lbl-type-add">追加</button></div>
+          </div>
+          <div class="lbl-col">
+            <b>タグ</b><span class="lbl-note">何個でも付けられる目印（例：腰痛あり・紹介者・VIP）</span>
+            ${labelData.tags.map(t => `<div class="lbl-row"><span class="lbl-chip">${esc(t.name)}</span><span>${used(t.id, 'tag')}名</span><button type="button" class="btn btn-ghost" data-lbl-tag-del="${t.id}">削除</button></div>`).join('')}
+            <div class="lbl-row"><input id="lbl-tag-new" placeholder="新しいタグ名" maxlength="40"><button type="button" class="btn" id="lbl-tag-add">追加</button></div>
+          </div>`;
+        box.querySelector('#lbl-type-add')?.addEventListener('click', async () => { if (await lblPost({ action: 'type_add', name: box.querySelector('#lbl-type-new').value }, 'タイプを追加しました')) loadLabels(); });
+        box.querySelector('#lbl-tag-add')?.addEventListener('click', async () => { if (await lblPost({ action: 'tag_add', name: box.querySelector('#lbl-tag-new').value }, 'タグを追加しました')) loadLabels(); });
+        box.querySelectorAll('[data-lbl-type-name]').forEach(i => i.addEventListener('change', async () => { if (await lblPost({ action: 'type_rename', id: i.dataset.lblTypeName, name: i.value }, '名前を変えました')) { await loadLabels(); render(); } }));
+        box.querySelectorAll('[data-lbl-type-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このメンバータイプを削除しますか？（付いているお客様は「未設定」になります）')) return;
+          if (await lblPost({ action: 'type_delete', id: b.dataset.lblTypeDel }, '削除しました')) { await loadLabels(); render(); }
+        }));
+        box.querySelectorAll('[data-lbl-tag-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このタグを削除しますか？（付いているお客様からも外れます）')) return;
+          if (await lblPost({ action: 'tag_delete', id: b.dataset.lblTagDel }, '削除しました')) { await loadLabels(); render(); }
+        }));
+      }
+      document.getElementById('lbl-manage-toggle')?.addEventListener('click', () => { const c = document.getElementById('lbl-manage'); if (c) c.hidden = !c.hidden; });
+
+      // 顧客情報ポップアップ：このお客様のタイプとタグ
+      function renderLabelEditor(type, id) {
+        const box = document.getElementById('cust-modal-labels');
+        if (!box) return;
+        const isManual = type === 'manual';
+        const l = (isManual ? labelByManual[id] : labelByUser[id]) || { member_type_id: null, tag_ids: [] };
+        if (!labelData.types.length && !labelData.tags.length) {
+          box.innerHTML = '<div class="lbl-ed"><span class="lbl-note">メンバータイプやタグを作ると、ここでお客様に付けられます（顧客一覧の「タイプ・タグ」から作成）。</span></div>';
+          return;
+        }
+        box.innerHTML = `<div class="lbl-ed">
+          ${labelData.types.length ? `<label>メンバータイプ<select id="lbl-ed-type"><option value="">未設定</option>${labelData.types.map(t => `<option value="${t.id}" ${l.member_type_id === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>` : ''}
+          ${labelData.tags.length ? `<div class="lbl-ed-tags"><span>タグ</span>${labelData.tags.map(t => `<button type="button" class="lbl-tog" aria-pressed="${(l.tag_ids || []).includes(t.id)}" data-lbl-tog="${t.id}">${esc(t.name)}</button>`).join('')}</div>` : ''}
+        </div>`;
+        const save = async () => {
+          const member_type_id = box.querySelector('#lbl-ed-type')?.value || null;
+          const tag_ids = [...box.querySelectorAll('[data-lbl-tog][aria-pressed="true"]')].map(b => b.dataset.lblTog);
+          const d = await lblPost({ action: 'set', [isManual ? 'manual_id' : 'user_id']: id, member_type_id, tag_ids });
+          if (!d) return;
+          const rec = { user_id: isManual ? null : id, manual_id: isManual ? id : null, member_type_id: d.member_type_id, tag_ids: d.tag_ids };
+          labelData.labels = labelData.labels.filter(x => (isManual ? x.manual_id : x.user_id) !== id).concat(rec);
+          indexLabels(); render();
+        };
+        box.querySelector('#lbl-ed-type')?.addEventListener('change', save);
+        box.querySelectorAll('[data-lbl-tog]').forEach(b => b.addEventListener('click', () => { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); save(); }));
+      }
+
       function syncCfUi() {
         const n = cfActiveCount();
         const t = document.getElementById('cf-toggle');
@@ -7073,6 +7256,7 @@ export default function ProviderDashboardPage() {
             <span class="fx-cust-main">
               <span class="fx-cust-name">${c.member_number != null ? `<span class="fx-cust-no">${fmtNo(c.member_number)}</span>` : ''}${esc(name)}</span>
               <span class="fx-cust-sub">${esc(sub)}</span>
+              ${labelChipsHtml(c, isManual)}
             </span>
             <span class="fx-cust-right">
               ${isManual ? '<span class="fx-chip fx-chip-quiet">非会員</span>' : custChipHtml(c)}
@@ -7124,7 +7308,11 @@ export default function ProviderDashboardPage() {
         const preset = bcFilterSel?.value || 'all';
         const kw = (bcSearchInput?.value || '').trim().toLowerCase();
         const nowMonth = new Date(Date.now() + 9 * 3600000).getUTCMonth() + 1;
-        const base = preset === 'custlist' ? currentFilteredMemberRows() : allItems.filter(c => {
+        const segM = preset.match(/^(seg|type|tag):(.+)$/);
+        const seg = segM?.[1] === 'seg' && labelData.segments.find(x => x.id === segM[2]);
+        const base = preset === 'custlist' ? currentFilteredMemberRows() : seg ? rowsForSegment(seg) : allItems.filter(c => {
+          if (segM?.[1] === 'type' && labelOf(c, false).member_type_id !== segM[2]) return false;
+          if (segM?.[1] === 'tag' && !(labelOf(c, false).tag_ids || []).includes(segM[2])) return false;
           if (kw && !matchesCustomer(kw, c.customer_name, c.member_number, c.phone)) return false;
           if (preset === 'line') return !!c.line_any;
           if (preset === 'member') return !!c.membership_active;
@@ -7167,7 +7355,7 @@ export default function ProviderDashboardPage() {
         if (!confirm(`${userIds.length}名に${whenText}配信します。よろしいですか？${at ? '' : '（取り消せません）'}`)) return;
         bcSendBtn.disabled = true;
         if (bcMsgEl) bcMsgEl.textContent = at ? '予約しています…' : '配信しています…（人数が多いと1分ほどかかります）';
-        const label = [BC_FILTER_LABEL[bcFilterSel?.value || 'all'], (bcSearchInput?.value || '').trim() && `「${bcSearchInput.value.trim()}」で検索`].filter(Boolean).join('・');
+        const label = [BC_FILTER_LABEL[bcFilterSel?.value || 'all'] || bcFilterSel?.selectedOptions?.[0]?.textContent, (bcSearchInput?.value || '').trim() && `「${bcSearchInput.value.trim()}」で検索`].filter(Boolean).join('・');
         const res = await fetch('/api/provider/broadcasts', {
           method: 'POST', headers: authHeaders(),
           body: JSON.stringify({ channel, subject, body_text, user_ids: userIds, segment_label: label, scheduled_at: at ? new Date(at).toISOString() : null }),
@@ -7430,8 +7618,11 @@ export default function ProviderDashboardPage() {
       }
 
       function openCustomerModal(uidOrId, type, fallbackName) {
-        if (type === 'manual') return openManualModal(uidOrId);
-        return openMemberModal(uidOrId, fallbackName);
+        const box = document.getElementById('cust-modal-labels');
+        if (box) box.innerHTML = '';
+        const p = type === 'manual' ? openManualModal(uidOrId) : openMemberModal(uidOrId, fallbackName);
+        Promise.resolve(p).then(() => renderLabelEditor(type === 'manual' ? 'manual' : 'member', uidOrId));
+        return p;
       }
 
       async function openMemberModal(uid, fallbackName) {
@@ -8309,6 +8500,7 @@ export default function ProviderDashboardPage() {
           const [res, staffRes] = await Promise.all([
             fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }),
             fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }),
+            loadLabels().catch(() => {}),
           ]);
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           staffList = staffRes.ok ? await staffRes.json() : [];
@@ -8383,7 +8575,7 @@ export default function ProviderDashboardPage() {
 
       // 一斉メール配信タブ（でお要望2026-09-16：顧客管理から独立させた）を直接開いた
       // 場合でも、送信対象を計算できるよう顧客データを読み込んでおく。
-      async function loadForBroadcastTab() { loadBroadcastHistory(); if (!allItems.length) await loadAll(); updateBroadcastCount(); }
+      async function loadForBroadcastTab() { loadBroadcastHistory(); if (!allItems.length) await loadAll(); else await loadLabels(); updateBroadcastCount(); }
       document.querySelectorAll('[data-tab="broadcast-email"]').forEach(btn => btn.addEventListener('click', loadForBroadcastTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'broadcast-email') loadForBroadcastTab();
 
@@ -15630,10 +15822,17 @@ export default function ProviderDashboardPage() {
               </select>
               <input id="karte-search" type="text" placeholder="名前・会員番号・電話番号で検索" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
               <button type="button" className="btn btn-ghost" id="cf-toggle" style={{ fontSize: '12.5px', padding: '7px 12px' }}>絞り込み</button>
+              <button type="button" className="btn btn-ghost" id="lbl-manage-toggle" style={{ fontSize: '12.5px', padding: '7px 12px' }}>タイプ・タグ</button>
+            </div>
+            {/* メンバータイプ・タグの管理（でお要望 2026-10-19：hacomono差分 #7） */}
+            <div id="lbl-manage" className="lbl-manage" hidden>
+              <div id="lbl-manage-body" className="lbl-manage-body"></div>
             </div>
             {/* 顧客一覧の絞り込み（でお要望 2026-10-17：LINE連携中のお客様など、もっと色々な条件で） */}
             <div id="cf-panel" className="cf-panel" hidden>
               <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="manual">非会員</option></select></label>
+              <label>メンバータイプ<select id="cf-type"><option value="">すべて</option></select></label>
+              <label>タグ<select id="cf-tag"><option value="">すべて</option></select></label>
               <label>LINE<select id="cf-line"><option value="">すべて</option><option value="store">お店のLINEと連携中</option><option value="any">LINEで連絡できる</option><option value="none">LINEで連絡できない</option></select></label>
               <label>来店回数<select id="cf-visits"><option value="">すべて</option><option value="0">来店なし</option><option value="1">1回</option><option value="2-4">2〜4回</option><option value="5+">5回以上</option></select></label>
               <label>最終来店<select id="cf-last"><option value="">すべて</option><option value="30">30日以内</option><option value="60">31〜60日前</option><option value="90">61〜90日前</option><option value="91+">91日以上前</option><option value="none">来店なし</option></select></label>
@@ -15645,6 +15844,13 @@ export default function ProviderDashboardPage() {
               <label>性別<select id="cf-gender"><option value="">すべて</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他</option><option value="unknown">未登録</option></select></label>
               <label>固定メモ<select id="cf-note"><option value="">すべて</option><option value="yes">あり</option><option value="no">なし</option></select></label>
               <button type="button" className="btn btn-ghost" id="cf-clear" style={{ fontSize: '12px', padding: '6px 12px', alignSelf: 'flex-end' }}>条件をクリア</button>
+              {/* 保存した絞り込み（でお要望 2026-10-19：hacomono差分 #7） */}
+              <div className="cf-seg-row">
+                <label>保存した絞り込み<select id="cf-seg"><option value="">選んでください</option></select></label>
+                <button type="button" className="btn btn-ghost" id="cf-seg-del">削除</button>
+                <input id="cf-seg-name" placeholder="今の条件に名前を付ける（例：休眠の会員）" maxLength={40} />
+                <button type="button" className="btn" id="cf-seg-save">今の条件を保存</button>
+              </div>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
@@ -15674,6 +15880,7 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
             </div>
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
+            <div id="cust-modal-labels"></div>
             <div id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 12px' }}></div>
             {/* 顧客の基本情報（住所・電話・緊急連絡先・お支払い方法。でお要望 2026-10-16） */}
             <div id="cust-modal-profile" style={{ margin: '0 0 12px' }}></div>
