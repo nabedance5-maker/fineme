@@ -388,12 +388,6 @@ const DASHBOARD_CSS = `
       .cf-panel select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
       .cf-panel select.is-on { border-color: #c9a84c; background: rgba(201,168,76,0.1); font-weight: 700; }
       /* 予約リクエストの絞り込み・まとめて既読（2026-10-19） */
-      .req-segs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-      .req-seg { border: 1px solid rgba(26,20,16,0.15); background: #fff; color: #1a1410; border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
-      .req-seg b { font-variant-numeric: tabular-nums; font-size: 11.5px; background: rgba(26,20,16,0.07); border-radius: 99px; padding: 0 7px; }
-      .req-seg[aria-selected="true"] { background: #1a1410; color: #fff; border-color: #1a1410; }
-      .req-seg[aria-selected="true"] b { background: rgba(255,255,255,0.2); }
-      .req-seg-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; display: inline-block; }
       .req-filterbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; padding: 10px 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
       .req-filterbar input[type="text"], .req-filterbar select { padding: 7px 10px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; background: #fff; color: #1a1410; }
       .req-filterbar input[type="text"] { flex: 1 1 140px; }
@@ -9421,17 +9415,17 @@ export default function ProviderDashboardPage() {
     ];
     const reqDateOf = r => r.confirmed_date || r.counter_date || parseDateChoices(r)[0]?.date || r.reserved_date || '';
     function renderReqSegs() {
-      const el = document.getElementById('req-segs');
-      if (!el) return;
-      el.innerHTML = REQ_SEGS.map(sg => {
+      const sel = document.getElementById('req-seg-select');
+      if (!sel) return;
+      sel.innerHTML = REQ_SEGS.map(sg => {
         const list = _allRequests.filter(sg.test);
-        if (sg.key !== 'all' && sg.key !== 'unread' && !list.length) return '';
-        const unread = list.filter(r => !r.viewed_at).length;
-        const dot = unread && sg.key !== 'unread' && sg.key !== 'all' ? `<i class="req-seg-dot" title="未読${unread}件"></i>` : '';
-        return `<button type="button" class="req-seg" role="tab" aria-selected="${reqSeg === sg.key}" data-req-seg="${sg.key}">${dot}${sg.label}<b>${list.length}</b></button>`;
+        if (sg.key !== 'all' && sg.key !== 'unread' && !list.length && reqSeg !== sg.key) return '';
+        const unread = sg.key === 'unread' || sg.key === 'all' ? 0 : list.filter(r => !r.viewed_at).length;
+        const label = sg.key === 'all' ? `ステータス：すべて（${list.length}）` : `${sg.label}（${list.length}${unread ? `・未読${unread}` : ''}）`;
+        return `<option value="${sg.key}"${reqSeg === sg.key ? ' selected' : ''}>${label}</option>`;
       }).join('');
-      el.querySelectorAll('[data-req-seg]').forEach(b => b.addEventListener('click', () => { reqSeg = b.dataset.reqSeg; reqSelected.clear(); applyRequestFilters(); }));
     }
+    document.getElementById('req-seg-select')?.addEventListener('change', e => { reqSeg = e.target.value; reqSelected.clear(); applyRequestFilters(); });
 
     function applyRequestFilters() {
       const kwFilter = (document.getElementById('req-filter-kw')?.value || '').toLowerCase().trim();
@@ -13709,8 +13703,9 @@ export default function ProviderDashboardPage() {
             </div>
 
             {/* 絞り込み（でお要望 2026-10-19：リクエストが溜まった時用に、ステータス別のタブ・予約日・並び替え・選んで既読） */}
-            <div id="req-segs" className="req-segs" role="tablist" aria-label="ステータスで絞り込み"></div>
             <div className="req-filterbar">
+              {/* ステータスはプルダウンで（でお要望 2026-10-19：タブを並べるとスペースを取る） */}
+              <select id="req-seg-select" aria-label="ステータス"><option value="all">ステータス：すべて</option></select>
               <input id="req-filter-kw" type="text" placeholder="名前・メモで検索" autoComplete="off" defaultValue="" />
               <select id="req-filter-when" aria-label="予約日">
                 <option value="">予約日：すべて</option>
