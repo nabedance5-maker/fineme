@@ -3,7 +3,8 @@
 // billing_status: free → active（payment_succeeded）/ cancelled / past_due
 import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
-import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
+import { getPlanKeyByPriceId, getPlanByPriceId } from '@/lib/stripe-plans';
+import { recordMembershipInvoice, recordMembershipSubscription, applyMembershipCardUpdate } from '@/lib/membership-billing';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
 import { markInvoicePaid } from '@/lib/invoices';
@@ -37,10 +38,13 @@ export async function POST(request) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object;
+        // お客様の月会費（会員プラン）は店舗自身の契約と別に扱う（2026-10-19：取り違えると店舗のプランがAに書き換わっていた）
+        if (await recordMembershipSubscription(supabaseAdmin, sub, false)) break;
         const providerId = sub.metadata?.fineme_provider_id;
         if (!providerId) break;
 
         const priceId = sub.items?.data?.[0]?.price?.id;
+        if (!getPlanByPriceId(priceId)) break; // Fineme掲載プラン以外のサブスクで店舗の契約を書き換えない
         const planKey = getPlanKeyByPriceId(priceId);
 
         await supabaseAdmin.from('providers').upsert({
@@ -57,8 +61,10 @@ export async function POST(request) {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
+        if (await recordMembershipSubscription(supabaseAdmin, sub, true)) break;
         const providerId = sub.metadata?.fineme_provider_id;
         if (!providerId) break;
+        if (!getPlanByPriceId(sub.items?.data?.[0]?.price?.id)) break;
         await supabaseAdmin.from('providers')
           .update({ billing_status: 'cancelled' })
           .eq('id', providerId);
@@ -67,6 +73,7 @@ export async function POST(request) {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
+        if (await recordMembershipInvoice(supabaseAdmin, invoice, 'succeeded')) break;
         const providerId = invoice.subscription_details?.metadata?.fineme_provider_id
           || invoice.metadata?.fineme_provider_id;
         if (!providerId) break;
@@ -102,6 +109,7 @@ export async function POST(request) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
+        if (await recordMembershipInvoice(supabaseAdmin, invoice, 'failed')) break;
         const providerId = invoice.subscription_details?.metadata?.fineme_provider_id;
         if (!providerId) break;
         await supabaseAdmin.from('providers')
@@ -115,6 +123,11 @@ export async function POST(request) {
       // 使えない。Webhook駆動で確定し、支払いが取れて初めてrecordPosTransactionで記録する。
       case 'checkout.session.completed': {
         const session = event.data.object;
+        // 月会費のカード更新（店舗が送った更新リンク）：新しいカードを既定にし、未払いの月会費を引き落とし直す
+        if (session.mode === 'setup' && session.metadata?.fineme_membership_card_update) {
+          try { await applyMembershipCardUpdate(supabaseAdmin, session, stripe); } catch (e) { console.error('[webhook] membership card update error:', e); }
+          break;
+        }
         const pendingId = session.metadata?.fineme_pos_pending_id;
         const depositReservationId = session.metadata?.fineme_deposit_reservation_id;
         const invoiceId = session.metadata?.fineme_invoice_id;

@@ -419,6 +419,21 @@ const DASHBOARD_CSS = `
       .mb-perm-table th:first-child, .mb-perm-table td:first-child { text-align: left; }
       .mb-perm-table td span { display: block; font-size: 11.5px; font-weight: 400; color: #1a1410; }
       .mb-perm-table input { width: 18px; height: 18px; }
+      /* 月会費の支払い状況（2026-10-19） */
+      .mbill-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+      .mbill-bar select { padding: 7px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .mbill-summary { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: #1a1410; }
+      .mbill-summary b { font-size: 16px; font-variant-numeric: tabular-nums; }
+      .mbill-row { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.1); border-radius: 12px; color: #1a1410; }
+      .mbill-main { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+      .mbill-main b { font-size: 14px; }
+      .mbill-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+      .mbill-chip { align-self: start; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: #dcfce7; color: #1a1410; white-space: nowrap; }
+      .mbill-chip.ng { background: #fecaca; }
+      .mbill-row .ng, .mbill-summary .ng { color: #1a1410; font-weight: 800; }
+      .mbill-row em.ng { font-style: normal; margin-left: 6px; }
+      .mbill-hist { grid-column: 1 / -1; display: grid; gap: 4px; font-size: 12.5px; padding-top: 6px; border-top: 1px dashed rgba(26,20,16,0.12); }
+      .mbill-hist div { display: grid; grid-template-columns: 110px 100px 1fr; font-variant-numeric: tabular-nums; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1078,6 +1093,78 @@ export default function ProviderDashboardPage() {
       });
     }
     applyMemberPerms(provider);
+
+    // ── 月会費の支払い状況（でお要望 2026-10-19：hacomonoの「月会費支払状況」相当） ──
+    (function setupMembershipBilling() {
+      const listEl = document.getElementById('mbill-list');
+      if (!listEl) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const BRAND = { visa: 'VISA', mastercard: 'Mastercard', amex: 'AMEX', jcb: 'JCB', diners: 'Diners', discover: 'Discover' };
+      const PS = { ok: ['正常', 'ok'], past_due: ['支払いエラー', 'ng'], unpaid: ['未払い', 'ng'] };
+      const ST = { paid: '支払い済み', failed: '失敗', open: '未払い', void: '取り消し' };
+      let rows = [];
+      async function load() {
+        listEl.innerHTML = '<p class="muted" style="font-size:13px">読み込み中…</p>';
+        const r = await fetch('/api/provider/membership-billing', { headers: H() });
+        if (!r.ok) { listEl.innerHTML = authErrorHtml(r); return; }
+        rows = (await r.json()).members || [];
+        render();
+      }
+      function cardSoon(c) {
+        if (!c) return false;
+        const now = new Date(); const end = new Date(c.exp_year, c.exp_month, 0);
+        return (end - now) / 86400000 < 45;
+      }
+      function render() {
+        const f = document.getElementById('mbill-filter')?.value || '';
+        const list = rows.filter(m => !f || (f === 'error' ? m.payment_status !== 'ok' : f === 'card' ? cardSoon(m.card) : m.status === f));
+        const errors = rows.filter(m => m.payment_status !== 'ok' && m.status === 'active').length;
+        document.getElementById('mbill-summary').innerHTML = `<span>入会中 <b>${rows.filter(m => m.status === 'active').length}</b>名</span><span class="${errors ? 'ng' : ''}">支払いエラー <b>${errors}</b>名</span><span>カードの期限が近い <b>${rows.filter(m => m.status === 'active' && cardSoon(m.card)).length}</b>名</span>`;
+        if (!list.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px;margin:0">該当する会員はいません。</p>'; return; }
+        listEl.innerHTML = list.map(m => {
+          const [label, cls] = PS[m.payment_status] || PS.ok;
+          const failed = (m.payments || []).find(p => p.status === 'failed' || p.status === 'open');
+          return `<div class="mbill-row">
+            <div class="mbill-main">
+              <b>${e(m.name || '（お名前未登録）')}</b>
+              <span>${e(m.plan)}${m.monthly_price != null ? `・月額¥${Number(m.monthly_price).toLocaleString()}` : ''}${m.status !== 'active' ? `・${m.status === 'cancelled' ? '退会' : '承認待ち'}` : ''}</span>
+              <span>最終支払い ${m.last_paid_at ? e(new Date(m.last_paid_at).toLocaleDateString('ja-JP')) : '—'}${m.next_charge_date ? `・次回の引き落とし ${e(m.next_charge_date.replace(/-/g, '/'))}` : ''}</span>
+              <span>${m.card ? `${e(BRAND[m.card.brand] || m.card.brand)} •••• ${e(m.card.last4)}（有効期限 ${String(m.card.exp_month).padStart(2, '0')}/${String(m.card.exp_year).slice(-2)}）${cardSoon(m.card) ? '<em class="ng">期限が近い</em>' : ''}` : 'カード情報なし'}</span>
+              ${failed ? `<span class="ng">${e(failed.period_start ? failed.period_start.slice(0, 7).replace('-', '年') + '月分' : '')} ¥${Number(failed.amount).toLocaleString()}：${e(failed.failure_message || ST[failed.status])}</span>` : ''}
+            </div>
+            <span class="mbill-chip ${cls}">${label}</span>
+            <div class="mbill-actions">
+              ${failed ? `<button type="button" class="btn" data-mbill-retry="${failed.id}" style="font-size:12px;padding:5px 12px">もう一度引き落とす</button>` : ''}
+              ${m.status === 'active' ? `<button type="button" class="btn btn-ghost" data-mbill-card="${m.id}" style="font-size:12px;padding:5px 12px">カードの更新を依頼</button>` : ''}
+              ${(m.payments || []).length ? `<button type="button" class="btn btn-ghost" data-mbill-hist="${m.id}" style="font-size:12px;padding:5px 12px">履歴</button>` : ''}
+            </div>
+            <div class="mbill-hist" data-mbill-hist-box="${m.id}" hidden>${(m.payments || []).map(p => `<div><span>${e((p.period_start || p.created_at || '').slice(0, 10).replace(/-/g, '/'))}</span><span>¥${Number(p.amount).toLocaleString()}</span><span class="${p.status === 'paid' ? '' : 'ng'}">${ST[p.status] || p.status}</span></div>`).join('')}</div>
+          </div>`;
+        }).join('');
+        listEl.querySelectorAll('[data-mbill-hist]').forEach(b => b.addEventListener('click', () => { const box = listEl.querySelector(`[data-mbill-hist-box="${b.dataset.mbillHist}"]`); if (box) box.hidden = !box.hidden; }));
+        listEl.querySelectorAll('[data-mbill-retry]').forEach(b => b.addEventListener('click', async () => {
+          b.disabled = true;
+          const r = await fetch('/api/provider/membership-billing', { method: 'POST', headers: H(), body: JSON.stringify({ action: 'retry', payment_id: b.dataset.mbillRetry }) });
+          const d = await r.json().catch(() => ({}));
+          b.disabled = false;
+          showToast(r.ok ? (d.paid ? '引き落とせました' : '引き落としを受け付けました。結果は少し後に反映されます') : (d.error || '引き落とせませんでした'));
+          if (r.ok) setTimeout(load, 2500);
+        }));
+        listEl.querySelectorAll('[data-mbill-card]').forEach(b => b.addEventListener('click', async () => {
+          b.disabled = true;
+          const r = await fetch('/api/provider/membership-billing', { method: 'POST', headers: H(), body: JSON.stringify({ action: 'card_link', membership_id: b.dataset.mbillCard }) });
+          const d = await r.json().catch(() => ({}));
+          b.disabled = false;
+          if (!r.ok) { showToast(d.error || 'リンクを作れませんでした'); return; }
+          try { await navigator.clipboard.writeText(d.url); } catch {}
+          showToast(d.sent ? 'お客様のLINEにカード更新のお願いを送りました（リンクもコピーしました）' : 'カード更新のリンクをコピーしました。お客様に送ってください');
+        }));
+      }
+      document.getElementById('mbill-filter')?.addEventListener('change', render);
+      document.querySelectorAll('[data-tab="membership-billing"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'membership-billing') load();
+    })();
 
     (function setupMembersTab() {
       const listEl = document.getElementById('mb-list');
@@ -13418,6 +13505,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
                   <button className="tab-btn" data-tab="invoices">請求</button>
+                  <button className="tab-btn" data-tab="membership-billing" data-feature="membership_enrollment">月会費の支払い状況<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
@@ -16330,6 +16418,27 @@ export default function ProviderDashboardPage() {
         {/* 機能設定：店舗ごとに使う機能を選べるようにする（Phase 0・でお要望2026-09-11）。
             hacomono/STORES網羅計画で追加していく機能（スタッフ指名予約・POS・チェックイン等）は
             店舗ごとにニーズが違うため、一通り実装した上で店舗が選んで使える形にする。 */}
+        {/* 月会費の支払い状況（でお要望 2026-10-19：hacomonoの「月会費支払状況」相当） */}
+        <div className="tab-pane" id="tab-membership-billing">
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>月会費の支払い状況</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>会員プランの月会費が引き落とせたかを会員ごとに確認できます。引き落とせなかった時は「もう一度引き落とす」か、お客様にカードの更新をお願いしてください（新しいカードが登録されると、未払いの月会費は自動で引き落とされます）。</p>
+            </div>
+            <div className="mbill-bar">
+              <div id="mbill-summary" className="mbill-summary"></div>
+              <select id="mbill-filter" aria-label="絞り込み">
+                <option value="">すべて</option>
+                <option value="error">支払いエラーのみ</option>
+                <option value="card">カードの期限が近い</option>
+                <option value="active">入会中</option>
+                <option value="cancelled">退会</option>
+              </select>
+            </div>
+            <div id="mbill-list"></div>
+          </div>
+        </div>
+
         {/* スタッフのログインと権限（でお要望 2026-10-19） */}
         <div className="tab-pane" id="tab-members">
           <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
