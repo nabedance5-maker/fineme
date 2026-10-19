@@ -64,7 +64,7 @@ export default function EmbedBooking() {
               <div className="fw-slots">
                 {daySlots.length ? daySlots.map(s => (
                   <a key={s.id} href={bookUrl({ service_id: s.service_id || '', date: s.date })} target="_blank" rel="noopener" className="fw-slot">
-                    <b>{String(s.start_time).slice(0, 5)}</b><span>{[menuName(s.service_id), s.staff_name].filter(Boolean).join('・') || '予約できます'}</span><em>残り{s.remaining}</em>
+                    <b>{String(s.start_time).slice(0, 5)}</b><span>{[menuName(s.service_id), s.staff_name].filter(Boolean).join('・') || '予約できます'}{s.limited ? '（回数券・会員の方）' : ''}</span><em>残り{s.remaining}</em>
                   </a>
                 )) : <p className="fw-note">この日は空きがありません。</p>}
               </div>
@@ -75,7 +75,7 @@ export default function EmbedBooking() {
               <h2>メニュー</h2>
               {menus.map(m => (
                 <div key={m.id} className="fw-menu">
-                  <div><b>{m.name}</b><span>¥{Number(m.price || 0).toLocaleString()}{m.duration ? `・${/^\d+$/.test(String(m.duration)) ? `${m.duration}分` : m.duration}` : ''}</span></div>
+                  <div><b>{m.name}</b>{m.scope_label && <span>{m.scope_label}専用</span>}<span>¥{Number(m.price || 0).toLocaleString()}{m.duration ? `・${/^\d+$/.test(String(m.duration)) ? `${m.duration}分` : m.duration}` : ''}</span></div>
                   <a href={bookUrl({ service_id: m.id })} target="_blank" rel="noopener" className="fw-btn fw-btn-sm">予約</a>
                 </div>
               ))}

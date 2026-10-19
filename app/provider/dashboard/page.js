@@ -676,6 +676,13 @@ const DASHBOARD_CSS = `
       .wg-code { margin: 0; padding: 12px 14px; background: #1a1410; color: #fff; border-radius: 10px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; overflow-x: auto; }
       .wg-preview { padding: 14px; background: #ece8df; border-radius: 12px; }
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
+      /* 予約できる人（2026-10-20） */
+      .svc-scope { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; color: #1a1410; font-size: 13px; }
+      .svc-scope label { display: flex; gap: 8px; align-items: center; font-weight: 400; margin: 0; font-size: 13px; }
+      .svc-scope-sub { display: grid; gap: 6px; padding: 8px 0 0 22px; }
+      .svc-scope-sub > span { font-size: 12px; line-height: 1.6; }
+      .svc-scope-list { display: grid; gap: 4px; padding-left: 24px; font-size: 12.5px; }
+      .svc-scope-list span { font-size: 11.5px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -2382,6 +2389,7 @@ export default function ProviderDashboardPage() {
                 <span style="font-weight:700;font-size:14px">${esc(s.name)}</span>
                 ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#1a1410;padding:1px 6px;border-radius:99px">看板</span>' : ''}
                 ${s.is_trial ? '<span style="font-size:11px;background:#1a1410;color:#fff;padding:1px 7px;border-radius:99px">体験</span>' : ''}
+                ${s.booking_scope === 'limited' ? `<span style="font-size:11px;background:#e9d5ff;color:#1a1410;padding:1px 7px;border-radius:99px">${[s.allow_ticket && '回数券の方', s.allow_membership && '会員の方'].filter(Boolean).join('・')}専用</span>` : ''}
                 ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
               </div>
               <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration_minutes ? ' · ' + s.duration_minutes + '分' : (s.duration ? ' · ' + esc(s.duration) : '')}</div>
@@ -2400,6 +2408,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['duration_minutes'].value = s.duration_minutes || '';
           editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
           if (editForm.elements['is_trial']) editForm.elements['is_trial'].checked = !!s.is_trial;
+          fillScope(s);
           editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
           // 新フィールド
           if (editForm.elements['target_axis']) editForm.elements['target_axis'].value = s.target_axis || '';
@@ -2439,9 +2448,35 @@ export default function ProviderDashboardPage() {
         const au = document.getElementById('service-after-image-url'); if (au) au.value = '';
         const am = document.getElementById('service-after-img-msg'); if (am) { am.style.display = 'none'; am.textContent = ''; }
       }
+      // 予約できる人の設定欄（回数券の種類・会員プランの一覧を出し、保存済みの値を入れる）
+      let scopeLists = null;
+      async function fillScope(s) {
+        if (!scopeLists) {
+          const H = { Authorization: `Bearer ${getSupabaseToken()}` };
+          const [a, b] = await Promise.all([fetch('/api/provider/packages', { headers: H }), fetch('/api/provider/membership-plans', { headers: H })]);
+          scopeLists = { pk: a.ok ? await a.json() : [], pl: b.ok ? await b.json() : [] };
+        }
+        const pkSel = new Set(s?.eligible_package_ids || []), plSel = new Set(s?.eligible_plan_ids || []);
+        document.getElementById('svc-scope-pk').innerHTML = scopeLists.pk.length
+          ? `<span>対象の回数券（選ばなければ、この店のどの回数券でも）</span>${scopeLists.pk.map(x => `<label><input type="checkbox" name="eligible_package_ids" value="${x.id}" ${pkSel.has(x.id) ? 'checked' : ''}>${esc(x.name)}</label>`).join('')}`
+          : '<span>回数券がまだありません（「回数券」タブで作れます）</span>';
+        document.getElementById('svc-scope-pl').innerHTML = scopeLists.pl.length
+          ? `<span>対象の会員プラン（選ばなければ、どのプランでも）</span>${scopeLists.pl.map(x => `<label><input type="checkbox" name="eligible_plan_ids" value="${x.id}" ${plSel.has(x.id) ? 'checked' : ''}>${esc(x.name)}</label>`).join('')}`
+          : '<span>会員プランがまだありません（「入会手続き」タブで作れます）</span>';
+        const lim = s?.booking_scope === 'limited';
+        editForm.querySelector(`[name=booking_scope][value=${lim ? 'limited' : 'public'}]`).checked = true;
+        editForm.elements['allow_ticket'].checked = !!s?.allow_ticket;
+        editForm.elements['allow_membership'].checked = !!s?.allow_membership;
+        editForm.elements['hide_when_locked'].checked = !!s?.hide_when_locked;
+        document.getElementById('svc-scope-limited').style.display = lim ? '' : 'none';
+      }
+      editForm?.querySelectorAll('[name=booking_scope]').forEach(r => r.addEventListener('change', () => {
+        document.getElementById('svc-scope-limited').style.display = editForm.querySelector('[name=booking_scope]:checked')?.value === 'limited' ? '' : 'none';
+      }));
       document.getElementById('btn-add-service')?.addEventListener('click', () => {
         editTitle.textContent = 'サービスを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_service_id'].value = '';
+        fillScope(null);
         resetServiceImgPreview();
         editCard.scrollIntoView({ behavior: 'smooth' });
       });
@@ -2456,7 +2491,11 @@ export default function ProviderDashboardPage() {
         const suitablePathTypes = [...editForm.querySelectorAll('[name=suitable_path_types]:checked')].map(el => el.value);
         const benefitListRaw = fd.get('benefit_list_text') || '';
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
-        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null, is_trial: !!editForm.elements['is_trial']?.checked };
+        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null, is_trial: !!editForm.elements['is_trial']?.checked,
+          booking_scope: editForm.querySelector('[name=booking_scope]:checked')?.value || 'public',
+          allow_ticket: !!editForm.elements['allow_ticket']?.checked, allow_membership: !!editForm.elements['allow_membership']?.checked, hide_when_locked: !!editForm.elements['hide_when_locked']?.checked,
+          eligible_package_ids: [...editForm.querySelectorAll('[name=eligible_package_ids]:checked')].map(el => el.value),
+          eligible_plan_ids: [...editForm.querySelectorAll('[name=eligible_plan_ids]:checked')].map(el => el.value) };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -16583,6 +16622,20 @@ export default function ProviderDashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <input type="checkbox" name="is_trial" id="is_trial" />
                 <label htmlFor="is_trial" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>体験メニュー（初めての方向け。「体験→入会」で入会につながったかを追えます）</label>
+              </div>
+              {/* 予約できる人（でお要望 2026-10-20：誰でも予約できるメニューと、回数券・会員の方専用のメニューを分ける） */}
+              <div className="svc-scope">
+                <b>予約できる人</b>
+                <label><input type="radio" name="booking_scope" value="public" defaultChecked />誰でも予約できる</label>
+                <label><input type="radio" name="booking_scope" value="limited" />回数券・会員プランの方だけ予約できる</label>
+                <div id="svc-scope-limited" className="svc-scope-sub" style={{ display: 'none' }}>
+                  <label><input type="checkbox" name="allow_ticket" />回数券をお持ちの方</label>
+                  <div id="svc-scope-pk" className="svc-scope-list"></div>
+                  <label><input type="checkbox" name="allow_membership" />会員プランに入会中の方</label>
+                  <div id="svc-scope-pl" className="svc-scope-list"></div>
+                  <label><input type="checkbox" name="hide_when_locked" />予約できないお客様には、このメニューを表示しない</label>
+                  <span>予約ページでは「回数券をお持ちの方専用」のように表示され、Finemeにログインして条件に合うお客様だけが選べます。回数券で予約すると、その回数券が予約に結び付き、来店確認の時に消化されます。休会中の会員は予約できません。</span>
+                </div>
               </div>
               <input type="hidden" name="_service_id" />
               <div style={{ display: 'flex', gap: '8px' }}>

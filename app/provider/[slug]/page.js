@@ -1437,6 +1437,31 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 行くか選択できれば」）。ログイン中かつこの店舗の有効なチケットを持っている時だけ表示。
   const [myPackages, setMyPackages] = useState([]);
   const [selectedPackageId, setSelectedPackageId] = useState('');
+
+  // 回数券・会員プランの方だけが予約できるメニュー（でお要望 2026-10-20）。ログイン中のお客様が予約できるかを店舗ごとに確かめる
+  const [elig, setElig] = useState(null);
+  const authToken = () => {
+    try { const k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token')); return k ? JSON.parse(localStorage.getItem(k))?.access_token || null : null; } catch { return null; }
+  };
+  useEffect(() => {
+    if (!provider?.slug || !(services || []).some(sv => sv.booking_scope === 'limited')) return;
+    const t = authToken();
+    fetch(`/api/providers/${provider.slug}/my-eligibility`, { headers: t ? { Authorization: `Bearer ${t}` } : {} })
+      .then(r => (r.ok ? r.json() : null)).then(setElig).catch(() => setElig(null));
+  }, [provider?.slug, services, userId]);
+  const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
+  const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked'));
+  // 即時予約でメニューを選ばずに枠だけ選んだ時は、枠に決まっているメニューで判定する
+  const slotSvcId = selectedSlotId ? (slots || []).find(x => x.id === selectedSlotId)?.service_id : null;
+  const effSvc = selectedService || (slotSvcId ? (services || []).find(x => x.id === slotSvcId) : null);
+  const selElig = effSvc?.booking_scope === 'limited' ? elig?.services?.[effSvc.id] : null;
+  // 回数券で予約するメニューでは、使える回数券の中から必ず1つ選ぶ
+  const ticketOnly = selElig?.ok && selElig.via === 'ticket' ? selElig.ticket_ids : null;
+  const ticketChoices = ticketOnly ? myPackages.filter(p => ticketOnly.includes(p.id)) : myPackages;
+  useEffect(() => {
+    if (ticketOnly?.length && !ticketOnly.includes(selectedPackageId)) setSelectedPackageId(ticketOnly[0]);
+  }, [effSvc?.id, elig, myPackages.length]);
+  const loginHref = () => `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
   useEffect(() => {
     if (!userId || !provider?.id) { setMyPackages([]); return; }
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -1462,7 +1487,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       .catch(() => setSlots([]));
   }, [showInstantPicker, provider?.slug, selectedService?.id, today]);
 
-  const slotsByDate = (slots || []).reduce((acc, s) => { (acc[s.date] = acc[s.date] || []).push(s); return acc; }, {});
+  // 回数券・会員プランの方専用のメニューの枠は、予約できるお客様にだけ出す（でお要望 2026-10-20）
+  const usableSlots = (slots || []).filter(x => !x.limited || elig?.services?.[x.service_id]?.ok);
+  const slotsByDate = usableSlots.reduce((acc, s) => { (acc[s.date] = acc[s.date] || []).push(s); return acc; }, {});
 
   // 予約カレンダー風の表（でお要望2026-09-27：一般的な予約サイトの「スタイリスト指名・
   // 日時選択」画面と同じ構成——上でスタッフをタブ選択し、その下に日付（列）×時間（行）の
@@ -1472,9 +1499,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
     d.setDate(d.getDate() + n);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const gridStaffOptions = [...new Map((slots || []).map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
+  const gridStaffOptions = [...new Map(usableSlots.map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
   const gridHasNamedStaff = gridStaffOptions.some(o => o.id);
-  const gridFilteredSlots = gridStaffFilter ? (slots || []).filter(s => s.staff_id === gridStaffFilter) : (slots || []);
+  const gridFilteredSlots = gridStaffFilter ? usableSlots.filter(s => s.staff_id === gridStaffFilter) : usableSlots;
   const gridWeekDates = Array.from({ length: 7 }, (_, i) => addDaysStr(today, gridWeekOffset * 7 + i));
   const gridTimes = [...new Set(gridFilteredSlots.map(s => s.start_time))].sort();
   const gridCellMap = {};
@@ -1578,7 +1605,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           ? { booking_mode: 'instant', slot_id: selectedSlotId }
           : { preferred_date: formState.date, preferred_time: formState.time }),
       };
-      const res = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (effSvc && svcState(effSvc) === 'locked') { setFormError(`このメニューは${effSvc.scope_label || '対象のお客様'}だけが予約できます`); return; }
+      const tk = authToken();
+      const res = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) }, body: JSON.stringify(body) });
       if (res.ok) {
         const resData = await res.json().catch(() => ({}));
         // 予約デポジット（決済機能Phase6③）: 店舗がデポジットを設定していれば決済ページへ誘導する
@@ -1711,7 +1740,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       )}
 
       {/* プログラム選択 */}
-      {services && services.length > 0 && (
+      {visibleServices.length > 0 && (
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '8px' }}>相談したいプログラム（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1719,13 +1748,37 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <input type="radio" name="menu" checked={!selectedService} onChange={() => onServiceSelect(null)} style={{ accentColor: '#111' }} />
               <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>まず話を聞いてみたい（プログラム未定）</span>
             </label>
-            {services.map(s => (
-              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${selectedService?.id === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
-                <input type="radio" name="menu" checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
-                <span style={{ flex: 1, fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>{s.name}{s.duration_minutes ? ` (${s.duration_minutes}分)` : (s.duration ? ` (${s.duration})` : '')}</span>
-                <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: 'var(--pv-text)', flexShrink: 0 }}>¥{s.price.toLocaleString()}</span>
-              </label>
-            ))}
+            {visibleServices.map(s => {
+              const st = svcState(s);
+              const locked = st === 'locked';
+              const via = elig?.services?.[s.id]?.via;
+              return (
+                <div key={s.id} style={{ border: `${selectedService?.id === s.id ? '2.5px' : '1.5px'} solid ${selectedService?.id === s.id ? 'var(--pv-text)' : '#e5e7eb'}`, borderRadius: '10px', opacity: locked ? 0.75 : 1 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: locked ? 'not-allowed' : 'pointer' }}>
+                    <input type="radio" name="menu" disabled={locked} checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
+                    <span style={{ flex: 1, fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)' }}>
+                      {s.name}{s.duration_minutes ? ` (${s.duration_minutes}分)` : (s.duration ? ` (${s.duration})` : '')}
+                      {s.booking_scope === 'limited' && (
+                        <span style={{ display: 'block', fontSize: 'calc(11.5px * var(--pv-fs))', fontWeight: 700, marginTop: '2px', color: 'var(--pv-text)' }}>
+                          {st === 'ok' ? (via === 'membership' ? '会員として予約できます' : '回数券で予約できます') : `${s.scope_label || '対象のお客様'}専用`}
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: 'var(--pv-text)', flexShrink: 0 }}>{st === 'ok' && via === 'ticket' ? '回数券' : st === 'ok' && via === 'membership' ? '会員' : Number(s.price) > 0 ? `¥${Number(s.price).toLocaleString()}` : ''}</span>
+                  </label>
+                  {locked && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0 14px 10px 40px', fontSize: 'calc(12px * var(--pv-fs))' }}>
+                      {!elig?.logged_in
+                        ? <a href={loginHref()} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>ログインすると予約できるか確認できます</a>
+                        : <>
+                            {s.allow_ticket && <a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>}
+                            {s.allow_membership && <a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>入会する</a>}
+                          </>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1795,16 +1848,19 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             できれば」）。この店舗の有効なチケットを持っている会員にだけ表示。選んだ
             チケットは来店確認時に優先して自動消化される（複数持っている場合の
             「どれを自動消化すべきか判断できない」問題を、ここでの選択で解消する）。 */}
-        {myPackages.length > 0 && (
+        {selElig?.ok && selElig.via === 'membership' && (
+          <p style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700, color: 'var(--pv-text)' }}>このメニューは会員プランの方として予約します。</p>
+        )}
+        {ticketChoices.length > 0 && (
           <div>
-            <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>使用するチケット（任意）</label>
+            <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>{ticketOnly ? '使用する回数券 *（このメニューは回数券で予約します）' : '使用するチケット（任意）'}</label>
             <select
               value={selectedPackageId}
               onChange={e => setSelectedPackageId(e.target.value)}
               style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}
             >
-              <option value="" style={{ color: '#000' }}>選択しない（通常のお支払い）</option>
-              {myPackages.map(p => (
+              {!ticketOnly && <option value="" style={{ color: '#000' }}>選択しない（通常のお支払い）</option>}
+              {ticketChoices.map(p => (
                 <option key={p.id} value={p.id} style={{ color: '#000' }}>
                   {p.package_name}（{p.package_type === 'unlimited' ? '通い放題' : `残り${p.remaining_sessions}回`}）
                 </option>

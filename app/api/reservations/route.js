@@ -10,6 +10,7 @@ import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
+import { customerEntitlements, checkService, scopeLabel } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -106,6 +107,33 @@ export async function POST(request) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
+  // 回数券・会員プランの方だけが予約できるメニュー（でお要望 2026-10-20）。
+  // 本人確認はログインのトークンで行う（本文の user_id は信用しない）。回数券で予約する時は、使う回数券を必ず決める。
+  let bookingUserId = user_id || null;
+  // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する（枠のメニューは後で予約に引き継がれるため）
+  let effectiveServiceId = service_id || null;
+  if (!effectiveServiceId && isInstant && slot_id) {
+    const { data: sl } = await supabase.from('provider_slots').select('service_id').eq('id', slot_id).eq('provider_id', provider_id).maybeSingle();
+    effectiveServiceId = sl?.service_id || null;
+  }
+  if (effectiveServiceId) {
+    const { data: svc } = await supabase.from('provider_services').select('id, booking_scope, allow_ticket, eligible_package_ids, allow_membership, eligible_plan_ids').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle();
+    if (svc?.booking_scope === 'limited') {
+      const authUser = await verifyAuth(request);
+      const [{ data: pk }, { data: pl }] = await Promise.all([
+        supabase.from('service_packages').select('id, name').in('id', svc.eligible_package_ids?.length ? svc.eligible_package_ids : ['00000000-0000-0000-0000-000000000000']),
+        supabase.from('provider_membership_plans').select('id, name').in('id', svc.eligible_plan_ids?.length ? svc.eligible_plan_ids : ['00000000-0000-0000-0000-000000000000']),
+      ]);
+      const label = scopeLabel(svc, Object.fromEntries((pk || []).map(x => [x.id, x.name])), Object.fromEntries((pl || []).map(x => [x.id, x.name])));
+      if (!authUser) return Response.json({ error: `このメニューは${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
+      if (user_id && user_id !== authUser.id) return Response.json({ error: 'ログインしているアカウントで予約してください' }, { status: 403 });
+      bookingUserId = authUser.id;
+      const chk = checkService(svc, await customerEntitlements(supabase, provider_id, authUser.id));
+      if (!chk.ok) return Response.json({ error: `このメニューは${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
+      if (chk.via === 'ticket' && !chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;
+    }
+  }
+
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
   // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
   const { data: providerFeatureRow } = await supabase.from('providers').select('plan, enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
@@ -120,13 +148,13 @@ export async function POST(request) {
   // 1人のお客様が同時に保持できる「来店前の予約」の数には上限がある（でお要望2026-09-14。
   // 既定は1件＝来店するまで次の予約を取れない。店舗ごとにmax_active_reservationsで
   // 上限数を変更できる）。ゲスト予約（user_id無し）は本人特定ができないため対象外。
-  if (user_id) {
+  if (bookingUserId) {
     const maxActive = providerFeatureRow?.max_active_reservations ?? 1;
     const { count } = await supabase
       .from('reservations')
       .select('id', { count: 'exact', head: true })
       .eq('provider_id', provider_id)
-      .eq('user_id', user_id)
+      .eq('user_id', bookingUserId)
       .in('status', ['pending', 'approved', 'counter_proposed']);
     if ((count || 0) >= maxActive) {
       return Response.json({ error: `この店舗への予約は同時に${maxActive}件までです。ご来店・キャンセル後に新しい予約リクエストを送ってください。` }, { status: 409 });
@@ -142,7 +170,7 @@ export async function POST(request) {
 
   const insertPayload = {
     provider_id,
-    user_id: user_id || null,
+    user_id: bookingUserId,
     user_name,
     user_contact,
     note: message || '',
@@ -240,7 +268,7 @@ export async function POST(request) {
     usedPackageName = usedPkg?.package_name || null;
   }
   await logCustomerActivity({
-    providerId: provider_id, userId: user_id, name: user_name,
+    providerId: provider_id, userId: bookingUserId, name: user_name,
     label: isInstant ? 'お客様が空き枠で予約を確定' : 'お客様が予約をリクエスト',
     targetId: data.id,
     detail: { reserved_date: data.reserved_date, start_time: data.start_time, package_name: usedPackageName },
@@ -261,7 +289,7 @@ export async function POST(request) {
 
   // 友達紹介プログラム（でお要望2026-09-14）：紹介コード付きの予約なら記録・通知
   if (referral_code) {
-    await attributeReferral(supabase, { providerId: provider_id, referralCode: referral_code, referredUserId: user_id, referredName: user_name, reservationId: data.id });
+    await attributeReferral(supabase, { providerId: provider_id, referralCode: referral_code, referredUserId: bookingUserId, referredName: user_name, reservationId: data.id });
   }
 
   // 掲載者情報を取得（通知用）
@@ -305,7 +333,7 @@ export async function POST(request) {
   // お客様にも受付確認をLINEで送る（メールはuser_contactがメール形式の時だけだが、
   // LINEなら電話番号で予約した人にも届く。でお指摘2026-09-09）
   await notifyCustomerLine(getSupabase(), {
-    userId: user_id,
+    userId: bookingUserId,
     providerId: provider_id,
     message: isInstant
       ? (className

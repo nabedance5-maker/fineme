@@ -2,6 +2,7 @@
 // DELETE /api/provider/services/[id] - サービス削除
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { normalizeScope } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -23,7 +24,11 @@ async function __PATCH(request, { params }) {
   const allowed = ['name','description','price','duration','duration_minutes','is_featured','sort_order','image_url','suitable_path_types','transformation_promise','target_axis','before_text','after_text','before_image_url','after_image_url','benefit_list','category','is_trial'];
   const updates = {};
   for (const k of allowed) { if (body[k] !== undefined) updates[k] = body[k]; }
-  if (updates.price) updates.price = Number(updates.price);
+  if (updates.price !== undefined) updates.price = Number(updates.price) || 0;
+  // 予約できる人（でお要望 2026-10-20）
+  const scope = await normalizeScope(supabase, provider.id, body);
+  if (scope.error) return Response.json({ error: scope.error }, { status: 400 });
+  Object.assign(updates, scope);
 
   const { data, error } = await supabase
     .from('provider_services')

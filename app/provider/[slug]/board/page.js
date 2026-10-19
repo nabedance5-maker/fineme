@@ -44,7 +44,8 @@ export default function BookingBoardPage() {
     const to = fmtDate(dates[dates.length - 1]);
     fetch(`/api/providers/${slug}/availability?from=${from}&to=${to}`)
       .then(r => r.ok ? r.json() : [])
-      .then(rows => setSlots(rows));
+      // 店頭の端末ではログインしないため、回数券・会員プランの方専用のメニューの枠は出さない（でお要望 2026-10-20）
+      .then(rows => setSlots((rows || []).filter(s => !s.limited)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider?.id, slug]);
 

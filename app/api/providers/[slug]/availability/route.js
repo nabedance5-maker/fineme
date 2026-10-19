@@ -121,11 +121,20 @@ export async function GET(request, { params }) {
     (staffRows || []).forEach(s => { staffMap[s.id] = s.name; });
   }
 
+  // 回数券・会員プランの方だけが予約できるメニューの枠には印を付ける（でお要望 2026-10-20）。予約できるかは予約ページ側で本人ごとに判定する
+  const svcIds = [...new Set(filtered.map(s => s.service_id).filter(Boolean))];
+  const limitedSvc = new Set();
+  if (svcIds.length) {
+    const { data: svcs } = await supabase.from('provider_services').select('id').in('id', svcIds).eq('booking_scope', 'limited');
+    (svcs || []).forEach(x => limitedSvc.add(x.id));
+  }
+
   const open = filtered
     .map(s => ({
       ...s,
       remaining: s.capacity - (bookedCount[s.id] || 0),
       staff_name: s.staff_id ? (staffMap[s.staff_id] || null) : null,
+      limited: !!(s.service_id && limitedSvc.has(s.service_id)),
     }))
     .filter(s => s.remaining > 0);
 

@@ -2,6 +2,7 @@
 // POST /api/provider/services - サービス追加
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { normalizeScope } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -33,12 +34,16 @@ async function __POST(request) {
   const provider = await getProviderFromToken(token);
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
 
-  const { name, description, price, duration, duration_minutes, is_featured, sort_order, image_url, suitable_path_types, transformation_promise, target_axis, before_text, after_text, before_image_url, after_image_url, benefit_list, category, is_trial } = await request.json();
-  if (!name || !price) return Response.json({ error: 'name, price は必須です' }, { status: 400 });
+  const body = await request.json();
+  const { name, description, price, duration, duration_minutes, is_featured, sort_order, image_url, suitable_path_types, transformation_promise, target_axis, before_text, after_text, before_image_url, after_image_url, benefit_list, category, is_trial } = body;
+  // 回数券・会員の方専用のメニューは0円もありうるため、価格は空でなければよい
+  if (!name || price === undefined || price === null || price === '') return Response.json({ error: 'メニュー名と価格を入れてください' }, { status: 400 });
+  const scope = await normalizeScope(supabase, provider.id, body);
+  if (scope.error) return Response.json({ error: scope.error }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_services')
-    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, duration_minutes: duration_minutes ? Number(duration_minutes) : null, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null, suitable_path_types: suitable_path_types || null, transformation_promise: transformation_promise || null, target_axis: target_axis || null, before_text: before_text || null, after_text: after_text || null, before_image_url: before_image_url || null, after_image_url: after_image_url || null, benefit_list: benefit_list || null, category: category || null, is_trial: !!is_trial })
+    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, duration_minutes: duration_minutes ? Number(duration_minutes) : null, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null, suitable_path_types: suitable_path_types || null, transformation_promise: transformation_promise || null, target_axis: target_axis || null, before_text: before_text || null, after_text: after_text || null, before_image_url: before_image_url || null, after_image_url: after_image_url || null, benefit_list: benefit_list || null, category: category || null, is_trial: !!is_trial, ...scope })
     .select().single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
