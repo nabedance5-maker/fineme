@@ -655,6 +655,19 @@ const DASHBOARD_CSS = `
       .pos-moves { display: grid; gap: 2px; max-height: 360px; overflow-y: auto; font-size: 12px; }
       .pos-mv { display: grid; grid-template-columns: 90px 1.2fr 80px 50px 2fr; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); font-variant-numeric: tabular-nums; }
       @media (max-width: 640px) { .pos-mv { grid-template-columns: 1fr 1fr; } }
+      /* お知らせ掲示（2026-10-19） */
+      #tab-notices { color: #1a1410; }
+      .nt-form { display: grid; gap: 10px; padding: 16px; border: 1px solid rgba(26,20,16,0.15); border-radius: 12px; }
+      .nt-form[hidden] { display: none; }
+      .nt-form label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; }
+      .nt-form input:not([type=checkbox]), .nt-form textarea, .nt-form select { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; font-family: inherit; }
+      .nt-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+      .nt-form .nt-inline { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+      .nt-row { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; }
+      .nt-row-main { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; } .nt-row-main b { font-size: 14px; }
+      .nt-row-actions { flex-basis: 100%; display: flex; gap: 6px; flex-wrap: wrap; } .nt-row-actions .btn { font-size: 12px; padding: 5px 11px; }
+      .nt-chip { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; color: #1a1410; background: #e5e7eb; }
+      .nt-on { background: #bbf7d0; } .nt-wait { background: #fde68a; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1372,6 +1385,75 @@ export default function ProviderDashboardPage() {
       document.getElementById('rp-type')?.addEventListener('change', e => { document.getElementById('rp-range').style.display = e.target.value === 'customers' || e.target.value === 'memberships' ? 'none' : ''; });
       document.querySelectorAll('[data-tab="reports"]').forEach(btn => btn.addEventListener('click', load));
       if (new URLSearchParams(location.search).get('tab') === 'reports') load();
+    })();
+
+    // ── お知らせ掲示（でお要望 2026-10-19：hacomono差分 #13） ──
+    (function setupNotices() {
+      const listEl = document.getElementById('nt-list');
+      if (!listEl) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const local = iso => { if (!iso) return ''; const d = new Date(new Date(iso).getTime() + 9 * 3600000); return d.toISOString().slice(0, 16); };
+      const fmt = iso => new Date(iso).toLocaleString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      let rows = [], editing = null;
+      async function load() {
+        const r = await fetch('/api/provider/notices', { headers: H() });
+        if (!r.ok) { listEl.innerHTML = authErrorHtml(r); return; }
+        rows = await r.json();
+        const now = Date.now();
+        listEl.innerHTML = rows.length ? rows.map(n => {
+          const st = new Date(n.publish_at).getTime() > now ? ['掲載予定', 'wait'] : n.expires_at && new Date(n.expires_at).getTime() <= now ? ['掲載終了', 'off'] : ['掲載中', 'on'];
+          return `<div class="nt-row">
+            <div class="nt-row-main"><b>${n.pinned ? '【大切】' : ''}${e(n.title)}</b><span>${fmt(n.publish_at)}から${n.expires_at ? `${fmt(n.expires_at)}まで` : ''}・${n.audience === 'members' ? '会員プランに入会中の方' : 'お客様全員'}・読んだ人 ${n.reads}名</span></div>
+            <span class="nt-chip nt-${st[1]}">${st[0]}</span>
+            <div class="nt-row-actions"><button type="button" class="btn btn-ghost" data-nt-edit="${n.id}">編集</button><button type="button" class="btn btn-ghost" data-nt-send="${n.id}">メッセージ配信でも知らせる</button><button type="button" class="btn btn-ghost" data-nt-del="${n.id}">削除</button></div>
+          </div>`;
+        }).join('') : '<p style="font-size:13px;margin:0">まだお知らせはありません。</p>';
+        listEl.querySelectorAll('[data-nt-edit]').forEach(b => b.addEventListener('click', () => openForm(rows.find(x => x.id === b.dataset.ntEdit))));
+        listEl.querySelectorAll('[data-nt-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このお知らせを削除しますか？')) return;
+          const r = await fetch(`/api/provider/notices/${b.dataset.ntDel}`, { method: 'DELETE', headers: H() });
+          showToast(r.ok ? '削除しました' : '削除できませんでした'); load();
+        }));
+        listEl.querySelectorAll('[data-nt-send]').forEach(b => b.addEventListener('click', () => {
+          const n = rows.find(x => x.id === b.dataset.ntSend);
+          const btn = document.querySelector('.tab-btn[data-tab="broadcast-email"]');
+          if (!btn) { showToast('メッセージ配信を使う権限がありません'); return; }
+          btn.click();
+          setTimeout(() => {
+            const body = document.getElementById('bc-body'); const subj = document.getElementById('bc-subject');
+            if (body) body.value = `${n.title}\n\n${n.body}\n\nマイページの「お店からのお知らせ」でも見られます。\n${location.origin}/mypage/notices`;
+            if (subj) subj.value = n.title;
+            if (n.audience === 'members') { const f = document.getElementById('bc-filter'); if (f) { f.value = 'member'; f.dispatchEvent(new Event('change')); } }
+          }, 300);
+        }));
+      }
+      function openForm(n) {
+        editing = n?.id || null;
+        const f = document.getElementById('nt-form'); f.hidden = false;
+        document.getElementById('nt-form-title').textContent = n ? 'お知らせを編集' : '新しいお知らせ';
+        document.getElementById('nt-title').value = n?.title || '';
+        document.getElementById('nt-body').value = n?.body || '';
+        document.getElementById('nt-aud').value = n?.audience || 'all';
+        document.getElementById('nt-pin').checked = !!n?.pinned;
+        document.getElementById('nt-at').value = n ? local(n.publish_at) : '';
+        document.getElementById('nt-ex').value = n ? local(n.expires_at) : '';
+        document.getElementById('nt-title').focus();
+      }
+      document.getElementById('nt-new')?.addEventListener('click', () => openForm(null));
+      document.getElementById('nt-cancel')?.addEventListener('click', () => { document.getElementById('nt-form').hidden = true; });
+      document.getElementById('nt-save')?.addEventListener('click', async () => {
+        const at = document.getElementById('nt-at').value, ex = document.getElementById('nt-ex').value;
+        const body = { title: document.getElementById('nt-title').value, body: document.getElementById('nt-body').value, audience: document.getElementById('nt-aud').value, pinned: document.getElementById('nt-pin').checked,
+          publish_at: at ? new Date(`${at}:00+09:00`).toISOString() : null, expires_at: ex ? new Date(`${ex}:00+09:00`).toISOString() : null };
+        const r = await fetch(editing ? `/api/provider/notices/${editing}` : '/api/provider/notices', { method: editing ? 'PATCH' : 'POST', headers: H(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '保存できませんでした'); return; }
+        showToast(editing ? '保存しました' : 'お知らせを掲示しました');
+        document.getElementById('nt-form').hidden = true; load();
+      });
+      document.querySelectorAll('[data-tab="notices"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'notices') load();
     })();
 
     // ── アンケート（でお要望 2026-10-19：hacomono差分 #9） ──
@@ -14792,6 +14874,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
                   <button className="tab-btn" data-tab="surveys">アンケート</button>
+                  <button className="tab-btn" data-tab="notices">お知らせ掲示</button>
                   <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
@@ -17744,6 +17827,30 @@ export default function ProviderDashboardPage() {
               </div>
               <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
             </div>
+          </div>
+        </div>
+
+        {/* お知らせ掲示（でお要望 2026-10-19：hacomono差分 #13） */}
+        <div className="tab-pane" id="tab-notices">
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>お知らせ掲示</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>書いたお知らせは、お店とつながっているお客様のマイページ「お店からのお知らせ」に並びます（休業日・営業時間の変更・キャンペーンなど）。読んだ人数も分かります。すぐに気づいてほしい時は「メッセージ配信でも知らせる」でLINEやメールでも送れます。</p>
+            </div>
+            <button type="button" className="btn" id="nt-new" style={{ width: 'fit-content' }}>お知らせを書く</button>
+            <div id="nt-form" className="nt-form" hidden>
+              <b id="nt-form-title">新しいお知らせ</b>
+              <label>タイトル<input id="nt-title" maxLength={100} placeholder="例：年末年始の営業について" /></label>
+              <label>本文<textarea id="nt-body" rows={6} maxLength={4000} placeholder="お客様に伝えたいことを書いてください。URLはそのままリンクになります。" /></label>
+              <div className="nt-form-row">
+                <label>見せる相手<select id="nt-aud"><option value="all">お客様全員</option><option value="members">会員プランに入会中の方だけ</option></select></label>
+                <label>表示を始める日時（空なら今すぐ）<input type="datetime-local" id="nt-at" /></label>
+                <label>表示を終える日時（任意）<input type="datetime-local" id="nt-ex" /></label>
+              </div>
+              <label className="nt-inline"><input type="checkbox" id="nt-pin" />大切なお知らせとして一番上に表示する</label>
+              <div style={{ display: 'flex', gap: '8px' }}><button type="button" className="btn" id="nt-save">掲示する</button><button type="button" className="btn btn-ghost" id="nt-cancel">やめる</button></div>
+            </div>
+            <div id="nt-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
           </div>
         </div>
 

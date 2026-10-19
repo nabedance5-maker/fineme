@@ -29,6 +29,7 @@ export default function MypageSideNav({ asideClassName = 'mypage-sidenav' }) {
 
   const links = [
     { href: '/mypage', label: 'ホーム', active: pathname === '/mypage' },
+    { href: '/mypage/notices', label: 'お店からのお知らせ', active: pathname.startsWith('/mypage/notices') },
     { href: '/mypage/mirror', label: 'Mirror履歴', active: pathname.startsWith('/mypage/mirror') },
     { href: track.diagnosisResult, label: '診断結果', active: pathname === track.diagnosisResult || pathname.startsWith('/mypage/diagnosis') },
     { href: '/mypage/navi', label: 'New Me Map', active: pathname.startsWith('/mypage/navi') },
