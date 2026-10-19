@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { priceItems } from '@/lib/pos-checkout';
 import { applicationFeeAmount } from '@/lib/payment-fee';
 import { planLockedResponse } from '@/lib/plan-features';
 
@@ -39,36 +40,16 @@ async function __POST(request) {
     return Response.json({ error: 'カード決済の受け取り設定が完了していません（「Fineme利用契約」タブ上部の「カード決済の受け取り設定」から設定できます）' }, { status: 409 });
   }
 
-  const { items, staff_id, memo } = await request.json().catch(() => ({}));
-  if (!Array.isArray(items) || !items.length) return Response.json({ error: '会計する商品がありません' }, { status: 400 });
-
-  // 明細の検証・金額計算だけここで行う（在庫引き当て・記録は支払い確定後）
-  const productIds = [...new Set(items.filter(it => it.product_id).map(it => it.product_id))];
-  let productMap = {};
-  if (productIds.length) {
-    const { data: products } = await supabase.from('provider_products').select('id, name, price, track_stock, stock_qty').eq('provider_id', provider.id).in('id', productIds);
-    (products || []).forEach(p => { productMap[p.id] = p; });
-  }
-  let totalAmount = 0;
-  const lineItemsForStripe = [];
-  for (const it of items) {
-    const qty = parseInt(it.qty, 10);
-    if (!Number.isInteger(qty) || qty <= 0) return Response.json({ error: '数量が不正です' }, { status: 400 });
-    const product = it.product_id ? productMap[it.product_id] : null;
-    if (it.product_id && !product) return Response.json({ error: '商品が見つかりません' }, { status: 404 });
-    if (product?.track_stock && product.stock_qty < qty) {
-      return Response.json({ error: `${product.name}の在庫が不足しています（残り${product.stock_qty}）` }, { status: 400 });
-    }
-    const unitPrice = product ? product.price : (Number.isFinite(parseInt(it.unit_price, 10)) ? parseInt(it.unit_price, 10) : 0);
-    const name = product ? product.name : (it.name?.trim() || '商品');
-    totalAmount += unitPrice * qty;
-    lineItemsForStripe.push({ price_data: { currency: 'jpy', product_data: { name }, unit_amount: unitPrice }, quantity: qty });
-  }
-  if (totalAmount <= 0) return Response.json({ error: '合計金額は1円以上にしてください' }, { status: 400 });
+  const { items, staff_id, memo, discount, customer } = await request.json().catch(() => ({}));
+  // 明細の検証・金額計算だけここで行う（在庫引き当て・記録は支払い確定後）。会計確定と同じ計算を使う
+  let priced;
+  try { priced = await priceItems(supabase, provider.id, items, discount); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
+  const totalAmount = priced.totalAmount;
+  const lineItemsForStripe = [{ price_data: { currency: 'jpy', product_data: { name: priced.lineItems.length === 1 ? priced.lineItems[0].name_snapshot : `お会計（${priced.lineItems.length}点${priced.cartOff ? '・割引あり' : ''}）` }, unit_amount: totalAmount }, quantity: 1 }];
 
   const { data: pending, error: pendingError } = await supabase
     .from('provider_pos_pending_checkouts')
-    .insert({ provider_id: provider.id, items, staff_id: staff_id || null, memo: memo?.trim() || null, total_amount: totalAmount })
+    .insert({ provider_id: provider.id, items, staff_id: staff_id || null, memo: memo?.trim() || null, total_amount: totalAmount, discount: discount || null, customer: customer || null })
     .select()
     .single();
   if (pendingError) return Response.json({ error: pendingError.message }, { status: 500 });
@@ -90,7 +71,7 @@ async function __POST(request) {
     return Response.json({ pending_id: pending.id, url: session.url });
   } catch (e) {
     console.error('[pos online-checkout]', e);
-    return Response.json({ error: 'Stripeでの手続き開始に失敗しました: ' + e.message }, { status: 500 });
+    return Response.json({ error: 'オンライン決済の準備に失敗しました。時間をおいてもう一度お試しください' }, { status: 500 });
   }
 }
 

@@ -150,6 +150,8 @@ export async function POST(request) {
               staffId: pending.staff_id,
               paymentMethod: 'オンライン決済',
               memo: pending.memo,
+              discount: pending.discount || undefined,
+              customer: pending.customer || undefined,
               source: 'pos_online',
             });
             await supabaseAdmin.from('provider_pos_pending_checkouts')

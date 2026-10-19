@@ -23,7 +23,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('provider_products')
-    .select('id, name, price, track_stock, stock_qty, active, sort_order, created_at')
+    .select('id, name, price, track_stock, stock_qty, active, sort_order, created_at, category, cost_price, low_stock_threshold')
     .eq('provider_id', provider.id)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true });
@@ -39,7 +39,7 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'pos'); if (locked) return locked; }
 
-  const { name, price, track_stock, stock_qty } = await request.json().catch(() => ({}));
+  const { name, price, track_stock, stock_qty, category, cost_price, low_stock_threshold } = await request.json().catch(() => ({}));
   if (!name?.trim()) return Response.json({ error: 'nameは必須です' }, { status: 400 });
 
   const trackStock = track_stock === undefined ? true : !!track_stock;
@@ -51,6 +51,9 @@ async function __POST(request) {
       price: Number.isFinite(parseInt(price, 10)) ? parseInt(price, 10) : 0,
       track_stock: trackStock,
       stock_qty: trackStock && Number.isFinite(parseInt(stock_qty, 10)) ? parseInt(stock_qty, 10) : 0,
+      category: String(category || '').trim().slice(0, 30) || null,
+      cost_price: Number.isFinite(parseInt(cost_price, 10)) ? Math.max(0, parseInt(cost_price, 10)) : null,
+      low_stock_threshold: Number.isFinite(parseInt(low_stock_threshold, 10)) ? Math.max(0, parseInt(low_stock_threshold, 10)) : null,
     })
     .select()
     .single();

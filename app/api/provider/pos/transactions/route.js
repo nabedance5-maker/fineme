@@ -21,15 +21,15 @@ export async function GET(request) {
 
   const { data: txs, error } = await supabase
     .from('provider_pos_transactions')
-    .select('id, staff_id, payment_method, total_amount, memo, created_at')
+    .select('id, staff_id, payment_method, payment_key, total_amount, subtotal_amount, discount_amount, discount_label, customer_user_id, customer_manual_id, customer_name, cash_received, status, refunded_at, refund_reason, receipt_no, operator, memo, created_at')
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(100);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!txs?.length) return Response.json([]);
 
   const [{ data: items }, { data: staffRows }] = await Promise.all([
-    supabase.from('provider_pos_transaction_items').select('transaction_id, name_snapshot, unit_price, qty, subtotal').in('transaction_id', txs.map(t => t.id)),
+    supabase.from('provider_pos_transaction_items').select('transaction_id, kind, name_snapshot, unit_price, qty, discount_amount, subtotal').in('transaction_id', txs.map(t => t.id)),
     supabase.from('provider_staff').select('id, name').eq('provider_id', provider.id),
   ]);
   const staffMap = {};
