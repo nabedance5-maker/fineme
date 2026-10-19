@@ -531,6 +531,39 @@ const DASHBOARD_CSS = `
       .tf-row .btn { font-size: 12px; padding: 5px 12px; }
       .tf-chip { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; color: #1a1410; white-space: nowrap; }
       .tf-ok { background: #bbf7d0; } .tf-mid { background: #dbeafe; } .tf-ng { background: #fecaca; } .tf-wait { background: #fde68a; } .tf-off { background: #e5e7eb; }
+      /* アンケート（2026-10-19） */
+      #tab-surveys { color: #1a1410; }
+      .sv-builder { display: grid; gap: 10px; padding: 16px; border: 1px solid rgba(26,20,16,0.15); border-radius: 12px; }
+      .sv-builder[hidden] { display: none; }
+      .sv-builder > label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; }
+      .sv-builder input:not([type=checkbox]), .sv-builder textarea, .sv-builder select { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; font-family: inherit; }
+      .sv-builder .sv-inline { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+      .sv-q-ed { display: grid; gap: 8px; padding: 12px; background: #f8f6f1; border-radius: 10px; }
+      .sv-q-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+      .sv-req { display: flex; gap: 4px; align-items: center; font-size: 12.5px; }
+      .sv-q-move { margin-left: auto; display: flex; gap: 4px; }
+      .sv-q-move .btn { font-size: 11.5px; padding: 4px 9px; }
+      .sv-row { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; }
+      .sv-row-main { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+      .sv-row-main b { font-size: 14px; }
+      .sv-row-actions { flex-basis: 100%; display: flex; gap: 6px; flex-wrap: wrap; }
+      .sv-row-actions .btn { font-size: 12px; padding: 5px 11px; }
+      .sv-chip { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: #e5e7eb; color: #1a1410; }
+      .sv-chip.on { background: #bbf7d0; }
+      .sv-result { display: grid; gap: 12px; padding: 0 4px; }
+      .sv-res-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .sv-res-head h3 { margin: 0; font-size: 16px; }
+      .sv-res-head .btn { margin-left: auto; font-size: 12px; padding: 5px 12px; }
+      .sv-res-q { display: grid; gap: 8px; padding: 16px; background: #fff; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; font-size: 13px; }
+      .sv-res-sub { font-size: 11.5px; margin-top: -6px; }
+      .sv-bar-row { display: grid; grid-template-columns: minmax(80px, 160px) 1fr 90px; gap: 8px; align-items: center; font-size: 12.5px; }
+      .sv-bar { height: 16px; background: #f1ede4; border-radius: 6px; overflow: hidden; }
+      .sv-bar i { display: block; height: 100%; background: #c9a84c; border-radius: 6px; min-width: 2px; }
+      .sv-bar-row b { font-variant-numeric: tabular-nums; }
+      .sv-avg { margin: 0; font-size: 13px; } .sv-avg b { font-size: 22px; }
+      .sv-text { padding: 8px 10px; background: #f8f6f1; border-radius: 8px; } .sv-text p { margin: 0 0 2px; white-space: pre-wrap; line-height: 1.7; } .sv-text span { font-size: 11.5px; }
+      .sv-who { display: flex; gap: 10px; align-items: center; font-size: 12.5px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); }
+      .sv-who span:first-child { flex: 1; font-weight: 700; } .sv-who .btn { font-size: 11.5px; padding: 3px 9px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1190,6 +1223,155 @@ export default function ProviderDashboardPage() {
       });
     }
     applyMemberPerms(provider);
+
+    // ── アンケート（でお要望 2026-10-19：hacomono差分 #9） ──
+    (function setupSurveys() {
+      const listEl = document.getElementById('sv-list');
+      if (!listEl) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const TYPE = { single: '1つ選ぶ', multi: '複数選べる', text: '自由に書く', rating: '5段階' };
+      const urlOf = t => `${location.origin}/survey/${t}`;
+      const builder = document.getElementById('sv-builder');
+      const resultEl = document.getElementById('sv-result');
+      let editingId = null;
+      let qs = [];
+
+      async function loadList() {
+        const r = await fetch('/api/provider/surveys', { headers: H() });
+        if (!r.ok) { listEl.innerHTML = authErrorHtml(r); return; }
+        const rows = await r.json();
+        listEl.innerHTML = rows.length ? rows.map(s => `
+          <div class="sv-row">
+            <div class="sv-row-main"><b>${e(s.title)}</b><span>質問 ${s.question_count}問・回答 ${s.responses}件・${new Date(s.created_at).toLocaleDateString('ja-JP')}作成</span></div>
+            <span class="sv-chip ${s.status === 'open' ? 'on' : ''}">${s.status === 'open' ? '受付中' : '受付終了'}</span>
+            <div class="sv-row-actions">
+              <button type="button" class="btn" data-sv-result="${s.id}">結果を見る</button>
+              <button type="button" class="btn btn-ghost" data-sv-copy="${s.token}">リンクをコピー</button>
+              <button type="button" class="btn btn-ghost" data-sv-send="${s.token}" data-title="${e(s.title)}">メッセージ配信で送る</button>
+              <button type="button" class="btn btn-ghost" data-sv-edit="${s.id}">編集</button>
+              <button type="button" class="btn btn-ghost" data-sv-status="${s.id}" data-next="${s.status === 'open' ? 'closed' : 'open'}">${s.status === 'open' ? '受付を終了' : '受付を再開'}</button>
+              <button type="button" class="btn btn-ghost" data-sv-del="${s.id}">削除</button>
+            </div>
+          </div>`).join('') : '<p style="font-size:13px;margin:0">まだアンケートがありません。「新しいアンケートを作る」から作成してください。</p>';
+        listEl.querySelectorAll('[data-sv-copy]').forEach(b => b.addEventListener('click', async () => { try { await navigator.clipboard.writeText(urlOf(b.dataset.svCopy)); showToast('回答ページのリンクをコピーしました'); } catch { showToast(urlOf(b.dataset.svCopy)); } }));
+        listEl.querySelectorAll('[data-sv-send]').forEach(b => b.addEventListener('click', () => {
+          const btn = document.querySelector('.tab-btn[data-tab="broadcast-email"]');
+          if (!btn) { showToast('メッセージ配信を使う権限がありません'); return; }
+          btn.click();
+          setTimeout(() => {
+            const body = document.getElementById('bc-body'); const subj = document.getElementById('bc-subject');
+            if (body) body.value = `「${b.dataset.title}」アンケートへのご協力をお願いします。1〜2分で答えられます。\n${urlOf(b.dataset.svSend)}`;
+            if (subj && !subj.value) subj.value = `アンケートへのご協力のお願い`;
+            body?.focus();
+          }, 300);
+        }));
+        listEl.querySelectorAll('[data-sv-status]').forEach(b => b.addEventListener('click', async () => {
+          const r = await fetch(`/api/provider/surveys/${b.dataset.svStatus}`, { method: 'PATCH', headers: H(), body: JSON.stringify({ status: b.dataset.next }) });
+          showToast(r.ok ? (b.dataset.next === 'open' ? '受付を再開しました' : '受付を終了しました') : '変更できませんでした'); loadList();
+        }));
+        listEl.querySelectorAll('[data-sv-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このアンケートと、集まった回答をすべて削除しますか？（元に戻せません）')) return;
+          const r = await fetch(`/api/provider/surveys/${b.dataset.svDel}`, { method: 'DELETE', headers: H() });
+          showToast(r.ok ? '削除しました' : '削除できませんでした'); resultEl.innerHTML = ''; loadList();
+        }));
+        listEl.querySelectorAll('[data-sv-edit]').forEach(b => b.addEventListener('click', async () => {
+          const r = await fetch(`/api/provider/surveys/${b.dataset.svEdit}`, { headers: H() });
+          if (!r.ok) return;
+          const d = await r.json();
+          openBuilder(d.survey, d.responses.length);
+        }));
+        listEl.querySelectorAll('[data-sv-result]').forEach(b => b.addEventListener('click', () => showResult(b.dataset.svResult)));
+      }
+
+      function openBuilder(s, answeredCount = 0) {
+        editingId = s?.id || null;
+        qs = s ? JSON.parse(JSON.stringify(s.questions || [])) : [{ type: 'rating', label: '今日のサービスの満足度を教えてください', options: [], required: true }, { type: 'text', label: 'よかった点・改善してほしい点があれば教えてください', options: [], required: false }];
+        builder.hidden = false;
+        document.getElementById('sv-title').value = s?.title || '';
+        document.getElementById('sv-desc').value = s?.description || '';
+        document.getElementById('sv-guest').checked = s ? s.allow_guest !== false : true;
+        document.getElementById('sv-builder-title').textContent = s ? 'アンケートを編集' : '新しいアンケート';
+        document.getElementById('sv-edit-note').textContent = answeredCount ? `すでに${answeredCount}件の回答があります。質問を消したり選択肢を変えたりすると、その質問の集計が変わります。` : '';
+        renderQs();
+        builder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      function renderQs() {
+        const box = document.getElementById('sv-qs');
+        box.innerHTML = qs.map((q, i) => `
+          <div class="sv-q-ed" data-i="${i}">
+            <div class="sv-q-top"><b>質問${i + 1}</b>
+              <select data-k="type">${Object.entries(TYPE).map(([k, v]) => `<option value="${k}" ${q.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+              <label class="sv-req"><input type="checkbox" data-k="required" ${q.required ? 'checked' : ''}>必須</label>
+              <span class="sv-q-move"><button type="button" class="btn btn-ghost" data-mv="-1" ${i === 0 ? 'disabled' : ''}>上へ</button><button type="button" class="btn btn-ghost" data-mv="1" ${i === qs.length - 1 ? 'disabled' : ''}>下へ</button><button type="button" class="btn btn-ghost" data-rm>削除</button></span>
+            </div>
+            <input data-k="label" value="${e(q.label)}" placeholder="質問文" maxlength="200">
+            ${q.type === 'single' || q.type === 'multi' ? `<textarea data-k="options" rows="3" placeholder="選択肢を1行に1つずつ">${e((q.options || []).join('\n'))}</textarea>` : ''}
+          </div>`).join('');
+        box.querySelectorAll('.sv-q-ed').forEach(el => {
+          const i = Number(el.dataset.i);
+          el.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener(inp.tagName === 'SELECT' || inp.type === 'checkbox' ? 'change' : 'input', () => {
+            const k = inp.dataset.k;
+            if (k === 'required') qs[i].required = inp.checked;
+            else if (k === 'options') qs[i].options = inp.value.split('\n').map(x => x.trim()).filter(Boolean);
+            else qs[i][k] = inp.value;
+            if (k === 'type') { if ((qs[i].type === 'single' || qs[i].type === 'multi') && !(qs[i].options || []).length) qs[i].options = ['はい', 'いいえ']; renderQs(); }
+          }));
+          el.querySelectorAll('[data-mv]').forEach(b => b.addEventListener('click', () => { const j = i + Number(b.dataset.mv); [qs[i], qs[j]] = [qs[j], qs[i]]; renderQs(); }));
+          el.querySelector('[data-rm]')?.addEventListener('click', () => { qs.splice(i, 1); renderQs(); });
+        });
+      }
+      document.getElementById('sv-new')?.addEventListener('click', () => openBuilder(null));
+      document.getElementById('sv-add-q')?.addEventListener('click', () => { qs.push({ type: 'single', label: '', options: ['はい', 'いいえ'], required: false }); renderQs(); });
+      document.getElementById('sv-cancel')?.addEventListener('click', () => { builder.hidden = true; });
+      document.getElementById('sv-save')?.addEventListener('click', async () => {
+        const body = { title: document.getElementById('sv-title').value, description: document.getElementById('sv-desc').value, allow_guest: document.getElementById('sv-guest').checked, questions: qs };
+        const r = await fetch(editingId ? `/api/provider/surveys/${editingId}` : '/api/provider/surveys', { method: editingId ? 'PATCH' : 'POST', headers: H(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '保存できませんでした'); return; }
+        showToast(editingId ? '保存しました' : 'アンケートを作りました。リンクをコピーしてお客様に送れます');
+        builder.hidden = true; loadList();
+      });
+
+      let lastResult = null;
+      async function showResult(id) {
+        resultEl.innerHTML = '<p style="font-size:13px">読み込み中…</p>';
+        const r = await fetch(`/api/provider/surveys/${id}`, { headers: H() });
+        if (!r.ok) { resultEl.innerHTML = '読み込めませんでした'; return; }
+        const d = lastResult = await r.json();
+        const sumOf = qid => d.summary.find(x => x.id === qid) || {};
+        resultEl.innerHTML = `
+          <div class="sv-res-head"><h3>${e(d.survey.title)} の結果</h3><span>回答 ${d.responses.length}件</span><button type="button" class="btn btn-ghost" id="sv-csv">CSVで保存</button></div>
+          ${d.survey.questions.map((q, i) => {
+            const s = sumOf(q.id);
+            let body = '';
+            if (q.type === 'single' || q.type === 'multi') {
+              const max = Math.max(1, ...Object.values(s.counts || {}));
+              body = q.options.map(o => { const n = s.counts?.[o] || 0; return `<div class="sv-bar-row"><span>${e(o)}</span><div class="sv-bar"><i style="width:${Math.round(n / max * 100)}%"></i></div><b>${n}件${s.answered ? `（${Math.round(n / s.answered * 100)}%）` : ''}</b></div>`; }).join('');
+            } else if (q.type === 'rating') {
+              const max = Math.max(1, ...(s.dist || [0]));
+              body = `<p class="sv-avg">平均 <b>${s.avg ?? '—'}</b> / 5</p>` + [5, 4, 3, 2, 1].map(n => `<div class="sv-bar-row"><span>${n}</span><div class="sv-bar"><i style="width:${Math.round((s.dist?.[n - 1] || 0) / max * 100)}%"></i></div><b>${s.dist?.[n - 1] || 0}件</b></div>`).join('');
+            } else {
+              const texts = d.responses.filter(x => x.answers?.[q.id]).slice(0, 100);
+              body = texts.length ? texts.map(x => `<div class="sv-text"><p>${e(x.answers[q.id])}</p><span>${e(x.name)}・${new Date(x.created_at).toLocaleDateString('ja-JP')}</span></div>`).join('') : '<p style="font-size:12.5px;margin:0">まだ回答がありません。</p>';
+            }
+            return `<div class="sv-res-q"><b>${i + 1}. ${e(q.label)}</b><span class="sv-res-sub">${TYPE[q.type]}・回答 ${s.answered || 0}件</span>${body}</div>`;
+          }).join('')}
+          <div class="sv-res-q"><b>回答したお客様</b>${d.responses.length ? d.responses.slice(0, 200).map(x => `<div class="sv-who"><span>${e(x.name)}</span><span>${new Date(x.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>${x.user_id ? `<button type="button" class="btn btn-ghost" data-sv-cust="${x.user_id}" data-name="${e(x.name)}">顧客情報</button>` : '<span>ログインなし</span>'}</div>`).join('') : '<p style="font-size:12.5px;margin:0">まだ回答がありません。</p>'}</div>`;
+        resultEl.querySelectorAll('[data-sv-cust]').forEach(b => b.addEventListener('click', () => { if (typeof window.openCustomerModal === 'function') window.openCustomerModal(b.dataset.svCust, 'member', b.dataset.name); }));
+        document.getElementById('sv-csv')?.addEventListener('click', () => {
+          const qsx = d.survey.questions;
+          const cell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+          const lines = [['回答日時', 'お名前', ...qsx.map(q => q.label)].map(cell).join(',')].concat(d.responses.map(x => [new Date(x.created_at).toLocaleString('ja-JP'), x.name, ...qsx.map(q => { const v = x.answers?.[q.id]; return Array.isArray(v) ? v.join(' / ') : v; })].map(cell).join(',')));
+          const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `アンケート_${d.survey.title}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        });
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      document.querySelectorAll('[data-tab="surveys"]').forEach(btn => btn.addEventListener('click', loadList));
+      if (new URLSearchParams(location.search).get('tab') === 'surveys') loadList();
+    })();
 
     // ── 体験→入会の追跡（でお要望 2026-10-19：hacomono差分 #8） ──
     (function setupTrialFunnel() {
@@ -14110,6 +14292,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
+                  <button className="tab-btn" data-tab="surveys">アンケート</button>
                   <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
@@ -16988,6 +17171,32 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* LTV/CAC：店舗単位の概算（メニュー別の紐づけデータが無いため店舗全体で算出） */}
+        {/* アンケート（でお要望 2026-10-19：hacomono差分 #9） */}
+        <div className="tab-pane" id="tab-surveys">
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>アンケート</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>満足度や要望を聞くアンケートを作り、回答ページのリンクをメッセージ配信・LINE・店頭のQRで配れます。Finemeにログインしているお客様の回答は、顧客情報から誰の回答か分かります。</p>
+            </div>
+            <button type="button" className="btn" id="sv-new" style={{ width: 'fit-content' }}>新しいアンケートを作る</button>
+            <div id="sv-builder" className="sv-builder" hidden>
+              <h3 id="sv-builder-title" style={{ margin: 0, fontSize: '15px' }}>新しいアンケート</h3>
+              <p id="sv-edit-note" style={{ margin: 0, fontSize: '12.5px', fontWeight: 700 }}></p>
+              <label>タイトル<input id="sv-title" maxLength={100} placeholder="例：ご来店アンケート" /></label>
+              <label>はじめの説明（任意）<textarea id="sv-desc" rows={2} maxLength={1000} placeholder="例：今後のサービス改善のため、1分ほどでお答えください。" /></label>
+              <label className="sv-inline"><input type="checkbox" id="sv-guest" />Finemeにログインしていない方も、お名前を書いて答えられるようにする</label>
+              <div id="sv-qs" className="stack" style={{ gap: '10px' }}></div>
+              <button type="button" className="btn btn-ghost" id="sv-add-q" style={{ width: 'fit-content' }}>質問を追加</button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" className="btn" id="sv-save">保存する</button>
+                <button type="button" className="btn btn-ghost" id="sv-cancel">やめる</button>
+              </div>
+            </div>
+            <div id="sv-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+          </div>
+          <div id="sv-result" className="sv-result"></div>
+        </div>
+
         {/* 体験→入会の追跡（でお要望 2026-10-19：hacomono差分 #8） */}
         <div className="tab-pane" id="tab-trial-funnel">
           <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
