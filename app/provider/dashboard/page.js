@@ -387,6 +387,23 @@ const DASHBOARD_CSS = `
       .cf-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; font-weight: 700; color: #1a1410; }
       .cf-panel select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
       .cf-panel select.is-on { border-color: #c9a84c; background: rgba(201,168,76,0.1); font-weight: 700; }
+      /* 予約リクエストの絞り込み・まとめて既読（2026-10-19） */
+      .req-segs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+      .req-seg { border: 1px solid rgba(26,20,16,0.15); background: #fff; color: #1a1410; border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+      .req-seg b { font-variant-numeric: tabular-nums; font-size: 11.5px; background: rgba(26,20,16,0.07); border-radius: 99px; padding: 0 7px; }
+      .req-seg[aria-selected="true"] { background: #1a1410; color: #fff; border-color: #1a1410; }
+      .req-seg[aria-selected="true"] b { background: rgba(255,255,255,0.2); }
+      .req-seg-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; display: inline-block; }
+      .req-filterbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; padding: 10px 12px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+      .req-filterbar input[type="text"], .req-filterbar select { padding: 7px 10px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; background: #fff; color: #1a1410; }
+      .req-filterbar input[type="text"] { flex: 1 1 140px; }
+      .req-unread-only { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #1a1410; white-space: nowrap; cursor: pointer; }
+      .req-bulk { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; font-size: 13px; color: #1a1410; }
+      .req-check-all { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+      .req-sel-count { font-weight: 700; }
+      .req-row.has-check { grid-template-columns: 28px 1.4fr 1.2fr auto; }
+      .req-row .req-check { width: 18px; height: 18px; cursor: pointer; }
+      .req-row.is-checked { background: rgba(201,168,76,0.08); }
 `;
 
 export default function ProviderDashboardPage() {
@@ -9320,8 +9337,8 @@ export default function ProviderDashboardPage() {
     })();
 
     // ── 予約リクエスト管理 ────────────────────────────────────────
-    const STATUS_LABELS = { pending: '返答待ち', approved: '承認済み', rejected: 'お断り', counter_proposed: '代替提案済み', visited: '来店確認済み' };
-    const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444', counter_proposed: '#6366f1', visited: '#059669' };
+    const STATUS_LABELS = { pending: '返答待ち', approved: '承認済み', rejected: 'お断り', counter_proposed: '代替提案済み', visited: '来店確認済み', cancelled: 'キャンセル', expired: '期限切れ' };
+    const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444', counter_proposed: '#6366f1', visited: '#059669', cancelled: '#6b7280', expired: '#6b7280' };
     const TIME_OPTIONS = ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
     function parseDateChoices(r) {
@@ -9369,8 +9386,6 @@ export default function ProviderDashboardPage() {
     }
 
     async function loadRequests() {
-      const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
-      const sf = document.getElementById('req-filter-status'); if (sf) sf.value = '';
       const providerId = provider?.id || loadProviderData()?.id;
       if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
       const _reqToken = getSupabaseToken();
@@ -9391,18 +9406,100 @@ export default function ProviderDashboardPage() {
       window.__pdMarkTabReady?.('requests');
     }
 
+    // ステータス別のタブ（でお要望 2026-10-19）。件数と未読数を出す
+    let reqSeg = 'all';
+    const reqSelected = new Set();
+    const REQ_SEGS = [
+      { key: 'all', label: 'すべて', test: () => true },
+      { key: 'unread', label: '未読', test: r => !r.viewed_at },
+      { key: 'pending', label: '返答待ち', test: r => r.status === 'pending' },
+      { key: 'counter_proposed', label: '代替提案中', test: r => r.status === 'counter_proposed' },
+      { key: 'approved', label: '承認済み', test: r => r.status === 'approved' },
+      { key: 'visited', label: '来店済み', test: r => r.status === 'visited' },
+      { key: 'rejected', label: 'お断り', test: r => r.status === 'rejected' },
+      { key: 'closed', label: 'キャンセル・期限切れ', test: r => r.status === 'cancelled' || r.status === 'expired' },
+    ];
+    const reqDateOf = r => r.confirmed_date || r.counter_date || parseDateChoices(r)[0]?.date || r.reserved_date || '';
+    function renderReqSegs() {
+      const el = document.getElementById('req-segs');
+      if (!el) return;
+      el.innerHTML = REQ_SEGS.map(sg => {
+        const list = _allRequests.filter(sg.test);
+        if (sg.key !== 'all' && sg.key !== 'unread' && !list.length) return '';
+        const unread = list.filter(r => !r.viewed_at).length;
+        const dot = unread && sg.key !== 'unread' && sg.key !== 'all' ? `<i class="req-seg-dot" title="未読${unread}件"></i>` : '';
+        return `<button type="button" class="req-seg" role="tab" aria-selected="${reqSeg === sg.key}" data-req-seg="${sg.key}">${dot}${sg.label}<b>${list.length}</b></button>`;
+      }).join('');
+      el.querySelectorAll('[data-req-seg]').forEach(b => b.addEventListener('click', () => { reqSeg = b.dataset.reqSeg; reqSelected.clear(); applyRequestFilters(); }));
+    }
+
     function applyRequestFilters() {
-      const statusFilter = document.getElementById('req-filter-status')?.value || '';
       const kwFilter = (document.getElementById('req-filter-kw')?.value || '').toLowerCase().trim();
       const unreadOnly = !!document.getElementById('req-filter-unread')?.checked;
-      let items = _allRequests;
-      if (statusFilter) items = items.filter(r => r.status === statusFilter);
+      const when = document.getElementById('req-filter-when')?.value || '';
+      const sort = document.getElementById('req-sort')?.value || 'created_desc';
+      const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      const addD = n => new Date(Date.now() + 9 * 3600000 + n * 86400000).toISOString().slice(0, 10);
+      renderReqSegs();
+      const seg = REQ_SEGS.find(x => x.key === reqSeg) || REQ_SEGS[0];
+      let items = _allRequests.filter(seg.test);
       if (unreadOnly) items = items.filter(r => !r.viewed_at);
+      if (when) items = items.filter(r => {
+        const d = reqDateOf(r);
+        if (!d) return false;
+        if (when === 'today') return d === today;
+        if (when === 'tomorrow') return d === addD(1);
+        if (when === 'week') return d >= today && d <= addD(7);
+        if (when === 'future') return d >= today;
+        if (when === 'past') return d < today;
+        return true;
+      });
       if (kwFilter) items = items.filter(r => (r.user_name || '').toLowerCase().includes(kwFilter) || (r.note || '').toLowerCase().includes(kwFilter));
+      items = [...items].sort((a, b) => {
+        if (sort === 'date_asc') return reqDateOf(a).localeCompare(reqDateOf(b));
+        const ca = a.created_at || '', cb = b.created_at || '';
+        return sort === 'created_asc' ? ca.localeCompare(cb) : cb.localeCompare(ca);
+      });
+      // 表示から外れた行の選択は外す
+      const visible = new Set(items.map(r => r.id));
+      [...reqSelected].forEach(id => { if (!visible.has(id)) reqSelected.delete(id); });
       const countEl = document.getElementById('req-filter-count');
       if (countEl) countEl.textContent = `${items.length}件`;
+      _visibleRequests = items;
       renderRequests(items);
+      syncReqBulk();
     }
+    let _visibleRequests = [];
+    function syncReqBulk() {
+      const n = reqSelected.size;
+      const cnt = document.getElementById('req-selected-count');
+      if (cnt) cnt.textContent = n ? `${n}件を選択中` : '';
+      ['req-mark-read', 'req-mark-unread'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = !n; });
+      const all = document.getElementById('req-check-all');
+      if (all) { all.checked = n > 0 && n === _visibleRequests.length; all.indeterminate = n > 0 && n < _visibleRequests.length; }
+    }
+    async function markRequestsBulk(unread) {
+      const ids = [...reqSelected];
+      if (!ids.length) return;
+      const tk = getSupabaseToken();
+      const res = await fetch('/api/provider/reservations/view-bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tk}` }, body: JSON.stringify({ ids, unread }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(d.error || '変更できませんでした'); return; }
+      const now = new Date().toISOString();
+      _allRequests.forEach(r => { if (reqSelected.has(r.id)) r.viewed_at = unread ? null : (r.viewed_at || now); });
+      reqSelected.clear();
+      const unreadCount = _allRequests.filter(r => !r.viewed_at).length;
+      const badge = document.getElementById('requests-badge');
+      if (badge) { badge.textContent = unreadCount || ''; badge.style.display = unreadCount > 0 ? 'inline' : 'none'; }
+      showToast(unread ? `${ids.length}件を未読に戻しました` : `${ids.length}件を既読にしました`);
+      applyRequestFilters();
+    }
+    document.getElementById('req-mark-read')?.addEventListener('click', () => markRequestsBulk(false));
+    document.getElementById('req-mark-unread')?.addEventListener('click', () => markRequestsBulk(true));
+    document.getElementById('req-check-all')?.addEventListener('change', e => {
+      if (e.target.checked) _visibleRequests.forEach(r => reqSelected.add(r.id)); else reqSelected.clear();
+      renderRequests(_visibleRequests); syncReqBulk();
+    });
 
     // 予約リクエストを開いたら既読にする（でお要望2026-09-25）。1回だけAPIを叩けば
     // 十分なので、ローカルにまだviewed_atが無い時だけ送る。
@@ -9421,13 +9518,16 @@ export default function ProviderDashboardPage() {
     }
 
     // 絞り込みコントロールのイベント登録
-    document.getElementById('req-filter-status')?.addEventListener('change', applyRequestFilters);
     document.getElementById('req-filter-kw')?.addEventListener('input', applyRequestFilters);
     document.getElementById('req-filter-unread')?.addEventListener('change', applyRequestFilters);
+    document.getElementById('req-filter-when')?.addEventListener('change', applyRequestFilters);
+    document.getElementById('req-sort')?.addEventListener('change', applyRequestFilters);
     document.getElementById('req-filter-reset')?.addEventListener('click', () => {
-      const s = document.getElementById('req-filter-status'); if (s) s.value = '';
+      reqSeg = 'all'; reqSelected.clear();
       const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
       const u = document.getElementById('req-filter-unread'); if (u) u.checked = false;
+      const w = document.getElementById('req-filter-when'); if (w) w.value = '';
+      const so = document.getElementById('req-sort'); if (so) so.value = 'created_desc';
       applyRequestFilters();
     });
 
@@ -9537,21 +9637,34 @@ export default function ProviderDashboardPage() {
       if (!items.length) { el.innerHTML = '<p class="muted">条件に一致するリクエストはありません。</p>'; return; }
       items.forEach(r => { _requestsById[r.id] = r; }); // ポップアップ・来店確認モーダルの下書きに使う
       el.innerHTML = `
-        <div class="req-row req-row-head"><span>お客様</span><span>希望・確定日時</span><span></span></div>
+        <div class="req-row req-row-head has-check"><span></span><span>お客様</span><span>希望・確定日時</span><span></span></div>
       ` + items.map(r => {
         const choices = parseDateChoices(r);
         const dateLabel = r.confirmed_date ? `${r.confirmed_date} ${r.confirmed_time || ''}` : `${choices[0].date} ${choices[0].time}`;
         const statusColor = STATUS_COLORS[r.status] || '#6b7280';
         const statusLabel = STATUS_LABELS[r.status] || r.status;
         return `
-          <div class="req-row" data-req-open="${r.id}">
+          <div class="req-row has-check${reqSelected.has(r.id) ? ' is-checked' : ''}" data-req-open="${r.id}">
+            <span><input type="checkbox" class="req-check" data-req-check="${r.id}" ${reqSelected.has(r.id) ? 'checked' : ''} aria-label="選択" /></span>
             <span class="req-row-name">${!r.viewed_at ? '<span class="req-unread-dot" title="未読"></span>' : ''}${esc(r.user_name)}</span>
             <span class="req-row-date">${esc(dateLabel)}</span>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor};white-space:nowrap">${statusLabel}</span>
           </div>
         `;
       }).join('');
-      el.querySelectorAll('[data-req-open]').forEach(row => bindTapHandler(row, () => window.openRequestModal(row.dataset.reqOpen)));
+      el.querySelectorAll('[data-req-open]').forEach(row => bindTapHandler(row, (e) => {
+        // チェックボックスの操作では詳細を開かず、選択だけ切り替える
+        const cb = e?.target?.closest?.('[data-req-check]') || (e?.target?.closest?.('.req-row > span:first-child') ? row.querySelector('[data-req-check]') : null);
+        if (cb) {
+          const id = cb.dataset.reqCheck;
+          if (reqSelected.has(id)) reqSelected.delete(id); else reqSelected.add(id);
+          cb.checked = reqSelected.has(id);
+          row.classList.toggle('is-checked', reqSelected.has(id));
+          syncReqBulk();
+          return;
+        }
+        window.openRequestModal(row.dataset.reqOpen);
+      }));
     }
 
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -13595,38 +13708,31 @@ export default function ProviderDashboardPage() {
               <span style={{ fontSize: '12px', color: 'rgba(26,20,16,0.55)' }} id="req-filter-count"></span>
             </div>
 
-            {/* 絞り込みバー */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', padding: '12px 14px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111', textShadow: 'none' }}>
-              <input
-                id="req-filter-kw"
-                type="text"
-                placeholder="名前・メモで検索"
-                autoComplete="off"
-                defaultValue=""
-                style={{ flex: '1 1 140px', padding: '7px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
-              />
-              <select
-                id="req-filter-status"
-                style={{ padding: '7px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', background: '#fff', cursor: 'pointer' }}
-              >
-                <option value="">すべてのステータス</option>
-                <option value="pending">返答待ち</option>
-                <option value="counter_proposed">代替提案済み</option>
-                <option value="approved">承認済み</option>
-                <option value="visited">来店確認済み</option>
-                <option value="rejected">お断り</option>
+            {/* 絞り込み（でお要望 2026-10-19：リクエストが溜まった時用に、ステータス別のタブ・予約日・並び替え・選んで既読） */}
+            <div id="req-segs" className="req-segs" role="tablist" aria-label="ステータスで絞り込み"></div>
+            <div className="req-filterbar">
+              <input id="req-filter-kw" type="text" placeholder="名前・メモで検索" autoComplete="off" defaultValue="" />
+              <select id="req-filter-when" aria-label="予約日">
+                <option value="">予約日：すべて</option>
+                <option value="today">今日</option>
+                <option value="tomorrow">明日</option>
+                <option value="week">7日以内</option>
+                <option value="future">今日以降</option>
+                <option value="past">過去</option>
               </select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '0 4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                <input id="req-filter-unread" type="checkbox" style={{ accentColor: '#c9a84c' }} />
-                未読のみ
-              </label>
-              <button
-                id="req-filter-reset"
-                className="btn btn-ghost"
-                style={{ fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}
-              >
-                リセット
-              </button>
+              <select id="req-sort" aria-label="並び替え">
+                <option value="created_desc">届いた順（新しい順）</option>
+                <option value="created_asc">届いた順（古い順）</option>
+                <option value="date_asc">予約日が近い順</option>
+              </select>
+              <label className="req-unread-only"><input id="req-filter-unread" type="checkbox" />未読のみ</label>
+              <button id="req-filter-reset" type="button" className="btn btn-ghost" style={{ fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}>リセット</button>
+            </div>
+            <div id="req-bulk" className="req-bulk">
+              <label className="req-check-all"><input type="checkbox" id="req-check-all" />表示中をすべて選択</label>
+              <span id="req-selected-count" className="req-sel-count"></span>
+              <button type="button" className="btn btn-ghost" id="req-mark-read" style={{ fontSize: '12px', padding: '5px 12px' }} disabled>既読にする</button>
+              <button type="button" className="btn btn-ghost" id="req-mark-unread" style={{ fontSize: '12px', padding: '5px 12px' }} disabled>未読に戻す</button>
             </div>
 
             <div id="requests-list"><p className="muted">読み込み中…</p></div>
