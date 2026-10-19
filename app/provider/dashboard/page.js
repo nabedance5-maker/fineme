@@ -505,6 +505,32 @@ const DASHBOARD_CSS = `
       .lbl-ed-tags > span { font-weight: 700; margin-right: 2px; }
       .lbl-tog { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(26,20,16,0.25); background: #fff; color: #1a1410; cursor: pointer; }
       .lbl-tog[aria-pressed="true"] { background: #1a1410; color: #fff; border-color: #1a1410; }
+      /* 体験→入会（2026-10-19） */
+      #tab-trial-funnel { color: #1a1410; }
+      .tf-bar-ctl { display: flex; gap: 10px; flex-wrap: wrap; }
+      .tf-bar-ctl label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 700; }
+      .tf-bar-ctl select { padding: 7px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      #tf-body { display: grid; gap: 16px; }
+      .tf-note { margin: 0; padding: 10px 12px; background: #fef3c7; border-radius: 10px; font-size: 12.5px; line-height: 1.7; }
+      .tf-funnel { display: grid; gap: 10px; }
+      .tf-step-head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+      .tf-step-head em { font-style: normal; font-weight: 700; font-size: 12px; }
+      .tf-bar { position: relative; height: 30px; background: #f1ede4; border-radius: 8px; overflow: hidden; }
+      .tf-bar i { position: absolute; inset: 0 auto 0 0; background: #c9a84c; border-radius: 8px; min-width: 4px; }
+      .tf-bar b { position: relative; display: block; line-height: 30px; padding-left: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .tf-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+      .tf-kpis div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; font-size: 12px; }
+      .tf-kpis b { font-size: 20px; font-variant-numeric: tabular-nums; }
+      .tf-kpis em { font-style: normal; font-size: 11px; }
+      .tf-staff { display: grid; gap: 4px; font-size: 12.5px; }
+      .tf-staff div { display: grid; grid-template-columns: 1.4fr 1fr 1fr 60px; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.12); font-variant-numeric: tabular-nums; }
+      .tf-list { display: grid; gap: 8px; }
+      .tf-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; }
+      .tf-row-main { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+      .tf-row-main b { font-size: 14px; }
+      .tf-row .btn { font-size: 12px; padding: 5px 12px; }
+      .tf-chip { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; color: #1a1410; white-space: nowrap; }
+      .tf-ok { background: #bbf7d0; } .tf-mid { background: #dbeafe; } .tf-ng { background: #fecaca; } .tf-wait { background: #fde68a; } .tf-off { background: #e5e7eb; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1165,6 +1191,79 @@ export default function ProviderDashboardPage() {
     }
     applyMemberPerms(provider);
 
+    // ── 体験→入会の追跡（でお要望 2026-10-19：hacomono差分 #8） ──
+    (function setupTrialFunnel() {
+      const box = document.getElementById('tf-body');
+      if (!box) return;
+      const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const STAGE = { membership: ['会員プランに入会', 'ok'], package: ['回数券を購入', 'ok'], returned: ['2回目に来店', 'mid'], not_yet: ['まだ入会していない', 'ng'], upcoming: ['体験の予定', 'wait'], unconfirmed: ['来店の記録なし', 'wait'], cancelled: ['キャンセル', 'off'] };
+      const ymd = d => (d ? String(d).slice(0, 10).replace(/-/g, '/') : '');
+      const jst = (offsetDays = 0) => new Date(Date.now() + 9 * 3600000 + offsetDays * 86400000).toISOString().slice(0, 10);
+      let data = null;
+      function range() {
+        const v = document.getElementById('tf-period')?.value || '90';
+        const t = new Date(Date.now() + 9 * 3600000);
+        // 終わりは先の日付まで含める（これからの体験の予定も一覧に出す）
+        if (v === 'this_month') return [`${t.toISOString().slice(0, 7)}-01`, jst(60)];
+        if (v === 'last_month') { const f = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - 1, 1)); const l = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 0)); return [f.toISOString().slice(0, 10), l.toISOString().slice(0, 10)]; }
+        if (v === 'year') return [`${t.getUTCFullYear()}-01-01`, jst(60)];
+        return [jst(-Number(v)), jst(60)];
+      }
+      async function load() {
+        box.innerHTML = '<p style="font-size:13px">読み込み中…</p>';
+        const [from, to] = range();
+        const days = document.getElementById('tf-days')?.value || '60';
+        const r = await fetch(`/api/provider/trial-funnel?from=${from}&to=${to}&days=${days}`, { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        if (!r.ok) { box.innerHTML = authErrorHtml(r); return; }
+        data = await r.json();
+        render();
+      }
+      const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '—');
+      function render() {
+        const s = data.summary;
+        const f = document.getElementById('tf-stage')?.value || '';
+        const list = data.items.filter(i => !f || (f === 'converted' ? i.membership_at || i.package_at : i.stage === f));
+        const steps = [
+          ['体験の申込', s.applied - s.cancelled, null],
+          ['体験に来店', s.visited, pct(s.visited, s.applied - s.cancelled)],
+          ['入会・回数券を購入', s.converted, pct(s.converted, s.visited)],
+        ];
+        const max = Math.max(1, steps[0][1]);
+        box.innerHTML = `
+          ${data.has_trial_menu ? '' : '<p class="tf-note">「体験メニュー」に設定したメニューがまだありません。メニュー設定で体験メニューに印を付けると、その予約を体験として数えます（今はメニュー名に「体験」「お試し」「トライアル」を含む予約だけを数えています）。</p>'}
+          <div class="tf-funnel">
+            ${steps.map(([label, n, rate]) => `<div class="tf-step"><div class="tf-step-head"><span>${label}</span>${rate ? `<em>前の段階から ${rate}</em>` : ''}</div><div class="tf-bar"><i style="width:${Math.round((n / max) * 100)}%"></i><b>${n}名</b></div></div>`).join('')}
+          </div>
+          <div class="tf-kpis">
+            <div><span>体験から入会した割合</span><b>${pct(s.converted, s.visited)}</b><em>来店した${s.visited}名のうち</em></div>
+            <div><span>会員プランに入会</span><b>${s.membership}名</b></div>
+            <div><span>回数券を購入</span><b>${s.package}名</b></div>
+            <div><span>入会までの日数</span><b>${s.avg_days != null ? `平均${s.avg_days}日` : '—'}</b></div>
+            <div><span>キャンセル</span><b>${s.cancelled}名</b></div>
+          </div>
+          ${data.by_staff.length ? `<div class="tf-staff"><b>担当スタッフ別</b>${data.by_staff.map(r => `<div><span>${e(r.staff)}</span><span>来店 ${r.visited}名</span><span>入会・購入 ${r.converted}名</span><span>${pct(r.converted, r.visited)}</span></div>`).join('')}</div>` : ''}
+          <div class="tf-list">
+            ${list.length ? list.map(i => {
+              const [label, cls] = STAGE[i.stage] || [i.stage, 'off'];
+              return `<div class="tf-row">
+                <div class="tf-row-main"><b>${e(i.name)}</b><span>${ymd(i.trial_date)} 体験・${e(i.menu)}${i.staff ? `・担当 ${e(i.staff)}` : ''}</span>
+                ${i.membership_at || i.package_at ? `<span>${i.days_to_convert}日後に${i.membership_at ? '入会' : '回数券を購入'}</span>` : i.stage === 'not_yet' || i.stage === 'returned' ? `<span>体験から${i.days_since}日</span>` : ''}</div>
+                <span class="tf-chip tf-${cls}">${label}</span>
+                ${i.stage === 'not_yet' || i.stage === 'returned' ? `<button type="button" class="btn btn-ghost" data-tf-open="${i.user_id}" data-name="${e(i.name)}">顧客情報・声かけ</button>` : ''}
+              </div>`;
+            }).join('') : '<p style="font-size:13px;margin:0">該当するお客様はいません。</p>'}
+          </div>`;
+        box.querySelectorAll('[data-tf-open]').forEach(b => b.addEventListener('click', () => {
+          if (typeof window.openCustomerModal !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          window.openCustomerModal(b.dataset.tfOpen, 'member', b.dataset.name);
+        }));
+      }
+      ['tf-period', 'tf-days'].forEach(id => document.getElementById(id)?.addEventListener('change', load));
+      document.getElementById('tf-stage')?.addEventListener('change', () => data && render());
+      document.querySelectorAll('[data-tab="trial-funnel"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'trial-funnel') load();
+    })();
+
     // ── 月会費の支払い状況（でお要望 2026-10-19：hacomonoの「月会費支払状況」相当） ──
     (function setupMembershipBilling() {
       const listEl = document.getElementById('mbill-list');
@@ -1823,7 +1922,8 @@ export default function ProviderDashboardPage() {
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
                 <span style="font-weight:700;font-size:14px">${esc(s.name)}</span>
-                ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>' : ''}
+                ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#1a1410;padding:1px 6px;border-radius:99px">看板</span>' : ''}
+                ${s.is_trial ? '<span style="font-size:11px;background:#1a1410;color:#fff;padding:1px 7px;border-radius:99px">体験</span>' : ''}
                 ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
               </div>
               <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration_minutes ? ' · ' + s.duration_minutes + '分' : (s.duration ? ' · ' + esc(s.duration) : '')}</div>
@@ -1841,6 +1941,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['name'].value = s.name || ''; editForm.elements['price'].value = s.price || '';
           editForm.elements['duration_minutes'].value = s.duration_minutes || '';
           editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
+          if (editForm.elements['is_trial']) editForm.elements['is_trial'].checked = !!s.is_trial;
           editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
           // 新フィールド
           if (editForm.elements['target_axis']) editForm.elements['target_axis'].value = s.target_axis || '';
@@ -1897,7 +1998,7 @@ export default function ProviderDashboardPage() {
         const suitablePathTypes = [...editForm.querySelectorAll('[name=suitable_path_types]:checked')].map(el => el.value);
         const benefitListRaw = fd.get('benefit_list_text') || '';
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
-        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
+        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null, is_trial: !!editForm.elements['is_trial']?.checked };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -14045,6 +14146,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="growth" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="area-demand">エリア需要</button>
+                  <button className="tab-btn" data-tab="trial-funnel">体験→入会</button>
                   <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
                   <button className="tab-btn" data-tab="referral">紹介報酬</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
@@ -15666,6 +15768,11 @@ export default function ProviderDashboardPage() {
                 <input type="checkbox" name="is_featured" id="is_featured" />
                 <label htmlFor="is_featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>おすすめプログラムとして表示する</label>
               </div>
+              {/* 体験メニュー（でお要望 2026-10-19：体験→入会の追跡の起点） */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <input type="checkbox" name="is_trial" id="is_trial" />
+                <label htmlFor="is_trial" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>体験メニュー（初めての方向け。「体験→入会」で入会につながったかを追えます）</label>
+              </div>
               <input type="hidden" name="_service_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit" className="btn" id="service-save-btn">保存</button>
@@ -16881,6 +16988,22 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* LTV/CAC：店舗単位の概算（メニュー別の紐づけデータが無いため店舗全体で算出） */}
+        {/* 体験→入会の追跡（でお要望 2026-10-19：hacomono差分 #8） */}
+        <div className="tab-pane" id="tab-trial-funnel">
+          <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>体験→入会</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>体験に来たお客様が、その後に会員プランへ入会したか・回数券を買ったかを追います。「まだ入会していない」お客様は、顧客情報から声かけできます。体験の予約は、メニュー設定で「体験メニュー」に印を付けたメニュー（または名前に「体験」「お試し」「トライアル」を含むメニュー）で数えます。</p>
+            </div>
+            <div className="tf-bar-ctl">
+              <label>体験した期間<select id="tf-period" defaultValue="90"><option value="30">直近30日</option><option value="90">直近90日</option><option value="this_month">今月</option><option value="last_month">先月</option><option value="year">今年</option></select></label>
+              <label>入会とみなす期間<select id="tf-days" defaultValue="60"><option value="30">体験から30日以内</option><option value="60">体験から60日以内</option><option value="90">体験から90日以内</option></select></label>
+              <label>お客様の絞り込み<select id="tf-stage"><option value="">すべて</option><option value="not_yet">まだ入会していない</option><option value="converted">入会・回数券を購入</option><option value="returned">2回目に来店（未入会）</option><option value="upcoming">体験の予定</option><option value="unconfirmed">来店の記録なし</option><option value="cancelled">キャンセル</option></select></label>
+            </div>
+            <div id="tf-body"></div>
+          </div>
+        </div>
+
         <div className="tab-pane" id="tab-ltv-cac">
           <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
             <div>
