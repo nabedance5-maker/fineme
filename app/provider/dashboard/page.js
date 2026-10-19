@@ -14,7 +14,8 @@ import Onboarding from './Onboarding';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
-import { withOperator } from './operator';
+import { withOperator, setOperator } from './operator';
+import { PERM_DEFS, ROLE_LABEL, permOfTab } from '@/lib/member-perms';
 import './fx.css';
 import { PREFECTURES as CP_PREFECTURES } from '@/lib/customer-profile';
 
@@ -398,6 +399,26 @@ const DASHBOARD_CSS = `
       .req-row.has-check { grid-template-columns: 28px 1.4fr 1.2fr auto; }
       .req-row .req-check { width: 18px; height: 18px; cursor: pointer; }
       .req-row.is-checked { background: rgba(201,168,76,0.08); }
+      /* スタッフのログインと権限（2026-10-19） */
+      .pd-member-badge { margin-top: 10px; padding: 8px 10px; border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+      .pd-member-badge span { color: #fff; font-size: 12px; font-weight: 700; display: flex; flex-direction: column; }
+      .pd-member-badge small { color: #fff; font-size: 10.5px; font-weight: 400; }
+      .pd-member-badge button { background: none; border: 1px solid rgba(255,255,255,0.35); color: #fff; font-size: 10.5px; border-radius: 6px; padding: 3px 6px; cursor: pointer; white-space: nowrap; }
+      .mb-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid rgba(26,20,16,0.1); border-radius: 10px; margin-bottom: 6px; color: #1a1410; }
+      .mb-row.is-off { opacity: .55; }
+      .mb-row.mb-owner { background: #faf8f3; }
+      .mb-main { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+      .mb-main b { font-size: 14px; }
+      .mb-row select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .mb-invite { display: grid; gap: 10px; padding: 14px; border: 1px dashed rgba(26,20,16,0.2); border-radius: 12px; color: #1a1410; }
+      .mb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+      .mb-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; }
+      .mb-grid input, .mb-grid select { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13.5px; color: #1a1410; background: #fff; }
+      .mb-perm-table { width: 100%; border-collapse: collapse; font-size: 13px; color: #1a1410; }
+      .mb-perm-table th, .mb-perm-table td { padding: 8px 10px; border-bottom: 1px solid rgba(26,20,16,0.08); text-align: center; }
+      .mb-perm-table th:first-child, .mb-perm-table td:first-child { text-align: left; }
+      .mb-perm-table td span { display: block; font-size: 11.5px; font-weight: 400; color: #1a1410; }
+      .mb-perm-table input { width: 18px; height: 18px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1002,6 +1023,133 @@ export default function ProviderDashboardPage() {
         location.reload();
       }
     });
+    // ── スタッフ個別ログインと権限（でお要望 2026-10-19：hacomonoの管理ユーザー・ロールレベル相当） ──
+    // スタッフのログインでは、役割ごとに許可されたメニューだけをサイドバーに残す（APIもmiddlewareで制限）。
+    function applyMemberPerms(prov) {
+      const m = prov?._member;
+      const badge = document.getElementById('pd-member-badge');
+      if (!m) { if (badge) badge.innerHTML = ''; return; }
+      if (m.name) setOperator(m.name);
+      if (badge) {
+        badge.innerHTML = `<div class="pd-member-badge"><span>${String(m.name || '').replace(/[<>&]/g, '')}<small>${ROLE_LABEL[m.role] || ''}</small></span><button type="button" id="pd-member-pw">パスワード変更</button></div>`;
+        document.getElementById('pd-member-pw')?.addEventListener('click', openMemberPasswordModal);
+      }
+      const catOf = Object.fromEntries(TAB_CATALOG.map(t => [t.key, t.category]));
+      let removedActive = false;
+      document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+        const key = btn.dataset.tab;
+        const perm = permOfTab(key, catOf[key]);
+        if (perm && !m.perms?.[perm]) {
+          if (btn.classList.contains('active')) removedActive = true;
+          btn.remove();
+          document.getElementById('tab-' + key)?.classList.remove('active');
+        }
+      });
+      window.__pdSyncRails?.();
+      const want = new URLSearchParams(location.search).get('tab');
+      if (removedActive || (want && !document.querySelector(`.tab-btn[data-tab="${want}"]`))) {
+        document.querySelector('.tab-btn[data-tab="today"]')?.click();
+      }
+    }
+    function openMemberPasswordModal() {
+      const ov = document.createElement('div');
+      ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+      ov.innerHTML = `<div class="cal-modal-card" style="max-width:380px">
+        <h3 style="margin:0 0 10px;font-size:16px">パスワード変更</h3>
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">新しいパスワード（8文字以上）</label>
+        <input type="password" data-pw1 autocomplete="new-password" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;margin-bottom:8px" />
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">もう一度</label>
+        <input type="password" data-pw2 autocomplete="new-password" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box" />
+        <p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button type="button" class="btn btn-ghost" data-cancel>やめる</button><button type="button" class="btn" data-ok>変更する</button></div>
+      </div>`;
+      document.body.appendChild(ov);
+      const close = () => ov.remove();
+      ov.addEventListener('click', e => { if (e.target === ov) close(); });
+      ov.querySelector('[data-cancel]').addEventListener('click', close);
+      ov.querySelector('[data-ok]').addEventListener('click', async () => {
+        const a = ov.querySelector('[data-pw1]').value, b = ov.querySelector('[data-pw2]').value;
+        const msg = ov.querySelector('[data-msg]');
+        if (a.length < 8) { msg.textContent = '8文字以上にしてください'; return; }
+        if (a !== b) { msg.textContent = '2つのパスワードが一致しません'; return; }
+        const { error } = await _sb.auth.updateUser({ password: a });
+        if (error) { msg.textContent = '変更できませんでした：' + error.message; return; }
+        close(); showToast('パスワードを変更しました');
+      });
+    }
+    applyMemberPerms(provider);
+
+    (function setupMembersTab() {
+      const listEl = document.getElementById('mb-list');
+      if (!listEl) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const escM = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      let data = null, staffOpts = [];
+      async function load() {
+        listEl.innerHTML = '<p class="muted" style="font-size:13px">読み込み中…</p>';
+        const [res, sres] = await Promise.all([fetch('/api/provider/members', { headers: H() }), fetch('/api/provider/staff', { headers: H() })]);
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        data = await res.json();
+        staffOpts = sres.ok ? await sres.json() : [];
+        const sel = document.getElementById('mb-staff');
+        if (sel) sel.innerHTML = '<option value="">（スタッフ登録と紐付けない）</option>' + staffOpts.map(s => `<option value="${s.id}">${escM(s.name)}</option>`).join('');
+        render();
+      }
+      function render() {
+        const rows = data.members.map(m => `<div class="mb-row${m.status === 'disabled' ? ' is-off' : ''}">
+            <div class="mb-main"><b>${escM(m.name)}</b><span>${escM(m.email)}</span><span>${m.accepted_at || m.last_seen_at ? `最終ログイン ${m.last_seen_at ? escM(new Date(m.last_seen_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : '—'}` : 'まだログインしていません'}${m.status === 'disabled' ? '・停止中' : ''}</span></div>
+            <select data-mb-role="${m.id}" ${data.me.id === m.id ? 'disabled' : ''}><option value="manager"${m.role === 'manager' ? ' selected' : ''}>店長</option><option value="staff"${m.role === 'staff' ? ' selected' : ''}>スタッフ</option></select>
+            <button type="button" class="btn btn-ghost" data-mb-status="${m.id}" data-next="${m.status === 'disabled' ? 'active' : 'disabled'}" ${data.me.id === m.id ? 'disabled' : ''} style="font-size:12px;padding:5px 10px">${m.status === 'disabled' ? '再開する' : 'ログインを止める'}</button>
+            <button type="button" class="btn btn-ghost" data-mb-del="${m.id}" ${data.me.id === m.id ? 'disabled' : ''} style="font-size:12px;padding:5px 10px;color:#b42318">削除</button>
+          </div>`).join('');
+        listEl.innerHTML = `<div class="mb-row mb-owner"><div class="mb-main"><b>オーナー（お店のアカウント）</b><span>${escM(data.owner_email)}</span><span>すべてのメニューを使えます</span></div></div>` + (rows || '<p class="muted" style="font-size:13px;margin:8px 0 0">まだスタッフのログインはありません。下から招待できます。</p>');
+        listEl.querySelectorAll('[data-mb-role]').forEach(sel => sel.addEventListener('change', () => patch(sel.dataset.mbRole, { role: sel.value }, '役割を変更しました')));
+        listEl.querySelectorAll('[data-mb-status]').forEach(b => b.addEventListener('click', () => patch(b.dataset.mbStatus, { status: b.dataset.next }, b.dataset.next === 'disabled' ? 'ログインを止めました' : 'ログインを再開しました')));
+        listEl.querySelectorAll('[data-mb-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このスタッフのログインを削除しますか？（これまでの操作ログは残ります）')) return;
+          const r = await fetch(`/api/provider/members/${b.dataset.mbDel}`, { method: 'DELETE', headers: H() });
+          const d = await r.json().catch(() => ({}));
+          showToast(r.ok ? '削除しました' : (d.error || '削除できませんでした')); load();
+        }));
+        renderPerms();
+      }
+      async function patch(id, body, okMsg) {
+        const r = await fetch(`/api/provider/members/${id}`, { method: 'PATCH', headers: H(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        showToast(r.ok ? okMsg : (d.error || '変更できませんでした')); load();
+      }
+      function renderPerms() {
+        const el = document.getElementById('mb-perms');
+        if (!el) return;
+        el.innerHTML = `<div style="overflow-x:auto"><table class="mb-perm-table"><thead><tr><th>メニュー</th><th>店長</th><th>スタッフ</th></tr></thead><tbody>${PERM_DEFS.map(p => `<tr>
+            <td><b>${escM(p.label)}</b><span>${escM(p.desc)}</span></td>
+            ${['manager', 'staff'].map(role => `<td><input type="checkbox" data-perm-role="${role}" data-perm-key="${p.key}" ${data.perms[role][p.key] ? 'checked' : ''} ${data.me.role === role ? 'disabled' : ''} /></td>`).join('')}
+          </tr>`).join('')}</tbody></table></div>`;
+        el.querySelectorAll('[data-perm-role]').forEach(cb => cb.addEventListener('change', async () => {
+          const role = cb.dataset.permRole;
+          const perms = { ...data.perms[role], [cb.dataset.permKey]: cb.checked };
+          const r = await fetch('/api/provider/role-permissions', { method: 'PUT', headers: H(), body: JSON.stringify({ role, perms }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { cb.checked = !cb.checked; showToast(d.error || '保存できませんでした'); return; }
+          data.perms[role] = d.perms;
+          showToast('権限を保存しました（反映まで最大1分ほどかかります）');
+        }));
+      }
+      document.getElementById('mb-invite')?.addEventListener('click', async e => {
+        const body = { email: document.getElementById('mb-email').value, name: document.getElementById('mb-name').value, role: document.getElementById('mb-role').value, staff_id: document.getElementById('mb-staff').value || null };
+        e.currentTarget.disabled = true;
+        const r = await fetch('/api/provider/members', { method: 'POST', headers: H(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        e.currentTarget.disabled = false;
+        if (!r.ok) { showToast(d.error || '招待できませんでした'); return; }
+        ['mb-email', 'mb-name'].forEach(id => { document.getElementById(id).value = ''; });
+        showToast(d.mail_error ? `招待しましたが、メールを送れませんでした。初期パスワード：${d.temp_password || '（既存のアカウント）'}` : '招待メールを送りました');
+        load();
+      });
+      document.querySelectorAll('[data-tab="members"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'members') load();
+    })();
+
 
     if (provider) {
       const fnCode = provider.referral_code || '';
@@ -13217,6 +13365,8 @@ export default function ProviderDashboardPage() {
             <div style={{ padding: '0 12px', marginBottom: 14 }}>
               <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>Fineme</p>
               <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>顧客管理システム</p>
+              {/* スタッフ個別ログインの時：ログイン中の人と役割（でお要望 2026-10-19） */}
+              <div id="pd-member-badge"></div>
             </div>
 
             {/* 2階層ナビ（2026-09-12・でお指摘：折りたたみ式は「どこが開閉できるのか分かりにくい」。
@@ -13297,6 +13447,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="line-channel" data-feature="line_channel">LINE連携<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
+                  <button className="tab-btn" data-tab="members">スタッフのログイン</button>
                   <button className="tab-btn" data-tab="activity-log" data-feature="activity_log">操作ログ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
                   <button className="tab-btn" data-tab="billing" style={{ borderLeft: '3px solid #2f4f8f' }}>Fineme利用契約</button>
@@ -16179,6 +16330,33 @@ export default function ProviderDashboardPage() {
         {/* 機能設定：店舗ごとに使う機能を選べるようにする（Phase 0・でお要望2026-09-11）。
             hacomono/STORES網羅計画で追加していく機能（スタッフ指名予約・POS・チェックイン等）は
             店舗ごとにニーズが違うため、一通り実装した上で店舗が選んで使える形にする。 */}
+        {/* スタッフのログインと権限（でお要望 2026-10-19） */}
+        <div className="tab-pane" id="tab-members">
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>スタッフのログイン</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>スタッフが自分のメールアドレスでログインできます。誰が操作したかが操作ログに自動で残り、役割ごとに使えるメニューを分けられます。お店のアカウント（オーナー）は、これまでどおりすべて使えます。</p>
+            </div>
+            <div id="mb-list"></div>
+            <div className="mb-invite">
+              <h3 style={{ margin: 0, fontSize: '14px' }}>スタッフを招待</h3>
+              <div className="mb-grid">
+                <label>お名前<input id="mb-name" type="text" maxLength={40} placeholder="例：山田 花子" /></label>
+                <label>メールアドレス<input id="mb-email" type="email" placeholder="例：hanako@example.com" /></label>
+                <label>役割<select id="mb-role" defaultValue="staff"><option value="staff">スタッフ</option><option value="manager">店長</option></select></label>
+                <label>スタッフ登録との紐付け<select id="mb-staff"><option value="">（スタッフ登録と紐付けない）</option></select></label>
+              </div>
+              <div><button type="button" className="btn" id="mb-invite">招待メールを送る</button></div>
+              <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>ログイン用の初期パスワードがメールで届きます。既にFinemeのアカウントを持っている人は、いつものパスワードでログインできます。</p>
+            </div>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: '10px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>役割ごとに使えるメニュー</h2>
+            <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>チェックを外したメニューは、その役割のスタッフのサイドバーに出ず、操作もできなくなります。ホーム（今日の業務・AI専属コンサル）と使い方は全員が使えます。</p>
+            <div id="mb-perms"></div>
+          </div>
+        </div>
+
         <div className="tab-pane" id="tab-features">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div>

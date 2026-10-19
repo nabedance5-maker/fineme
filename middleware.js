@@ -1,6 +1,54 @@
 import { NextResponse } from 'next/server'
+import { permOfApi, normalizePerms, PERM_DEFS } from './lib/member-perms'
 
-export function middleware(request) {
+// ── スタッフ個別ログインの権限チェック（でお要望 2026-10-19） ──
+// スタッフのログインで呼ばれた掲載者向けAPIを、役割ごとに許可されたメニュー分類だけに絞る。
+// トークンの署名検証は各APIが行う（ここで偽のトークンを通しても、API側で401になる）。
+const MEMBER_CACHE_MS = 30 * 1000
+const memberCache = new Map()
+function decodeSub(token) {
+  try {
+    const part = token.split('.')[1]
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((part.length + 3) % 4))
+    return JSON.parse(json).sub || null
+  } catch { return null }
+}
+async function memberPerms(sub) {
+  const hit = memberCache.get(sub)
+  if (hit && Date.now() - hit.at < MEMBER_CACHE_MS) return hit.value
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  let value = null
+  try {
+    const h = { apikey: key, Authorization: `Bearer ${key}` }
+    const r = await fetch(`${base}/rest/v1/provider_members?user_id=eq.${sub}&status=eq.active&select=provider_id,role&limit=1`, { headers: h })
+    const rows = r.ok ? await r.json() : []
+    if (rows[0]) {
+      const pr = await fetch(`${base}/rest/v1/provider_role_permissions?provider_id=eq.${rows[0].provider_id}&role=eq.${rows[0].role}&select=perms`, { headers: h })
+      const prow = pr.ok ? await pr.json() : []
+      value = normalizePerms(rows[0].role, prow[0]?.perms)
+    }
+  } catch { value = null }
+  memberCache.set(sub, { at: Date.now(), value })
+  return value
+}
+async function guardMemberApi(request) {
+  const auth = request.headers.get('authorization') || ''
+  if (!auth.startsWith('Bearer ')) return null
+  const perm = permOfApi(request.nextUrl.pathname, request.method)
+  if (!perm) return null
+  const sub = decodeSub(auth.slice(7))
+  if (!sub) return null
+  const perms = await memberPerms(sub)
+  if (!perms || perms[perm]) return null
+  const label = PERM_DEFS.find(p => p.key === perm)?.label || perm
+  return NextResponse.json({ error: `この操作（${label}）の権限がありません。店舗のオーナーに権限の変更を依頼してください`, code: 'no_permission', perm }, { status: 403 })
+}
+
+export async function middleware(request) {
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return (await guardMemberApi(request)) || NextResponse.next()
+  }
   const host = request.headers.get('host') || ''
   if (host === 'finemenextjs.vercel.app') {
     const url = request.nextUrl.clone()
@@ -45,5 +93,5 @@ export function middleware(request) {
 // リダイレクト）はどれも/api/*やNext内部アセットには関係ないため、対象から除外して
 // 無駄な処理を減らす。
 export const config = {
-  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)'],
+  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)', '/api/provider/:path*', '/api/reservations/:path*', '/api/reservations', '/api/stripe/connect/:path*'],
 }
