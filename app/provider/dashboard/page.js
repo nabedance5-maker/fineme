@@ -9419,7 +9419,7 @@ export default function ProviderDashboardPage() {
       if (!sel) return;
       sel.innerHTML = REQ_SEGS.map(sg => {
         const list = _allRequests.filter(sg.test);
-        if (sg.key !== 'all' && sg.key !== 'unread' && !list.length && reqSeg !== sg.key) return '';
+        // 0件の分類も出す（でお指摘 2026-10-19：出さないと、その分類自体が無いと勘違いされる）
         const unread = sg.key === 'unread' || sg.key === 'all' ? 0 : list.filter(r => !r.viewed_at).length;
         const label = sg.key === 'all' ? `ステータス：すべて（${list.length}）` : `${sg.label}（${list.length}${unread ? `・未読${unread}` : ''}）`;
         return `<option value="${sg.key}"${reqSeg === sg.key ? ' selected' : ''}>${label}</option>`;
