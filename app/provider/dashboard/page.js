@@ -462,6 +462,26 @@ const DASHBOARD_CSS = `
       .mbr-ex-row .btn { font-size: 12px; padding: 4px 10px; }
       .mbr-ex-row select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 12.5px; color: #1a1410; background: #fff; max-width: 100%; }
       .mbr-ex-note { font-size: 11.5px; }
+      /* メッセージ配信（2026-10-19） */
+      .bc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+      #tab-broadcast-email select, #tab-broadcast-email input[type="datetime-local"] { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .bc-h { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 12px; color: #1a1410; font-size: 13px; }
+      .bc-h-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .bc-chip { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 99px; background: #e5e7eb; color: #1a1410; }
+      .bc-chip.bc-sent { background: #bbf7d0; } .bc-chip.bc-scheduled { background: #fde68a; } .bc-chip.bc-failed { background: #fecaca; }
+      .bc-h-meta { font-size: 12px; }
+      .bc-h-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; }
+      .bc-h-stats span { display: flex; flex-direction: column; }
+      .bc-h-stats b { font-size: 17px; font-variant-numeric: tabular-nums; }
+      .bc-h-stats em { font-style: normal; font-size: 11px; }
+      .bc-h-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .bc-h-actions .btn { font-size: 12px; padding: 5px 12px; }
+      .bc-h-body { white-space: pre-wrap; font-size: 12.5px; padding: 10px 12px; background: #f6f4ef; border-radius: 8px; line-height: 1.7; }
+      .bc-h-detail { display: grid; gap: 8px; }
+      .bc-h-detail[hidden] { display: none; }
+      .bc-h-list { display: grid; gap: 2px; font-size: 12.5px; max-height: 320px; overflow-y: auto; }
+      .bc-h-list div { display: grid; grid-template-columns: minmax(100px, 1.2fr) 60px 1.6fr 1fr; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); }
+      @media (max-width: 640px) { .bc-h-list div { grid-template-columns: 1fr 1fr; } }
 `;
 
 export default function ProviderDashboardPage() {
@@ -7087,9 +7107,8 @@ export default function ProviderDashboardPage() {
         bindCustRows(box);
       }
 
-      // ── セグメント一斉メール配信（でお要望2026-09-14：hacomonoのメンバータイプ別
-      //    一斉メール配信相当機能。凝ったテンプレートは持たず、件名＋本文の自由記述を
-      //    「今の絞り込み結果全員」に送るだけのシンプルな実装） ──
+      // ── メッセージ配信（でお要望 2026-10-19：hacomono差分 #6。旧「一斉メール配信」を拡張）
+      //    LINE優先・LINEのみ・メールのみ、今すぐ／日時指定、宛先ごとの到達・開封・クリックを残す ──
       const bcCountEl = document.getElementById('bc-recipient-count');
       const bcSubjectEl = document.getElementById('bc-subject');
       const bcBodyEl = document.getElementById('bc-body');
@@ -7097,37 +7116,120 @@ export default function ProviderDashboardPage() {
       const bcMsgEl = document.getElementById('bc-msg');
       const bcFilterSel = document.getElementById('bc-filter');
       const bcSearchInput = document.getElementById('bc-search');
-      function bcCurrentFilterKw() {
-        return [bcFilterSel?.value || 'all', (bcSearchInput?.value || '').trim().toLowerCase()];
+      const bcChannelSel = document.getElementById('bc-channel');
+      const bcWhenSel = document.getElementById('bc-when');
+      const bcAtInput = document.getElementById('bc-at');
+      const BC_FILTER_LABEL = { all: 'すべてのお客様', line: 'LINE連携中', member: '会員プラン入会中', pkg: '有効な回数券あり', recent: '30日以内に来店', overdue: '来店の目安を過ぎた', dormant: '休眠', bday: '今月が誕生月', custlist: '顧客一覧の今の絞り込み' };
+      function bcRows() {
+        const preset = bcFilterSel?.value || 'all';
+        const kw = (bcSearchInput?.value || '').trim().toLowerCase();
+        const nowMonth = new Date(Date.now() + 9 * 3600000).getUTCMonth() + 1;
+        const base = preset === 'custlist' ? currentFilteredMemberRows() : allItems.filter(c => {
+          if (kw && !matchesCustomer(kw, c.customer_name, c.member_number, c.phone)) return false;
+          if (preset === 'line') return !!c.line_any;
+          if (preset === 'member') return !!c.membership_active;
+          if (preset === 'pkg') return (c.packages_active || 0) > 0;
+          if (preset === 'recent') return c.last_visit && (Date.now() - new Date(c.last_visit).getTime()) / 86400000 <= 30;
+          if (preset === 'overdue') return (typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0) || (typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0);
+          if (preset === 'dormant') return c.status === 'dormant' || c.status === 'churned';
+          if (preset === 'bday') return c.birthday && Number(c.birthday.slice(5, 7)) === nowMonth;
+          return true;
+        });
+        const seen = new Map();
+        base.forEach(c => { if (c.user_id && !seen.has(c.user_id)) seen.set(c.user_id, c); });
+        return [...seen.values()];
       }
       function updateBroadcastCount() {
         if (!bcCountEl) return;
-        const [filter, kw] = bcCurrentFilterKw();
-        const n = currentFilteredMemberRows(filter, kw).length;
-        bcCountEl.textContent = `今の絞り込み条件：${n}名に送信されます`;
+        const rows = bcRows();
+        const line = rows.filter(c => c.line_any).length;
+        const ch = bcChannelSel?.value || 'line_then_email';
+        const note = ch === 'email' ? 'メールアドレスが無い方には届きません' : ch === 'line' ? `LINEで届くのは約${line}名です（LINE未連携の方には届きません）` : `うちLINE連携中 ${line}名にはLINE、それ以外の方にはメールで届きます`;
+        bcCountEl.textContent = `送る相手：${rows.length}名（${note}）`;
+        const subjWrap = document.getElementById('bc-subject-wrap');
+        if (subjWrap) subjWrap.style.display = ch === 'line' ? 'none' : '';
+        if (bcAtInput) bcAtInput.style.display = bcWhenSel?.value === 'at' ? '' : 'none';
+        if (bcSendBtn) bcSendBtn.textContent = bcWhenSel?.value === 'at' ? 'この内容で配信を予約する' : 'この内容で今すぐ配信する';
       }
-      bcFilterSel?.addEventListener('change', updateBroadcastCount);
+      [bcFilterSel, bcChannelSel, bcWhenSel].forEach(el => el?.addEventListener('change', updateBroadcastCount));
       bcSearchInput?.addEventListener('input', updateBroadcastCount);
       bcSendBtn?.addEventListener('click', async () => {
+        const channel = bcChannelSel?.value || 'line_then_email';
         const subject = bcSubjectEl?.value.trim();
         const body_text = bcBodyEl?.value.trim();
-        const [filter, kw] = bcCurrentFilterKw();
-        const userIds = currentFilteredMemberRows(filter, kw).map(c => c.user_id).filter(Boolean);
-        if (!subject || !body_text) { showToast('件名と本文を入力してください'); return; }
-        if (!userIds.length) { showToast('送信対象がいません'); return; }
-        if (!confirm(`${userIds.length}名に一斉メールを送信します。よろしいですか？（取り消せません）`)) return;
+        const userIds = bcRows().map(c => c.user_id);
+        const at = bcWhenSel?.value === 'at' ? bcAtInput?.value : '';
+        if (!body_text) { showToast('本文を入力してください'); return; }
+        if (channel !== 'line' && !subject) { showToast('メールの件名を入力してください'); return; }
+        if (!userIds.length) { showToast('送る相手がいません'); return; }
+        if (bcWhenSel?.value === 'at' && !at) { showToast('配信する日時を選んでください'); return; }
+        const whenText = at ? `${at.replace('T', ' ').replace(/-/g, '/')}に` : '今すぐ';
+        if (!confirm(`${userIds.length}名に${whenText}配信します。よろしいですか？${at ? '' : '（取り消せません）'}`)) return;
         bcSendBtn.disabled = true;
-        if (bcMsgEl) { bcMsgEl.style.color = ''; bcMsgEl.textContent = '送信中…'; }
-        const res = await fetch('/api/provider/customers/broadcast-email', {
-          method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_ids: userIds, subject, body_text }),
+        if (bcMsgEl) bcMsgEl.textContent = at ? '予約しています…' : '配信しています…（人数が多いと1分ほどかかります）';
+        const label = [BC_FILTER_LABEL[bcFilterSel?.value || 'all'], (bcSearchInput?.value || '').trim() && `「${bcSearchInput.value.trim()}」で検索`].filter(Boolean).join('・');
+        const res = await fetch('/api/provider/broadcasts', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ channel, subject, body_text, user_ids: userIds, segment_label: label, scheduled_at: at ? new Date(at).toISOString() : null }),
         });
         bcSendBtn.disabled = false;
-        if (!res.ok) { const e = await res.json().catch(() => ({})); if (bcMsgEl) { bcMsgEl.style.color = '#ef4444'; bcMsgEl.textContent = 'エラー: ' + (e.error || '不明'); } return; }
-        const d = await res.json();
-        if (bcMsgEl) { bcMsgEl.style.color = '#4ade80'; bcMsgEl.textContent = `✓ ${d.sent}名に送信しました（メール未登録等で${d.skipped}名はスキップ）`; }
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { if (bcMsgEl) bcMsgEl.textContent = d.error || '配信できませんでした'; return; }
+        if (bcMsgEl) bcMsgEl.textContent = d.scheduled ? `予約しました（${new Date(d.scheduled_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}に配信）` : `配信しました：LINE ${d.line_sent}名・メール ${d.email_sent}名${d.skipped + d.failed ? `（届けられなかった方 ${d.skipped + d.failed}名）` : ''}`;
         if (bcSubjectEl) bcSubjectEl.value = '';
         if (bcBodyEl) bcBodyEl.value = '';
+        loadBroadcastHistory();
       });
+
+      const BC_STATUS = { scheduled: '予約中', sending: '配信中', sent: '配信済み', cancelled: '取り消し', failed: 'エラー' };
+      const BC_CH = { line: 'LINEのみ', email: 'メールのみ', line_then_email: 'LINE優先（無い方はメール）' };
+      const fmtDT = s => s ? new Date(s).toLocaleString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      async function loadBroadcastHistory() {
+        const el = document.getElementById('bc-history');
+        if (!el) return;
+        const res = await fetch('/api/provider/broadcasts', { headers: authHeaders() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { el.innerHTML = '<p style="font-size:13px;margin:0">まだ配信はありません。</p>'; return; }
+        el.innerHTML = rows.map(b => {
+          const reached = b.line_sent + b.email_sent;
+          return `<div class="bc-h">
+            <div class="bc-h-top"><span class="bc-chip bc-${b.status}">${BC_STATUS[b.status] || b.status}</span><b>${esc(b.subject || b.body_text.slice(0, 30))}</b></div>
+            <div class="bc-h-meta">${[b.status === 'scheduled' ? `${fmtDT(b.scheduled_at)}に配信予定` : fmtDT(b.sent_at || b.created_at), BC_CH[b.channel], b.segment_label, b.created_by].filter(Boolean).map(esc).join('・')}</div>
+            ${b.status === 'sent' ? `<div class="bc-h-stats">
+              <span>送る相手<b>${b.target_count}</b></span><span>届いた<b>${reached}</b><em>LINE ${b.line_sent}・メール ${b.email_sent}</em></span>
+              <span>メールを開いた<b>${b.opened}</b><em>${b.email_sent ? `${Math.round(b.opened / Math.max(1, b.email_sent) * 100)}%・目安` : '—'}</em></span>
+              <span>リンクを押した<b>${b.clicked}</b><em>${reached ? `${Math.round(b.clicked / reached * 100)}%` : '—'}</em></span>
+              <span>届けられなかった<b>${b.skipped + b.failed}</b></span></div>` : b.status === 'scheduled' ? `<div class="bc-h-meta">送る相手 ${b.planned_count}名</div>` : ''}
+            <div class="bc-h-actions">
+              ${b.status === 'sent' || b.status === 'scheduled' ? `<button type="button" class="btn btn-ghost" data-bc-detail="${b.id}">${b.status === 'scheduled' ? '本文と送る相手を見る' : '宛先ごとの結果を見る'}</button>` : ''}
+              ${b.status === 'scheduled' ? `<button type="button" class="btn btn-ghost" data-bc-cancel="${b.id}">予約を取り消す</button>` : ''}
+            </div>
+            <div class="bc-h-detail" data-bc-box="${b.id}" hidden></div>
+          </div>`;
+        }).join('');
+        el.querySelectorAll('[data-bc-cancel]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この配信の予約を取り消しますか？')) return;
+          const r = await fetch(`/api/provider/broadcasts/${btn.dataset.bcCancel}`, { method: 'DELETE', headers: authHeaders() });
+          const d = await r.json().catch(() => ({}));
+          showToast(r.ok ? '予約を取り消しました' : (d.error || '取り消せませんでした'));
+          loadBroadcastHistory();
+        }));
+        el.querySelectorAll('[data-bc-detail]').forEach(btn => btn.addEventListener('click', async () => {
+          const box = el.querySelector(`[data-bc-box="${btn.dataset.bcDetail}"]`);
+          if (!box) return;
+          if (!box.hidden) { box.hidden = true; return; }
+          box.hidden = false; box.innerHTML = '読み込み中…';
+          const b = rows.find(x => x.id === btn.dataset.bcDetail);
+          const r = await fetch(`/api/provider/broadcasts/${btn.dataset.bcDetail}`, { headers: authHeaders() });
+          if (!r.ok) { box.innerHTML = '読み込めませんでした'; return; }
+          const d = await r.json();
+          const bodyHtml = `<div class="bc-h-body">${esc(b?.body_text || '')}</div>`;
+          if (b?.status === 'scheduled') { box.innerHTML = bodyHtml + `<div class="bc-h-list">${d.planned.map(p => `<div><span>${esc(p.name)}</span></div>`).join('')}</div>`; return; }
+          const ST = { sent: '届いた', skipped: '届けられなかった', failed: 'エラー', optout: '配信停止中' };
+          box.innerHTML = bodyHtml + `<div class="bc-h-list">${d.recipients.map(x => `<div><span>${esc(x.name)}</span><span>${x.channel === 'line' ? 'LINE' : x.channel === 'email' ? 'メール' : '—'}</span><span>${ST[x.status] || x.status}${x.reason ? `（${esc(x.reason)}）` : ''}</span><span>${x.clicked_at ? 'リンクを押した' : x.opened_at ? '開いた' : ''}</span></div>`).join('')}</div>`;
+        }));
+      }
 
       // ── 顧客詳細ポップアップ（一覧の行クリックで開く。バッジ・固定メモ・声かけ・
       //    担当割当・来店記録追加/履歴/AI傾向分析をここに集約） ──
@@ -8281,7 +8383,7 @@ export default function ProviderDashboardPage() {
 
       // 一斉メール配信タブ（でお要望2026-09-16：顧客管理から独立させた）を直接開いた
       // 場合でも、送信対象を計算できるよう顧客データを読み込んでおく。
-      async function loadForBroadcastTab() { if (!allItems.length) await loadAll(); updateBroadcastCount(); }
+      async function loadForBroadcastTab() { loadBroadcastHistory(); if (!allItems.length) await loadAll(); updateBroadcastCount(); }
       document.querySelectorAll('[data-tab="broadcast-email"]').forEach(btn => btn.addEventListener('click', loadForBroadcastTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'broadcast-email') loadForBroadcastTab();
 
@@ -13714,7 +13816,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
-                  <button className="tab-btn" data-tab="broadcast-email">一斉メール配信</button>
+                  <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
                   <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
@@ -15686,34 +15788,64 @@ export default function ProviderDashboardPage() {
             ページ、対象者の絞り込み方が無い」を受けて、このタブ自身に絞り込みUIを追加
             （顧客管理タブの絞り込みとは独立。他タブへ行き来させない）。 */}
         <div className="tab-pane" id="tab-broadcast-email">
-          <div className="card stack" style={{ padding: '24px', gap: 10 }}>
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>一斉メール配信</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                下の絞り込み条件に一致する、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>メッセージ配信</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: '1.7', color: '#1a1410' }}>
+                お客様にLINEかメールでお知らせを送ります。今すぐ、または日時を決めて予約できます。配信のあと、届いた人数・メールを開いた人数・本文のリンクを押した人数が下の履歴に出ます。メールには配信停止のリンクが自動で付き、停止した方には送りません。
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <label className="muted" style={{ fontSize: '13px' }}>対象：</label>
-              <select id="bc-filter">
-                <option value="all">すべて</option>
-                <option value="user-overdue">ユーザー想定超過のみ</option>
-                <option value="store-overdue">店舗推奨超過のみ</option>
-                <option value="dormant">休眠のみ</option>
-              </select>
-              <input id="bc-search" type="text" placeholder="お客様の名前で絞り込み" style={{ padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px', minWidth: '180px' }} />
+            <div className="bc-grid">
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label>送る相手</label>
+                <select id="bc-filter">
+                  <option value="all">すべてのお客様</option>
+                  <option value="line">LINE連携中のお客様</option>
+                  <option value="member">会員プランに入会中</option>
+                  <option value="pkg">有効な回数券がある</option>
+                  <option value="recent">30日以内に来店した</option>
+                  <option value="overdue">来店の目安を過ぎた</option>
+                  <option value="dormant">休眠しているお客様</option>
+                  <option value="bday">今月が誕生月</option>
+                  <option value="custlist">顧客一覧で今絞り込んでいるお客様</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label>名前・電話番号でさらに絞り込む（任意）</label>
+                <input id="bc-search" type="text" placeholder="例：山田" />
+              </div>
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label>送り方</label>
+                <select id="bc-channel">
+                  <option value="line_then_email">LINE優先（LINEが無い方にはメール）</option>
+                  <option value="line">LINEだけ</option>
+                  <option value="email">メールだけ</option>
+                </select>
+              </div>
             </div>
-            <p id="bc-recipient-count" className="muted" style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}></p>
-            <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>件名</label>
+            <p id="bc-recipient-count" style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: '#1a1410' }}></p>
+            <div className="form-field" id="bc-subject-wrap" style={{ marginBottom: 0 }}>
+              <label>メールの件名</label>
               <input type="text" id="bc-subject" placeholder="例：秋の特別キャンペーンのご案内" />
             </div>
             <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>本文</label>
-              <textarea id="bc-body" style={{ width: '100%', minHeight: '110px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="お客様への案内文を入力してください"></textarea>
+              <label>本文（LINEとメールで同じ文が届きます。URLを書くと、押した人数を数えます）</label>
+              <textarea id="bc-body" style={{ width: '100%', minHeight: '140px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="お客様への案内文を入力してください"></textarea>
             </div>
-            <button type="button" className="btn" id="bc-send-btn" style={{ width: 'fit-content' }}>この絞り込み結果に送信する</button>
-            <p id="bc-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <select id="bc-when" aria-label="配信のタイミング">
+                <option value="now">今すぐ配信</option>
+                <option value="at">日時を指定して予約</option>
+              </select>
+              <input type="datetime-local" id="bc-at" style={{ display: 'none' }} />
+            </div>
+            <button type="button" className="btn" id="bc-send-btn" style={{ width: 'fit-content' }}>この内容で今すぐ配信する</button>
+            <p id="bc-msg" style={{ fontSize: '13px', margin: 0, fontWeight: 700, color: '#1a1410' }}></p>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: 12 }}>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>配信の履歴と結果</h3>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>「メールを開いた」は、メールの画像を読み込んだ人の数です。画像を表示しない設定の方は数えられないため目安です（LINEは開いたかどうかを取得できないため、リンクを押した人数で反応を見てください）。</p>
+            <div id="bc-history" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
           </div>
         </div>
 

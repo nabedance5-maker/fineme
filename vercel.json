@@ -29,7 +29,8 @@
     { "path": "/api/cron/provider-log-toolkit-announce", "schedule": "0 1 * * *" },
     { "path": "/api/cron/generate-slots", "schedule": "0 4 * * *" },
     { "path": "/api/cron/grant-subscription-tickets", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/shift-deadline", "schedule": "0 0 * * *" }
+    { "path": "/api/cron/shift-deadline", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/broadcasts", "schedule": "*/10 * * * *" }
   ],
   "redirects": [
     {
