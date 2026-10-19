@@ -7,6 +7,7 @@ import { storeBookingAction, fetchLastMenu, lastMenuLine } from '@/lib/log-reboo
 import { resolveLineTarget } from '@/lib/line-channel';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { providerCustomerIds } from '@/lib/broadcast';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -30,15 +31,9 @@ async function __POST(request, { params }) {
   const userId = params.user_id;
 
   // 対象ユーザーが実際にこの店舗にNew Me Logを紐づけているか確認（他店舗の顧客への送信を防ぐ）
-  const { data: log } = await supabase
-    .from('user_service_logs')
-    .select('id')
-    .eq('provider_slug', provider.slug)
-    .eq('user_id', userId)
-    .eq('active', true)
-    .limit(1)
-    .single();
-  if (!log) return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
+  // この店舗の顧客一覧に出るお客様（New Me Log・予約・入会・回数券・カルテ・基本情報）だけに送れる
+  // （以前はNew Me Log連携者だけで、予約だけのお客様には送れなかった。2026-10-19修正）
+  if (!(await providerCustomerIds(supabase, provider)).has(userId)) return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
 
   const { data: profile } = await supabase.from('profiles').select('line_user_id').eq('id', userId).single();
   const target = await resolveLineTarget(supabase, {
