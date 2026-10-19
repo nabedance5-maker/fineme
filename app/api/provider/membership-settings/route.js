@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeFormFields } from '@/lib/membership-form';
+import { normalizeQuestions } from '@/lib/surveys';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -26,6 +28,8 @@ export async function GET(request) {
     prorate_first_month: data?.prorate_first_month ?? true,
     require_id_document: data?.require_id_document ?? true,
     allow_online_requests: data?.allow_online_requests ?? true,
+    form_fields: normalizeFormFields(data?.form_fields),
+    custom_fields: data?.custom_fields || [],
     terms_text: data?.terms_text || '',
   });
 }
@@ -43,6 +47,14 @@ async function __PATCH(request) {
   if ('require_id_document' in body) update.require_id_document = !!body.require_id_document;
   if ('allow_online_requests' in body) update.allow_online_requests = !!body.allow_online_requests;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;
+  // 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
+  if ('form_fields' in body) update.form_fields = normalizeFormFields(body.form_fields);
+  if ('custom_fields' in body) {
+    const q = normalizeQuestions((body.custom_fields || []).filter(x => x?.type !== 'rating'));
+    if (q.error) return Response.json({ error: q.error }, { status: 400 });
+    if (q.questions.length > 10) return Response.json({ error: '追加の質問は10個までです' }, { status: 400 });
+    update.custom_fields = q.questions;
+  }
 
   const { error } = await supabase.from('provider_membership_settings').upsert(update);
   if (error) return Response.json({ error: error.message }, { status: 500 });

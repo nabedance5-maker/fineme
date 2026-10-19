@@ -40,6 +40,7 @@ export default function JoinMembershipPage() {
   const [form, setForm] = useState({
     last_name: '', first_name: '', birthdate: '', postal_code: '', address: '', phone: '',
     plan_id: '', enrollment_date: '', locker_id: '', option_ids: [], coupon_code: '',
+    last_name_kana: '', first_name_kana: '', gender: '', custom_answers: {},
     emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
     agree: false,
   });
@@ -119,6 +120,22 @@ export default function JoinMembershipPage() {
     );
   }
 
+  // 店舗が決めた入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
+  const FF = info?.form_fields || {};
+  const shown = k => (FF[k] || 'optional') !== 'hidden';
+  const req = k => FF[k] === 'required';
+  const mark = k => (req(k) ? ' *' : '');
+  const customFields = info?.custom_fields || [];
+  const setCustom = (id, v) => setForm(f => ({ ...f, custom_answers: { ...f.custom_answers, [id]: v } }));
+  const toggleCustom = (id, opt) => setForm(f => { const cur = Array.isArray(f.custom_answers[id]) ? f.custom_answers[id] : []; return { ...f, custom_answers: { ...f.custom_answers, [id]: cur.includes(opt) ? cur.filter(x => x !== opt) : [...cur, opt] } }; });
+  const hasStep3 = shown('emergency') || customFields.length > 0;
+  const step1Ok = form.last_name && form.first_name && form.phone
+    && (!req('kana') || (form.last_name_kana.trim() && form.first_name_kana.trim()))
+    && (!req('gender') || form.gender) && (!req('birthdate') || form.birthdate)
+    && (!req('postal_code') || form.postal_code.replace(/\D/g, '').length === 7) && (!req('address') || form.address.trim());
+  const step3Ok = (!req('emergency') || (form.emergency_contact_name.trim() && form.emergency_contact_phone.trim()))
+    && customFields.every(q => !q.required || (Array.isArray(form.custom_answers[q.id]) ? form.custom_answers[q.id].length : String(form.custom_answers[q.id] ?? '').trim()));
+
   const selectedPlan = info?.plans.find(p => p.id === form.plan_id);
   const selectedLocker = info?.lockers?.find(l => l.id === form.locker_id);
   // ロッカーを選んだ場合は同じサブスクリプションの明細として一緒に課金されるため、
@@ -138,6 +155,7 @@ export default function JoinMembershipPage() {
       body: JSON.stringify({
         provider_id: info.provider_id, plan_id: form.plan_id, enrollment_date: form.enrollment_date, locker_id: form.locker_id || null,
         option_ids: form.option_ids, coupon_code: coupon ? form.coupon_code.trim() : null,
+        last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, gender: form.gender || null, custom_answers: form.custom_answers,
         last_name: form.last_name, first_name: form.first_name, birthdate: form.birthdate || null, postal_code: form.postal_code, address: form.address, phone: form.phone,
         emergency_contact_name: form.emergency_contact_name, emergency_contact_phone: form.emergency_contact_phone, emergency_contact_relation: form.emergency_contact_relation,
         terms_snapshot: info.terms_text || '（この店舗は規約テキストを設定していません）',
@@ -175,11 +193,24 @@ export default function JoinMembershipPage() {
               <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>姓 *</label><input style={INPUT} value={form.last_name} onChange={e => set('last_name', e.target.value)} /></div>
               <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>名 *</label><input style={INPUT} value={form.first_name} onChange={e => set('first_name', e.target.value)} /></div>
             </div>
-            <div style={FIELD}><label style={LABEL}>生年月日</label><input type="date" style={INPUT} value={form.birthdate} onChange={e => set('birthdate', e.target.value)} /></div>
-            <div style={FIELD}><label style={LABEL}>郵便番号</label><input style={INPUT} value={form.postal_code} onChange={e => set('postal_code', e.target.value)} placeholder="123-4567" /></div>
-            <div style={FIELD}><label style={LABEL}>ご住所</label><input style={INPUT} value={form.address} onChange={e => set('address', e.target.value)} /></div>
+            {shown('kana') && (
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>セイ{mark('kana')}</label><input style={INPUT} value={form.last_name_kana} onChange={e => set('last_name_kana', e.target.value)} placeholder="ヤマダ" /></div>
+                <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>メイ{mark('kana')}</label><input style={INPUT} value={form.first_name_kana} onChange={e => set('first_name_kana', e.target.value)} placeholder="ハナコ" /></div>
+              </div>
+            )}
+            {shown('gender') && (
+              <div style={FIELD}><label style={LABEL}>性別{mark('gender')}</label>
+                <select style={INPUT} value={form.gender} onChange={e => set('gender', e.target.value)}>
+                  <option value="">選択してください</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他・回答しない</option>
+                </select>
+              </div>
+            )}
+            {shown('birthdate') && <div style={FIELD}><label style={LABEL}>生年月日{mark('birthdate')}</label><input type="date" style={INPUT} value={form.birthdate} onChange={e => set('birthdate', e.target.value)} /></div>}
+            {shown('postal_code') && <div style={FIELD}><label style={LABEL}>郵便番号{mark('postal_code')}</label><input style={INPUT} value={form.postal_code} onChange={e => set('postal_code', e.target.value)} placeholder="123-4567" /></div>}
+            {shown('address') && <div style={FIELD}><label style={LABEL}>ご住所{mark('address')}</label><input style={INPUT} value={form.address} onChange={e => set('address', e.target.value)} /></div>}
             <div style={FIELD}><label style={LABEL}>電話番号 *</label><input style={INPUT} value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
-            <button style={BTN} onClick={() => setStep(2)} disabled={!form.last_name || !form.first_name || !form.phone}>次へ</button>
+            <button style={BTN} onClick={() => setStep(2)} disabled={!step1Ok}>次へ</button>
           </div>
         )}
 
@@ -232,21 +263,47 @@ export default function JoinMembershipPage() {
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={BTN_GHOST} onClick={() => setStep(1)}>戻る</button>
-              <button style={BTN} onClick={() => setStep(3)} disabled={!form.plan_id || !form.enrollment_date || (form.coupon_code.trim() && !coupon)}>次へ</button>
+              <button style={BTN} onClick={() => setStep(hasStep3 ? 3 : 4)} disabled={!form.plan_id || !form.enrollment_date || (form.coupon_code.trim() && !coupon)}>次へ</button>
             </div>
           </div>
         )}
 
         {step === 3 && (
           <div>
-            <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 6px' }}>緊急連絡先</h2>
-            <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px' }}>万が一の際にご連絡する先です。</p>
-            <div style={FIELD}><label style={LABEL}>お名前</label><input style={INPUT} value={form.emergency_contact_name} onChange={e => set('emergency_contact_name', e.target.value)} /></div>
-            <div style={FIELD}><label style={LABEL}>続柄</label><input style={INPUT} value={form.emergency_contact_relation} onChange={e => set('emergency_contact_relation', e.target.value)} placeholder="例：配偶者・親" /></div>
-            <div style={FIELD}><label style={LABEL}>電話番号</label><input style={INPUT} value={form.emergency_contact_phone} onChange={e => set('emergency_contact_phone', e.target.value)} /></div>
+            {shown('emergency') && (
+              <>
+                <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 6px' }}>緊急連絡先{req('emergency') ? '' : '（任意）'}</h2>
+                <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px' }}>万が一の際にご連絡する先です。</p>
+                <div style={FIELD}><label style={LABEL}>お名前{mark('emergency')}</label><input style={INPUT} value={form.emergency_contact_name} onChange={e => set('emergency_contact_name', e.target.value)} /></div>
+                <div style={FIELD}><label style={LABEL}>続柄</label><input style={INPUT} value={form.emergency_contact_relation} onChange={e => set('emergency_contact_relation', e.target.value)} placeholder="例：配偶者・親" /></div>
+                <div style={FIELD}><label style={LABEL}>電話番号{mark('emergency')}</label><input style={INPUT} value={form.emergency_contact_phone} onChange={e => set('emergency_contact_phone', e.target.value)} /></div>
+              </>
+            )}
+            {customFields.length > 0 && (
+              <>
+                <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: shown('emergency') ? '24px 0 16px' : '0 0 16px' }}>お店からの質問</h2>
+                {customFields.map(q => (
+                  <div key={q.id} style={FIELD}>
+                    <label style={LABEL}>{q.label}{q.required ? ' *' : ''}</label>
+                    {q.type === 'text' && <textarea style={{ ...INPUT, minHeight: '80px', fontFamily: 'inherit' }} value={form.custom_answers[q.id] || ''} onChange={e => setCustom(q.id, e.target.value)} maxLength={2000} />}
+                    {q.type === 'single' && (
+                      <select style={INPUT} value={form.custom_answers[q.id] || ''} onChange={e => setCustom(q.id, e.target.value)}>
+                        <option value="">選択してください</option>
+                        {q.options.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    )}
+                    {q.type === 'multi' && q.options.map(o => (
+                      <label key={o} style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '6px 0', fontSize: '14px', color: '#fff', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={(form.custom_answers[q.id] || []).includes(o)} onChange={() => toggleCustom(q.id, o)} />{o}
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </>
+            )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={BTN_GHOST} onClick={() => setStep(2)}>戻る</button>
-              <button style={BTN} onClick={() => setStep(4)}>次へ</button>
+              <button style={BTN} onClick={() => setStep(4)} disabled={!step3Ok}>次へ</button>
             </div>
           </div>
         )}
@@ -260,7 +317,7 @@ export default function JoinMembershipPage() {
             </p>
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setIdFile(e.target.files?.[0] || null)} style={{ color: '#e8e4dc', marginBottom: '16px' }} />
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={BTN_GHOST} onClick={() => setStep(3)}>戻る</button>
+              <button style={BTN_GHOST} onClick={() => setStep(hasStep3 ? 3 : 2)}>戻る</button>
               <button style={BTN} onClick={() => setStep(5)} disabled={info?.require_id_document && !idFile}>次へ</button>
             </div>
           </div>

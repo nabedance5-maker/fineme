@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { hasFeature } from '@/lib/feature-flags';
+import { normalizeFormFields } from '@/lib/membership-form';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -23,7 +24,7 @@ export async function GET(request, { params }) {
 
   const [{ data: plans }, { data: settings }, { data: lockers }, { data: options }, { count: couponCount }] = await Promise.all([
     supabase.from('provider_membership_plans').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
-    supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text, form_fields, custom_fields').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_lockers').select('id, name, monthly_fee').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_options').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_discounts').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('active', true).not('code', 'is', null),
@@ -47,5 +48,7 @@ export async function GET(request, { params }) {
     lockers: availableLockers,
     options: options || [],
     has_coupons: (couponCount || 0) > 0,
+    form_fields: normalizeFormFields(settings?.form_fields),
+    custom_fields: settings?.custom_fields || [],
   });
 }

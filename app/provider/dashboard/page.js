@@ -15,6 +15,7 @@ import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
 import { withOperator, setOperator } from './operator';
+import { FORM_FIELDS, FIELD_STATES } from '@/lib/membership-form';
 import { PERM_DEFS, ROLE_LABEL, permOfTab } from '@/lib/member-perms';
 import './fx.css';
 import { PREFECTURES as CP_PREFECTURES } from '@/lib/customer-profile';
@@ -564,6 +565,19 @@ const DASHBOARD_CSS = `
       .sv-text { padding: 8px 10px; background: #f8f6f1; border-radius: 8px; } .sv-text p { margin: 0 0 2px; white-space: pre-wrap; line-height: 1.7; } .sv-text span { font-size: 11.5px; }
       .sv-who { display: flex; gap: 10px; align-items: center; font-size: 12.5px; padding: 4px 0; border-bottom: 1px dashed rgba(26,20,16,0.1); }
       .sv-who span:first-child { flex: 1; font-weight: 700; } .sv-who .btn { font-size: 11.5px; padding: 3px 9px; }
+      /* 入会フォームの項目（2026-10-19） */
+      .ff-box { display: grid; gap: 6px; padding: 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; font-size: 13px; }
+      .ff-box > span { font-size: 12px; line-height: 1.6; }
+      .ff-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
+      .ff-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed rgba(26,20,16,0.12); font-size: 13px; }
+      .ff-row.ff-fixed { grid-column: 1 / -1; } .ff-row.ff-fixed b { font-size: 12px; }
+      .ff-row select, .cf-ed select { padding: 5px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 12.5px; color: #1a1410; background: #fff; }
+      .cf-ed { display: grid; gap: 6px; padding: 10px; background: #f8f6f1; border-radius: 8px; }
+      .cf-ed-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .cf-ed-top input[data-k="label"] { flex: 1 1 220px; }
+      .cf-ed input[data-k="label"], .cf-ed textarea { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; font-family: inherit; }
+      .cf-ed label { display: flex; gap: 4px; align-items: center; font-size: 12.5px; }
+      .cf-ed .btn { font-size: 11.5px; padding: 4px 9px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -5769,6 +5783,42 @@ export default function ProviderDashboardPage() {
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
       });
 
+      // ── 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10） ──
+      let ffState = {}, cfList = [];
+      const FF_STATE_LABEL = { hidden: '聞かない', optional: '任意', required: '必須' };
+      const CF_TYPE_LABEL = { text: '自由に書く', single: '1つ選ぶ', multi: '複数選べる' };
+      function renderFormFields() {
+        const box = document.getElementById('mbr-ff');
+        if (!box) return;
+        box.innerHTML = `<div class="ff-row ff-fixed"><span>お名前（姓・名）・電話番号</span><b>必須（変更できません）</b></div>` + FORM_FIELDS.map(f => `
+          <div class="ff-row"><span>${f.label}</span><select data-ff="${f.key}">${FIELD_STATES.map(st => `<option value="${st}" ${ffState[f.key] === st ? 'selected' : ''}>${FF_STATE_LABEL[st]}</option>`).join('')}</select></div>`).join('');
+        box.querySelectorAll('[data-ff]').forEach(sel => sel.addEventListener('change', () => { ffState[sel.dataset.ff] = sel.value; }));
+        const cbox = document.getElementById('mbr-cf');
+        if (!cbox) return;
+        cbox.innerHTML = cfList.map((q, i) => `
+          <div class="cf-ed" data-i="${i}">
+            <div class="cf-ed-top">
+              <input data-k="label" value="${esc(q.label || '')}" placeholder="質問文（例：ご入会のきっかけは？）" maxlength="200">
+              <select data-k="type">${Object.entries(CF_TYPE_LABEL).map(([k, v]) => `<option value="${k}" ${q.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+              <label><input type="checkbox" data-k="required" ${q.required ? 'checked' : ''}>必須</label>
+              <button type="button" class="btn btn-ghost" data-rm>削除</button>
+            </div>
+            ${q.type !== 'text' ? `<textarea data-k="options" rows="3" placeholder="選択肢を1行に1つずつ">${esc((q.options || []).join('\n'))}</textarea>` : ''}
+          </div>`).join('') || '<p style="font-size:12.5px;margin:0">追加の質問はありません。</p>';
+        cbox.querySelectorAll('.cf-ed').forEach(el => {
+          const i = Number(el.dataset.i);
+          el.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener(inp.tagName === 'SELECT' || inp.type === 'checkbox' ? 'change' : 'input', () => {
+            const k = inp.dataset.k;
+            if (k === 'required') cfList[i].required = inp.checked;
+            else if (k === 'options') cfList[i].options = inp.value.split('\n').map(x => x.trim()).filter(Boolean);
+            else cfList[i][k] = inp.value;
+            if (k === 'type') { if (cfList[i].type !== 'text' && !(cfList[i].options || []).length) cfList[i].options = ['はい', 'いいえ']; renderFormFields(); }
+          }));
+          el.querySelector('[data-rm]')?.addEventListener('click', () => { cfList.splice(i, 1); renderFormFields(); });
+        });
+      }
+      document.getElementById('mbr-cf-add')?.addEventListener('click', () => { cfList.push({ type: 'text', label: '', options: [], required: false }); renderFormFields(); });
+
       async function loadSettings() {
         const res = await fetch('/api/provider/membership-settings', { headers: authH() });
         if (!res.ok) return;
@@ -5781,6 +5831,9 @@ export default function ProviderDashboardPage() {
         if (termsEl) termsEl.value = s.terms_text || '';
         const allowEl = document.getElementById('mbr-set-allowreq');
         if (allowEl) allowEl.checked = s.allow_online_requests !== false;
+        ffState = { ...(s.form_fields || {}) };
+        cfList = JSON.parse(JSON.stringify(s.custom_fields || []));
+        renderFormFields();
       }
       document.getElementById('mbr-set-save-btn')?.addEventListener('click', async () => {
         const msgEl = document.getElementById('mbr-set-msg');
@@ -5788,10 +5841,13 @@ export default function ProviderDashboardPage() {
           prorate_first_month: document.getElementById('mbr-set-prorate')?.checked,
           require_id_document: document.getElementById('mbr-set-idreq')?.checked,
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
+          form_fields: ffState,
+          custom_fields: cfList,
           terms_text: document.getElementById('mbr-set-terms')?.value || '',
         };
         const res = await fetch('/api/provider/membership-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
-        if (msgEl) { msgEl.textContent = res.ok ? '保存しました' : '保存に失敗しました'; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
+        const d = res.ok ? null : await res.json().catch(() => ({}));
+        if (msgEl) { msgEl.textContent = res.ok ? '保存しました' : (d?.error || '保存に失敗しました'); setTimeout(() => { msgEl.textContent = ''; }, 4000); }
       });
 
       // ── 休会・プラン変更・退会（でお要望 2026-10-19：hacomono差分 #4） ──
@@ -5913,6 +5969,8 @@ export default function ProviderDashboardPage() {
         if (rejectBtn) rejectBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
         detailBody.innerHTML = `
           <div><strong>${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong> <span class="mbr-chip" style="background:${STATUS_COLOR[m.status] || '#e5e7eb'}">${STATUS_LABEL[m.status] || m.status}</span></div>
+          ${m.last_name_kana || m.first_name_kana ? `<div>フリガナ：${esc(m.last_name_kana || '')} ${esc(m.first_name_kana || '')}</div>` : ''}
+          ${m.gender ? `<div>性別：${{ female: '女性', male: '男性', other: 'その他' }[m.gender] || ''}</div>` : ''}
           <div>生年月日：${esc(m.birthdate || '未入力')}</div>
           <div>住所：〒${esc(m.postal_code || '')} ${esc(m.address || '')}</div>
           <div>電話：${esc(m.phone || '未入力')}</div>
@@ -5925,6 +5983,7 @@ export default function ProviderDashboardPage() {
           <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
           <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
           ${m.cancel_reason ? `<div>退会の理由：${esc(m.cancel_reason)}</div>` : ''}
+          ${(m.custom_fields_snapshot || []).map(q => { const v = m.custom_answers?.[q.id]; return `<div>${esc(q.label)}：${v == null ? '未回答' : esc(Array.isArray(v) ? v.join('、') : v)}</div>`; }).join('')}
         `;
         renderManage(m);
       }
@@ -16888,6 +16947,16 @@ export default function ProviderDashboardPage() {
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-allowreq" />お客様がマイページから休会・プラン変更・退会を申請できるようにする（承認するまで契約は変わりません）
             </label>
+            {/* 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10） */}
+            <div className="ff-box">
+              <b>入会フォームで聞く項目</b>
+              <span>項目ごとに「聞かない／任意／必須」を選べます。入力された内容は、承認すると顧客の基本情報にも入ります。</span>
+              <div id="mbr-ff" className="ff-list"></div>
+              <b style={{ marginTop: '8px' }}>お店からの追加の質問</b>
+              <span>例：ご入会のきっかけ、運動経験、既往歴など。答えは申込の詳細で確認できます（10個まで）。</span>
+              <div id="mbr-cf" className="stack" style={{ gap: '8px' }}></div>
+              <button type="button" className="btn btn-ghost" id="mbr-cf-add" style={{ width: 'fit-content', fontSize: '12.5px' }}>質問を追加</button>
+            </div>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label>利用規約・同意書の内容（入会ページとお客様のマイページに表示されます）</label>
               <textarea id="mbr-set-terms" style={{ width: '100%', minHeight: '140px', fontSize: '13px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="規約・同意書の文面を入力してください"></textarea>

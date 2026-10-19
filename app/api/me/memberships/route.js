@@ -4,6 +4,8 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { findCoupon } from '@/lib/membership-changes';
+import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
+import { validateAnswers } from '@/lib/surveys';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -63,7 +65,7 @@ export async function POST(request) {
     provider_id, plan_id, enrollment_date, locker_id,
     last_name, first_name, birthdate, postal_code, address, phone,
     emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
-    terms_snapshot, option_ids, coupon_code,
+    terms_snapshot, option_ids, coupon_code, last_name_kana, first_name_kana, gender, custom_answers,
   } = body;
 
   if (!provider_id || !plan_id || !enrollment_date || !last_name?.trim() || !first_name?.trim() || !phone?.trim()) {
@@ -79,10 +81,19 @@ export async function POST(request) {
 
   const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
     supabase.from('provider_membership_plans').select('monthly_price').eq('id', plan_id).eq('provider_id', provider_id).single(),
-    supabase.from('provider_membership_settings').select('prorate_first_month').eq('provider_id', provider_id).maybeSingle(),
+    supabase.from('provider_membership_settings').select('prorate_first_month, form_fields, custom_fields').eq('provider_id', provider_id).maybeSingle(),
     locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider_id).single() : Promise.resolve({ data: null }),
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
+
+  // 店舗が決めた入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
+  const fields = normalizeFormFields(settings?.form_fields);
+  const reqErr = checkRequired(fields, body);
+  if (reqErr) return Response.json({ error: reqErr }, { status: 400 });
+  const customFields = settings?.custom_fields || [];
+  const custom = validateAnswers(customFields, custom_answers || {});
+  if (custom.error) return Response.json({ error: custom.error }, { status: 400 });
+  const shown = k => fields[k] !== 'hidden';
 
   // オプション・クーポン（でお要望 2026-10-19：hacomono差分 #5）
   const optIds = Array.isArray(option_ids) ? [...new Set(option_ids)].slice(0, 20) : [];
@@ -109,10 +120,15 @@ export async function POST(request) {
       option_ids: (opts || []).length ? opts.map(o => o.id) : null,
       discount_id: discountId,
       last_name: last_name.trim(), first_name: first_name.trim(),
-      birthdate: birthdate || null, postal_code: postal_code || null, address: address || null, phone: phone.trim(),
-      emergency_contact_name: emergency_contact_name || null,
-      emergency_contact_phone: emergency_contact_phone || null,
-      emergency_contact_relation: emergency_contact_relation || null,
+      last_name_kana: shown('kana') ? String(last_name_kana || '').trim().slice(0, 40) || null : null,
+      first_name_kana: shown('kana') ? String(first_name_kana || '').trim().slice(0, 40) || null : null,
+      gender: shown('gender') && ['female', 'male', 'other'].includes(gender) ? gender : null,
+      birthdate: shown('birthdate') ? birthdate || null : null, postal_code: shown('postal_code') ? postal_code || null : null, address: shown('address') ? address || null : null, phone: phone.trim(),
+      emergency_contact_name: shown('emergency') ? emergency_contact_name || null : null,
+      emergency_contact_phone: shown('emergency') ? emergency_contact_phone || null : null,
+      emergency_contact_relation: shown('emergency') ? emergency_contact_relation || null : null,
+      custom_answers: customFields.length ? custom.answers : null,
+      custom_fields_snapshot: customFields.length ? customFields : null,
       terms_snapshot: terms_snapshot.trim(),
       terms_agreed_at: new Date().toISOString(),
     })
