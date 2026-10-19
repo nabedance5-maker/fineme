@@ -1,5 +1,5 @@
 // GET /api/cron/line-reminder
-// Vercel Cron: 毎日15:00 UTC（深夜0時 JST）に翌日の予約をリマインド
+// Vercel Cron: 毎日9:00 UTC（18時 JST）に翌日の予約をリマインド（2026-10-19 でお指示で深夜0時→夕方に変更）
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { resolveLineTarget } from '@/lib/line-channel';
