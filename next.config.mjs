@@ -117,9 +117,22 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type,Authorization,x-internal-key' },
         ],
       },
-      // 全ページ: セキュリティヘッダー
+      // 予約ウィジェット（でお要望 2026-10-19）：店舗の自社サイトに iframe で埋め込めるよう、/embed/ だけ他サイトからの表示を許す。
+      // 予約手続き自体は新しいタブのFinemeのページで行い、iframe 内でログインや決済はさせない。
       {
-        source: '/(.*)',
+        source: '/embed/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; connect-src 'self' https:; font-src 'self' data: https://fonts.gstatic.com; object-src 'none'; frame-ancestors *; base-uri 'self';"
+          },
+        ],
+      },
+      // 全ページ: セキュリティヘッダー（/embed/ 以外）
+      {
+        source: '/((?!embed/).*)',
         headers: [
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },

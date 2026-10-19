@@ -6,7 +6,7 @@ export default function Footer() {
   const pathname = usePathname();
   // 掲載者ダッシュボードは白背景の業務ツールに刷新（2026-09-11）。ユーザー向け
   // マーケティングフッターが下に付くと世界観が合わないため、Navbar同様に非表示にする。
-  if (pathname?.startsWith('/provider/dashboard') || pathname?.startsWith('/admin') || pathname?.startsWith('/attendance-kiosk')) return null;
+  if (pathname?.startsWith('/provider/dashboard') || pathname?.startsWith('/admin') || pathname?.startsWith('/attendance-kiosk') || pathname?.startsWith('/embed/')) return null;
 
   return (
     <footer className="footer">

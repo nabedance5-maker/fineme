@@ -668,6 +668,14 @@ const DASHBOARD_CSS = `
       .nt-row-actions { flex-basis: 100%; display: flex; gap: 6px; flex-wrap: wrap; } .nt-row-actions .btn { font-size: 12px; padding: 5px 11px; }
       .nt-chip { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; color: #1a1410; background: #e5e7eb; }
       .nt-on { background: #bbf7d0; } .nt-wait { background: #fde68a; }
+      /* 予約ウィジェット（2026-10-19） */
+      #tab-widget { color: #1a1410; }
+      .wg-ctl { display: flex; gap: 10px; flex-wrap: wrap; }
+      .wg-ctl label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 700; }
+      .wg-ctl select { padding: 7px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .wg-code { margin: 0; padding: 12px 14px; background: #1a1410; color: #fff; border-radius: 10px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; overflow-x: auto; }
+      .wg-preview { padding: 14px; background: #ece8df; border-radius: 12px; }
+      .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -1385,6 +1393,42 @@ export default function ProviderDashboardPage() {
       document.getElementById('rp-type')?.addEventListener('change', e => { document.getElementById('rp-range').style.display = e.target.value === 'customers' || e.target.value === 'memberships' ? 'none' : ''; });
       document.querySelectorAll('[data-tab="reports"]').forEach(btn => btn.addEventListener('click', load));
       if (new URLSearchParams(location.search).get('tab') === 'reports') load();
+    })();
+
+    // ── 予約ウィジェット（でお要望 2026-10-19：hacomono差分 #14） ──
+    (function setupWidget() {
+      const codeEl = document.getElementById('wg-code');
+      if (!codeEl) return;
+      const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      function render() {
+        const slug = provider?.slug;
+        if (!slug) { codeEl.textContent = '店舗のURLが決まると表示されます。'; return; }
+        const view = document.getElementById('wg-view').value;
+        const theme = document.getElementById('wg-theme').value;
+        const kind = document.getElementById('wg-kind').value;
+        const origin = location.origin;
+        const code = kind === 'button'
+          ? `<div data-fineme-button="${slug}" data-label="予約する"></div>\n<script src="${origin}/widget.js" async></script>`
+          : `<div data-fineme-widget="${slug}" data-view="${view}" data-theme="${theme}"></div>\n<script src="${origin}/widget.js" async></script>`;
+        codeEl.textContent = code;
+        document.getElementById('wg-opts').style.display = kind === 'button' ? 'none' : '';
+        const pv = document.getElementById('wg-preview');
+        pv.innerHTML = kind === 'button'
+          ? `<a href="${origin}/provider/${e(slug)}?tab=consult&from=widget" target="_blank" rel="noopener" class="wg-btn-preview">予約する</a>`
+          : `<iframe src="/embed/${e(slug)}?view=${view}&theme=${theme}" title="予約ウィジェットの見本" style="width:100%;height:520px;border:0;border-radius:14px;background:${theme === 'dark' ? '#111418' : '#fff'}"></iframe>`;
+      }
+      // 見本のiframeも、埋め込み先と同じく中身の高さに合わせる
+      window.addEventListener('message', ev => {
+        const f = document.querySelector('#wg-preview iframe');
+        if (ev.origin !== location.origin || ev.data?.type !== 'fineme-embed-height' || !f || ev.source !== f.contentWindow) return;
+        f.style.height = `${Math.min(Math.max(200, ev.data.height), 4000)}px`;
+      });
+      ['wg-view', 'wg-theme', 'wg-kind'].forEach(id => document.getElementById(id)?.addEventListener('change', render));
+      document.getElementById('wg-copy')?.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(codeEl.textContent); showToast('埋め込みコードをコピーしました'); } catch { showToast('コピーできませんでした。コードを選択してコピーしてください'); }
+      });
+      document.querySelectorAll('[data-tab="widget"]').forEach(btn => btn.addEventListener('click', render));
+      if (new URLSearchParams(location.search).get('tab') === 'widget') render();
     })();
 
     // ── お知らせ掲示（でお要望 2026-10-19：hacomono差分 #13） ──
@@ -14896,6 +14940,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
                   <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
+                  <button className="tab-btn" data-tab="widget">予約ウィジェット</button>
                   <button className="tab-btn" data-tab="page-design">ページデザイン</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
@@ -17827,6 +17872,28 @@ export default function ProviderDashboardPage() {
               </div>
               <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
             </div>
+          </div>
+        </div>
+
+        {/* 予約ウィジェット（でお要望 2026-10-19：hacomono差分 #14） */}
+        <div className="tab-pane" id="tab-widget">
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>予約ウィジェット</h2>
+              <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>お店のホームページやブログに、空き状況とメニュー、予約ボタンを埋め込めます。下のコードをコピーして、ホームページの表示したい場所に貼り付けてください。予約はFinemeの店舗ページ（新しいタブ）で行われ、届いた予約はいつも通りこの管理画面に入ります。</p>
+            </div>
+            <div className="wg-ctl">
+              <label>形<select id="wg-kind"><option value="widget">空き状況とメニュー</option><option value="button">予約ボタンだけ</option></select></label>
+              <span id="wg-opts" className="wg-ctl">
+                <label>表示する内容<select id="wg-view"><option value="both">空き状況とメニュー</option><option value="schedule">空き状況だけ</option><option value="menus">メニューだけ</option></select></label>
+                <label>色<select id="wg-theme"><option value="light">明るい背景</option><option value="dark">暗い背景</option></select></label>
+              </span>
+            </div>
+            <pre id="wg-code" className="wg-code"></pre>
+            <button type="button" className="btn" id="wg-copy" style={{ width: 'fit-content' }}>コードをコピー</button>
+            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>空き状況は「空き枠」で作った予約枠から表示します。枠が無い場合はメニューと予約ボタンだけが出ます。ホームページ作成サービスによっては、「HTML」や「埋め込み」のブロックに貼り付けます。</p>
+            <b style={{ fontSize: '13px' }}>見本</b>
+            <div id="wg-preview" className="wg-preview"></div>
           </div>
         </div>
 
