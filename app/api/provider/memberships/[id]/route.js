@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { planLockedResponse } from '@/lib/plan-features';
-import { periodEndOf } from '@/lib/membership-changes';
+import { periodEndOf, discountText } from '@/lib/membership-changes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -32,10 +32,17 @@ export async function GET(request, { params }) {
   ]);
 
   // 休会・プラン変更・退会の履歴と申請、変更先に選べるプラン、次回の引き落とし日（でお要望 2026-10-19）
-  const [{ data: changes }, { data: plans }] = await Promise.all([
+  const [{ data: changes }, { data: plans }, { data: optionItems }, { data: options }, { data: discounts }] = await Promise.all([
     supabase.from('provider_membership_changes').select('*').eq('membership_id', m.id).order('created_at', { ascending: false }).limit(50),
     supabase.from('provider_membership_plans').select('id, name, monthly_price, active').eq('provider_id', provider.id).order('sort_order'),
+    supabase.from('provider_membership_option_items').select('id, option_id, name, monthly_price, started_at').eq('membership_id', m.id).eq('status', 'active').order('started_at'),
+    supabase.from('provider_membership_options').select('id, name, monthly_price').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
+    supabase.from('provider_membership_discounts').select('id, name, kind, value, duration, months, code, active').eq('provider_id', provider.id).order('created_at', { ascending: false }),
   ]);
+  const discountOf = Object.fromEntries((discounts || []).map(d => [d.id, d]));
+  const pendingOptions = m.status === 'pending_approval' && m.option_ids?.length
+    ? (await supabase.from('provider_membership_options').select('id, name, monthly_price').in('id', m.option_ids)).data || []
+    : [];
   const planName = Object.fromEntries((plans || []).map(p => [p.id, p.name]));
   let next_charge_date = null;
   if (m.status === 'active' && m.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
@@ -61,6 +68,11 @@ export async function GET(request, { params }) {
     locker_name: locker?.name || null,
     next_charge_date,
     plans: (plans || []).filter(p => p.active || p.id === m.plan_id),
+    option_items: optionItems || [],
+    pending_options: pendingOptions,
+    options: options || [],
+    discount: m.discount_id && discountOf[m.discount_id] ? { ...discountOf[m.discount_id], text: discountText(discountOf[m.discount_id]) } : null,
+    discounts: (discounts || []).filter(d => d.active).map(d => ({ id: d.id, name: d.name, text: discountText(d) })),
     changes: (changes || []).map(c => ({ ...c, from_plan_name: planName[c.from_plan_id] || null, to_plan_name: planName[c.to_plan_id] || null })),
   });
 }

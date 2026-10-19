@@ -451,6 +451,17 @@ const DASHBOARD_CSS = `
       .mbr-hist { display: grid; gap: 4px; font-size: 12.5px; padding-top: 8px; border-top: 1px dashed rgba(26,20,16,0.15); }
       .mbr-hist div { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; }
       @media (max-width: 640px) { .mbr-hist div { grid-template-columns: 1fr; gap: 0; padding-bottom: 6px; } }
+      /* 会員プランのオプション・割引（2026-10-19） */
+      .mbr-li { display: flex; align-items: center; gap: 8px 10px; padding: 10px 14px; background: var(--color-bg); border-radius: 10px; flex-wrap: wrap; color: #1a1410; }
+      .mbr-li > div { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+      .mbr-li b { font-size: 14px; }
+      .mbr-li .btn { font-size: 12px; padding: 5px 10px; }
+      .mbr-ex-wrap { display: grid; gap: 10px; }
+      .mbr-ex { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; font-size: 13px; color: #1a1410; }
+      .mbr-ex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .mbr-ex-row .btn { font-size: 12px; padding: 4px 10px; }
+      .mbr-ex-row select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 12.5px; color: #1a1410; background: #fff; max-width: 100%; }
+      .mbr-ex-note { font-size: 11.5px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -5318,6 +5329,108 @@ export default function ProviderDashboardPage() {
         }));
       }
 
+      // ── オプション・割引・クーポン（でお要望 2026-10-19：hacomono差分 #5） ──
+      const JH = () => ({ 'Content-Type': 'application/json', ...authH() });
+      const DUR_LABEL = { once: '初回のみ', repeating: 'か月', forever: 'ずっと' };
+      const discText = d => `${d.kind === 'percent' ? `${d.value}%引き` : `¥${Number(d.value).toLocaleString()}引き`}・${d.duration === 'repeating' ? `${d.months}か月` : DUR_LABEL[d.duration]}`;
+      async function loadOptions() {
+        const el = document.getElementById('mbr-opt-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/membership-options', { headers: authH() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        el.innerHTML = rows.length ? rows.map(o => `
+          <div class="mbr-li">
+            <div><b>${esc(o.name)}</b><span>月額${fmtYen(o.monthly_price)}・利用中 ${o.members}名${o.active ? '' : '・選べない状態'}</span>${o.description ? `<span>${esc(o.description)}</span>` : ''}</div>
+            <button type="button" class="btn btn-ghost" data-mbr-opt-toggle="${o.id}" data-active="${o.active}">${o.active ? '選べなくする' : '選べるようにする'}</button>
+            <button type="button" class="btn btn-ghost" data-mbr-opt-del="${o.id}">削除</button>
+          </div>`).join('') : '<p style="font-size:13px;margin:0">まだオプションがありません。</p>';
+        el.querySelectorAll('[data-mbr-opt-toggle]').forEach(b => b.addEventListener('click', async () => {
+          const r = await fetch(`/api/provider/membership-options/${b.dataset.mbrOptToggle}`, { method: 'PATCH', headers: JH(), body: JSON.stringify({ active: b.dataset.active !== 'true' }) });
+          if (r.ok) loadOptions(); else showToast('更新できませんでした');
+        }));
+        el.querySelectorAll('[data-mbr-opt-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このオプションを削除しますか？（付いている会員の契約はそのまま続きます）')) return;
+          const r = await fetch(`/api/provider/membership-options/${b.dataset.mbrOptDel}`, { method: 'DELETE', headers: authH() });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) { showToast(d.archived ? '利用中の会員がいるため、新しく選べない状態にしました' : '削除しました'); loadOptions(); } else showToast('削除できませんでした');
+        }));
+      }
+      document.getElementById('mbr-opt-add-btn')?.addEventListener('click', async () => {
+        const g = id => document.getElementById(id);
+        const r = await fetch('/api/provider/membership-options', { method: 'POST', headers: JH(), body: JSON.stringify({ name: g('mbr-opt-name').value, monthly_price: g('mbr-opt-price').value, description: g('mbr-opt-desc').value }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '追加できませんでした'); return; }
+        ['mbr-opt-name', 'mbr-opt-price', 'mbr-opt-desc'].forEach(id => { g(id).value = ''; });
+        showToast('オプションを追加しました'); loadOptions();
+      });
+
+      async function loadDiscounts() {
+        const el = document.getElementById('mbr-disc-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/membership-discounts', { headers: authH() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+        el.innerHTML = rows.length ? rows.map(d => {
+          const expired = d.valid_until && d.valid_until < today;
+          const full = d.max_uses && d.used_count >= d.max_uses;
+          return `
+          <div class="mbr-li">
+            <div><b>${esc(d.name)}</b><span>${discText(d)}・利用中 ${d.members}名${d.active ? '' : '・使えない状態'}</span>
+              ${d.code ? `<span>クーポンコード <code>${esc(d.code)}</code>・使われた回数 ${d.used_count}${d.max_uses ? ` / ${d.max_uses}` : ''}${d.valid_until ? `・${esc(ymd(d.valid_until))}まで` : ''}${expired ? '（期限切れ）' : full ? '（上限に達しました）' : ''}</span>` : '<span>店舗が会員に付ける割引（クーポンコードなし）</span>'}
+            </div>
+            <button type="button" class="btn btn-ghost" data-mbr-disc-toggle="${d.id}" data-active="${d.active}">${d.active ? '使えなくする' : '使えるようにする'}</button>
+            <button type="button" class="btn btn-ghost" data-mbr-disc-del="${d.id}">削除</button>
+          </div>`;
+        }).join('') : '<p style="font-size:13px;margin:0">まだ割引・クーポンがありません。</p>';
+        el.querySelectorAll('[data-mbr-disc-toggle]').forEach(b => b.addEventListener('click', async () => {
+          const r = await fetch(`/api/provider/membership-discounts/${b.dataset.mbrDiscToggle}`, { method: 'PATCH', headers: JH(), body: JSON.stringify({ active: b.dataset.active !== 'true' }) });
+          if (r.ok) loadDiscounts(); else showToast('更新できませんでした');
+        }));
+        el.querySelectorAll('[data-mbr-disc-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('この割引を削除しますか？（付いている会員の割引はそのまま続きます）')) return;
+          const r = await fetch(`/api/provider/membership-discounts/${b.dataset.mbrDiscDel}`, { method: 'DELETE', headers: authH() });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) { showToast(d.archived ? '利用中の会員がいるため、使えない状態にしました' : '削除しました'); loadDiscounts(); } else showToast('削除できませんでした');
+        }));
+      }
+      document.getElementById('mbr-disc-dur')?.addEventListener('change', e => { document.getElementById('mbr-disc-months-wrap').style.display = e.target.value === 'repeating' ? '' : 'none'; });
+      document.getElementById('mbr-disc-add-btn')?.addEventListener('click', async () => {
+        const g = id => document.getElementById(id);
+        const body = { name: g('mbr-disc-name').value, kind: g('mbr-disc-kind').value, value: g('mbr-disc-value').value, duration: g('mbr-disc-dur').value, months: g('mbr-disc-months').value, code: g('mbr-disc-code').value, max_uses: g('mbr-disc-max').value, valid_until: g('mbr-disc-until').value };
+        const r = await fetch('/api/provider/membership-discounts', { method: 'POST', headers: JH(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '追加できませんでした'); return; }
+        ['mbr-disc-name', 'mbr-disc-value', 'mbr-disc-months', 'mbr-disc-code', 'mbr-disc-max', 'mbr-disc-until'].forEach(id => { g(id).value = ''; });
+        showToast('割引を追加しました'); loadDiscounts();
+      });
+
+      // 会員の詳細：オプションと割引の付け外し
+      function renderExtras(m, send) {
+        const box = document.getElementById('mbr-extras');
+        if (!box) return;
+        if (m.status !== 'active') { box.innerHTML = ''; return; }
+        const usedOpt = new Set((m.option_items || []).map(i => i.option_id));
+        const addable = (m.options || []).filter(o => !usedOpt.has(o.id));
+        box.innerHTML = `
+          <div class="mbr-ex">
+            <b>オプション</b>
+            ${(m.option_items || []).length ? m.option_items.map(i => `<div class="mbr-ex-row"><span>${esc(i.name)}（月額${fmtYen(i.monthly_price)}）</span><button type="button" class="btn btn-ghost" data-mbr-opt-rm="${i.id}">外す</button></div>`).join('') : '<span>付いていません</span>'}
+            ${addable.length ? `<div class="mbr-ex-row"><select id="mbr-ex-opt">${addable.map(o => `<option value="${o.id}">${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" id="mbr-ex-opt-add">追加する</button></div>` : ''}
+            <span class="mbr-ex-note">付け外しは次回の引き落としから反映されます（日割りの精算はしません）。</span>
+          </div>
+          <div class="mbr-ex">
+            <b>割引</b>
+            ${m.discount ? `<div class="mbr-ex-row"><span>${esc(m.discount.name)}（${esc(m.discount.text)}）</span><button type="button" class="btn btn-ghost" id="mbr-ex-disc-rm">外す</button></div>` : '<span>付いていません</span>'}
+            ${(m.discounts || []).length ? `<div class="mbr-ex-row"><select id="mbr-ex-disc">${m.discounts.filter(d => d.id !== m.discount?.id).map(d => `<option value="${d.id}">${esc(d.name)}（${esc(d.text)}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" id="mbr-ex-disc-add">${m.discount ? '付け替える' : '付ける'}</button></div>` : ''}
+          </div>`;
+        box.querySelectorAll('[data-mbr-opt-rm]').forEach(b => b.addEventListener('click', () => send({ kind: 'option_remove', item_id: b.dataset.mbrOptRm }, 'オプションを外しました')));
+        document.getElementById('mbr-ex-opt-add')?.addEventListener('click', () => send({ kind: 'option_add', option_id: document.getElementById('mbr-ex-opt').value }, 'オプションを追加しました'));
+        document.getElementById('mbr-ex-disc-rm')?.addEventListener('click', () => send({ kind: 'discount_remove' }, '割引を外しました'));
+        document.getElementById('mbr-ex-disc-add')?.addEventListener('click', () => { const v = document.getElementById('mbr-ex-disc').value; if (v) send({ kind: 'discount_apply', discount_id: v }, '割引を付けました'); });
+      }
+
       document.getElementById('mbr-plan-add-btn')?.addEventListener('click', async () => {
         const nameEl = document.getElementById('mbr-plan-name');
         const priceEl = document.getElementById('mbr-plan-price');
@@ -5356,7 +5469,7 @@ export default function ProviderDashboardPage() {
       });
 
       // ── 休会・プラン変更・退会（でお要望 2026-10-19：hacomono差分 #4） ──
-      const CHANGE_LABEL = { pause: '休会', resume: '休会から再開', plan_change: 'プラン変更', cancel: '退会', cancel_undo: '退会の取り消し', decline: 'お断り' };
+      const CHANGE_LABEL = { pause: '休会', resume: '休会から再開', plan_change: 'プラン変更', cancel: '退会', cancel_undo: '退会の取り消し', decline: 'お断り', option_add: 'オプション追加', option_remove: 'オプション解除', discount_apply: '割引の適用', discount_remove: '割引の解除' };
       const CHANGE_STATUS = { requested: '申請中', applied: '反映済み', declined: 'お断り', withdrawn: '取り下げ' };
       const TIMING_LABEL = { now: '今すぐ', period_end: '今の支払い期間の終わり', date: '日付を指定' };
       const ymd = d => (d ? String(d).slice(0, 10).replace(/-/g, '/') : '');
@@ -5395,7 +5508,8 @@ export default function ProviderDashboardPage() {
             ${m.cancel_at ? '<button type="button" class="btn btn-ghost" data-mbr-act="cancel_undo">退会を取り消す</button>' : '<button type="button" class="btn btn-ghost" data-mbr-act="cancel">退会する</button>'}
           </div>
           <div id="mbr-act-form"></div>
-          ${(m.changes || []).length ? `<div class="mbr-hist"><b>変更の履歴</b>${m.changes.map(c => `<div><span>${ymd(c.created_at)}</span><span>${CHANGE_LABEL[c.kind]}${c.kind === 'plan_change' ? `（${esc(c.from_plan_name || '')} → ${esc(c.to_plan_name || '')}）` : ''}${c.effective_date && c.kind !== 'resume' ? `・${ymd(c.effective_date)}${c.kind === 'cancel' ? 'で退会' : 'から'}` : ''}${c.pause_until ? `・${ymd(c.pause_until)}に再開` : ''}</span><span>${c.requested_by === 'customer' ? 'お客様の申請' : '店舗'}・${CHANGE_STATUS[c.status]}${c.operator ? `（${esc(c.operator)}）` : ''}</span></div>`).join('')}</div>` : ''}
+          <div id="mbr-extras" class="mbr-ex-wrap"></div>
+          ${(m.changes || []).length ? `<div class="mbr-hist"><b>変更の履歴</b>${m.changes.map(c => `<div><span>${ymd(c.created_at)}</span><span>${CHANGE_LABEL[c.kind]}${c.kind === 'plan_change' ? `（${esc(c.from_plan_name || '')} → ${esc(c.to_plan_name || '')}）` : ''}${c.detail ? `：${esc(c.detail)}` : ''}${c.effective_date && c.kind !== 'resume' ? `・${ymd(c.effective_date)}${c.kind === 'cancel' ? 'で退会' : 'から'}` : ''}${c.pause_until ? `・${ymd(c.pause_until)}に再開` : ''}</span><span>${c.requested_by === 'customer' ? 'お客様の申請' : '店舗'}・${CHANGE_STATUS[c.status]}${c.operator ? `（${esc(c.operator)}）` : ''}</span></div>`).join('')}</div>` : ''}
         `;
         const formEl = document.getElementById('mbr-act-form');
         const today = new Date(Date.now() + 9 * 3600000); today.setUTCDate(today.getUTCDate() + 1);
@@ -5408,16 +5522,17 @@ export default function ProviderDashboardPage() {
           showToast(okText);
           openDetail(m.id); loadApplications();
         };
+        renderExtras(m, send);
         box.querySelectorAll('[data-mbr-act]').forEach(b => b.addEventListener('click', () => {
           const act = b.dataset.mbrAct;
           if (act === 'resume') { send({ kind: 'resume' }, '休会から再開しました'); return; }
           if (act === 'cancel_undo') { send({ kind: 'cancel_undo' }, '退会の予定を取り消しました'); return; }
           if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>休会中の月会費は引き落としません（すでに払った期間はそのまま）。再開日を決めると、その日に自動で再開します。</p><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'plan_change') formEl.innerHTML = `<div class="mbr-form"><b>プランを変更する</b><label>変更先のプラン<select id="mbr-f-plan">${otherPlans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select></label><label>いつから<select id="mbr-f-timing"><option value="period_end">次回の引き落としから新しい月額（差額の精算なし）</option><option value="now">今日から（差額を日割りで次回の請求に加減）</option></select></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">変更する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
-          if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">今の支払い期間の終わり（${esc(ymd(m.next_charge_date) || '次回の引き落とし日')}の前日まで通える）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" hidden>退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">今の支払い期間の終わり（${esc(ymd(m.next_charge_date) || '次回の引き落とし日')}の前日まで通える）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" style="display:none">退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           document.getElementById('mbr-f-x')?.addEventListener('click', () => { formEl.innerHTML = ''; });
           const tEl = document.getElementById('mbr-f-timing');
-          if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').hidden = tEl.value !== 'date'; });
+          if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').style.display = tEl.value === 'date' ? '' : 'none'; });
           document.getElementById('mbr-f-go')?.addEventListener('click', () => {
             const reason = document.getElementById('mbr-f-reason')?.value || '';
             if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, reason }, '休会にしました');
@@ -5478,6 +5593,8 @@ export default function ProviderDashboardPage() {
           <div>プラン：${esc(m.plan_name || '未選択')}（月額${fmtYen(m.plan_price)}）</div>
           <div>入会希望日：${esc(m.enrollment_date || '未設定')}${m.prorated_first_amount != null ? `（初回目安：${fmtYen(m.prorated_first_amount)}）` : ''}</div>
           <div>ロッカー：${esc(m.locker_name || 'なし')}</div>
+          ${m.status === 'pending_approval' && (m.pending_options || []).length ? `<div>オプション：${m.pending_options.map(o => `${esc(o.name)}（月額${fmtYen(o.monthly_price)}）`).join('、')}</div>` : ''}
+          ${m.status === 'pending_approval' && m.discount ? `<div>クーポン：${esc(m.discount.name)}（${esc(m.discount.text)}）</div>` : ''}
           <div>緊急連絡先：${esc(m.emergency_contact_name || '未入力')}（${esc(m.emergency_contact_relation || '')}）${esc(m.emergency_contact_phone || '')}</div>
           <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
           <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
@@ -5515,6 +5632,8 @@ export default function ProviderDashboardPage() {
         if (joinUrlEl) joinUrlEl.textContent = slug ? `${location.origin}/provider/${slug}/join` : location.origin + '/provider/[店舗URL]/join';
         checkConnectStatus();
         loadPlans();
+        loadOptions();
+        loadDiscounts();
         loadSettings();
         loadApplications();
       }
@@ -16089,6 +16208,43 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn" id="mbr-plan-add-btn">追加する</button>
             </div>
             <div id="mbr-plan-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
+          </div>
+
+          {/* オプション（でお要望 2026-10-19：hacomono差分 #5） */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>オプション</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>プランに足せる月額の追加サービスです（例：タオル、水素水、プロテイン飲み放題）。お客様は入会時に選べて、月会費と一緒に引き落とされます。入会後は会員の詳細から付け外しできます。</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>オプション名</label><input id="mbr-opt-name" placeholder="例：レンタルタオル" /></div>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '120px' }}><label>月額（円）</label><input id="mbr-opt-price" type="number" min="1" placeholder="500" /></div>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>説明（任意）</label><input id="mbr-opt-desc" placeholder="任意" /></div>
+              <button type="button" className="btn" id="mbr-opt-add-btn">追加する</button>
+            </div>
+            <div id="mbr-opt-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
+          </div>
+
+          {/* 割引・クーポン（でお要望 2026-10-19：hacomono差分 #5） */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>割引・クーポン</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>月会費から引く割引です（例：学割、家族割、入会キャンペーン）。会員の詳細から付けられます。クーポンコードを設定すると、お客様が入会ページでコードを入れて使えます。金額と期間は作った後に変えられないため、変えたい時は新しく作ってください。</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>名前</label><input id="mbr-disc-name" placeholder="例：学割" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>種類</label><select id="mbr-disc-kind"><option value="amount">金額（円）を引く</option><option value="percent">％を引く</option></select></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '100px' }}><label>値</label><input id="mbr-disc-value" type="number" min="1" placeholder="1000" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>期間</label><select id="mbr-disc-dur"><option value="once">初回の月会費だけ</option><option value="repeating">決まった月数</option><option value="forever">ずっと</option></select></div>
+              <div className="form-field" id="mbr-disc-months-wrap" style={{ marginBottom: 0, width: '90px', display: 'none' }}><label>月数</label><input id="mbr-disc-months" type="number" min="1" max="36" placeholder="3" /></div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '150px' }}><label>クーポンコード（任意）</label><input id="mbr-disc-code" placeholder="例：SPRING2026" /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '110px' }}><label>利用上限（任意）</label><input id="mbr-disc-max" type="number" min="1" placeholder="回数" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>有効期限（任意）</label><input id="mbr-disc-until" type="date" /></div>
+              <button type="button" className="btn" id="mbr-disc-add-btn">追加する</button>
+            </div>
+            <div id="mbr-disc-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
           </div>
 
           {/* 入会手続き設定（でお要望：各項目は店舗ごとにカスタマイズ可能に） */}

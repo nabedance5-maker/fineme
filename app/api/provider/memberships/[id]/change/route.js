@@ -50,6 +50,7 @@ async function __POST(request, { params }) {
     date: body.date ?? req?.effective_date,
     pause_until: body.pause_until ?? req?.pause_until,
     reason: body.reason ?? req?.reason,
+    option_id: body.option_id, item_id: body.item_id, discount_id: body.discount_id,
   };
   let result;
   try {
@@ -61,7 +62,7 @@ async function __POST(request, { params }) {
   const rec = {
     status: 'applied', from_plan_id: result.from_plan_id ?? m.plan_id, to_plan_id: result.to_plan_id ?? null,
     timing: opts.timing || null, effective_date: result.effective_date, pause_until: kind === 'pause' ? opts.pause_until || null : null,
-    operator, decided_at: now,
+    operator, decided_at: now, detail: result.detail || null,
   };
   if (req) await supabase.from('provider_membership_changes').update(rec).eq('id', req.id);
   else await supabase.from('provider_membership_changes').insert({ ...rec, provider_id: prov.id, membership_id: m.id, kind, reason: opts.reason || null, requested_by: 'store' });
@@ -74,6 +75,9 @@ async function __POST(request, { params }) {
     plan_change: `プランを「${toPlan?.name || ''}」に変更しました（${ymd(result.effective_date)}から新しい月額）。`,
     cancel: `退会を受け付けました。${ymd(result.effective_date)}で退会となります。これまでのご利用ありがとうございました。`,
     cancel_undo: '退会のご予定を取り消しました。引き続きご利用いただけます。',
+    option_add: `オプション「${result.detail}」を追加しました（次回の引き落としから）。`,
+    option_remove: `オプション「${result.detail}」を外しました（次回の引き落としから）。`,
+    discount_apply: `月会費に「${result.detail}」の割引を適用しました。`,
   }[kind];
   if (msg) await notifyCustomer(m, prov, `${prov.name}より：${msg}`);
 

@@ -23,6 +23,7 @@ import { withAudit } from '@/lib/activity-log';
 import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
 import { planLockedResponse } from '@/lib/plan-features';
 import { profileFromMembership, fillEmpty } from '@/lib/customer-profile';
+import { ensureOptionProduct, ensureStripeCoupon } from '@/lib/membership-changes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -93,6 +94,18 @@ async function __POST(request, { params }) {
       });
     }
 
+    // 入会時に選んだオプションも同じサブスクの明細に（でお要望 2026-10-19：hacomono差分 #5）
+    const { data: options } = m.option_ids?.length
+      ? await supabase.from('provider_membership_options').select('*').eq('provider_id', provider.id).in('id', m.option_ids)
+      : { data: [] };
+    const optionProduct = {};
+    for (const o of options || []) {
+      optionProduct[o.id] = await ensureOptionProduct(supabase, stripe, o);
+      items.push({ price_data: { currency: 'jpy', product: optionProduct[o.id], unit_amount: o.monthly_price, recurring: { interval: 'month' } } });
+    }
+    // 入会時に使ったクーポン（割引）
+    const { data: discount } = m.discount_id ? await supabase.from('provider_membership_discounts').select('*').eq('id', m.discount_id).maybeSingle() : { data: null };
+
     const subParams = {
       customer: m.stripe_customer_id,
       items,
@@ -107,11 +120,21 @@ async function __POST(request, { params }) {
       subParams.billing_cycle_anchor = Math.max(enrollTs, minTs);
     }
 
+    if (discount) subParams.discounts = [{ coupon: await ensureStripeCoupon(supabase, stripe, discount) }];
+
     const subscription = await stripe.subscriptions.create(subParams);
+
+    if ((options || []).length) {
+      await supabase.from('provider_membership_option_items').insert(options.map(o => ({
+        provider_id: provider.id, membership_id: m.id, option_id: o.id, name: o.name, monthly_price: o.monthly_price,
+        stripe_item_id: subscription.items.data.find(i => i.price?.product === optionProduct[o.id])?.id || null,
+      })));
+    }
+    if (discount) await supabase.from('provider_membership_discounts').update({ used_count: (discount.used_count || 0) + 1 }).eq('id', discount.id);
 
     const { data: updated, error } = await supabase
       .from('provider_memberships')
-      .update({ status: 'active', stripe_subscription_id: subscription.id, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({ status: 'active', stripe_subscription_id: subscription.id, approved_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...(discount ? { discount_applied_at: new Date().toISOString() } : {}) })
       .eq('id', id)
       .select()
       .single();

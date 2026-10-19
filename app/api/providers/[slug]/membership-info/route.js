@@ -21,10 +21,12 @@ export async function GET(request, { params }) {
     return Response.json({ error: 'この店舗はオンライン入会に対応していません' }, { status: 404 });
   }
 
-  const [{ data: plans }, { data: settings }, { data: lockers }] = await Promise.all([
+  const [{ data: plans }, { data: settings }, { data: lockers }, { data: options }, { count: couponCount }] = await Promise.all([
     supabase.from('provider_membership_plans').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_lockers').select('id, name, monthly_fee').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
+    supabase.from('provider_membership_options').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
+    supabase.from('provider_membership_discounts').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('active', true).not('code', 'is', null),
   ]);
 
   // 空きロッカーのみ提示（契約中のロッカーは選ばせない）
@@ -43,5 +45,7 @@ export async function GET(request, { params }) {
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
     lockers: availableLockers,
+    options: options || [],
+    has_coupons: (couponCount || 0) > 0,
   });
 }

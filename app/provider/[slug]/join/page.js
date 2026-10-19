@@ -39,13 +39,24 @@ export default function JoinMembershipPage() {
 
   const [form, setForm] = useState({
     last_name: '', first_name: '', birthdate: '', postal_code: '', address: '', phone: '',
-    plan_id: '', enrollment_date: '', locker_id: '',
+    plan_id: '', enrollment_date: '', locker_id: '', option_ids: [], coupon_code: '',
     emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
     agree: false,
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const [idFile, setIdFile] = useState(null);
+  // クーポン（でお要望 2026-10-19：hacomono差分 #5）
+  const [coupon, setCoupon] = useState(null);
+  const [couponMsg, setCouponMsg] = useState('');
+  async function checkCoupon() {
+    setCoupon(null); setCouponMsg('');
+    if (!form.coupon_code.trim()) return;
+    const r = await fetch(`/api/providers/${slug}/membership-coupon?code=${encodeURIComponent(form.coupon_code.trim())}`);
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) setCoupon(d); else setCouponMsg(d.error || 'このクーポンコードは使えません');
+  }
+  const toggleOption = id => setForm(f => ({ ...f, option_ids: f.option_ids.includes(id) ? f.option_ids.filter(x => x !== id) : [...f.option_ids, id] }));
   const [membershipId, setMembershipId] = useState(null);
 
   useEffect(() => {
@@ -113,7 +124,8 @@ export default function JoinMembershipPage() {
   // ロッカーを選んだ場合は同じサブスクリプションの明細として一緒に課金されるため、
   // 見積もりにもロッカー代を含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
   // 課金したい」）。
-  const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0);
+  const optionTotal = (info?.options || []).filter(o => form.option_ids.includes(o.id)).reduce((t, o) => t + o.monthly_price, 0);
+  const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0) + optionTotal;
   const daysInMonth = form.enrollment_date ? new Date(new Date(form.enrollment_date).getFullYear(), new Date(form.enrollment_date).getMonth() + 1, 0).getDate() : null;
   const remainingDays = form.enrollment_date ? daysInMonth - new Date(form.enrollment_date).getDate() + 1 : null;
   const estimatedFirstAmount = (info?.prorate_first_month && selectedPlan && remainingDays) ? Math.round((remainingDays / daysInMonth) * monthlyTotal) : monthlyTotal;
@@ -125,6 +137,7 @@ export default function JoinMembershipPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
       body: JSON.stringify({
         provider_id: info.provider_id, plan_id: form.plan_id, enrollment_date: form.enrollment_date, locker_id: form.locker_id || null,
+        option_ids: form.option_ids, coupon_code: coupon ? form.coupon_code.trim() : null,
         last_name: form.last_name, first_name: form.first_name, birthdate: form.birthdate || null, postal_code: form.postal_code, address: form.address, phone: form.phone,
         emergency_contact_name: form.emergency_contact_name, emergency_contact_phone: form.emergency_contact_phone, emergency_contact_relation: form.emergency_contact_relation,
         terms_snapshot: info.terms_text || '（この店舗は規約テキストを設定していません）',
@@ -190,6 +203,28 @@ export default function JoinMembershipPage() {
                 </select>
               </div>
             )}
+            {info?.options?.length > 0 && (
+              <div style={FIELD}>
+                <label style={LABEL}>オプション（任意・月会費と一緒にお支払い）</label>
+                {info.options.map(o => (
+                  <label key={o.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', fontSize: '14px', color: '#fff', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.option_ids.includes(o.id)} onChange={() => toggleOption(o.id)} style={{ marginTop: '3px' }} />
+                    <span>{o.name}（月額¥{o.monthly_price.toLocaleString()}）{o.description && <span style={{ display: 'block', fontSize: '12px', color: '#fff' }}>{o.description}</span>}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {info?.has_coupons && (
+              <div style={FIELD}>
+                <label style={LABEL}>クーポンコード（お持ちの方）</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input style={INPUT} value={form.coupon_code} onChange={e => { set('coupon_code', e.target.value); setCoupon(null); setCouponMsg(''); }} placeholder="例：SPRING2026" />
+                  <button type="button" style={{ ...BTN_GHOST, width: 'auto', padding: '0 16px', fontSize: '14px', whiteSpace: 'nowrap' }} onClick={checkCoupon}>適用</button>
+                </div>
+                {coupon && <p style={{ fontSize: '13px', color: '#fff', margin: '6px 0 0', fontWeight: 700 }}>「{coupon.name}」が使えます：月会費から{coupon.text}（承認時に適用されます）</p>}
+                {couponMsg && <p style={{ fontSize: '13px', color: '#fff', margin: '6px 0 0' }}>{couponMsg}</p>}
+              </div>
+            )}
             {selectedPlan && form.enrollment_date && (
               <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 16px' }}>
                 {info.prorate_first_month ? `初回のお支払い目安：約¥${estimatedFirstAmount?.toLocaleString()}（日割り。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${monthlyTotal.toLocaleString()}（承認日から満額開始）`}
@@ -197,7 +232,7 @@ export default function JoinMembershipPage() {
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={BTN_GHOST} onClick={() => setStep(1)}>戻る</button>
-              <button style={BTN} onClick={() => setStep(3)} disabled={!form.plan_id || !form.enrollment_date}>次へ</button>
+              <button style={BTN} onClick={() => setStep(3)} disabled={!form.plan_id || !form.enrollment_date || (form.coupon_code.trim() && !coupon)}>次へ</button>
             </div>
           </div>
         )}

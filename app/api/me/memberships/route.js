@@ -3,6 +3,7 @@
 //      別ステップ。ここでは個人情報・プラン・入会日・緊急連絡先・規約同意までを保存する）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { findCoupon } from '@/lib/membership-changes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -62,7 +63,7 @@ export async function POST(request) {
     provider_id, plan_id, enrollment_date, locker_id,
     last_name, first_name, birthdate, postal_code, address, phone,
     emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
-    terms_snapshot,
+    terms_snapshot, option_ids, coupon_code,
   } = body;
 
   if (!provider_id || !plan_id || !enrollment_date || !last_name?.trim() || !first_name?.trim() || !phone?.trim()) {
@@ -83,9 +84,19 @@ export async function POST(request) {
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
 
+  // オプション・クーポン（でお要望 2026-10-19：hacomono差分 #5）
+  const optIds = Array.isArray(option_ids) ? [...new Set(option_ids)].slice(0, 20) : [];
+  const { data: opts } = optIds.length ? await supabase.from('provider_membership_options').select('id, monthly_price').eq('provider_id', provider_id).eq('active', true).in('id', optIds) : { data: [] };
+  let discountId = null;
+  if (coupon_code) {
+    const r = await findCoupon(supabase, provider_id, coupon_code);
+    if (r.error) return Response.json({ error: r.error }, { status: 400 });
+    discountId = r.discount.id;
+  }
+
   // 初回目安額にはロッカー代も含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
   // 課金したい」。ロッカーも同じサブスクリプションの明細として日割り対象になるため）。
-  const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0);
+  const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0) + (opts || []).reduce((t, o) => t + o.monthly_price, 0);
   const proratedAmount = (settings?.prorate_first_month ?? true) ? estimateProratedAmount(enrollment_date, monthlyTotal) : null;
 
   const { data, error } = await supabase
@@ -95,6 +106,8 @@ export async function POST(request) {
       status: 'draft',
       enrollment_date, prorated_first_amount: proratedAmount,
       locker_id: locker_id || null,
+      option_ids: (opts || []).length ? opts.map(o => o.id) : null,
+      discount_id: discountId,
       last_name: last_name.trim(), first_name: first_name.trim(),
       birthdate: birthdate || null, postal_code: postal_code || null, address: address || null, phone: phone.trim(),
       emergency_contact_name: emergency_contact_name || null,
