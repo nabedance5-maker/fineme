@@ -21,7 +21,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from('provider_memberships')
-    .select('id, user_id, plan_id, status, last_name, first_name, enrollment_date, prorated_first_amount, locker_id, created_at, approved_at')
+    .select('id, user_id, plan_id, status, last_name, first_name, enrollment_date, prorated_first_amount, locker_id, created_at, approved_at, paused_at, pause_until, cancel_at, cancelled_at')
     .eq('provider_id', provider.id)
     .in('status', ['pending_approval', 'active', 'rejected', 'cancelled'])
     .order('created_at', { ascending: false });
@@ -30,10 +30,12 @@ export async function GET(request) {
 
   const planIds = [...new Set(rows.map(r => r.plan_id).filter(Boolean))];
   const lockerIds = [...new Set(rows.map(r => r.locker_id).filter(Boolean))];
-  const [{ data: plans }, { data: lockers }] = await Promise.all([
+  const [{ data: plans }, { data: lockers }, { data: reqs }] = await Promise.all([
     planIds.length ? supabase.from('provider_membership_plans').select('id, name, monthly_price').in('id', planIds) : { data: [] },
     lockerIds.length ? supabase.from('provider_lockers').select('id, name').in('id', lockerIds) : { data: [] },
+    supabase.from('provider_membership_changes').select('membership_id, kind').eq('provider_id', provider.id).eq('status', 'requested'),
   ]);
+  const reqOf = {}; (reqs || []).forEach(r => { reqOf[r.membership_id] = r.kind; });
   const planMap = {}; (plans || []).forEach(p => { planMap[p.id] = p; });
   const lockerMap = {}; (lockers || []).forEach(l => { lockerMap[l.id] = l; });
 
@@ -42,5 +44,6 @@ export async function GET(request) {
     plan_name: planMap[r.plan_id]?.name || null,
     plan_price: planMap[r.plan_id]?.monthly_price || null,
     locker_name: lockerMap[r.locker_id]?.name || null,
+    pending_request: reqOf[r.id] || null,
   })));
 }

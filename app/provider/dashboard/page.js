@@ -434,6 +434,23 @@ const DASHBOARD_CSS = `
       .mbill-row em.ng { font-style: normal; margin-left: 6px; }
       .mbill-hist { grid-column: 1 / -1; display: grid; gap: 4px; font-size: 12.5px; padding-top: 6px; border-top: 1px dashed rgba(26,20,16,0.12); }
       .mbill-hist div { display: grid; grid-template-columns: 110px 100px 1fr; font-variant-numeric: tabular-nums; }
+      /* 会員プランの休会・プラン変更・退会（2026-10-19） */
+      .mbr-chip { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 99px; color: #1a1410; margin-left: 8px; }
+      .mbr-chip-sub { background: #fde68a; }
+      #mbr-manage { color: #1a1410; }
+      .mbr-state { display: flex; gap: 8px 24px; flex-wrap: wrap; font-size: 13px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; }
+      .mbr-state div { display: flex; flex-direction: column; gap: 2px; }
+      .mbr-state span { font-size: 11.5px; }
+      .mbr-req { display: grid; gap: 8px; padding: 12px 14px; border-radius: 10px; background: #fef3c7; font-size: 13px; line-height: 1.7; }
+      .mbr-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .mbr-actions .btn { font-size: 12.5px; padding: 6px 14px; }
+      .mbr-form { display: grid; gap: 10px; padding: 14px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; font-size: 13px; }
+      .mbr-form p { margin: 0; font-size: 12.5px; line-height: 1.7; }
+      .mbr-form label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; }
+      .mbr-form input, .mbr-form select { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; font-weight: 400; }
+      .mbr-hist { display: grid; gap: 4px; font-size: 12.5px; padding-top: 8px; border-top: 1px dashed rgba(26,20,16,0.15); }
+      .mbr-hist div { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; }
+      @media (max-width: 640px) { .mbr-hist div { grid-template-columns: 1fr; gap: 0; padding-bottom: 6px; } }
 `;
 
 export default function ProviderDashboardPage() {
@@ -5243,8 +5260,8 @@ export default function ProviderDashboardPage() {
       const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
-      const STATUS_LABEL = { pending_approval: '承認待ち', active: '有効', rejected: '却下', cancelled: '解約' };
-      const STATUS_COLOR = { pending_approval: '#d97706', active: '#16a34a', rejected: '#ef4444', cancelled: '#9ca3af' };
+      const STATUS_LABEL = { pending_approval: '承認待ち', active: '入会中', rejected: '却下', cancelled: '退会' };
+      const STATUS_COLOR = { pending_approval: '#fde68a', active: '#bbf7d0', rejected: '#fecaca', cancelled: '#e5e7eb' };
 
       const warningEl = document.getElementById('mbr-connect-warning');
       const joinUrlEl = document.getElementById('mbr-join-url');
@@ -5323,17 +5340,103 @@ export default function ProviderDashboardPage() {
         if (prorateEl) prorateEl.checked = !!s.prorate_first_month;
         if (idreqEl) idreqEl.checked = !!s.require_id_document;
         if (termsEl) termsEl.value = s.terms_text || '';
+        const allowEl = document.getElementById('mbr-set-allowreq');
+        if (allowEl) allowEl.checked = s.allow_online_requests !== false;
       }
       document.getElementById('mbr-set-save-btn')?.addEventListener('click', async () => {
         const msgEl = document.getElementById('mbr-set-msg');
         const body = {
           prorate_first_month: document.getElementById('mbr-set-prorate')?.checked,
           require_id_document: document.getElementById('mbr-set-idreq')?.checked,
+          allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
           terms_text: document.getElementById('mbr-set-terms')?.value || '',
         };
         const res = await fetch('/api/provider/membership-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
         if (msgEl) { msgEl.textContent = res.ok ? '保存しました' : '保存に失敗しました'; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
       });
+
+      // ── 休会・プラン変更・退会（でお要望 2026-10-19：hacomono差分 #4） ──
+      const CHANGE_LABEL = { pause: '休会', resume: '休会から再開', plan_change: 'プラン変更', cancel: '退会', cancel_undo: '退会の取り消し', decline: 'お断り' };
+      const CHANGE_STATUS = { requested: '申請中', applied: '反映済み', declined: 'お断り', withdrawn: '取り下げ' };
+      const TIMING_LABEL = { now: '今すぐ', period_end: '今の支払い期間の終わり', date: '日付を指定' };
+      const ymd = d => (d ? String(d).slice(0, 10).replace(/-/g, '/') : '');
+      function stateChips(m) {
+        const chips = [];
+        if (m.status === 'active' && m.paused_at) chips.push(`休会中${m.pause_until ? `（${ymd(m.pause_until)}に再開）` : ''}`);
+        if (m.status === 'active' && m.cancel_at) chips.push(`${ymd(m.cancel_at)}で退会予定`);
+        if (m.pending_request) chips.push(`${CHANGE_LABEL[m.pending_request]}の申請あり`);
+        return chips.map(c => `<span class="mbr-chip mbr-chip-sub">${esc(c)}</span>`).join('');
+      }
+      function renderManage(m) {
+        const box = document.getElementById('mbr-manage');
+        if (!box) return;
+        if (m.status !== 'active') { box.innerHTML = ''; return; }
+        const req = (m.changes || []).find(c => c.status === 'requested');
+        const otherPlans = (m.plans || []).filter(p => p.id !== m.plan_id);
+        const reqText = c => [
+          c.kind === 'plan_change' && `変更先：${esc(c.to_plan_name || '')}（次回の引き落としから）`,
+          c.kind === 'pause' && `再開の希望日：${c.pause_until ? ymd(c.pause_until) : '未定'}`,
+          c.kind === 'cancel' && `退会の希望：${c.effective_date ? `${ymd(c.effective_date)}で退会` : '今の支払い期間の終わりで退会'}`,
+          c.reason && `理由：${esc(c.reason)}`,
+        ].filter(Boolean).join('<br>');
+        box.innerHTML = `
+          <div class="mbr-state">
+            <div><span>状態</span><b>${m.paused_at ? `休会中${m.pause_until ? `（${ymd(m.pause_until)}に自動で再開）` : '（再開日は未定）'}` : '通常'}${m.cancel_at ? `・${ymd(m.cancel_at)}で退会予定` : ''}</b></div>
+            <div><span>次回の引き落とし</span><b>${m.paused_at ? '休会中のため無し' : m.cancel_at ? '退会予定のため無し' : esc(ymd(m.next_charge_date) || '—')}</b></div>
+          </div>
+          ${req ? `<div class="mbr-req">
+            <b>お客様から「${CHANGE_LABEL[req.kind]}」の申請があります（${ymd(req.created_at)}）</b>
+            <div>${reqText(req)}</div>
+            <div class="mbr-actions"><button type="button" class="btn" data-mbr-req-ok="${req.id}">承認して反映する</button><button type="button" class="btn btn-ghost" data-mbr-req-ng="${req.id}">お断りする</button></div>
+          </div>` : ''}
+          <div class="mbr-actions">
+            ${m.paused_at ? '<button type="button" class="btn btn-ghost" data-mbr-act="resume">休会から再開する</button>' : '<button type="button" class="btn btn-ghost" data-mbr-act="pause">休会する</button>'}
+            ${otherPlans.length ? '<button type="button" class="btn btn-ghost" data-mbr-act="plan_change">プランを変更する</button>' : ''}
+            ${m.cancel_at ? '<button type="button" class="btn btn-ghost" data-mbr-act="cancel_undo">退会を取り消す</button>' : '<button type="button" class="btn btn-ghost" data-mbr-act="cancel">退会する</button>'}
+          </div>
+          <div id="mbr-act-form"></div>
+          ${(m.changes || []).length ? `<div class="mbr-hist"><b>変更の履歴</b>${m.changes.map(c => `<div><span>${ymd(c.created_at)}</span><span>${CHANGE_LABEL[c.kind]}${c.kind === 'plan_change' ? `（${esc(c.from_plan_name || '')} → ${esc(c.to_plan_name || '')}）` : ''}${c.effective_date && c.kind !== 'resume' ? `・${ymd(c.effective_date)}${c.kind === 'cancel' ? 'で退会' : 'から'}` : ''}${c.pause_until ? `・${ymd(c.pause_until)}に再開` : ''}</span><span>${c.requested_by === 'customer' ? 'お客様の申請' : '店舗'}・${CHANGE_STATUS[c.status]}${c.operator ? `（${esc(c.operator)}）` : ''}</span></div>`).join('')}</div>` : ''}
+        `;
+        const formEl = document.getElementById('mbr-act-form');
+        const today = new Date(Date.now() + 9 * 3600000); today.setUTCDate(today.getUTCDate() + 1);
+        const tomorrow = today.toISOString().slice(0, 10);
+        const send = async (payload, okText) => {
+          if (detailMsg) detailMsg.textContent = '';
+          const res = await fetch(`/api/provider/memberships/${m.id}/change`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(payload) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { if (detailMsg) detailMsg.textContent = d.error || '反映できませんでした'; return; }
+          showToast(okText);
+          openDetail(m.id); loadApplications();
+        };
+        box.querySelectorAll('[data-mbr-act]').forEach(b => b.addEventListener('click', () => {
+          const act = b.dataset.mbrAct;
+          if (act === 'resume') { send({ kind: 'resume' }, '休会から再開しました'); return; }
+          if (act === 'cancel_undo') { send({ kind: 'cancel_undo' }, '退会の予定を取り消しました'); return; }
+          if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>休会中の月会費は引き落としません（すでに払った期間はそのまま）。再開日を決めると、その日に自動で再開します。</p><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'plan_change') formEl.innerHTML = `<div class="mbr-form"><b>プランを変更する</b><label>変更先のプラン<select id="mbr-f-plan">${otherPlans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select></label><label>いつから<select id="mbr-f-timing"><option value="period_end">次回の引き落としから新しい月額（差額の精算なし）</option><option value="now">今日から（差額を日割りで次回の請求に加減）</option></select></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">変更する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">今の支払い期間の終わり（${esc(ymd(m.next_charge_date) || '次回の引き落とし日')}の前日まで通える）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" hidden>退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          document.getElementById('mbr-f-x')?.addEventListener('click', () => { formEl.innerHTML = ''; });
+          const tEl = document.getElementById('mbr-f-timing');
+          if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').hidden = tEl.value !== 'date'; });
+          document.getElementById('mbr-f-go')?.addEventListener('click', () => {
+            const reason = document.getElementById('mbr-f-reason')?.value || '';
+            if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, reason }, '休会にしました');
+            if (act === 'plan_change') send({ kind: 'plan_change', to_plan_id: document.getElementById('mbr-f-plan').value, timing: tEl.value }, 'プランを変更しました');
+            if (act === 'cancel') {
+              const date = document.getElementById('mbr-f-date').value;
+              if (tEl.value === 'date' && !date) { if (detailMsg) detailMsg.textContent = '退会日を選んでください'; return; }
+              send({ kind: 'cancel', timing: tEl.value, date: date || null, reason }, tEl.value === 'now' ? '退会にしました' : '退会を予約しました');
+            }
+          });
+        }));
+        box.querySelector('[data-mbr-req-ok]')?.addEventListener('click', e => send({ request_id: e.currentTarget.dataset.mbrReqOk }, '申請を承認して反映しました'));
+        box.querySelector('[data-mbr-req-ng]')?.addEventListener('click', e => {
+          const rid = e.currentTarget.dataset.mbrReqNg;
+          formEl.innerHTML = `<div class="mbr-form"><b>申請をお断りする</b><label>お客様へのひとこと（任意・LINEでお知らせします）<input id="mbr-f-note" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">お断りする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          document.getElementById('mbr-f-x').addEventListener('click', () => { formEl.innerHTML = ''; });
+          document.getElementById('mbr-f-go').addEventListener('click', () => send({ kind: 'decline', request_id: rid, note: document.getElementById('mbr-f-note').value }, 'お断りしました'));
+        });
+      }
 
       async function loadApplications() {
         if (!appListEl) return;
@@ -5345,7 +5448,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap;cursor:pointer" data-mbr-open="${m.id}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:14px">${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong>
-              <span style="font-size:11px;font-weight:700;color:${STATUS_COLOR[m.status] || '#6b7280'};margin-left:8px">${STATUS_LABEL[m.status] || m.status}</span>
+              <span class="mbr-chip" style="background:${STATUS_COLOR[m.status] || '#e5e7eb'}">${STATUS_LABEL[m.status] || m.status}</span>${stateChips(m)}
               <div class="muted" style="font-size:12px;margin-top:2px">${esc(m.plan_name || 'プラン未選択')} ／ 入会希望日：${esc(m.enrollment_date || '未設定')}</div>
             </div>
           </div>
@@ -5368,7 +5471,7 @@ export default function ProviderDashboardPage() {
         if (approveBtn) approveBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
         if (rejectBtn) rejectBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
         detailBody.innerHTML = `
-          <div><strong>${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong> <span style="font-size:11px;font-weight:700;color:${STATUS_COLOR[m.status] || '#6b7280'}">${STATUS_LABEL[m.status] || m.status}</span></div>
+          <div><strong>${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong> <span class="mbr-chip" style="background:${STATUS_COLOR[m.status] || '#e5e7eb'}">${STATUS_LABEL[m.status] || m.status}</span></div>
           <div>生年月日：${esc(m.birthdate || '未入力')}</div>
           <div>住所：〒${esc(m.postal_code || '')} ${esc(m.address || '')}</div>
           <div>電話：${esc(m.phone || '未入力')}</div>
@@ -5378,7 +5481,9 @@ export default function ProviderDashboardPage() {
           <div>緊急連絡先：${esc(m.emergency_contact_name || '未入力')}（${esc(m.emergency_contact_relation || '')}）${esc(m.emergency_contact_phone || '')}</div>
           <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
           <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
+          ${m.cancel_reason ? `<div>退会の理由：${esc(m.cancel_reason)}</div>` : ''}
         `;
+        renderManage(m);
       }
       document.getElementById('mbr-detail-close')?.addEventListener('click', () => { detailCard.style.display = 'none'; currentDetailId = null; });
       document.getElementById('mbr-detail-approve-btn')?.addEventListener('click', async () => {
@@ -15995,6 +16100,9 @@ export default function ProviderDashboardPage() {
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-idreq" />本人確認書類（免許証・保険証・パスポート）を必須にする
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <input type="checkbox" id="mbr-set-allowreq" />お客様がマイページから休会・プラン変更・退会を申請できるようにする（承認するまで契約は変わりません）
+            </label>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label>利用規約・同意書の内容（入会ページとお客様のマイページに表示されます）</label>
               <textarea id="mbr-set-terms" style={{ width: '100%', minHeight: '140px', fontSize: '13px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="規約・同意書の文面を入力してください"></textarea>
@@ -16005,17 +16113,19 @@ export default function ProviderDashboardPage() {
 
           {/* 申込一覧 */}
           <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px' }}>入会申込一覧</h3>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>会員・入会申込の一覧</h3>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>会員を開くと、休会・プラン変更・退会の操作と、お客様からの申請の承認ができます。</p>
             <div id="mbr-app-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
           </div>
 
           {/* 申込詳細（一覧から開く） */}
           <div id="mbr-detail-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px', display: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px' }}>申込詳細</h3>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>会員の詳細</h3>
               <button type="button" className="btn btn-ghost" id="mbr-detail-close" style={{ fontSize: '12px' }}>閉じる</button>
             </div>
             <div id="mbr-detail-body" style={{ fontSize: '13px', lineHeight: '1.8' }}></div>
+            <div id="mbr-manage" className="stack" style={{ gap: '12px' }}></div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" className="btn" id="mbr-detail-approve-btn">承認する（課金開始）</button>
               <button type="button" className="btn btn-ghost" id="mbr-detail-reject-btn" style={{ color: '#ef4444' }}>却下する</button>

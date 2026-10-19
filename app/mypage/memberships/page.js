@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import MypageSideNav from '../_components/MypageSideNav';
+import RequestPanel from './RequestPanel';
 
-const STATUS_LABEL = { pending_approval: '承認待ち', active: '会員', rejected: '却下', cancelled: '解約済み' };
-const STATUS_COLOR = { pending_approval: '#d97706', active: '#22c55e', rejected: '#ef4444', cancelled: 'rgba(232,228,220,0.5)' };
+const STATUS_LABEL = { pending_approval: '承認待ち', active: '会員', rejected: '却下', cancelled: '退会済み' };
+const STATUS_COLOR = { pending_approval: '#fff', active: '#fff', rejected: '#fff', cancelled: '#fff' };
 
 function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
 function fmtDate(s) { return s ? new Date(s).toLocaleDateString('ja-JP') : ''; }
@@ -34,6 +35,11 @@ export default function MypageMembershipsPage() {
       .catch(() => setError('取得に失敗しました'))
       .finally(() => setLoading(false));
   }, []);
+
+  async function reloadDetail(id) {
+    const res = await fetch(`/api/me/memberships/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) setDetail(await res.json());
+  }
 
   async function toggleDetail(id) {
     if (openId === id) { setOpenId(null); setDetail(null); return; }
@@ -102,6 +108,7 @@ export default function MypageMembershipsPage() {
                             <p style={{ margin: '0 0 6px' }}>ロッカー：{detail.locker_name}（月額{fmtYen(detail.locker_fee)}）</p>
                           )}
                           {detail.approved_at && <p style={{ margin: '0 0 6px' }}>承認日：{fmtDate(detail.approved_at)}</p>}
+                          {m.status === 'active' && <RequestPanel detail={detail} token={token} onChanged={() => reloadDetail(m.id)} />}
                           {detail.terms_snapshot ? (
                             <div style={{ marginTop: '10px' }}>
                               <p style={{ margin: '0 0 6px', fontWeight: 700, color: 'rgba(232,228,220,0.7)' }}>

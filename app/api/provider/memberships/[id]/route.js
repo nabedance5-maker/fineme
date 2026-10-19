@@ -1,7 +1,9 @@
 // GET /api/provider/memberships/[id] → 申込詳細（本人確認書類は署名付きURLを都度発行）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import Stripe from 'stripe';
 import { planLockedResponse } from '@/lib/plan-features';
+import { periodEndOf } from '@/lib/membership-changes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -29,6 +31,21 @@ export async function GET(request, { params }) {
     m.locker_id ? supabase.from('provider_lockers').select('name').eq('id', m.locker_id).single() : Promise.resolve({ data: null }),
   ]);
 
+  // 休会・プラン変更・退会の履歴と申請、変更先に選べるプラン、次回の引き落とし日（でお要望 2026-10-19）
+  const [{ data: changes }, { data: plans }] = await Promise.all([
+    supabase.from('provider_membership_changes').select('*').eq('membership_id', m.id).order('created_at', { ascending: false }).limit(50),
+    supabase.from('provider_membership_plans').select('id, name, monthly_price, active').eq('provider_id', provider.id).order('sort_order'),
+  ]);
+  const planName = Object.fromEntries((plans || []).map(p => [p.id, p.name]));
+  let next_charge_date = null;
+  if (m.status === 'active' && m.stripe_subscription_id && process.env.STRIPE_SECRET_KEY) {
+    try {
+      const sub = await new Stripe(process.env.STRIPE_SECRET_KEY).subscriptions.retrieve(m.stripe_subscription_id);
+      const end = periodEndOf(sub);
+      if (end && !sub.pause_collection) next_charge_date = new Date(end * 1000 + 9 * 3600000).toISOString().slice(0, 10);
+    } catch { /* Stripeに繋がらない時は省く */ }
+  }
+
   let id_document_url = null;
   if (m.id_document_path) {
     const { data: signed } = await supabase.storage.from('id-documents').createSignedUrl(m.id_document_path, 300);
@@ -42,5 +59,8 @@ export async function GET(request, { params }) {
     plan_name: plan?.name || null,
     plan_price: plan?.monthly_price ?? null,
     locker_name: locker?.name || null,
+    next_charge_date,
+    plans: (plans || []).filter(p => p.active || p.id === m.plan_id),
+    changes: (changes || []).map(c => ({ ...c, from_plan_name: planName[c.from_plan_id] || null, to_plan_name: planName[c.to_plan_id] || null })),
   });
 }

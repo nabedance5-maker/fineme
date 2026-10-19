@@ -25,6 +25,7 @@ export async function GET(request) {
   return Response.json({
     prorate_first_month: data?.prorate_first_month ?? true,
     require_id_document: data?.require_id_document ?? true,
+    allow_online_requests: data?.allow_online_requests ?? true,
     terms_text: data?.terms_text || '',
   });
 }
@@ -40,6 +41,7 @@ async function __PATCH(request) {
   const update = { provider_id: provider.id, updated_at: new Date().toISOString() };
   if ('prorate_first_month' in body) update.prorate_first_month = !!body.prorate_first_month;
   if ('require_id_document' in body) update.require_id_document = !!body.require_id_document;
+  if ('allow_online_requests' in body) update.allow_online_requests = !!body.allow_online_requests;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;
 
   const { error } = await supabase.from('provider_membership_settings').upsert(update);
