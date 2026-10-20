@@ -98,9 +98,18 @@ export async function POST(request) {
   // 予約時に選んだ使用チケット（でお要望2026-09-27）。本人（user_id）が実際に持っている
   // このお店のチケットかを確認してからでないと信用しない（他人のpackage_idを勝手に
   // 指定されるのを防ぐ）。無効なら黙ってnull扱いにする（必須項目ではないため）。
+  // 予約するお客様の本人確認はログインのトークンで行う（でお要望 2026-10-21）。
+  // 本文の user_id はトークンの本人と一致する時だけ受け付ける（他人のアカウントに予約を付けられないように）。
+  // ログインしていないお客様は、これまで通りアカウントに紐付けないゲスト予約になる。
+  const authUser = await verifyAuth(request);
+  if (user_id && (!authUser || authUser.id !== user_id)) {
+    return Response.json({ error: 'ログインの確認ができませんでした。ページを開き直すか、ログインし直してから予約してください', code: 'auth_mismatch' }, { status: 401 });
+  }
+  let bookingUserId = authUser?.id || null;
+
   let verifiedPackageId = null;
-  if (package_id && user_id) {
-    const { data: pkg } = await supabase.from('customer_packages').select('id').eq('id', package_id).eq('user_id', user_id).eq('provider_id', provider_id).maybeSingle();
+  if (package_id && bookingUserId) {
+    const { data: pkg } = await supabase.from('customer_packages').select('id').eq('id', package_id).eq('user_id', bookingUserId).eq('provider_id', provider_id).maybeSingle();
     if (pkg) verifiedPackageId = pkg.id;
   }
   if (!isInstant && (!preferred_date || !preferred_time)) {
@@ -108,8 +117,7 @@ export async function POST(request) {
   }
 
   // 回数券・会員プランの方だけが予約できるメニュー（でお要望 2026-10-20）。
-  // 本人確認はログインのトークンで行う（本文の user_id は信用しない）。回数券で予約する時は、使う回数券を必ず決める。
-  let bookingUserId = user_id || null;
+  // 回数券で予約する時は、使う回数券を必ず決める。
   // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する（枠のメニューは後で予約に引き継がれるため）
   let effectiveServiceId = service_id || null;
   if (!effectiveServiceId && isInstant && slot_id) {
@@ -119,15 +127,12 @@ export async function POST(request) {
   if (effectiveServiceId) {
     const { data: svc } = await supabase.from('provider_services').select('id, booking_scope, allow_ticket, eligible_package_ids, allow_membership, eligible_plan_ids').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle();
     if (svc?.booking_scope === 'limited') {
-      const authUser = await verifyAuth(request);
       const [{ data: pk }, { data: pl }] = await Promise.all([
         supabase.from('service_packages').select('id, name').in('id', svc.eligible_package_ids?.length ? svc.eligible_package_ids : ['00000000-0000-0000-0000-000000000000']),
         supabase.from('provider_membership_plans').select('id, name').in('id', svc.eligible_plan_ids?.length ? svc.eligible_plan_ids : ['00000000-0000-0000-0000-000000000000']),
       ]);
       const label = scopeLabel(svc, Object.fromEntries((pk || []).map(x => [x.id, x.name])), Object.fromEntries((pl || []).map(x => [x.id, x.name])));
       if (!authUser) return Response.json({ error: `このメニューは${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
-      if (user_id && user_id !== authUser.id) return Response.json({ error: 'ログインしているアカウントで予約してください' }, { status: 403 });
-      bookingUserId = authUser.id;
       const chk = checkService(svc, await customerEntitlements(supabase, provider_id, authUser.id));
       if (!chk.ok) return Response.json({ error: `このメニューは${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
       if (chk.via === 'ticket' && !chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;

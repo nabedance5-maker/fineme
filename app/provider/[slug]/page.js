@@ -7,6 +7,7 @@ import { hasFeature } from '@/lib/feature-flags';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { themeToCssVars } from '@/lib/provider-theme';
+import { freshAccessToken } from '@/lib/browser-auth';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -1122,9 +1123,11 @@ function ClassTab({ provider }) {
     if (!form.email.trim() && !form.phone.trim()) { setError('メールアドレスまたは電話番号のどちらかは必ず入力してください'); return; }
     setBookingSlotId(slotId);
     try {
+      // ログイン中ならトークンで本人を確かめてもらう（でお要望 2026-10-21）
+      const tk = userId ? await freshAccessToken() : null;
       const res = await fetch('/api/reservations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
         body: JSON.stringify({
           provider_id: provider.id,
           user_id: userId || null,
@@ -1440,13 +1443,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   // 回数券・会員プランの方だけが予約できるメニュー（でお要望 2026-10-20）。ログイン中のお客様が予約できるかを店舗ごとに確かめる
   const [elig, setElig] = useState(null);
-  const authToken = () => {
-    try { const k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token')); return k ? JSON.parse(localStorage.getItem(k))?.access_token || null : null; } catch { return null; }
-  };
   useEffect(() => {
     if (!provider?.slug || !(services || []).some(sv => sv.booking_scope === 'limited')) return;
-    const t = authToken();
-    fetch(`/api/providers/${provider.slug}/my-eligibility`, { headers: t ? { Authorization: `Bearer ${t}` } : {} })
+    freshAccessToken().then(t => fetch(`/api/providers/${provider.slug}/my-eligibility`, { headers: t ? { Authorization: `Bearer ${t}` } : {} }))
       .then(r => (r.ok ? r.json() : null)).then(setElig).catch(() => setElig(null));
   }, [provider?.slug, services, userId]);
   const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
@@ -1606,7 +1605,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           : { preferred_date: formState.date, preferred_time: formState.time }),
       };
       if (effSvc && svcState(effSvc) === 'locked') { setFormError(`このメニューは${effSvc.scope_label || '対象のお客様'}だけが予約できます`); return; }
-      const tk = authToken();
+      const tk = await freshAccessToken();
       const res = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) }, body: JSON.stringify(body) });
       if (res.ok) {
         const resData = await res.json().catch(() => ({}));
