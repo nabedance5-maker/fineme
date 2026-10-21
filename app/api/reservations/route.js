@@ -11,6 +11,7 @@ import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
 import { customerEntitlements, checkService, scopeLabel } from '@/lib/booking-eligibility';
+import { checkAndAssign } from '@/lib/availability-engine';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -91,7 +92,10 @@ export async function POST(request) {
   if (!provider_id || !user_name || !user_contact) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
-  if (isInstant && !slot_id) {
+  // 即時予約は「グループレッスンの開催回（slot_id）」か「メニュー×日時（date・start_time）」のどちらか（2026-10-21）
+  const { date: instantDate, start_time: instantStart } = body;
+  const engineInstant = isInstant && !slot_id && /^\d{4}-\d{2}-\d{2}$/.test(instantDate || '') && /^\d{1,2}:\d{2}/.test(instantStart || '');
+  if (isInstant && !slot_id && !engineInstant) {
     return Response.json({ error: '空き枠を選んでください' }, { status: 400 });
   }
 
@@ -188,7 +192,19 @@ export async function POST(request) {
   };
 
   let slot = null;
-  if (isInstant) {
+  if (engineInstant) {
+    // その場の計算で受けられるか確かめ、担当スタッフ・部屋を割り当てる（指名が無ければ空いているスタッフを自動で）
+    const { data: provFull } = await supabase.from('providers').select('id, plan, enabled_features, business_hours, booking_unit, booking_interval_minutes, store_capacity, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time').eq('id', provider_id).single();
+    const chk = await checkAndAssign(supabase, provFull, { serviceId: service_id || null, date: instantDate, startTime: instantStart.slice(0, 5), staffId: staff_id || null });
+    if (!chk.ok) return Response.json({ error: chk.error }, { status: 409 });
+    Object.assign(insertPayload, {
+      reserved_date: instantDate, start_time: instantStart.slice(0, 5), confirmed_date: instantDate, confirmed_time: instantStart.slice(0, 5),
+      status: 'approved', staff_id: chk.staffId, resource_id: chk.resourceId,
+      // お客様が指名していない担当は、店舗側の割り当てと同じ扱い（カレンダーで「指名なし」と分かるように）
+      staff_manually_assigned: chk.autoAssigned,
+    });
+    if (chk.autoAssigned) insertPayload.designation_fee = 0;
+  } else if (isInstant) {
     // 枠の空き再検証（アプリ側の再カウント方式。Financeの想定同時予約数は少ないため
     // DBレベルの排他制御までは今回不要と判断——決定済みの設計判断、要再確認せず進める）。
     const { data: slotRow } = await supabase.from('provider_slots').select('*').eq('id', slot_id).eq('provider_id', provider_id).single();
@@ -304,7 +320,7 @@ export async function POST(request) {
     .eq('id', provider_id)
     .single();
 
-  const whenText = isInstant ? `${slot.date} ${slot.start_time}` : `${preferred_date} ${preferred_time}`;
+  const whenText = isInstant ? `${insertPayload.confirmed_date} ${String(insertPayload.confirmed_time || '').slice(0, 5)}` : `${preferred_date} ${preferred_time}`;
   let className = null;
   if (slot?.class_id) {
     const { data: clsRow } = await supabase.from('provider_classes').select('name').eq('id', slot.class_id).single();

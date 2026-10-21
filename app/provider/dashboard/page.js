@@ -5332,6 +5332,7 @@ export default function ProviderDashboardPage() {
         // 開催日時が入力されていれば、同時に開催回も作る（でお要望2026-09-26：新規作成時。
         // 2026-10-21：クラスの編集画面からも開催日時を追加できるように）。
         let sessionCount = 0;
+        const sessionErrors = []; // 担当者・部屋が重なって作れなかった回（でお要望 2026-10-21）
         {
           const baseDate = document.getElementById('cls-new-session-date')?.value || '';
           if (baseDate) {
@@ -5346,6 +5347,7 @@ export default function ProviderDashboardPage() {
               for (const dateStr of dates) {
                 const sRes = await fetch(`/api/provider/classes/${savedClass.id}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ date: dateStr, start_time, end_time, capacity }) });
                 if (sRes.ok) sessionCount++;
+                else { const e = await sRes.json().catch(() => ({})); if (e.code === 'conflict') sessionErrors.push(e.error); }
               }
             }
           }
@@ -5353,6 +5355,7 @@ export default function ProviderDashboardPage() {
 
         editCard.style.display = 'none'; editForm.reset(); loadClasses();
         showToast(sessionCount ? `保存しました（開催回${sessionCount}件も追加）` : '保存しました');
+        if (sessionErrors.length) setTimeout(() => showToast(`${sessionErrors.length}回は作れませんでした：${sessionErrors[0]}${sessionErrors.length > 1 ? ' ほか' : ''}`), 2600);
       });
 
       function resetNewSessionInputs() {
@@ -5540,14 +5543,16 @@ export default function ProviderDashboardPage() {
         const capacity = fd.get('capacity');
         const dates = generateSessionDates({ recurType, baseDate, untilDate, weekdays });
         let okCount = 0;
+        const skipped = [];
         for (const dateStr of dates) {
           const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ date: dateStr, start_time, end_time, capacity }) });
           if (res.ok) okCount++;
+          else { const e = await res.json().catch(() => ({})); if (e.code === 'conflict') skipped.push(e.error); }
         }
         sessionForm.reset();
         updateSessionRecurFields();
         loadSessions();
-        showToast(`${okCount}件の開催回を追加しました`);
+        showToast(`${okCount}件の開催回を追加しました${skipped.length ? `（${skipped.length}件は担当者・部屋が重なるため作れませんでした：${skipped[0]}）` : ''}`);
       });
 
       async function loadRoster() {

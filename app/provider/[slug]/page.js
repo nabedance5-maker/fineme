@@ -1601,7 +1601,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         package_id: selectedPackageId || null,
         referral_code,
         ...(useInstant
-          ? { booking_mode: 'instant', slot_id: selectedSlotId }
+          // 2026-10-21：空き枠ではなく、選んだ日時で予約（スタッフのタブで選んでいればそのスタッフを指名、指名なしなら空いているスタッフをお店側で割り当て）
+          ? { booking_mode: 'instant', date: selectedSlotObj?.date, start_time: selectedSlotObj?.start_time, staff_id: gridStaffFilter || null }
           : { preferred_date: formState.date, preferred_time: formState.time }),
       };
       if (effSvc && svcState(effSvc) === 'locked') { setFormError(`このメニューは${effSvc.scope_label || '対象のお客様'}だけが予約できます`); return; }
@@ -1973,7 +1974,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
             {selectedSlotObj && (
               <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: '700', color: '#4ade80', margin: '10px 0 0' }}>
-                選択中：{selectedSlotObj.date}（{new Date(`${selectedSlotObj.date}T00:00:00`).toLocaleDateString('ja-JP', { weekday: 'short' })}）{selectedSlotObj.start_time?.slice(0, 5)}〜{selectedSlotObj.staff_name ? `　担当：${selectedSlotObj.staff_name}` : ''}
+                選択中：{selectedSlotObj.date}（{new Date(`${selectedSlotObj.date}T00:00:00`).toLocaleDateString('ja-JP', { weekday: 'short' })}）{selectedSlotObj.start_time?.slice(0, 5)}〜{gridStaffFilter && selectedSlotObj.staff_name ? `　担当：${selectedSlotObj.staff_name}` : gridHasNamedStaff ? '　担当：お店におまかせ' : ''}
               </p>
             )}
           </div>

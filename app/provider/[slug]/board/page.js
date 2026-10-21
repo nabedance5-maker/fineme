@@ -88,8 +88,10 @@ export default function BookingBoardPage() {
           user_name: name.trim(),
           user_contact: phone.trim(),
           booking_mode: 'instant',
-          slot_id: selectedSlot.id,
-          staff_id: selectedSlot.staff_id || null,
+          // 2026-10-21：空き枠ではなく選んだ日時で予約（スタッフのタブを選んでいればそのスタッフ、指名なしならお店側で割り当て）
+          date: selectedSlot.date,
+          start_time: selectedSlot.start_time,
+          staff_id: staffFilter ? selectedSlot.staff_id || null : null,
         }),
       });
       if (res.ok) {
@@ -192,7 +194,7 @@ export default function BookingBoardPage() {
           <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '18px', marginBottom: '20px', textAlign: 'center' }}>
             <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>ご予約日時</p>
             <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: '900' }}>{selectedSlot.date} {selectedSlot.start_time}</p>
-            {selectedSlot.staff_name && <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#666' }}>担当：{selectedSlot.staff_name}</p>}
+            {staffFilter && selectedSlot.staff_name && <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#666' }}>担当：{selectedSlot.staff_name}</p>}
           </div>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>お名前 *</label>

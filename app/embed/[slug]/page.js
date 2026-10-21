@@ -41,7 +41,8 @@ export default function EmbedBooking() {
   }, [slug, prov]);
 
   const days = [...Array(14)].map((_, i) => jst(i));
-  const daySlots = slots.filter(s => s.date === day).sort((a, b) => (a.start_time < b.start_time ? -1 : 1));
+  // 同じ時刻はまとめる（スタッフで受ける店では、空いているスタッフの人数分の行が来るため）
+  const daySlots = Object.values(slots.filter(s => s.date === day).reduce((m, s) => { const k = s.start_time; m[k] = m[k] ? { ...m[k], remaining: m[k].remaining + 1, staff_name: null } : { ...s }; return m; }, {})).sort((a, b) => (a.start_time < b.start_time ? -1 : 1));
   const menuName = id => menus.find(m => m.id === id)?.name;
 
   return (
@@ -56,7 +57,7 @@ export default function EmbedBooking() {
               <h2>空き状況</h2>
               <div className="fw-days" role="tablist">
                 {days.map(d => {
-                  const n = slots.filter(s => s.date === d).length;
+                  const n = new Set(slots.filter(s => s.date === d).map(s => s.start_time)).size;
                   const dt = new Date(`${d}T00:00:00+09:00`);
                   return <button key={d} type="button" role="tab" aria-selected={d === day} className={d === day ? 'on' : ''} onClick={() => setDay(d)} disabled={!n}><span>{dt.getMonth() + 1}/{dt.getDate()}</span><small>{WD[dt.getDay()]}</small><em>{n ? `空${n}` : '—'}</em></button>;
                 })}
@@ -64,7 +65,7 @@ export default function EmbedBooking() {
               <div className="fw-slots">
                 {daySlots.length ? daySlots.map(s => (
                   <a key={s.id} href={bookUrl({ service_id: s.service_id || '', date: s.date })} target="_blank" rel="noopener" className="fw-slot">
-                    <b>{String(s.start_time).slice(0, 5)}</b><span>{[menuName(s.service_id), s.staff_name].filter(Boolean).join('・') || '予約できます'}{s.limited ? '（回数券・会員の方）' : ''}</span><em>残り{s.remaining}</em>
+                    <b>{String(s.start_time).slice(0, 5)}</b><span>{[menuName(s.service_id), s.staff_name].filter(Boolean).join('・') || '空きあり'}{s.limited ? '（回数券・会員の方）' : ''}</span><em>{s.remaining > 1 ? `${s.remaining}名受付可` : '予約できます'}</em>
                   </a>
                 )) : <p className="fw-note">この日は空きがありません。</p>}
               </div>

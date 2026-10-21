@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { lessonConflict } from '@/lib/availability-engine';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -42,6 +43,16 @@ async function __PATCH(request, { params }) {
     if (changed) {
       const { data: booked } = await supabase.from('reservations').select('id').eq('slot_id', sessionId).in('status', OCCUPYING_STATUSES).limit(1);
       if (booked?.length) return Response.json({ error: '予約中のお客様がいるため、日時は変えられません。新しい日時の回を追加して、お客様にご案内してください' }, { status: 409 });
+    }
+  }
+
+  // 日時を動かす時は、動かした先で担当者・部屋がふさがっていないか（でお要望 2026-10-21）
+  if ('date' in update || 'start_time' in update || 'end_time' in update) {
+    const { data: cur } = await supabase.from('provider_slots').select('date, start_time, end_time, staff_id, resource_id').eq('id', sessionId).eq('provider_id', provider.id).maybeSingle();
+    const { data: cls } = await supabase.from('provider_classes').select('instructor_staff_id, resource_id').eq('id', id).maybeSingle();
+    if (cur) {
+      const conflict = await lessonConflict(supabase, provider.id, { date: update.date || cur.date, startTime: update.start_time || cur.start_time, endTime: update.end_time || cur.end_time, staffId: cur.staff_id || cls?.instructor_staff_id, resourceId: cur.resource_id || cls?.resource_id, excludeSlotId: sessionId });
+      if (conflict) return Response.json({ error: conflict, code: 'conflict' }, { status: 409 });
     }
   }
 

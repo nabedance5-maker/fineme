@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { lessonConflict } from '@/lib/availability-engine';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -52,12 +53,15 @@ async function __POST(request, { params }) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
-  const { data: cls } = await supabase.from('provider_classes').select('id, capacity').eq('id', id).eq('provider_id', provider.id).single();
-  if (!cls) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });
+  const { data: cls } = await supabase.from('provider_classes').select('id, capacity, instructor_staff_id, resource_id').eq('id', id).eq('provider_id', provider.id).single();
+  if (!cls) return Response.json({ error: 'グループレッスンが見つかりません' }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const { date, start_time, end_time, capacity, staff_id, resource_id } = body;
   if (!date || !start_time || !end_time) return Response.json({ error: '日付・開始/終了時刻は必須です' }, { status: 400 });
+  // 担当者・部屋が、その時間に個別の予約・別のレッスン・休憩でふさがっていないか（でお要望 2026-10-21）
+  const conflict = await lessonConflict(supabase, provider.id, { date, startTime: start_time, endTime: end_time, staffId: staff_id || cls.instructor_staff_id, resourceId: resource_id || cls.resource_id });
+  if (conflict) return Response.json({ error: `${date}：${conflict}`, code: 'conflict' }, { status: 409 });
 
   const cap = Number.isFinite(Number(capacity)) && capacity !== '' ? Number(capacity) : (cls.capacity || 1);
   const { data, error } = await supabase
