@@ -1,15 +1,62 @@
 'use client';
 // 掲載者ダッシュボード右下の常駐「AI専属コンサル」（でお要望 2026-10-03）。
 // どのタブにいても、店舗のゴール・実データ・今日の時期から考えた「今やること」を出す。
-// 最初は開いて表示、閉じると右端に小さく収まる。ゴール未設定でもシステムは普通に使える。
+// 閉じている時は右下に「今日やること 1/3」のような進み具合の札を出す（2026-10-21：右端の縦タブから変更）。ゴール未設定でもシステムは普通に使える。
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { goToTab } from './consultant-api';
 import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
+// ── 閉じている時の吹き出し（でお要望 2026-10-21：「折りたたみが見つけづらい。今野くんは気づいていなかった。
+//    でも作業の邪魔はしない、いい塩梅で」）。作業の区切り（画面を開いた後・タブを切り替えた直後）にだけ、
+//    1日3回まで・20分以上あけて出す。入力中・ポップアップ表示中・直前に操作していた時は出さない。15秒で消える。
+const NUDGE_KEY = 'fineme:cw:nudge';
+const OPENED_KEY = 'fineme:cw:opened';
+const MAX_PER_DAY = 3;
+const GAP_MS = 20 * 60 * 1000;
+const SHOW_MS = 15000;
+const todayStr = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+function readNudge() {
+  try {
+    const v = JSON.parse(localStorage.getItem(NUDGE_KEY) || '{}');
+    return v.date === todayStr() ? v : { date: todayStr(), count: 0, lastAt: 0, off: false };
+  } catch { return null; }
+}
+function writeNudge(v) { try { localStorage.setItem(NUDGE_KEY, JSON.stringify(v)); } catch {} }
+function everOpened() { try { return localStorage.getItem(OPENED_KEY) === '1'; } catch { return true; } }
+function currentTab() {
+  return document.querySelector('.tab-btn.active[data-tab]')?.dataset.tab || new URLSearchParams(location.search).get('tab') || '';
+}
+// 入力中・ポップアップ表示中・直前の操作がある間は「作業中」とみなして出さない
+let lastActivity = 0;
+function isBusyNow() {
+  if (Date.now() - lastActivity < 4000) return true;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return true;
+  const modal = [...document.querySelectorAll('.cal-modal-overlay, [role="dialog"], [aria-modal="true"]')].some(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed' && getComputedStyle(el).display !== 'none');
+  return modal;
+}
+
+function Ring({ done, total }) {
+  const r = 15, c = 2 * Math.PI * r;
+  const ratio = total ? done / total : 0;
+  return (
+    <svg className="cw-ring" width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
+      <circle cx="19" cy="19" r={r} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="4" />
+      {ratio > 0 && <circle cx="19" cy="19" r={r} fill="none" stroke="#c8a45c" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${c * ratio} ${c}`} transform="rotate(-90 19 19)" />}
+      <text x="19" y="23" textAnchor="middle" fontSize="12" fontWeight="800" fill="#ffffff">{total ? total - done : '策'}</text>
+    </svg>
+  );
+}
+
 export default function ConsultantWidget() {
   const { data, error, planning, busy, chatLog, replan, setTaskStatus, saveGoal, sendChat } = useConsultant();
   const [collapsed, setCollapsed] = useState(true);
+  const [bubble, setBubble] = useState(null); // { text, sub }
+  const [wiggle, setWiggle] = useState(false);
+  const bubbleTimer = useRef(null);
+  const dataRef = useRef(null);
+  dataRef.current = data;
   const [view, setView] = useState('now');
   const [chatInput, setChatInput] = useState('');
   const [goalDraft, setGoalDraft] = useState('');
@@ -21,6 +68,75 @@ export default function ConsultantWidget() {
 
   function setCollapsedPersist(v) {
     setCollapsed(v);
+    if (!v) {
+      setBubble(null);
+      try { localStorage.setItem(OPENED_KEY, '1'); } catch {}
+    }
+  }
+
+  // 吹き出しに出す言葉：今の画面に関係するタスク ＞ 初めての方への紹介 ＞ ゴール未設定 ＞ 今日やることの件数
+  function pickMessage(tab) {
+    const d = dataRef.current;
+    if (!d || d.enabled === false) return null;
+    const open = (d.tasks || []).filter(t => t.status === 'open');
+    const urgentN = open.filter(t => t.bucket === 'today' || t.bucket === 'missed').length;
+    const here = tab && open.find(t => t.tab === tab);
+    const cut = (t, n = 48) => (t.length > n ? `${t.slice(0, n)}…` : t);
+    if (here) return { text: `この画面でできること：${cut(here.title)}`, sub: 'AIコンサルがお店のデータから選んだ、今日のおすすめです' };
+    if (!everOpened()) return { text: 'AIコンサルです。お店のデータから「今日やること」を出しています', sub: urgentN ? `いま${urgentN}件あります。押すと開きます` : '押すと開きます' };
+    if (d.needsGoal) return { text: 'お店がどうなりたいか教えてもらえれば、今日やることを考えます', sub: '押すと開きます' };
+    if (urgentN) return { text: `今日やることが${urgentN}件あります`, sub: cut(open.find(t => t.bucket === 'today' || t.bucket === 'missed')?.title || '', 60) };
+    return null;
+  }
+  function tryNudge(tab, attempt = 0) {
+    if (!collapsedRef.current) return;
+    const st = readNudge();
+    if (!st || st.off || st.count >= MAX_PER_DAY || Date.now() - st.lastAt < GAP_MS) return;
+    const msg = pickMessage(tab);
+    if (!msg) return;
+    if (isBusyNow()) {
+      // 作業中なら少し待ってからもう一度（それでも作業中なら今回は出さない）
+      if (attempt < 6) bubbleTimer.current = setTimeout(() => tryNudge(tab, attempt + 1), 5000);
+      return;
+    }
+    writeNudge({ ...st, count: st.count + 1, lastAt: Date.now() });
+    setBubble(msg);
+    setWiggle(true);
+    setTimeout(() => setWiggle(false), 1200);
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setBubble(null), SHOW_MS);
+  }
+  const collapsedRef = useRef(true);
+  collapsedRef.current = collapsed;
+  const hideTimer = useRef(null);
+
+  useEffect(() => {
+    if (!data || data.enabled === false) return;
+    const mark = () => { lastActivity = Date.now(); };
+    window.addEventListener('keydown', mark, true);
+    window.addEventListener('input', mark, true);
+    // 画面を開いて少し落ち着いてから1回
+    const first = setTimeout(() => tryNudge(currentTab()), 6000);
+    // タブを切り替えた直後（作業の区切り）
+    const onClick = e => {
+      const btn = e.target.closest?.('.tab-btn[data-tab]');
+      if (!btn) { mark(); return; }
+      clearTimeout(bubbleTimer.current);
+      bubbleTimer.current = setTimeout(() => tryNudge(btn.dataset.tab), 2500);
+    };
+    document.addEventListener('click', onClick, true);
+    return () => {
+      clearTimeout(first); clearTimeout(bubbleTimer.current); clearTimeout(hideTimer.current);
+      window.removeEventListener('keydown', mark, true);
+      window.removeEventListener('input', mark, true);
+      document.removeEventListener('click', onClick, true);
+    };
+  }, [!!data]);
+
+  function dismissToday() {
+    const st = readNudge();
+    if (st) writeNudge({ ...st, off: true });
+    setBubble(null);
   }
 
   function submitChat() {
@@ -36,15 +152,37 @@ export default function ConsultantWidget() {
   const urgent = openTasks.filter(t => t.bucket === 'today' || t.bucket === 'missed');
   const shown = (urgent.length ? urgent : openTasks).slice(0, 4);
   const hiddenCount = openTasks.length - shown.length;
+  // 今日の進み具合（今日やること＝期限が今日・遅れているもの。今日終えたものも数に入れて「もう進んでいる」と見せる）
+  const today0 = todayStr();
+  const doneToday = (tasks || []).filter(t => t.status === 'done' && t.done_at && new Date(new Date(t.done_at).getTime() + 9 * 3600000).toISOString().slice(0, 10) === today0).length;
+  const todayTotal = doneToday + urgent.length;
 
   if (collapsed) {
     return createPortal(
       <>
         <style>{WIDGET_CSS}</style>
-        <button type="button" className="cw-tab" onClick={() => setCollapsedPersist(false)} aria-label="AI専属コンサルを開く">
-          <span className="cw-tab-label">AIコンサル</span>
-          {(needsGoal || urgent.length > 0) && <span className="cw-dot" aria-hidden="true" />}
+        {/* 右下の札（でお要望 2026-10-21：右端の縦タブは質問チャットbotと見分けがつかず気づかれにくかった）。
+            チャットの窓口ではなく「今日の段取り役」に見えるよう、今日の進み具合を輪と数字で出す */}
+        <button type="button" className={`cw-launch${wiggle ? ' is-wiggle' : ''}`} onClick={() => setCollapsedPersist(false)}
+          aria-label={`AI専属コンサルを開く${todayTotal ? `（今日やること ${doneToday}/${todayTotal}）` : ''}`}>
+          <Ring done={doneToday} total={todayTotal} />
+          <span className="cw-launch-text">
+            <span className="cw-launch-kicker">AIコンサル</span>
+            <b>{needsGoal ? 'お店のゴールを決める' : todayTotal === 0 ? '相談する' : urgent.length === 0 ? '今日の分は完了' : `今日やること ${doneToday}/${todayTotal}`}</b>
+          </span>
         </button>
+        {bubble && (
+          <div className="cw-bubble" role="status" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={() => { hideTimer.current = setTimeout(() => setBubble(null), 6000); }}>
+            <button type="button" className="cw-bubble-main" onClick={() => setCollapsedPersist(false)}>
+              <b>{bubble.text}</b>
+              {bubble.sub && <span>{bubble.sub}</span>}
+            </button>
+            <div className="cw-bubble-foot">
+              <button type="button" onClick={dismissToday}>今日は出さない</button>
+              <button type="button" onClick={() => setBubble(null)} aria-label="閉じる">閉じる</button>
+            </div>
+          </div>
+        )}
       </>,
       document.body,
     );
@@ -173,10 +311,27 @@ const WIDGET_CSS = `
   .cw-typing { color: rgba(26,20,16,0.55); }
   .cw-chat-form { display: flex; gap: 8px; align-items: flex-end; }
   .cw-chat-form textarea { flex: 1; resize: none; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
-  .cw-tab { position: fixed; right: 0; top: calc(100vh - 168px); top: calc(100svh - 168px); z-index: 180; display: flex; align-items: center; gap: 6px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px 0 0 12px; padding: 12px 10px; box-shadow: -4px 4px 16px rgba(10,15,30,0.25); cursor: pointer; }
-  .cw-tab-label { writing-mode: vertical-rl; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; }
   .cw-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--color-gold, #c8a45c); }
-  .cw-panel button:focus-visible, .cw-tab:focus-visible, .cw-panel textarea:focus-visible, .cw-panel input:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+  .cw-launch { position: fixed; right: 16px; bottom: 16px; z-index: 180; display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 8px; background: #0a0f1e; color: #fff; border: 1px solid rgba(200,164,92,0.45); border-radius: 16px; box-shadow: 0 8px 24px rgba(10,15,30,0.28); cursor: pointer; font-family: inherit; text-align: left; }
+  .cw-launch:hover { border-color: #c8a45c; }
+  .cw-launch-text { display: flex; flex-direction: column; gap: 1px; }
+  .cw-launch-kicker { font-size: 10.5px; letter-spacing: .08em; color: #ffffff; opacity: .8; }
+  .cw-launch b { font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cw-ring { flex-shrink: 0; display: block; }
+  .cw-launch.is-wiggle { animation: cw-wiggle 1.1s ease-in-out 1; }
+  @keyframes cw-wiggle { 0%, 100% { transform: translateY(0); } 20% { transform: translateY(-5px); } 40% { transform: translateY(0); } 60% { transform: translateY(-3px); } 80% { transform: translateY(0); } }
+  .cw-bubble { position: fixed; right: 16px; bottom: 84px; z-index: 181; width: min(300px, calc(100vw - 32px)); background: #fff; color: #1a1410; border: 1px solid rgba(26,20,16,0.15); border-radius: 12px; box-shadow: 0 10px 30px rgba(10,15,30,0.2); animation: cw-in .25s ease-out; }
+  .cw-bubble::after { content: ''; position: absolute; right: 36px; bottom: -7px; width: 12px; height: 12px; background: #fff; border-right: 1px solid rgba(26,20,16,0.15); border-bottom: 1px solid rgba(26,20,16,0.15); transform: rotate(45deg); }
+  .cw-bubble-main { display: grid; gap: 3px; width: 100%; text-align: left; padding: 12px 14px 6px; background: none; border: 0; color: #1a1410; cursor: pointer; font-family: inherit; }
+  .cw-bubble-main b { font-size: 13.5px; line-height: 1.55; }
+  .cw-bubble-main span { font-size: 12px; line-height: 1.5; }
+  .cw-bubble-foot { display: flex; justify-content: flex-end; gap: 4px; padding: 0 8px 8px; }
+  .cw-bubble-foot button { background: none; border: 0; color: #1a1410; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; cursor: pointer; text-decoration: underline; }
+  .cw-bubble-foot button:hover { background: rgba(26,20,16,0.06); }
+  @keyframes cw-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .cw-launch.is-wiggle, .cw-bubble { animation: none; } }
+  @media (max-width: 640px) { .cw-launch { right: 10px; bottom: 10px; padding: 6px 12px 6px 6px; } .cw-bubble { right: 10px; bottom: 74px; width: calc(100vw - 20px); } }
+  .cw-panel button:focus-visible, .cw-launch:focus-visible, .cw-panel textarea:focus-visible, .cw-panel input:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
   @media (max-width: 640px) { .cw-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); max-height: 70vh; } }
   .cw-head-text { min-width: 0; }
   .cw-goal-input { width: 100%; box-sizing: border-box; resize: vertical; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
