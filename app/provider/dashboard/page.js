@@ -683,6 +683,25 @@ const DASHBOARD_CSS = `
       .svc-scope-sub > span { font-size: 12px; line-height: 1.6; }
       .svc-scope-list { display: grid; gap: 4px; padding-left: 24px; font-size: 12.5px; }
       .svc-scope-list span { font-size: 11.5px; }
+      /* クラスの編集画面の開催日時（2026-10-21） */
+      .cls-es { display: grid; gap: 6px; margin-bottom: 14px; color: #1a1410; font-size: 13px; }
+      .cls-es-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 8px; background: var(--color-bg); border-radius: 8px; }
+      .cls-es-row input { padding: 5px 7px; border: 1px solid rgba(26,20,16,0.18); border-radius: 7px; font-size: 13px; color: #1a1410; background: #fff; }
+      .cls-es-row input:disabled { background: #f1ede4; }
+      .cls-es-row .es-cap { width: 64px; }
+      .cls-es-row .btn { font-size: 11.5px; padding: 4px 10px; }
+      .cls-es-wd { font-size: 12px; font-weight: 700; width: 1.4em; }
+      .cls-es-booked { font-size: 12px; font-variant-numeric: tabular-nums; margin-right: auto; }
+      /* グループレッスンのタブの開催日時の表（2026-10-21） */
+      .cls-bd-nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      .cls-bd-nav .btn { font-size: 12px; padding: 5px 10px; }
+      .cls-bd-nav input { padding: 5px 8px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .cls-bd-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
+      .cls-bd-day { flex: 0 0 auto; display: grid; justify-items: center; gap: 1px; padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(26,20,16,0.15); background: #fff; color: #1a1410; cursor: pointer; font-size: 12px; font-family: inherit; }
+      .cls-bd-day em { font-style: normal; font-size: 11px; font-weight: 700; }
+      .cls-bd-day.is-on { background: #1a1410; color: #fff; border-color: #1a1410; }
+      /* 予約カレンダーの下に「レッスンの作成・編集」として借りて表示する時は、同じ表が二重にならないよう隠す */
+      #lb-tools #cls-board-card { display: none; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -5103,6 +5122,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/staff', { headers: authH() });
         if (!res.ok) return;
         staffOptionsForClasses = await res.json();
+        if (boardSessions.length) renderBoard(); // 講師の名前・写真を表に反映
         if (instructorSelectEl) {
           instructorSelectEl.innerHTML = '<option value="">未設定</option>' + staffOptionsForClasses.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
         }
@@ -5116,7 +5136,7 @@ export default function ProviderDashboardPage() {
         // 部屋・場所の候補：これまでに使った場所の名前
         const placeOpts = document.getElementById('cls-place-options');
         if (placeOpts) placeOpts.innerHTML = [...new Set(classesCache.map(c => c.place).filter(Boolean))].map(x => `<option value="${esc(x)}"></option>`).join('');
-        if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。「＋ クラスを追加」から作成してください。</p>'; return; }
+        if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだグループレッスンがありません。「＋ グループレッスンを追加」から作成してください。</p>'; return; }
         listEl.innerHTML = classesCache.map(c => `
           <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--color-bg);border-radius:10px" data-cls-row="${c.id}">
             <div style="min-width:0">
@@ -5133,7 +5153,7 @@ export default function ProviderDashboardPage() {
         `).join('');
         listEl.querySelectorAll('[data-cls-edit]').forEach(btn => btn.addEventListener('click', () => {
           const c = classesCache.find(x => x.id === btn.dataset.clsEdit); if (!c) return;
-          editTitle.textContent = 'クラスを編集'; editCard.style.display = 'block';
+          editTitle.textContent = 'グループレッスンを編集'; editCard.style.display = 'block';
           editForm.elements['_class_id'].value = c.id;
           editForm.elements['name'].value = c.name || '';
           editForm.elements['description'].value = c.description || '';
@@ -5142,17 +5162,104 @@ export default function ProviderDashboardPage() {
           if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
           if (editForm.elements['place']) editForm.elements['place'].value = c.place || '';
           editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
-          if (newSessionFieldsEl) newSessionFieldsEl.style.display = 'none';
+          if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
+          resetNewSessionInputs();
+          const hd = document.getElementById('cls-new-session-heading');
+          if (hd) hd.textContent = '開催日時を追加（任意・1回だけ／毎週／毎月）';
+          loadEditSessions(c);
           editCard.scrollIntoView({ behavior: 'smooth' });
         }));
         listEl.querySelectorAll('[data-cls-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('このクラスを削除しますか？在籍者・進級履歴も全て削除されます。')) return;
+          if (!confirm('このグループレッスンを削除しますか？在籍者・進級履歴・開催日時も全て削除されます。')) return;
           await fetch(`/api/provider/classes/${btn.dataset.clsDel}`, { method: 'DELETE', headers: authH() });
           loadClasses();
         }));
         listEl.querySelectorAll('[data-cls-roster]').forEach(btn => btn.addEventListener('click', () => openRoster(btn.dataset.clsRoster)));
         listEl.querySelectorAll('[data-cls-sessions]').forEach(btn => btn.addEventListener('click', () => openSessions(btn.dataset.clsSessions)));
+        loadBoard();
       }
+
+      // ── 開催日時の表（でお要望 2026-10-21：一覧の下に、予約カレンダーのグループレッスンと同じカードで並べる）。
+      //    列＝部屋・場所、カード＝時刻・講師・レッスン名・残り枠。カードを押すとそのレッスンの編集（開催日時の一覧つき）、
+      //    空いているマスを押すとその日時・場所で開催日時を追加できる。
+      const boardEl = document.getElementById('cls-board');
+      const boardDateEl = document.getElementById('cls-board-date');
+      const jstToday = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      const addDays = (ymd, n) => { const t = new Date(`${ymd}T00:00:00Z`); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+      let boardDate = jstToday();
+      let boardSessions = [];
+      let boardResources = [];
+      const BOARD_COLORS = ['#1a1410', '#2f4f8f', '#7c3aed', '#b45309', '#047857', '#be185d', '#0e7490'];
+      async function loadBoard() {
+        if (!boardEl) return;
+        if (!classesCache.length) { boardEl.innerHTML = ''; return; }
+        const [rs, ...lists] = await Promise.all([
+          fetch('/api/provider/resources', { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []),
+          ...classesCache.map(c => fetch(`/api/provider/classes/${c.id}/sessions`, { headers: authH() }).then(r => (r.ok ? r.json() : [])).then(rows => rows.map(x => ({ ...x, class_id: c.id }))).catch(() => [])),
+        ]);
+        boardResources = Array.isArray(rs) ? rs : [];
+        boardSessions = lists.flat();
+        renderBoard();
+      }
+      function renderBoard() {
+        if (!boardEl) return;
+        if (boardDateEl) boardDateEl.value = boardDate;
+        const WD = ['日', '月', '火', '水', '木', '金', '土'];
+        // 7日分の日付（開催回の数つき）
+        const strip = [...Array(7)].map((_, i) => addDays(boardDate, i - 3)).map(d => {
+          const n = boardSessions.filter(x => x.date === d).length;
+          const dt = new Date(`${d}T00:00:00Z`);
+          return `<button type="button" class="cls-bd-day${d === boardDate ? ' is-on' : ''}" data-bd-day="${d}"><span>${dt.getUTCMonth() + 1}/${dt.getUTCDate()}（${WD[dt.getUTCDay()]}）</span><em>${n ? `${n}回` : '—'}</em></button>`;
+        }).join('');
+        const sessions = boardSessions.filter(x => x.date === boardDate).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
+        const placeOf = x => (x.resource_id && boardResources.find(r => r.id === x.resource_id)?.name) || classesCache.find(c => c.id === x.class_id)?.place || '場所未設定';
+        const places = [...new Set([...classesCache.map(c => c.place).filter(Boolean), ...sessions.map(placeOf)])];
+        if (!places.length) places.push('場所未設定');
+        const times = [...new Set(sessions.map(x => String(x.start_time).slice(0, 5)))];
+        const staffById = Object.fromEntries((staffOptionsForClasses || []).map(x => [x.id, x]));
+        const color = id => BOARD_COLORS[Math.max(0, classesCache.findIndex(c => c.id === id)) % BOARD_COLORS.length];
+        const card = x => {
+          const c = classesCache.find(k => k.id === x.class_id);
+          const st = staffById[x.staff_id || c?.instructor_staff_id];
+          const remaining = x.capacity - (x.booked || 0);
+          return `<div class="lb-card${!x.is_open ? ' is-closed' : ''}" data-bd-open="${x.class_id}">
+            ${remaining <= 0 ? '<span class="lb-flag">満席</span>' : ''}
+            <div class="lb-time">${esc(String(x.start_time).slice(0, 5))} - ${esc(String(x.end_time).slice(0, 5))}</div>
+            ${st?.photo_url ? `<img class="lb-photo" src="${esc(st.photo_url)}" alt="" />` : `<span class="lb-photo lb-initial">${esc((st?.name || c?.name || '・').trim().charAt(0))}</span>`}
+            <div class="lb-staff">${esc(st?.name || '講師未設定')}</div>
+            <span class="lb-tag" style="background:${color(x.class_id)}">${esc(c?.name || 'レッスン')}</span>
+            <div class="lb-remain">${!x.is_open ? '締切中・' : ''}残り${remaining}/${x.capacity}</div>
+          </div>`;
+        };
+        const rows = times.length ? times.map(t => `<div class="lb-row">${places.map(pl => {
+            const here = sessions.filter(x => String(x.start_time).slice(0, 5) === t && placeOf(x) === pl);
+            return `<div class="lb-cell" data-bd-add="${esc(pl)}" data-bd-time="${t}">${here.map(card).join('') || '<span class="lb-empty">＋</span>'}</div>`;
+          }).join('')}</div>`).join('')
+          : `<div class="lb-row">${places.map(pl => `<div class="lb-cell" data-bd-add="${esc(pl)}" data-bd-time="10:00"><span class="lb-empty">＋ 開催日時を追加</span></div>`).join('')}</div>`;
+        boardEl.innerHTML = `<div class="cls-bd-strip">${strip}</div>
+          <div class="lb-scroll"><div class="lb-grid" style="--lb-cols:${places.length}">
+            <div class="lb-row lb-head">${places.map(pl => `<div class="lb-room">${esc(pl)}</div>`).join('')}</div>${rows}
+          </div></div>
+          ${!sessions.length ? '<p style="font-size:12.5px;margin:8px 0 0;color:#1a1410">この日の開催はありません。マスの「＋」から追加できます。</p>' : ''}`;
+        boardEl.querySelectorAll('[data-bd-day]').forEach(b => b.addEventListener('click', () => { boardDate = b.dataset.bdDay; renderBoard(); }));
+        boardEl.querySelectorAll('[data-bd-open]').forEach(el => el.addEventListener('click', e => { e.stopPropagation(); listEl.querySelector(`[data-cls-edit="${el.dataset.bdOpen}"]`)?.click(); }));
+        boardEl.querySelectorAll('[data-bd-add]').forEach(cell => cell.addEventListener('click', e => {
+          if (e.target.closest('[data-bd-open]')) return;
+          // その場所に設定しているレッスンの編集を開き、追加欄に日時を入れておく（無ければ新しく作る画面）
+          const c = classesCache.find(k => k.place === cell.dataset.bdAdd) || (classesCache.length === 1 ? classesCache[0] : null);
+          if (c) listEl.querySelector(`[data-cls-edit="${c.id}"]`)?.click();
+          else { document.getElementById('cls-add-btn')?.click(); if (editForm.elements['place'] && cell.dataset.bdAdd !== '場所未設定') editForm.elements['place'].value = cell.dataset.bdAdd; }
+          const dEl = document.getElementById('cls-new-session-date'); const sEl = document.getElementById('cls-new-session-start'); const eEl = document.getElementById('cls-new-session-end');
+          if (dEl) dEl.value = boardDate;
+          if (sEl) sEl.value = cell.dataset.bdTime;
+          if (eEl) { const [h, m] = cell.dataset.bdTime.split(':').map(Number); eEl.value = `${String(Math.min(23, h + 1)).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
+          showToast('下の「開催日時を追加」に日時を入れました。保存すると追加されます');
+        }));
+      }
+      document.getElementById('cls-board-prev')?.addEventListener('click', () => { boardDate = addDays(boardDate, -1); renderBoard(); });
+      document.getElementById('cls-board-next')?.addEventListener('click', () => { boardDate = addDays(boardDate, 1); renderBoard(); });
+      document.getElementById('cls-board-today')?.addEventListener('click', () => { boardDate = jstToday(); renderBoard(); });
+      boardDateEl?.addEventListener('change', () => { if (boardDateEl.value) { boardDate = boardDateEl.value; renderBoard(); } });
 
       const newSessionFieldsEl = document.getElementById('cls-new-session-fields');
       const newSessionRecurTypeEl = document.getElementById('cls-new-session-recur-type');
@@ -5166,9 +5273,13 @@ export default function ProviderDashboardPage() {
       newSessionRecurTypeEl?.addEventListener('change', updateNewSessionRecurFields);
 
       document.getElementById('cls-add-btn')?.addEventListener('click', () => {
-        editTitle.textContent = 'クラスを追加'; editCard.style.display = 'block';
+        editTitle.textContent = 'グループレッスンを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_class_id'].value = '';
         if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
+        const hd = document.getElementById('cls-new-session-heading');
+        if (hd) hd.textContent = '最初の開催日時（任意・空欄ならグループレッスンだけ作成されます）';
+        const es = document.getElementById('cls-edit-sessions');
+        if (es) { es.style.display = 'none'; es.innerHTML = ''; }
         updateNewSessionRecurFields();
         editCard.scrollIntoView({ behavior: 'smooth' });
       });
@@ -5191,11 +5302,10 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); return; }
         const savedClass = await res.json();
 
-        // 新規作成時のみ、「最初の開催日時」が入力されていれば同時に開催回も作る
-        // （でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
-        // 日時を入れてほしい」）。編集時はこのフィールド自体を非表示にしているため対象外。
+        // 開催日時が入力されていれば、同時に開催回も作る（でお要望2026-09-26：新規作成時。
+        // 2026-10-21：クラスの編集画面からも開催日時を追加できるように）。
         let sessionCount = 0;
-        if (!id) {
+        {
           const baseDate = document.getElementById('cls-new-session-date')?.value || '';
           if (baseDate) {
             const start_time = document.getElementById('cls-new-session-start')?.value || '';
@@ -5217,6 +5327,56 @@ export default function ProviderDashboardPage() {
         editCard.style.display = 'none'; editForm.reset(); loadClasses();
         showToast(sessionCount ? `保存しました（開催回${sessionCount}件も追加）` : '保存しました');
       });
+
+      function resetNewSessionInputs() {
+        ['cls-new-session-date', 'cls-new-session-start', 'cls-new-session-end', 'cls-new-session-capacity', 'cls-new-session-until'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; });
+        document.querySelectorAll('.cls-new-session-weekday').forEach(el => { el.checked = false; });
+        if (newSessionRecurTypeEl) newSessionRecurTypeEl.value = 'once';
+        updateNewSessionRecurFields();
+      }
+      // 編集中のクラスの開催日時（これからの回）を、その場で変更・削除できる一覧（でお要望 2026-10-21）
+      async function loadEditSessions(c) {
+        const box = document.getElementById('cls-edit-sessions');
+        if (!box) return;
+        box.style.display = '';
+        box.innerHTML = '<p style="font-size:12.5px;margin:0">開催日時を読み込み中…</p>';
+        const res = await fetch(`/api/provider/classes/${c.id}/sessions`, { headers: authH() });
+        if (!res.ok) { box.innerHTML = ''; return; }
+        const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+        const rows = (await res.json()).filter(x => x.date >= today);
+        const WD = ['日', '月', '火', '水', '木', '金', '土'];
+        box.innerHTML = `<b>これからの開催日時（${rows.length}回）</b>` + (rows.length ? rows.slice(0, 60).map(x => `
+          <div class="cls-es-row" data-es="${x.id}">
+            <input type="date" class="es-date" value="${x.date}" ${x.booked ? 'disabled' : ''} aria-label="日付">
+            <span class="cls-es-wd">${WD[new Date(`${x.date}T00:00:00`).getDay()]}</span>
+            <input type="time" class="es-start" value="${String(x.start_time).slice(0, 5)}" ${x.booked ? 'disabled' : ''} aria-label="開始">
+            <span>〜</span>
+            <input type="time" class="es-end" value="${String(x.end_time).slice(0, 5)}" ${x.booked ? 'disabled' : ''} aria-label="終了">
+            <input type="number" class="es-cap" min="1" value="${x.capacity}" aria-label="定員" title="定員">
+            <span class="cls-es-booked">予約 ${x.booked}名</span>
+            <button type="button" class="btn btn-ghost es-save">変更を保存</button>
+            <button type="button" class="btn btn-ghost es-del" ${x.booked ? 'disabled title="予約中のお客様がいるため削除できません"' : ''}>削除</button>
+          </div>`).join('') + (rows.length > 60 ? `<p style="font-size:12px;margin:0">ほか${rows.length - 60}回は「予約枠を管理」から確認できます。</p>` : '') + (rows.some(x => x.booked) ? '<p style="font-size:12px;margin:0">予約が入っている回は、お客様の予約とずれないよう日時を変えられません（定員は変えられます）。</p>' : '')
+          : '<p style="font-size:12.5px;margin:0">まだ開催日時がありません。下で追加できます。</p>');
+        box.querySelectorAll('[data-es]').forEach(row => {
+          const sid = row.dataset.es;
+          row.querySelector('.es-save').addEventListener('click', async () => {
+            const body = { capacity: row.querySelector('.es-cap').value };
+            if (!row.querySelector('.es-date').disabled) Object.assign(body, { date: row.querySelector('.es-date').value, start_time: row.querySelector('.es-start').value, end_time: row.querySelector('.es-end').value });
+            const r = await fetch(`/api/provider/classes/${c.id}/sessions/${sid}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+            const d = await r.json().catch(() => ({}));
+            showToast(r.ok ? '開催日時を変更しました' : (d.error || '変更できませんでした'));
+            if (r.ok) { loadEditSessions(c); loadBoard(); }
+          });
+          row.querySelector('.es-del').addEventListener('click', async () => {
+            if (!confirm('この回を削除しますか？')) return;
+            const r = await fetch(`/api/provider/classes/${c.id}/sessions/${sid}`, { method: 'DELETE', headers: authH() });
+            const d = await r.json().catch(() => ({}));
+            showToast(r.ok ? '削除しました' : (d.error || '削除できませんでした'));
+            if (r.ok) { loadEditSessions(c); loadBoard(); }
+          });
+        });
+      }
 
       const STATUS_LABEL_CLS = { active: '在籍中', waitlisted: '待機中', withdrawn: '退会' };
       function openRoster(classId) {
@@ -12509,7 +12669,7 @@ export default function ProviderDashboardPage() {
         });
         renderOffStaff(offStaffColumns, items);
         if (viewMode === 'class' && columns.length === 0) {
-          gridWrapEl.innerHTML = '<p class="muted" style="font-size:13px;padding:20px">まだグループレッスンがありません。「クラス管理」タブでクラスを作成してください。</p>';
+          gridWrapEl.innerHTML = '<p class="muted" style="font-size:13px;padding:20px">まだグループレッスンがありません。「グループレッスン」タブで作成してください。</p>';
           return;
         }
         if (columns.length === 0) {
@@ -12991,7 +13151,7 @@ export default function ProviderDashboardPage() {
         if (manualClassEl) {
           manualClassEl.innerHTML = classList.length
             ? classList.map(c => `<option value="${c.id}"${colGroupKey === 'class_id' && c.id === colId ? ' selected' : ''}>${esc(c.name)}</option>`).join('')
-            : '<option value="">クラスがありません</option>';
+            : '<option value="">グループレッスンがありません</option>';
         }
         if (manualClassStartEl) manualClassStartEl.value = time;
         if (manualClassEndEl) {
@@ -13094,7 +13254,7 @@ export default function ProviderDashboardPage() {
           const classId = manualClassEl?.value || '';
           const start_time = manualClassStartEl?.value || '';
           const end_time = manualClassEndEl?.value || '';
-          if (!classId) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'クラスを選んでください'; } return; }
+          if (!classId) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'グループレッスンを選んでください'; } return; }
           if (!start_time || !end_time || start_time >= end_time) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = '開始・終了時刻を正しく入力してください'; } return; }
           manualSaveBtn.disabled = true;
           if (manualMsgEl) { manualMsgEl.style.color = ''; manualMsgEl.textContent = '保存中…'; }
@@ -13553,7 +13713,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/classes', { headers: authHeadersToday() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
-        if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。</p>'; return; }
+        if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだグループレッスンがありません。</p>'; return; }
         el.innerHTML = rows.map(c => `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
             <span>${esc(c.name)}</span>
@@ -13580,14 +13740,14 @@ export default function ProviderDashboardPage() {
         builtin_referrals: { title: '紹介実績', gotoTab: 'member-referral', gotoLabel: '友達紹介タブを開く', mountId: 'today-referrals-list' },
         builtin_events: { title: 'イベント出欠', gotoTab: 'events', gotoLabel: '出欠確認タブを開く', mountId: 'today-events-list', featureGate: 'attendance_confirm' },
         builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: '顧客管理タブを開く', mountId: 'today-dormant-list' },
-        builtin_classes: { title: 'クラスの状況', gotoTab: 'classes', gotoLabel: 'クラス管理タブを開く', mountId: 'today-classes-list', featureGate: 'class_management' },
+        builtin_classes: { title: 'グループレッスンの状況', gotoTab: 'classes', gotoLabel: 'グループレッスンのタブを開く', mountId: 'today-classes-list', featureGate: 'class_management' },
       };
       // 「＋カードを追加」で選べる任意カード一覧（1枚まで・削除可）。常設4カードは含めない。
       const ADDABLE_TODAY_TYPES = [
         { type: 'builtin_referrals', label: '紹介実績' },
         { type: 'builtin_events', label: 'イベント出欠', featureGate: 'attendance_confirm' },
         { type: 'builtin_dormant', label: '休眠顧客アラート' },
-        { type: 'builtin_classes', label: 'クラスの状況', featureGate: 'class_management' },
+        { type: 'builtin_classes', label: 'グループレッスンの状況', featureGate: 'class_management' },
       ];
 
       async function loadTodayFeatures() {
@@ -14984,7 +15144,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
-                  <button className="tab-btn" data-tab="classes" data-feature="class_management">クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="classes" data-feature="class_management">グループレッスン<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
@@ -15359,13 +15519,13 @@ export default function ProviderDashboardPage() {
                 そこでグループレッスンを選べるやつもつけてほしい」） */}
             <div id="cal-manual-class-fields" style={{ display: 'none' }}>
               <div className="form-field">
-                <label>クラス *</label>
+                <label>グループレッスン *</label>
                 <select id="cal-manual-class"></select>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <div className="form-field" style={{ flex: '1 1 120px' }}><label>開始</label><input type="time" id="cal-manual-class-start" /></div>
                 <div className="form-field" style={{ flex: '1 1 120px' }}><label>終了</label><input type="time" id="cal-manual-class-end" /></div>
-                <div className="form-field" style={{ flex: '1 1 100px' }}><label>定員</label><input type="number" min="1" id="cal-manual-class-capacity" placeholder="クラス既定" /></div>
+                <div className="form-field" style={{ flex: '1 1 100px' }}><label>定員</label><input type="number" min="1" id="cal-manual-class-capacity" placeholder="レッスンの定員" /></div>
               </div>
             </div>
             <button type="button" className="btn" id="cal-manual-save" style={{ fontSize: '13px', padding: '9px 18px', width: '100%' }}>この内容で予約を追加</button>
@@ -16046,17 +16206,17 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>クラス管理</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング等の定員制クラスの作成・名簿・進級・開催回スケジュール・参加者確認をここでまとめて管理します。</p>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスン</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング・ヨガ等、定員のあるグループレッスンの作成・名簿・進級・開催日時・参加者確認をここでまとめて管理します。</p>
               </div>
-              <button type="button" className="btn" id="cls-add-btn">＋ クラスを追加</button>
+              <button type="button" className="btn" id="cls-add-btn">＋ グループレッスンを追加</button>
             </div>
 
             <div id="cls-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
-              <h3 id="cls-edit-title" style={{ margin: '0 0 10px', fontSize: '14px' }}>クラスを追加</h3>
+              <h3 id="cls-edit-title" style={{ margin: '0 0 10px', fontSize: '14px' }}>グループレッスンを追加</h3>
               <form id="cls-edit-form">
                 <input type="hidden" name="_class_id" />
-                <div className="form-field"><label>クラス名 *</label><input name="name" required /></div>
+                <div className="form-field"><label>レッスン名 *</label><input name="name" required /></div>
                 <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
                 <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
                 <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
@@ -16068,10 +16228,11 @@ export default function ProviderDashboardPage() {
                 {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
                     日時を入れてほしい」。クラス作成と同時に最初の開催回もまとめて作れる
                     ようにする（空欄ならクラスだけ作成、従来通り「予約枠を管理」から後で
-                    追加も可能）。編集時は既存クラスの日時を書き換える機能ではないため
-                    非表示にする（JSでcls-add-btn/編集クリック時に出し分け）。 */}
+                    追加も可能）。2026-10-21：編集時も表示し、開催日時の一覧（変更・削除）と追加ができる。 */}
                 <div id="cls-new-session-fields" style={{ borderTop: '1px solid rgba(26,20,16,0.1)', marginTop: '12px', paddingTop: '12px' }}>
-                  <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px', fontWeight: 700 }}>最初の開催日時（任意・空欄ならクラスだけ作成されます）</p>
+                  {/* 編集時は、このクラスの開催日時の一覧（その場で変更・削除）を上に出す（でお要望 2026-10-21） */}
+                  <div id="cls-edit-sessions" className="cls-es" style={{ display: 'none' }}></div>
+                  <p id="cls-new-session-heading" style={{ fontSize: '12px', margin: '0 0 8px', fontWeight: 700, color: '#1a1410' }}>最初の開催日時（任意・空欄ならグループレッスンだけ作成されます）</p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
                     <div className="form-field" style={{ marginBottom: 0 }}><label>開始日</label><input type="date" id="cls-new-session-date" /></div>
                     <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="cls-new-session-start" /></div>
@@ -16114,6 +16275,21 @@ export default function ProviderDashboardPage() {
             <div id="cls-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
           </div>
 
+          {/* 開催日時の表（でお要望 2026-10-21：予約カレンダーのグループレッスンと同じカードで、一覧の下に並べる） */}
+          <div id="cls-board-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>開催日時の表</h3>
+              <div className="cls-bd-nav">
+                <button type="button" className="btn btn-ghost" id="cls-board-prev" aria-label="前の日">前の日</button>
+                <input type="date" id="cls-board-date" aria-label="日付" />
+                <button type="button" className="btn btn-ghost" id="cls-board-next" aria-label="次の日">次の日</button>
+                <button type="button" className="btn btn-ghost" id="cls-board-today">今日</button>
+              </div>
+            </div>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約カレンダーの「グループレッスン」と同じ表示です。カードを押すとそのレッスンの編集（開催日時の変更・追加）、空いているマスを押すとその日時で開催日時を追加できます。</p>
+            <div id="cls-board"></div>
+          </div>
+
           {/* 選択中のクラスの名簿・進級管理 */}
           <div id="cls-roster-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
             <h3 id="cls-roster-title" style={{ margin: 0, fontSize: '15px' }}></h3>
@@ -16131,13 +16307,13 @@ export default function ProviderDashboardPage() {
           <div id="cls-sessions-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
             <h3 id="cls-sessions-title" style={{ margin: 0, fontSize: '15px' }}></h3>
             <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>
-              ここで追加した開催回が、お客様が閲覧する店舗ページの「クラス」タブに予約枠として表示されます。
+              ここで追加した開催回が、お客様が閲覧する店舗ページの「グループレッスン」タブに予約枠として表示されます。
             </p>
             <form id="cls-session-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
               <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" name="date" required /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input type="time" name="start_time" required /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input type="time" name="end_time" required /></div>
-              <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="クラス既定" /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="レッスンの定員" /></div>
               <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
                 <label>繰り返し</label>
                 <select id="cls-session-recur-type" name="recur_type" defaultValue="once">

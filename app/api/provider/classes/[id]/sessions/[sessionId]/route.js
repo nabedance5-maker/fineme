@@ -29,6 +29,21 @@ async function __PATCH(request, { params }) {
   if ('capacity' in body) update.capacity = Number(body.capacity) || 1;
   if ('start_time' in body) update.start_time = body.start_time;
   if ('end_time' in body) update.end_time = body.end_time;
+  // 日付の変更（でお要望 2026-10-21：クラスの編集画面で開催日時を変えられるように）
+  if ('date' in body) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(body.date || ''))) return Response.json({ error: '日付が正しくありません' }, { status: 400 });
+    update.date = body.date;
+  }
+  if ((update.start_time && update.end_time && update.start_time >= update.end_time)) return Response.json({ error: '終了時刻は開始時刻より後にしてください' }, { status: 400 });
+  // 予約が入っている回の日時を動かすと、お客様の予約の日時とずれるため変えられない
+  if ('date' in update || 'start_time' in update || 'end_time' in update) {
+    const { data: cur } = await supabase.from('provider_slots').select('date, start_time, end_time').eq('id', sessionId).eq('provider_id', provider.id).eq('class_id', id).maybeSingle();
+    const changed = cur && (('date' in update && update.date !== cur.date) || ('start_time' in update && update.start_time.slice(0, 5) !== String(cur.start_time).slice(0, 5)) || ('end_time' in update && update.end_time.slice(0, 5) !== String(cur.end_time).slice(0, 5)));
+    if (changed) {
+      const { data: booked } = await supabase.from('reservations').select('id').eq('slot_id', sessionId).in('status', OCCUPYING_STATUSES).limit(1);
+      if (booked?.length) return Response.json({ error: '予約中のお客様がいるため、日時は変えられません。新しい日時の回を追加して、お客様にご案内してください' }, { status: 409 });
+    }
+  }
 
   const { data, error } = await supabase
     .from('provider_slots')

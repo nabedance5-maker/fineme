@@ -28,7 +28,7 @@ export async function GET(request, { params }) {
 
   const { data: sessions, error } = await supabase
     .from('provider_slots')
-    .select('id, date, start_time, end_time, capacity, is_open')
+    .select('id, date, start_time, end_time, capacity, is_open, staff_id, resource_id')
     .eq('provider_id', provider.id)
     .eq('class_id', id)
     .order('date', { ascending: true })

@@ -80,7 +80,7 @@ function tabsFor(provider) {
   if (!instantOn && !requestOn) tabs.push({ id: 'consult', label: '予約' });
   tabs.push({ id: 'appeal', label: 'アピール' });
   if (hasFeature(provider, 'class_management')) {
-    tabs.push({ id: 'class', label: 'クラス' });
+    tabs.push({ id: 'class', label: 'グループレッスン' });
   }
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
@@ -1133,7 +1133,7 @@ function ClassTab({ provider }) {
           user_id: userId || null,
           user_name: form.name,
           user_contact: [form.email, form.phone].filter(Boolean).join(' / '),
-          message: `【クラス予約】${className}`,
+          message: `【グループレッスン予約】${className}`,
           booking_mode: 'instant',
           slot_id: slotId,
         }),
@@ -1153,7 +1153,7 @@ function ClassTab({ provider }) {
 
   if (classes === null) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p>;
   const sessions = classes.sessions || [];
-  if (!sessions.length) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能なクラスの開催回がありません。</p>;
+  if (!sessions.length) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約できるグループレッスンの開催日時がありません。</p>;
 
   // でお要望（2026-10-16）：hacomonoの予約画面のように、日付を選ぶと部屋ごとの列に開催回のカードが並ぶ
   const dates = [...new Set(sessions.map(x => x.date))].sort();
