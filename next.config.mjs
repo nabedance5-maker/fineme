@@ -82,7 +82,9 @@ const nextConfig = {
       { source: '/pages/provider/service_form.html', destination: '/provider/service-form', permanent: true },
       { source: '/pages/provider/staff.html', destination: '/provider/staff', permanent: true },
       { source: '/pages/store.html', destination: '/search', permanent: true },
-      { source: '/pages/user/schedule.html', destination: '/booking/schedule', permanent: true },
+      // 旧予約画面（/booking/schedule）は使われておらず2026-10-21に削除。予約は各店舗ページで行うため、店舗を探す画面へ
+      { source: '/pages/user/schedule.html', destination: '/search', permanent: true },
+      { source: '/booking/:path*', destination: '/search', permanent: true },
     ];
   },
   async headers() {

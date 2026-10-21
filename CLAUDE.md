@@ -52,7 +52,7 @@ app/
 ├── search/page.js     # 検索結果ページ（searchParams でフィルタ）
 ├── services/[slug]/   # サービス詳細（動的ルーティング）
 ├── articles/          # 特集・記事
-├── booking/           # 予約フロー
+├── provider/[slug]/   # 店舗ページ（お客様の予約はここ。即時予約・予約リクエスト。旧 booking/ は2026-10-21に削除）
 ├── admin/             # 管理画面（Next.js 版）
 └── dashboard/         # プロバイダーダッシュボード
 ```
