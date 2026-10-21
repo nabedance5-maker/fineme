@@ -702,6 +702,33 @@ const DASHBOARD_CSS = `
       .cls-bd-day.is-on { background: #1a1410; color: #fff; border-color: #1a1410; }
       /* 予約カレンダーの下に「レッスンの作成・編集」として借りて表示する時は、同じ表が二重にならないよう隠す */
       #lb-tools #cls-board-card { display: none; }
+      /* 予約カレンダーの空き枠と受付設定（2026-10-21） */
+      .tab-btn[data-tab="slots"] { display: none !important; }
+      .cal-slot { position: absolute; left: 3px; right: 3px; z-index: 1; border: 1.5px dashed rgba(26,20,16,0.35); background: repeating-linear-gradient(135deg, rgba(201,168,76,0.10) 0 6px, rgba(201,168,76,0.04) 6px 12px); border-radius: 6px; font-size: 10.5px; line-height: 1.25; color: #1a1410; padding: 1px 4px; overflow: hidden; cursor: pointer; box-sizing: border-box; display: flex; gap: 4px; align-items: flex-start; }
+      .cal-slot span { font-weight: 800; font-variant-numeric: tabular-nums; }
+      .cal-slot.is-h { left: auto; right: auto; top: 3px; bottom: 3px; flex-direction: column; gap: 0; }
+      .cal-slot.is-closed { background: #eceae4; border-color: rgba(26,20,16,0.2); }
+      .cal-slot:hover { border-color: #c9a84c; background: rgba(201,168,76,0.18); }
+      .cal-slot-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 8px 0 10px; color: #1a1410; }
+      .cal-slot-bar .btn { font-size: 12px; padding: 6px 12px; margin-left: auto; }
+      .cal-slot-toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+      .cal-slot-legend { display: inline-flex; gap: 6px; align-items: center; font-size: 11.5px; }
+      .cal-slot-swatch { width: 18px; height: 12px; border: 1.5px dashed rgba(26,20,16,0.35); border-radius: 3px; background: rgba(201,168,76,0.12); display: inline-block; }
+      .cal-booking-settings { margin-top: 16px; padding-top: 14px; border-top: 2px solid rgba(26,20,16,0.1); }
+      .cal-bs-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 15px; color: #1a1410; }
+      .cal-bs-head .btn { font-size: 12px; padding: 5px 12px; }
+      .cal-slot-card { max-width: 420px; color: #1a1410; }
+      .cal-slot-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .cal-slot-head h3 { margin: 0; font-size: 15px; }
+      .cal-slot-head .btn { font-size: 12px; padding: 5px 10px; }
+      .cal-slot-when { margin: 0 0 10px; font-size: 13px; font-weight: 700; }
+      .cal-slot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .cal-slot-grid label { display: grid; gap: 3px; font-size: 12px; font-weight: 700; }
+      .cal-slot-grid input, .cal-slot-grid select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.18); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .cal-slot-grid input:disabled, .cal-slot-grid select:disabled { background: #f1ede4; }
+      .cal-slot-note, .cal-slot-msg { margin: 8px 0 0; font-size: 12px; font-weight: 700; }
+      .cal-slot-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+      .cal-slot-actions .btn { font-size: 12.5px; padding: 7px 12px; }
 `;
 
 export default function ProviderDashboardPage() {
@@ -6765,7 +6792,7 @@ export default function ProviderDashboardPage() {
         });
         if (res.ok) {
           const d = await res.json();
-          showToast(`${d.count}件を${label}しました`);
+          showToast(`${d.count}件を${label}しました${d.skipped ? `（予約が入っている${d.skipped}件は残しました）` : ''}`);
           selectedSlotIds.clear();
           updateSelectionBar();
           loadWindow();
@@ -6928,7 +6955,7 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() },
           body: JSON.stringify({ action, date: selectedDate, staff_id: filterStaffEl?.value || null, resource_id: filterResourceEl?.value || null }),
         });
-        if (res.ok) { const d = await res.json(); showToast(`${d.count}件を${label}しました`); loadWindow(); }
+        if (res.ok) { const d = await res.json(); showToast(`${d.count}件を${label}しました${d.skipped ? `（予約が入っている${d.skipped}件は残しました）` : ''}`); loadWindow(); }
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
       }
       document.getElementById('slot-bulk-open')?.addEventListener('click', () => bulkAction('open'));
@@ -12215,6 +12242,10 @@ export default function ProviderDashboardPage() {
       let classById = {};
       let classList = [];
       let resourceFeatureOn = false;
+      // 即時予約の空き枠を予約カレンダーに出す（でお要望 2026-10-21）
+      let instantFeatureOn = false;
+      let slotsByDate = {};
+      let showSlots = (() => { try { return localStorage.getItem('fineme:cal:slots') !== '0'; } catch { return true; } })();
       let shiftFeatureOn = false;
       // スタッフの休憩・外出ブロック（でお要望2026-09-14）と、シフト確定済みの勤務時間帯を
       // 週窓分キャッシュし、カレンダーのグレー表示（帯）に使う。
@@ -12253,7 +12284,7 @@ export default function ProviderDashboardPage() {
           fetch('/api/provider/resources', { headers: authHeadersCal() }),
           fetch('/api/provider/classes', { headers: authHeadersCal() }),
         ]);
-        if (featRes.ok) { const { features, locks } = await featRes.json(); resourceFeatureOn = !!features?.resource_management && !locks?.resource_management; shiftFeatureOn = !!features?.shift_management && !locks?.shift_management; }
+        if (featRes.ok) { const { features, locks } = await featRes.json(); resourceFeatureOn = !!features?.resource_management && !locks?.resource_management; instantFeatureOn = !!features?.instant_booking && !locks?.instant_booking; syncSlotToolbar(); shiftFeatureOn = !!features?.shift_management && !locks?.shift_management; }
         if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
         if (clsRes.ok) { classList = await clsRes.json(); (classList || []).forEach(c => { classById[c.id] = c.name; }); }
       }
@@ -12357,6 +12388,7 @@ export default function ProviderDashboardPage() {
         bindCalOpenHandlers(el);
         bindCalEmptyHandlers(el);
         bindGreyBandHandlers(el);
+        bindSlotHandlers(el);
         document.getElementById('cal-off-staff-edit-link')?.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation(); // <summary>内のボタンなので、開閉トグルへのクリック伝播を止める
@@ -12476,6 +12508,148 @@ export default function ProviderDashboardPage() {
         return selectedDate === todayStr && nowMin >= RANGE_START_MIN && nowMin <= RANGE_END_MIN;
       }
 
+      // ── 予約カレンダーの空き枠（でお要望 2026-10-21：「空き枠設定が分かりづらい。全部予約カレンダーで編集・設定できたら楽」）。
+      //    即時予約の枠を列の中に薄く出し、押すとその場で時間・定員の変更、締切/開放、削除、その枠への予約の追加ができる。
+      function slotInColumn(s, col) {
+        if (viewMode === 'resource') return col.groupKey === 'resource_id' && (s.resource_id || null) === col.id;
+        if (col.groupKey === 'staff_id') return s.staff_id ? s.staff_id === col.id : (col.id === null && !(viewMode === 'combined' && s.resource_id));
+        if (col.groupKey === 'resource_id') return !s.staff_id && !!s.resource_id && s.resource_id === col.id;
+        return false;
+      }
+      function slotBlocksHtml(col, totalMin, size, horizontal) {
+        if (!instantFeatureOn || !showSlots || viewMode === 'class') return '';
+        // 予約が入った枠は予約のブロックで見えるので、点線の枠は予約ゼロの枠と締切中の枠だけ（重なって読めなくならないように）
+        return (slotsByDate[selectedDate] || []).filter(s => slotInColumn(s, col) && !s.booked).map(s => {
+          const st = timeToMinutes(s.time); if (st === null) return '';
+          const pos = ((Math.max(RANGE_START_MIN, st) - RANGE_START_MIN) / totalMin) * size;
+          const len = Math.max(horizontal ? 24 : 14, ((s.duration_minutes || 30) / totalMin) * size - 2);
+          const label = !s.is_open ? '締切' : s.capacity > 1 ? `空き${s.capacity}` : '空き';
+          const style = horizontal ? `left:${pos}px;width:${len}px` : `top:${pos}px;height:${len}px`;
+          return `<div class="cal-slot${horizontal ? ' is-h' : ''}${!s.is_open ? ' is-closed' : ''}" style="${style}" data-cal-slot="${s.slot_id}" title="${esc(String(s.time).slice(0, 5))}〜${esc(String(s.end_time || '').slice(0, 5))} ${label}（押すと変更できます）"><span>${esc(String(s.time).slice(0, 5))}</span>${label}</div>`;
+        }).join('');
+      }
+      function bindSlotHandlers(container) {
+        container.querySelectorAll('[data-cal-slot]').forEach(el => bindTapHandler(el, () => openSlotEditor(el.dataset.calSlot)));
+      }
+      let slotModalEl = null;
+      function openSlotEditor(slotId) {
+        const s = (slotsByDate[selectedDate] || []).find(x => x.slot_id === slotId);
+        if (!s) return;
+        if (!slotModalEl) {
+          slotModalEl = document.createElement('div');
+          slotModalEl.className = 'cal-modal-overlay';
+          slotModalEl.addEventListener('click', e => { if (e.target === slotModalEl) slotModalEl.style.display = 'none'; });
+          document.body.appendChild(slotModalEl);
+        }
+        const staffOpts = '<option value="">指名なし</option>' + staffList.map(x => `<option value="${x.id}"${x.id === s.staff_id ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+        slotModalEl.innerHTML = `<div class="cal-modal-card cal-slot-card">
+          <div class="cal-slot-head"><h3>空き枠</h3><button type="button" class="btn btn-ghost" data-sl-x>閉じる</button></div>
+          <p class="cal-slot-when">${esc(s.date)}・予約 ${s.booked}/${s.capacity}名・${s.is_open ? 'お客様が予約できます' : '締切中（お客様には出ません）'}</p>
+          <div class="cal-slot-grid">
+            <label>開始<input type="time" data-sl-start value="${esc(String(s.time).slice(0, 5))}" ${s.booked ? 'disabled' : ''}></label>
+            <label>終了<input type="time" data-sl-end value="${esc(String(s.end_time || '').slice(0, 5))}" ${s.booked ? 'disabled' : ''}></label>
+            <label>定員<input type="number" min="1" data-sl-cap value="${s.capacity}"></label>
+            <label>担当<select data-sl-staff ${s.booked ? 'disabled' : ''}>${staffOpts}</select></label>
+          </div>
+          ${s.booked ? '<p class="cal-slot-note">予約が入っているため、時間と担当は変えられません。</p>' : ''}
+          <div class="cal-slot-actions">
+            <button type="button" class="btn" data-sl-save>変更を保存</button>
+            <button type="button" class="btn btn-ghost" data-sl-toggle>${s.is_open ? '締め切る' : '予約を受け付ける'}</button>
+            ${s.remaining > 0 ? '<button type="button" class="btn btn-ghost" data-sl-book>この枠に予約を入れる</button>' : ''}
+            <button type="button" class="btn btn-ghost" data-sl-del ${s.booked ? 'disabled title="予約が入っているため削除できません"' : ''}>削除</button>
+          </div>
+          <p class="cal-slot-msg" data-sl-msg></p>
+        </div>`;
+        const q = sel => slotModalEl.querySelector(sel);
+        const msg = t => { q('[data-sl-msg]').textContent = t; };
+        const done = async t => { slotModalEl.style.display = 'none'; showToast(t); await loadWeek(); };
+        const patch = async body => {
+          const r = await fetch(`/api/provider/slots/${s.slot_id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify(body) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { msg(d.error || '変更できませんでした'); return false; }
+          return true;
+        };
+        q('[data-sl-x]').onclick = () => { slotModalEl.style.display = 'none'; };
+        q('[data-sl-save]').onclick = async () => {
+          const body = { capacity: Number(q('[data-sl-cap]').value) || 1 };
+          if (!s.booked) Object.assign(body, { start_time: q('[data-sl-start]').value, end_time: q('[data-sl-end]').value, staff_id: q('[data-sl-staff]').value || null });
+          if (body.start_time && body.end_time && body.start_time >= body.end_time) { msg('終了は開始より後にしてください'); return; }
+          if (await patch(body)) done('空き枠を変更しました');
+        };
+        q('[data-sl-toggle]').onclick = async () => { if (await patch({ is_open: !s.is_open })) done(s.is_open ? '締め切りました' : '予約を受け付けます'); };
+        q('[data-sl-del]').onclick = async () => {
+          if (!confirm('この空き枠を削除しますか？')) return;
+          const r = await fetch(`/api/provider/slots/${s.slot_id}`, { method: 'DELETE', headers: authHeadersCal() });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) done('削除しました'); else msg(d.error || '削除できませんでした');
+        };
+        q('[data-sl-book]')?.addEventListener('click', () => {
+          slotModalEl.style.display = 'none';
+          openManualCreate(s.date, timeToMinutes(s.time), s.staff_id || null, 'staff_id');
+        });
+        slotModalEl.style.display = 'flex';
+      }
+
+      function syncSlotToolbar() {
+        const wrap = document.getElementById('cal-slot-toggle-wrap');
+        const legend = document.getElementById('cal-slot-legend');
+        if (wrap) wrap.style.display = instantFeatureOn ? '' : 'none';
+        if (legend) legend.style.display = instantFeatureOn && showSlots ? '' : 'none';
+        const t = document.getElementById('cal-slot-toggle');
+        if (t) t.checked = showSlots;
+      }
+      document.getElementById('cal-slot-toggle')?.addEventListener('change', e => {
+        showSlots = e.target.checked;
+        try { localStorage.setItem('fineme:cal:slots', showSlots ? '1' : '0'); } catch {}
+        syncSlotToolbar();
+        renderDesktopGrid({ preserveScroll: true });
+      });
+      // 旧「空き枠」タブの中身（受付のオン/オフ・予約数の上限・締切・営業時間と自動生成・臨時休業日・枠の一覧）を、
+      // カレンダーの下に借りて表示する（同じ機能を二重に作らない）
+      let settingsNodes = null;
+      function toggleBookingSettings(open) {
+        const holder = document.getElementById('cal-booking-settings');
+        const pane = document.getElementById('tab-slots');
+        if (!holder || !pane) return;
+        const isOpen = !!settingsNodes;
+        if (open === isOpen) { if (open) holder.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+        if (isOpen) {
+          settingsNodes.forEach(n => pane.appendChild(n));
+          settingsNodes = null; holder.innerHTML = ''; holder.style.display = 'none';
+          try { history.replaceState(null, '', '?tab=calendar'); } catch {}
+          loadResourcesAndFeatures().then(loadWeek);
+          return;
+        }
+        settingsNodes = [...pane.childNodes];
+        holder.innerHTML = '<div class="cal-bs-head"><b>予約の受付設定</b><button type="button" class="btn btn-ghost" data-bs-close>閉じる</button></div>';
+        settingsNodes.forEach(n => holder.appendChild(n));
+        holder.style.display = '';
+        holder.querySelector('[data-bs-close]').addEventListener('click', () => toggleBookingSettings(false));
+        // 開いている間は ?tab=slots にしておく（ページの再読み込みでも受付設定を開いたまま戻れるように）
+        try { history.replaceState(null, '', '?tab=slots'); } catch {}
+        holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      document.getElementById('cal-booking-settings-btn')?.addEventListener('click', () => toggleBookingSettings(!settingsNodes));
+      window.__pdOpenBookingSettings = () => toggleBookingSettings(true);
+      // 旧「空き枠」タブへの案内（URLの?tab=slots・AIコンサルの「開く」）は、予約カレンダーの受付設定を開く
+      function redirectSlotsTab() {
+        setTimeout(() => {
+          document.querySelector('.tab-btn[data-tab="calendar"]')?.click();
+          toggleBookingSettings(true);
+        }, 0);
+      }
+      document.querySelectorAll('.tab-btn[data-tab="slots"]').forEach(b => b.addEventListener('click', redirectSlotsTab));
+      // ページを開いた直後（初期化の途中）に開くと後から閉じられてしまうため、カレンダーの描画が終わってから開く
+      if (new URLSearchParams(location.search).get('tab') === 'slots') {
+        document.querySelector('.tab-btn[data-tab="calendar"]')?.click();
+        let tries = 0;
+        const waitOpen = () => {
+          if ((gridWrapEl?.children.length || 0) > 0 && !document.getElementById('tab-calendar')?.classList.contains('pd-cal-loading')) { setTimeout(() => toggleBookingSettings(true), 400); return; }
+          if (++tries < 60) setTimeout(waitOpen, 250);
+        };
+        setTimeout(waitOpen, 500);
+      }
+
       function buildGridHtml(items, columns) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const rowH = 26; // 30分あたりの高さ(px)
@@ -12535,7 +12709,7 @@ export default function ProviderDashboardPage() {
             `;
           }).join('');
           const greyHtml = greyBandsHtml(col, totalMin, totalHeight, 'top', 'height', '-v');
-          return `<div class="cal-staff-col${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${hourLines}${greyHtml}${blocksHtml}</div>`;
+          return `<div class="cal-staff-col${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${hourLines}${greyHtml}${slotBlocksHtml(col, totalMin, totalHeight, false)}${blocksHtml}</div>`;
         }).join('');
 
         // ヘッダー・本体を同じgrid-template-columnsを持つ1つのグリッドのセルとして並べる
@@ -12615,7 +12789,7 @@ export default function ProviderDashboardPage() {
           const greyHtml = greyBandsHtml(col, totalMin, totalWidth, 'left', 'width', '-h');
           return `
             <div class="cal-row-name-h${col.groupKey === 'resource_id' ? ' is-resource-head' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px">${esc(col.name)}</div>
-            <div class="cal-lane${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${vLines}${greyHtml}${blocksHtml}</div>
+            <div class="cal-lane${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${vLines}${greyHtml}${slotBlocksHtml(col, totalMin, totalWidth, true)}${blocksHtml}</div>
           `;
         }).join('');
 
@@ -12682,6 +12856,7 @@ export default function ProviderDashboardPage() {
         bindCalOpenHandlers(gridWrapEl);
         bindCalEmptyHandlers(gridWrapEl);
         bindGreyBandHandlers(gridWrapEl);
+        bindSlotHandlers(gridWrapEl);
 
         if (opts.preserveScroll) {
           gridWrapEl.scrollTop = prevScrollTop;
@@ -12923,10 +13098,14 @@ export default function ProviderDashboardPage() {
         if (labelEl) labelEl.textContent = `${from} 〜 ${to}`;
         const [, res] = await Promise.all([
           loadStaffBlocksAndShifts(),
-          fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() }),
+          fetch(`/api/provider/calendar?from=${from}&to=${to}&slots=1`, { headers: authHeadersCal() }),
         ]);
         if (!res.ok) { if (gridWrapEl) gridWrapEl.innerHTML = authErrorHtml(res); return false; }
-        const rows = await res.json();
+        const allRows = await res.json();
+        // 空き枠は予約とは別に持つ（予約の数え方・一覧には混ぜない）
+        slotsByDate = {};
+        allRows.filter(r => r._isOpenSlot).forEach(r => { (slotsByDate[r.date] = slotsByDate[r.date] || []).push(r); });
+        const rows = allRows.filter(r => !r._isOpenSlot);
         byDate = {};
         byId = {};
         rows.forEach(r => {
@@ -13039,6 +13218,7 @@ export default function ProviderDashboardPage() {
       const manualModeReservationBtn = document.getElementById('cal-manual-mode-reservation');
       const manualModeBlockBtn = document.getElementById('cal-manual-mode-block');
       const manualModeClassBtn = document.getElementById('cal-manual-mode-class');
+      const manualModeSlotBtn = document.getElementById('cal-manual-mode-slot');
       const manualReservationFieldsEl = document.getElementById('cal-manual-reservation-fields');
       const manualReservationFields2El = document.getElementById('cal-manual-reservation-fields-2');
       const manualBlockFieldsEl = document.getElementById('cal-manual-block-fields');
@@ -13056,7 +13236,12 @@ export default function ProviderDashboardPage() {
       // （でお要望2026-09-14・2026-09-16）。
       function setManualMode(mode) {
         if (manualCtx) manualCtx.mode = mode;
-        const isBlock = mode === 'block';
+        const isSlot = mode === 'slot';
+        // 空き枠は、休憩ブロックと同じ「開始・終了」の入力を使う
+        const isBlock = mode === 'block' || isSlot;
+        const slotF = document.getElementById('cal-manual-slot-fields'); if (slotF) slotF.style.display = isSlot ? '' : 'none';
+        const reasonF = document.getElementById('cal-manual-block-reason-field'); if (reasonF) reasonF.style.display = isSlot ? 'none' : '';
+        if (manualModeSlotBtn) { manualModeSlotBtn.style.display = instantFeatureOn ? '' : 'none'; manualModeSlotBtn.className = `btn ${isSlot ? '' : 'btn-ghost'}`; }
         const isClass = mode === 'class';
         if (manualReservationFieldsEl) manualReservationFieldsEl.style.display = (isBlock || isClass) ? 'none' : '';
         if (manualReservationFields2El) manualReservationFields2El.style.display = (isBlock || isClass) ? 'none' : '';
@@ -13064,13 +13249,14 @@ export default function ProviderDashboardPage() {
         if (manualClassFieldsEl) manualClassFieldsEl.style.display = isClass ? '' : 'none';
         if (manualResourceFieldEl) manualResourceFieldEl.style.display = (!isBlock && resourceFeatureOn) ? '' : 'none';
         if (manualModeReservationBtn) manualModeReservationBtn.className = `btn ${mode === 'reservation' ? '' : 'btn-ghost'}`;
-        if (manualModeBlockBtn) manualModeBlockBtn.className = `btn ${isBlock ? '' : 'btn-ghost'}`;
+        if (manualModeBlockBtn) manualModeBlockBtn.className = `btn ${mode === 'block' ? '' : 'btn-ghost'}`;
         if (manualModeClassBtn) manualModeClassBtn.className = `btn ${isClass ? '' : 'btn-ghost'}`;
-        if (manualSaveBtn) manualSaveBtn.textContent = isBlock ? 'この時間をブロックする' : isClass ? 'この内容でグループレッスンを作成' : 'この内容で予約を追加';
+        if (manualSaveBtn) manualSaveBtn.textContent = isSlot ? 'この時間を空き枠にする' : isBlock ? 'この時間をブロックする' : isClass ? 'この内容でグループレッスンを作成' : 'この内容で予約を追加';
       }
       manualModeReservationBtn?.addEventListener('click', () => setManualMode('reservation'));
       manualModeBlockBtn?.addEventListener('click', () => setManualMode('block'));
       manualModeClassBtn?.addEventListener('click', () => setManualMode('class'));
+      manualModeSlotBtn?.addEventListener('click', () => setManualMode('slot'));
 
       function roundToHalfHour(min) {
         return Math.round(min / 30) * 30;
@@ -13179,6 +13365,7 @@ export default function ProviderDashboardPage() {
           bindTapHandler(col, (e) => {
             if (e.target?.closest?.('[data-cal-open]')) return; // 既存の予約ブロック上のタップはそちらに任せる
             if (e.target?.closest?.('[data-staff-block-id]')) return; // グレー帯（削除可能）のタップはそちらに任せる
+            if (e.target?.closest?.('[data-cal-slot]')) return; // 空き枠のタップはそちらに任せる
             const rect = col.getBoundingClientRect();
             const totalMin = RANGE_END_MIN - RANGE_START_MIN;
             const horizontal = col.classList.contains('cal-lane');
@@ -13229,6 +13416,27 @@ export default function ProviderDashboardPage() {
 
       manualSaveBtn?.addEventListener('click', async () => {
         if (!manualCtx) return;
+        if (manualCtx.mode === 'slot') {
+          const start_time = manualBlockStartEl?.value || '';
+          const end_time = manualBlockEndEl?.value || '';
+          const err = t => { if (manualMsgEl) { manualMsgEl.style.color = '#1a1410'; manualMsgEl.textContent = t; } };
+          if (!start_time || !end_time || start_time >= end_time) { err('開始・終了の時刻を正しく入れてください'); return; }
+          const weeks = { once: 1, weekly4: 4, weekly8: 8 }[document.getElementById('cal-manual-slot-repeat')?.value || 'once'] || 1;
+          const base = { start_time, end_time, capacity: Number(document.getElementById('cal-manual-slot-capacity')?.value) || 1, staff_id: manualStaffEl?.value || null, resource_id: manualResourceEl?.value || null };
+          manualSaveBtn.disabled = true;
+          let made = 0;
+          for (let w = 0; w < weeks; w++) {
+            const d = new Date(`${manualCtx.date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + w * 7);
+            const r = await fetch('/api/provider/slots', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify({ ...base, date: d.toISOString().slice(0, 10) }) });
+            if (r.ok) made++;
+          }
+          manualSaveBtn.disabled = false;
+          if (!made) { err('空き枠を作れませんでした'); return; }
+          if (manualModalEl) manualModalEl.style.display = 'none';
+          showToast(`空き枠を${made}件作りました`);
+          await loadWeek();
+          return;
+        }
         if (manualCtx.mode === 'block') {
           const staff_id = manualStaffEl?.value || '';
           const start_time = manualBlockStartEl?.value || '';
@@ -15372,6 +15580,13 @@ export default function ProviderDashboardPage() {
               <div id="cal-day-pills" className="cal-day-pills" style={{ flex: 1 }}></div>
               <button type="button" className="btn btn-ghost" id="cal-agenda-popup-btn" style={{ fontSize: '12px', padding: '6px 12px', flexShrink: 0 }}>予約一覧</button>
             </div>
+            {/* 空き枠と予約の受付設定（でお要望 2026-10-21：空き枠タブを無くし、予約カレンダーで編集・設定する）。
+                「予約の受付設定」ボタンは data-tab="slots" を持ち、旧空き枠タブの中身の読み込みをそのまま動かす（タブは切り替えない） */}
+            <div className="cal-slot-bar">
+              <label id="cal-slot-toggle-wrap" className="cal-slot-toggle" style={{ display: 'none' }}><input type="checkbox" id="cal-slot-toggle" />空き枠を表示</label>
+              <span id="cal-slot-legend" className="cal-slot-legend" style={{ display: 'none' }}><i className="cal-slot-swatch" />空き枠（押すと変更）・空いている所を押すと「空き枠をつくる」</span>
+              <button type="button" className="btn btn-ghost" id="cal-booking-settings-btn" data-tab="slots">予約の受付設定</button>
+            </div>
 
             {/* 時間×スタッフのグリッド（hacomono参考）。PC・スマホ共通の1つのグリッドで、
                 横スクロールでスタッフ列を、縦スクロールで時間帯を確認する。640px以下は
@@ -15390,6 +15605,7 @@ export default function ProviderDashboardPage() {
                 （でお報告2026-09-18：「列の順はここじゃない気がする。赤丸のボタンは下に
                 持っていくべきかな」）ため別の行に分け、さらにカレンダー本体の下に移動した
                 （でお要望2026-09-18：「予約カレンダーの下に移動して」）。 */}
+            <div id="cal-booking-settings" className="cal-booking-settings" style={{ display: 'none' }}></div>
             <div id="cal-column-order-row" style={{ display: 'none', marginTop: '14px' }}>
               <button type="button" className="btn btn-ghost" id="cal-column-order-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>列の並び順を変更</button>
             </div>
@@ -15461,6 +15677,8 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn" id="cal-manual-mode-reservation" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>予約を追加</button>
               <button type="button" className="btn btn-ghost" id="cal-manual-mode-block" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>休憩・外出をブロック</button>
               <button type="button" className="btn btn-ghost" id="cal-manual-mode-class" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>グループレッスンを作成</button>
+              {/* 空き枠をカレンダーから作る（でお要望 2026-10-21）。即時予約を使っている店舗だけ出す */}
+              <button type="button" className="btn btn-ghost" id="cal-manual-mode-slot" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1, display: 'none' }}>空き枠をつくる</button>
             </div>
 
             <div id="cal-manual-reservation-fields">
@@ -15508,9 +15726,18 @@ export default function ProviderDashboardPage() {
                 <div className="form-field" style={{ flex: '1 1 120px' }}><label>開始</label><input type="time" id="cal-manual-block-start" /></div>
                 <div className="form-field" style={{ flex: '1 1 120px' }}><label>終了</label><input type="time" id="cal-manual-block-end" /></div>
               </div>
-              <div className="form-field">
+              <div className="form-field" id="cal-manual-block-reason-field">
                 <label>理由（任意）</label>
                 <input type="text" id="cal-manual-block-reason" placeholder="例：休憩／外出／早退" />
+              </div>
+              <div id="cal-manual-slot-fields" style={{ display: 'none' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="form-field" style={{ flex: '1 1 100px' }}><label>定員</label><input type="number" id="cal-manual-slot-capacity" min="1" defaultValue="1" /></div>
+                  <div className="form-field" style={{ flex: '1 1 120px' }}><label>繰り返し</label>
+                    <select id="cal-manual-slot-repeat" defaultValue="once"><option value="once">この日だけ</option><option value="weekly4">毎週同じ曜日（4週分）</option><option value="weekly8">毎週同じ曜日（8週分）</option></select>
+                  </div>
+                </div>
+                <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>お客様の予約ページに出て、選んだ時点で予約が確定する枠です。開始〜終了の時間を1つの枠にします。</p>
               </div>
             </div>
 
@@ -16389,7 +16616,7 @@ export default function ProviderDashboardPage() {
         <div className="tab-pane" id="tab-slots">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>空き枠（即時予約）</h2>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>受付の方法</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 ここに登録した枠は、お客様が選んだ時点でその場で予約確定します（店舗の承認は不要）。<br />
                 OFFにすると、この機能を使わずに従来通りの申請制のままにできます。
@@ -18120,7 +18347,7 @@ export default function ProviderDashboardPage() {
             </div>
             <pre id="wg-code" className="wg-code"></pre>
             <button type="button" className="btn" id="wg-copy" style={{ width: 'fit-content' }}>コードをコピー</button>
-            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>空き状況は「空き枠」で作った予約枠から表示します。枠が無い場合はメニューと予約ボタンだけが出ます。ホームページ作成サービスによっては、「HTML」や「埋め込み」のブロックに貼り付けます。</p>
+            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>空き状況は予約カレンダーの空き枠（「予約の受付設定」で自動生成、またはカレンダーで追加）から表示します。枠が無い場合はメニューと予約ボタンだけが出ます。ホームページ作成サービスによっては、「HTML」や「埋め込み」のブロックに貼り付けます。</p>
             <b style={{ fontSize: '13px' }}>見本</b>
             <div id="wg-preview" className="wg-preview"></div>
           </div>

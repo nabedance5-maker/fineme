@@ -42,7 +42,8 @@ async function __POST(request) {
     if (findError) return Response.json({ error: findError.message }, { status: 500 });
     ids = (targets || []).map(t => t.id);
   } else {
-    let query = supabase.from('provider_slots').select('id').eq('provider_id', provider.id).eq('date', date);
+    // 日付まとめての操作は通常の空き枠だけ（グループレッスンの開催回は「グループレッスン」で扱う。2026-10-21）
+    let query = supabase.from('provider_slots').select('id').eq('provider_id', provider.id).eq('date', date).is('class_id', null);
     if (staff_id) query = query.eq('staff_id', staff_id);
     if (resource_id) query = query.eq('resource_id', resource_id);
     const { data: targets, error: findError } = await query;
@@ -51,14 +52,22 @@ async function __POST(request) {
   }
   if (!ids.length) return Response.json({ ok: true, count: 0 });
 
+  let skipped = 0;
   if (action === 'delete') {
-    const { error } = await supabase.from('provider_slots').delete().in('id', ids);
-    if (error) return Response.json({ error: error.message }, { status: 500 });
+    // 予約が入っている枠は消さない（お客様の予約が宙に浮くため。締め切れば新しい予約は止まる）
+    const { data: booked } = await supabase.from('reservations').select('slot_id').in('slot_id', ids).in('status', ['pending', 'approved', 'counter_proposed', 'visited']);
+    const keep = new Set((booked || []).map(b => b.slot_id));
+    skipped = ids.filter(i => keep.has(i)).length;
+    ids = ids.filter(i => !keep.has(i));
+    if (ids.length) {
+      const { error } = await supabase.from('provider_slots').delete().in('id', ids);
+      if (error) return Response.json({ error: error.message }, { status: 500 });
+    }
   } else {
     const { error } = await supabase.from('provider_slots').update({ is_open: action === 'open' }).in('id', ids);
     if (error) return Response.json({ error: error.message }, { status: 500 });
   }
-  return Response.json({ ok: true, count: ids.length });
+  return Response.json({ ok: true, count: ids.length, skipped });
 }
 
 export const POST = withAudit(__POST);

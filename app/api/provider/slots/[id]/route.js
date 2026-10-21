@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -29,6 +30,18 @@ async function __PATCH(request, { params }) {
   if (body.staff_id !== undefined) updates.staff_id = body.staff_id || null;
   if (body.resource_id !== undefined) updates.resource_id = body.resource_id || null;
 
+  // 予約が入っている枠は、お客様の予約とずれないよう時間・担当・部屋を変えない。定員は予約数より小さくできない（2026-10-21）
+  const { data: booked } = await supabase.from('reservations').select('id').eq('slot_id', id).in('status', OCCUPYING_STATUSES);
+  const bookedN = booked?.length || 0;
+  if (bookedN) {
+    const { data: cur } = await supabase.from('provider_slots').select('start_time, end_time, staff_id, resource_id').eq('id', id).eq('provider_id', provider.id).maybeSingle();
+    const same = (a, b) => String(a || '').slice(0, 5) === String(b || '').slice(0, 5);
+    const moved = cur && (('start_time' in updates && !same(updates.start_time, cur.start_time)) || ('end_time' in updates && !same(updates.end_time, cur.end_time))
+      || ('staff_id' in updates && (updates.staff_id || null) !== (cur.staff_id || null)) || ('resource_id' in updates && (updates.resource_id || null) !== (cur.resource_id || null)));
+    if (moved) return Response.json({ error: '予約が入っているため、時間・担当・部屋は変えられません' }, { status: 409 });
+    if ('capacity' in updates && updates.capacity < bookedN) return Response.json({ error: `すでに${bookedN}名の予約があるため、定員は${bookedN}以上にしてください` }, { status: 409 });
+  }
+
   const { data, error } = await supabase
     .from('provider_slots')
     .update(updates)
@@ -47,6 +60,9 @@ async function __DELETE(request, { params }) {
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(token);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { data: booked } = await supabase.from('reservations').select('id').eq('slot_id', id).in('status', OCCUPYING_STATUSES).limit(1);
+  if (booked?.length) return Response.json({ error: '予約が入っているため削除できません。締め切ると、新しい予約だけ止められます' }, { status: 409 });
 
   const { error } = await supabase
     .from('provider_slots')
