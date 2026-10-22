@@ -710,6 +710,12 @@ const DASHBOARD_CSS = `
       .sm-tk { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(26,20,16,0.06); }
       .sm-url { font-size: 12px; word-break: break-all; background: rgba(26,20,16,0.05); padding: 8px 10px; border-radius: 8px; }
       /* チケット（2026-10-22） */
+      .pkg-ed { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(26,20,16,0.15); color: #1a1410; }
+      .pkg-ed label { display: grid; gap: 3px; font-size: 12px; font-weight: 700; }
+      .pkg-ed input, .pkg-ed select { padding: 6px 8px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .pkg-ed input[type=number] { width: 100px; }
+      .pkg-ed p { flex-basis: 100%; margin: 0; font-size: 12px; }
+      .pkg-ed [hidden] { display: none !important; }
       .tk-flow { margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(26,20,16,0.06); color: #1a1410; font-size: 13px; font-weight: 700; line-height: 1.6; }
       .tk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; color: #1a1410; }
       .tk-head > div { flex: 1 1 320px; }
@@ -9572,7 +9578,8 @@ export default function ProviderDashboardPage() {
         ticketRows = await res.json();
         const sel = document.getElementById('pkg-ticket');
         if (sel) { const cur = sel.value; sel.innerHTML = '<option value="">新しく同じ名前で作る</option>' + ticketRows.filter(t => t.active).map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join(''); sel.value = cur; }
-        renderDefs();
+        // 回数券の編集を開いている間は描き直さない（入力中の内容が消えるため）
+        if (!defListEl?.querySelector('[data-pkg-form]:not([hidden])')) renderDefs();
         if (!tkListEl) return;
         tkListEl.innerHTML = ticketRows.length ? ticketRows.map(t => `
           <div class="tk-row${t.active ? '' : ' is-off'}">
@@ -9654,16 +9661,62 @@ export default function ProviderDashboardPage() {
             : d.package_type === 'combo' ? `（通い放題＋${d.combo_ticket_sessions || ''}枚）`
             : d.package_type === 'subscription' ? `（初回${d.total_sessions}枚＋毎月${d.recurring_sessions}枚）`
             : ` ${d.total_sessions}枚`}`;
+          const mode = d.expires_on ? 'date' : d.validity_days ? 'days' : 'none';
           return `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
-            <div style="flex:1;min-width:0">
-              <strong style="font-size:13px">${esc(d.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${typeLabel}${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.expires_on ? ` ／ ${d.expires_on}まで有効` : d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
+          <div style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}" data-pkg-row="${d.id}">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div style="flex:1;min-width:0">
+                <strong style="font-size:13px">${esc(d.name)}</strong>
+                <span class="muted" style="font-size:12px;margin-left:8px">${typeLabel}${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.expires_on ? ` ／ ${d.expires_on}まで有効` : d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" data-pkg-edit="${d.id}">編集</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="togglePackageActive('${d.id}', ${!d.active})">${d.active ? '停止する' : '再開する'}</button>
             </div>
-            <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="togglePackageActive('${d.id}', ${!d.active})">${d.active ? '停止する' : '再開する'}</button>
+            <div class="pkg-ed" data-pkg-form="${d.id}" hidden>
+              <label>回数券の名前<input data-f="name" value="${esc(d.name)}" maxlength="60"></label>
+              <label>付くチケット<select data-f="ticket_id">${ticketRows.filter(t => t.active || t.id === d.ticket_id).map(t => `<option value="${t.id}" ${t.id === d.ticket_id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+              <label>タイプ<select data-f="package_type"><option value="fixed_count" ${d.package_type !== 'unlimited' ? 'selected' : ''}>チケット◯枚</option><option value="unlimited" ${d.package_type === 'unlimited' ? 'selected' : ''}>期間中は使い放題</option></select></label>
+              <label data-f-wrap="sessions" ${d.package_type === 'unlimited' ? 'hidden' : ''}>枚数<input data-f="total_sessions" type="number" min="1" value="${d.total_sessions || ''}"></label>
+              <label>価格（円）<input data-f="price" type="number" min="0" value="${d.price ?? ''}"></label>
+              <label>有効期限<select data-f="mode"><option value="none" ${mode === 'none' ? 'selected' : ''}>無期限</option><option value="days" ${mode === 'days' ? 'selected' : ''}>購入から◯日</option><option value="date" ${mode === 'date' ? 'selected' : ''}>日付を指定</option></select></label>
+              <label data-f-wrap="days" ${mode === 'days' ? '' : 'hidden'}>日数<input data-f="validity_days" type="number" min="1" value="${d.validity_days || ''}"></label>
+              <label data-f-wrap="date" ${mode === 'date' ? '' : 'hidden'}>この日まで<input data-f="expires_on" type="date" value="${d.expires_on || ''}"></label>
+              <p>変更は、これから購入・記録する回数券に使われます。すでにお客様が持っている分は変わりません（お客様の詳細から個別に直せます）。</p>
+              <div style="display:flex;gap:8px"><button type="button" class="btn" data-pkg-save="${d.id}">保存する</button><button type="button" class="btn btn-ghost" data-pkg-cancel="${d.id}">閉じる</button></div>
+            </div>
           </div>
         `;
         }).join('');
+        defListEl.querySelectorAll('[data-pkg-edit]').forEach(b => b.addEventListener('click', () => { const f = defListEl.querySelector(`[data-pkg-form="${b.dataset.pkgEdit}"]`); f.hidden = !f.hidden; }));
+        defListEl.querySelectorAll('[data-pkg-cancel]').forEach(b => b.addEventListener('click', () => { defListEl.querySelector(`[data-pkg-form="${b.dataset.pkgCancel}"]`).hidden = true; }));
+        defListEl.querySelectorAll('[data-pkg-form]').forEach(f => {
+          const q = k => f.querySelector(`[data-f="${k}"]`);
+          const w = k => f.querySelector(`[data-f-wrap="${k}"]`);
+          q('package_type').addEventListener('change', () => { w('sessions').hidden = q('package_type').value === 'unlimited'; });
+          q('mode').addEventListener('change', () => { w('days').hidden = q('mode').value !== 'days'; w('date').hidden = q('mode').value !== 'date'; });
+        });
+        defListEl.querySelectorAll('[data-pkg-save]').forEach(b => b.addEventListener('click', async () => {
+          const f = defListEl.querySelector(`[data-pkg-form="${b.dataset.pkgSave}"]`);
+          const q = k => f.querySelector(`[data-f="${k}"]`);
+          const type = q('package_type').value; const mode = q('mode').value;
+          if (!q('name').value.trim()) { showToast('名前を入れてください'); return; }
+          if (type === 'fixed_count' && !(Number(q('total_sessions').value) > 0)) { showToast('枚数を入れてください'); return; }
+          if (mode === 'date' && !q('expires_on').value) { showToast('有効期限の日付を選んでください'); return; }
+          b.disabled = true;
+          const res = await fetch(`/api/provider/packages/${b.dataset.pkgSave}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
+            body: JSON.stringify({
+              name: q('name').value.trim(), ticket_id: q('ticket_id').value || null, package_type: type,
+              total_sessions: type === 'fixed_count' ? Number(q('total_sessions').value) : null,
+              price: q('price').value === '' ? null : q('price').value,
+              validity_days: mode === 'days' ? q('validity_days').value : null, expires_on: mode === 'date' ? q('expires_on').value : null,
+            }),
+          });
+          b.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || res.status)); return; }
+          showToast('回数券を保存しました');
+          loadDefs(); loadTickets();
+        }));
       }
 
       function renderPkgSelect() {
