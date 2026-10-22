@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -266,6 +266,24 @@ function UniqueStrengthsSection({ provider }) {
     <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '18px', padding: '22px 24px' }}>
       <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: '#b45309', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>このガイドにしかできないこと</div>
       <p style={{ fontSize: 'calc(15px * var(--pv-fs))', color: '#111', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.unique_strengths}</p>
+    </div>
+  );
+}
+
+// ── 設備紹介（でお要望 2026-10-22：予約で使わない設備も、どんな設備があるかを見せたい） ─────
+function FacilitiesSection({ facilities }) {
+  if (!facilities || facilities.length === 0) return null;
+  return (
+    <div>
+      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>設備</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: '10px' }}>
+        {facilities.map(f => (
+          <div key={f.id} style={{ padding: '14px 16px', background: 'var(--pv-surface)', borderRadius: '14px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)' }}>
+            <div style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)' }}>{f.name}</div>
+            {f.description && <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 72%, transparent)', lineHeight: '1.7', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{f.description}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -736,7 +754,8 @@ function renderAppealBlock(b, ctx) {
   switch (b.block_type) {
     case 'builtin_guide_message':    return <GuideMessageCard key={b.id} provider={ctx.provider} />;
     case 'builtin_unique_strengths': return <UniqueStrengthsSection key={b.id} provider={ctx.provider} />;
-    case 'builtin_staff':            return <StaffSection key={b.id} staff={ctx.staff} />;
+    // 設備は並び替えの項目を増やさず、スタッフ紹介のすぐ後に出す
+    case 'builtin_staff':            return <Fragment key={b.id}><StaffSection staff={ctx.staff} /><FacilitiesSection facilities={ctx.facilities} /></Fragment>;
     case 'builtin_newme_map':        return <NewMeMapSection key={b.id} diagnosis={ctx.diagnosis} matchData={ctx.matchData} />;
     case 'builtin_philosophy':       return <PhilosophySection key={b.id} provider={ctx.provider} />;
     case 'builtin_stories':          return <StoriesSection key={b.id} stories={ctx.stories} provider={ctx.provider} />;
@@ -751,13 +770,13 @@ function renderAppealBlock(b, ctx) {
 // 「プログラム」を1つに統合し、診断/Mirror経由の訪問者だけがこのタブに最初に
 // 着地する構成にした。中身（理念・スタッフ紹介・体験談・サービスカード）は
 // 従来のまま——タブの独立性だけをやめている）。
-function AppealTab({ provider, diagnosis, matchData, stories, staff, services, appealBlocks, onConsult, userPathType, onGoToConsult }) {
+function AppealTab({ provider, diagnosis, matchData, stories, staff, facilities, services, appealBlocks, onConsult, userPathType, onGoToConsult }) {
   // でお要望2026-10-01：「デフォルトで表示されているものも自由に並び替えたり内容編集
   // したりできるように」。掲載者が一度でもダッシュボードの並び替え設定を開くとbuiltin_*行が
   // シードされ、そちらの並び順・表示/非表示設定で描画する。まだ開いていない店舗
   // （appealBlocksにbuiltin_*が無い）は従来の固定順レンダリングのまま——既存店舗への影響ゼロ。
   const hasBuiltinConfig = (appealBlocks || []).some(b => b.block_type?.startsWith('builtin_'));
-  const blockCtx = { provider, diagnosis, matchData, stories, staff, services, onConsult, userPathType };
+  const blockCtx = { provider, diagnosis, matchData, stories, staff, facilities, services, onConsult, userPathType };
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '100px' }}>
@@ -774,6 +793,7 @@ function AppealTab({ provider, diagnosis, matchData, stories, staff, services, a
               </div>
             )}
             <StaffSection staff={staff} />
+            <FacilitiesSection facilities={facilities} />
             {/* Me Scan 済みなら最上部に、未スキャンは最下部に小さく */}
             {diagnosis && <NewMeMapSection diagnosis={diagnosis} matchData={matchData} />}
             <PhilosophySection provider={provider} />
@@ -2061,6 +2081,7 @@ function ProviderPageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [stories, setStories] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [facilities, setFacilities] = useState([]);
   const [appealBlocks, setAppealBlocks] = useState([]);
   const [isFavorited, setIsFavorited] = useState(false);
 
@@ -2134,10 +2155,12 @@ function ProviderPageContent() {
       fetch(`/api/providers/${slug}/services`).then(r => r.ok ? r.json() : []),
       fetch(`/api/providers/${slug}/staff`).then(r => r.ok ? r.json() : []),
       fetch(`/api/providers/${slug}/appeal-blocks`).then(r => r.ok ? r.json() : []),
-    ]).then(([prov, svcs, stf, blocks]) => {
+      fetch(`/api/providers/${slug}/facilities`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([prov, svcs, stf, blocks, facs]) => {
       setProvider(prov);
       setServices(Array.isArray(svcs) ? svcs : []);
       setStaff(Array.isArray(stf) ? stf : []);
+      setFacilities(Array.isArray(facs) ? facs : []);
       setAppealBlocks(Array.isArray(blocks) ? blocks : []);
       // New Me Log のLINE通知「前回と同じで予約」から来た時は、前回のメニューを選んだ状態で開く
       // （でお指摘2026-10-14：通知からそのまま予約まで行けないと意味がない）
@@ -2305,6 +2328,7 @@ function ProviderPageContent() {
           matchData={matchData}
           stories={stories}
           staff={staff}
+          facilities={facilities}
           services={services}
           appealBlocks={appealBlocks}
           onConsult={handleConsultFromProgram}

@@ -3,6 +3,8 @@
 // hacomono/STORES網羅計画 Phase 1。スタッフとは独立に管理し、即時予約モードの
 // 空き枠がスタッフ+部屋の組で二重にブロックされるようにする（今野くんの実地メモ：
 // 部屋のブロック忘れによるダブルブッキングを防ぐ）。
+// active＝予約で使う（予約カレンダー・空き計算・メニューの部屋選び）、show_on_page＝お店のページで紹介する。
+// 予約には使わず「こんな設備があります」と見せるだけの登録もできる（でお要望 2026-10-22）。
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -42,7 +44,7 @@ async function __POST(request) {
   { const locked = planLockedResponse(provider, 'resource_management'); if (locked) return locked; }
 
   const body = await request.json();
-  const { name, type, active, sort_order } = body;
+  const { name, type, active, sort_order, show_on_page, description } = body;
   if (!name?.trim()) return Response.json({ error: '名前は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -53,6 +55,8 @@ async function __POST(request) {
       type: type ? String(type).slice(0, 30) : 'room',
       active: active === undefined ? true : !!active,
       sort_order: sort_order ? Number(sort_order) : 0,
+      show_on_page: !!show_on_page,
+      description: description ? String(description).trim().slice(0, 300) || null : null,
     })
     .select()
     .single();

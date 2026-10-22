@@ -27,6 +27,8 @@ async function __PATCH(request, { params }) {
   if (body.type !== undefined)       updates.type       = body.type ? String(body.type).slice(0, 30) : 'room';
   if (body.active !== undefined)     updates.active     = !!body.active;
   if (body.sort_order !== undefined) updates.sort_order = Number(body.sort_order) || 0;
+  if (body.show_on_page !== undefined) updates.show_on_page = !!body.show_on_page;
+  if (body.description !== undefined) updates.description = String(body.description || '').trim().slice(0, 300) || null;
 
   const { data, error } = await supabase
     .from('provider_resources')

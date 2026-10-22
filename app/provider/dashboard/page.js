@@ -2510,7 +2510,7 @@ export default function ProviderDashboardPage() {
         const H = { Authorization: `Bearer ${getSupabaseToken()}` };
         const [a, b] = await Promise.all([fetch('/api/provider/staff', { headers: H }).catch(() => null), fetch('/api/provider/resources', { headers: H }).catch(() => null)]);
         const staff = a?.ok ? await a.json() : [];
-        const rooms = b?.ok ? await b.json() : [];
+        const rooms = (b?.ok ? await b.json() : []).filter(r => r.active !== false); // 予約で使う部屋・設備だけ
         assignLists = { staff: staff.filter(x => x.bookable !== false), allStaff: staff, rooms };
         return assignLists;
       }
@@ -4938,7 +4938,6 @@ export default function ProviderDashboardPage() {
       const editForm  = document.getElementById('resource-edit-form');
       const editTitle = document.getElementById('resource-edit-title');
       function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-      const TYPE_LABEL = { room: '部屋', equipment: '設備・マシン', other: 'その他' };
 
       async function loadResources() {
         if (!listEl) return;
@@ -4953,8 +4952,9 @@ export default function ProviderDashboardPage() {
           row.innerHTML = `
             <div style="flex:1;min-width:0">
               <strong style="font-size:14px">${esc(r.name)}</strong>
-              <span style="font-size:11px;color:#6b7280;margin-left:6px">${esc(TYPE_LABEL[r.type] || r.type)}</span>
-              ${!r.active ? '<span style="font-size:10px;background:#f3f4f6;color:#9ca3af;padding:1px 6px;border-radius:99px;margin-left:6px">停止中</span>' : ''}
+              <span style="font-size:10.5px;padding:1px 7px;border-radius:99px;margin-left:6px;${r.active !== false ? 'background:#dcfce7;color:#166534' : 'background:#f3f4f6;color:#6b7280'}">${r.active !== false ? '予約で使う' : '予約には使わない'}</span>
+              ${r.show_on_page ? '<span style="font-size:10.5px;background:rgba(201,168,76,.15);color:#84651a;padding:1px 7px;border-radius:99px;margin-left:4px">お店のページで紹介中</span>' : ''}
+              ${r.description ? `<div class="muted" style="font-size:12px;margin-top:2px">${esc(r.description)}</div>` : ''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-resource-edit="${r.id}">編集</button>
@@ -4966,8 +4966,9 @@ export default function ProviderDashboardPage() {
           const r = items.find(x => x.id === btn.dataset.resourceEdit); if (!r) return;
           editTitle.textContent = '部屋・設備を編集'; editCard.style.display = 'block';
           editForm.elements['name'].value = r.name || '';
-          editForm.elements['type'].value = r.type || 'room';
           editForm.elements['active'].checked = r.active !== false;
+          editForm.elements['show_on_page'].checked = !!r.show_on_page;
+          editForm.elements['description'].value = r.description || '';
           editForm.elements['_resource_id'].value = r.id;
           editCard.scrollIntoView({ behavior: 'smooth' });
         }));
@@ -4991,7 +4992,7 @@ export default function ProviderDashboardPage() {
         e.preventDefault();
         const fd = new FormData(editForm);
         const id = fd.get('_resource_id');
-        const body = { name: fd.get('name'), type: fd.get('type'), active: !!editForm.elements['active'].checked };
+        const body = { name: fd.get('name'), active: !!editForm.elements['active'].checked, show_on_page: !!editForm.elements['show_on_page'].checked, description: fd.get('description') || '' };
         const url = id ? `/api/provider/resources/${id}` : '/api/provider/resources';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadResources(); showToast('保存しました'); }
@@ -5382,7 +5383,7 @@ export default function ProviderDashboardPage() {
       let roomOptionsForClasses = [];
       async function loadRoomOptionsForClasses() {
         const res = await fetch('/api/provider/resources', { headers: authH() }).catch(() => null);
-        roomOptionsForClasses = res?.ok ? await res.json() : [];
+        roomOptionsForClasses = (res?.ok ? await res.json() : []).filter(r => r.active !== false); // 予約で使う部屋・設備だけ
         const sel = editForm?.elements['resource_id'];
         const wrap = document.getElementById('cls-room-field');
         if (wrap) wrap.style.display = roomOptionsForClasses.length ? '' : 'none';
@@ -5456,7 +5457,7 @@ export default function ProviderDashboardPage() {
           fetch('/api/provider/resources', { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []),
           ...classesCache.map(c => fetch(`/api/provider/classes/${c.id}/sessions`, { headers: authH() }).then(r => (r.ok ? r.json() : [])).then(rows => rows.map(x => ({ ...x, class_id: c.id }))).catch(() => [])),
         ]);
-        boardResources = Array.isArray(rs) ? rs : [];
+        boardResources = Array.isArray(rs) ? rs.filter(r => r.active !== false) : [];
         boardSessions = lists.flat();
         renderBoard();
       }
@@ -16127,26 +16128,24 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>部屋・設備</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>個室やマシンなど、予約に紐づく設備を登録します。</p>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>個室・ベッド・マシンなどを登録します。予約で使うもの（同じ時間に二重に予約が入らないようにする）と、お店のページで紹介するだけのものを、それぞれ選べます。</p>
               </div>
               <button className="btn" id="btn-add-resource">＋ 追加</button>
             </div>
             <div id="resource-edit-card" className="card" style={{ display: 'none', padding: '18px', background: '#f9fafb' }}>
               <h3 id="resource-edit-title" style={{ fontSize: '14px', margin: '0 0 12px' }}>部屋・設備を追加</h3>
               <form id="resource-edit-form">
-                <div className="form-field"><label>名前 *</label><input name="name" required placeholder="例: 個室A / マシン1" /></div>
-                <div className="form-field">
-                  <label>種類</label>
-                  <select name="type" defaultValue="room">
-                    <option value="room">部屋</option>
-                    <option value="equipment">設備・マシン</option>
-                    <option value="other">その他</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 0 16px' }}>
-                  <input type="checkbox" name="active" id="resource-active" defaultChecked />
-                  <label htmlFor="resource-active" style={{ margin: 0, fontSize: '13px', fontWeight: 400 }}>予約可能にする</label>
-                </div>
+                <div className="form-field"><label>名前 *</label><input name="name" required placeholder="例: 個室A / 脱毛マシン / パウダールーム" /></div>
+                {/* でお要望（2026-10-22）：部屋／設備の種類分けは意味がない。代わりに「予約で使うか」「お店のページで紹介するか」を選ぶ */}
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '10px 0 4px', cursor: 'pointer' }}>
+                  <input type="checkbox" name="active" defaultChecked style={{ marginTop: '3px' }} />
+                  <span style={{ fontSize: '13px' }}><b>予約で使う</b><br /><span className="muted" style={{ fontSize: '12px' }}>予約カレンダーに出し、同じ時間に二重に予約が入らないようにします。メニューやグループレッスンの「使う部屋」にも選べます。</span></span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '10px 0 4px', cursor: 'pointer' }}>
+                  <input type="checkbox" name="show_on_page" style={{ marginTop: '3px' }} />
+                  <span style={{ fontSize: '13px' }}><b>お店のページで紹介する</b><br /><span className="muted" style={{ fontSize: '12px' }}>公開ページの「設備」に表示します。予約で使わない設備（パウダールーム・シャワーなど）も紹介できます。</span></span>
+                </label>
+                <div className="form-field" style={{ margin: '10px 0 16px' }}><label>紹介文（任意・300文字まで）</label><textarea name="description" rows={2} maxLength={300} placeholder="例: 完全個室で、施術中は他のお客様と顔を合わせません" /></div>
                 <input type="hidden" name="_resource_id" />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="submit" className="btn">保存</button>
