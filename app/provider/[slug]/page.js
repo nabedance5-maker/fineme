@@ -31,12 +31,9 @@ const CAT_TO_AXIS = {
   nail:'nail',
 };
 const AXIS_LABELS = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
-const AXIS_ICONS  = { body:'', eyebrow:'', fashion:'', hair:'', skin:'', teeth:'', nail:'' };
+const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 const PATH_LABELS = { virgin:'初めて', quit:'続かなかった', blind:'非客観視', lapsed:'以前やっていた' };
-const PATH_COLORS = { virgin:'#10b981', quit:'#f59e0b', blind:'#6366f1', lapsed:'#3b82f6' };
 const PATH_PERSON = { virgin:'外見ケアが初めての方', quit:'続かなかった経験がある方', blind:'自己流でやってきたが客観評価がない方', lapsed:'以前やっていたが後回しにしている方' };
-const FAILURE_ICONS  = { lost_direction:'', no_continuation:'', no_result:'️', cost:'', awkward:'' };
-const TRIGGER_ICONS  = { matching_app:'', love:'️', career:'', word:'', vague:'' };
 const TRIGGER_PERSON = { matching_app:'マッチングアプリの写真を良くしたい方', love:'恋愛・告白前に外見を整えたい方', career:'就職・転職前に印象を変えたい方', word:'誰かの一言が刺さって変わろうと思った方', vague:'ずっと気になっていたが踏み出せなかった方' };
 const FAILURE_PERSON = { lost_direction:'一度やめてしまったが、また変わりたい方', no_continuation:'始めても続かなかった経験がある方', no_result:'自己流でやっているが、客観的な視点がほしい方', cost:'コストが気になって踏み出せなかった方', awkward:'担当者との関係性に悩んだ経験がある方' };
 const STYLE_LABELS = {
@@ -52,6 +49,14 @@ const FAILURE_LABELS = {
   cost:'コストで断念した経験がある方',
   awkward:'プロとの相性で悩んだ経験がある方',
 };
+// 公開ページの共通の見た目（2026-10-22 UI刷新）。青・緑・紫・クリーム色などが混ざって
+// ごちゃごちゃしていたため、文字は店舗のテーマの文字色の濃淡、強調はテーマのアクセント色だけにそろえる。
+const tx = pct => `color-mix(in srgb, var(--pv-text) ${pct}%, transparent)`;
+const ac = pct => `color-mix(in srgb, var(--pv-accent) ${pct}%, transparent)`;
+const PV_CARD = { background: 'var(--pv-surface)', border: `1px solid ${tx(12)}`, borderRadius: '16px', padding: '20px' };
+const PV_LABEL = { fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', letterSpacing: '.06em', color: tx(62), margin: '0 0 12px' };
+const PV_CHIP = { display: 'inline-flex', alignItems: 'center', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', borderRadius: '99px', border: `1px solid ${tx(20)}`, color: tx(85), whiteSpace: 'nowrap' };
+const PV_CHIP_ACCENT = { ...PV_CHIP, border: '1px solid var(--pv-accent)', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)' };
 const TIME_OPTIONS = ['9:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 
 // 公開ページの3タブ構成（でお要望2026-09-29：「基本情報」「予約」「アピール」を
@@ -108,12 +113,18 @@ const WEEKDAY_KEYS_BH = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 function todayStatusText(provider) {
   const hours = provider?.business_hours;
   if (!hours) return null;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // 以前は世界標準時の日付で判定していたため、日本の朝9時前は前日の曜日になっていた。
+  // また営業時間外でも「営業中」と出ていたので、今の時刻で「営業中／営業時間外」を分ける（2026-10-22）
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   if (isClosedWeekday(hours, todayStr)) return '本日は定休日';
-  const key = WEEKDAY_KEYS_BH[new Date(`${todayStr}T00:00:00Z`).getUTCDay()];
-  const today = hours[key];
+  const today = hours[WEEKDAY_KEYS_BH[now.getDay()]];
   if (!today?.open || !today?.close) return null;
-  return `本日 ${today.open}〜${today.close <= today.open ? '翌' + today.close : today.close} 営業中`;
+  const overnight = today.close <= today.open;
+  const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const openNow = overnight ? (hm >= today.open || hm < today.close) : (hm >= today.open && hm < today.close);
+  const range = `${today.open}〜${overnight ? '翌' + today.close : today.close}`;
+  return openNow ? `営業中（${overnight ? '翌' : ''}${today.close}まで）` : `本日 ${range}`;
 }
 
 // 住所の地図検索リンク（でお要望2026-09-29：住所を公開表示し地図リンクも追加）。
@@ -212,7 +223,7 @@ function FacilityPhotosStrip({ provider }) {
   const photos = (provider.facility_photos || []).filter(Boolean);
   if (!photos.length) return null;
   return (
-    <div style={{ marginBottom: '16px' }}>
+    <div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
         {photos.map((url, i) => (
           <div key={i} style={{ flexShrink: 0, width: '160px', height: '108px', borderRadius: '12px', overflow: 'hidden', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)' }}>
@@ -228,8 +239,6 @@ function FacilityPhotosStrip({ provider }) {
 function QuickFactsStrip({ provider }) {
   if (!isShown(provider, 'quick_facts')) return null;
   const chips = [];
-  const areaText = [provider.nearest_station, provider.area].filter(Boolean).join(' ／ ');
-  if (areaText) chips.push({ label: areaText, highlight: false });
   if (provider.online_available) chips.push({ label: 'オンライン対応', highlight: true });
   if (provider.trial_available) chips.push({ label: 'お試し・無料相談あり', highlight: true });
   if (provider.response_hours) chips.push({ label: `返信${provider.response_hours}時間以内`, highlight: false });
@@ -244,9 +253,9 @@ function QuickFactsStrip({ provider }) {
           <span key={i} style={{
             flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px',
             padding: '7px 14px',
-            background: chip.highlight ? 'rgba(5,150,105,0.15)' : 'var(--pv-surface)',
-            color: chip.highlight ? '#10b981' : 'color-mix(in srgb, var(--pv-text) 75%, transparent)',
-            border: `1px solid ${chip.highlight ? 'rgba(5,150,105,0.3)' : 'color-mix(in srgb, var(--pv-text) 15%, transparent)'}`,
+            background: 'var(--pv-surface)',
+            color: chip.highlight ? 'var(--pv-text)' : tx(75),
+            border: `1px solid ${chip.highlight ? 'var(--pv-accent)' : tx(15)}`,
             borderRadius: '99px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: chip.highlight ? '700' : '500',
             whiteSpace: 'nowrap',
           }}>
@@ -262,9 +271,9 @@ function QuickFactsStrip({ provider }) {
 function UniqueStrengthsSection({ provider }) {
   if (!provider.unique_strengths) return null;
   return (
-    <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '18px', padding: '22px 24px' }}>
-      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: '#b45309', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>このガイドにしかできないこと</div>
-      <p style={{ fontSize: 'calc(15px * var(--pv-fs))', color: '#111', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.unique_strengths}</p>
+    <div style={{ ...PV_CARD, boxShadow: 'inset 3px 0 0 var(--pv-accent)' }}>
+      <p style={PV_LABEL}>このお店ならではのこと</p>
+      <p style={{ fontSize: 'calc(15px * var(--pv-fs))', color: tx(92), lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.unique_strengths}</p>
     </div>
   );
 }
@@ -274,7 +283,7 @@ function FacilitiesSection({ facilities }) {
   if (!facilities || facilities.length === 0) return null;
   return (
     <div>
-      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>設備</div>
+      <p style={PV_LABEL}>設備</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: '10px' }}>
         {facilities.map(f => (
           <div key={f.id} style={{ padding: '14px 16px', background: 'var(--pv-surface)', borderRadius: '14px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)' }}>
@@ -293,7 +302,7 @@ function StaffSection({ staff }) {
   if (!staff || staff.length === 0) return null;
   return (
     <div>
-      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>担当スタッフ紹介</div>
+      <p style={PV_LABEL}>スタッフ</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {staff.map(s => (
           <div key={s.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px', background: 'var(--pv-surface)', borderRadius: '18px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', backdropFilter: 'blur(8px)' }}>
@@ -301,7 +310,7 @@ function StaffSection({ staff }) {
             <div style={{ flexShrink: 0 }}>
               {s.photo_url
                 ? <img src={s.photo_url} alt={s.name} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid color-mix(in srgb, var(--pv-text) 25%, transparent)', display: 'block' }} />
-                : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg,#e5e7eb,#d1d5db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(28px * var(--pv-fs))' }}></div>
+                : <div aria-hidden="true" style={{ width: '72px', height: '72px', borderRadius: '50%', background: ac(14), color: tx(85), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(26px * var(--pv-fs))', fontFamily: 'var(--pv-hfont)', fontWeight: '700' }}>{(s.name || '').trim().charAt(0)}</div>
               }
             </div>
             {/* テキスト情報 */}
@@ -309,28 +318,22 @@ function StaffSection({ staff }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
                 <span style={{ fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)' }}>{s.name}</span>
                 {s.is_featured && (
-                  <span style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '99px' }}>担当</span>
+                  <span style={PV_CHIP_ACCENT}>担当</span>
                 )}
                 {s.role && <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontWeight: '500' }}>{s.role}</span>}
               </div>
-              {/* 経験・資格チップ */}
-              {(s.experience_years || s.credentials) && (
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                  {s.experience_years && (
-                    <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: '#d1fae5', color: '#065f46', borderRadius: '99px' }}>
-                      経験{s.experience_years}年
-                    </span>
-                  )}
-                  {s.credentials && s.credentials.split('\n').filter(Boolean).slice(0, 2).map((cred, i) => (
-                    <span key={i} style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '600', padding: '3px 10px', background: '#eff6ff', color: '#1e40af', borderRadius: '99px' }}>
-                      {cred.length > 20 ? cred.slice(0, 20) + '…' : cred}
-                    </span>
+              {/* 経験・資格（資格は長い文章のことが多いので、丸い枠に入れず文で出す） */}
+              {s.experience_years && <div style={{ marginBottom: '8px' }}><span style={PV_CHIP}>経験{s.experience_years}年</span></div>}
+              {s.credentials && (
+                <ul style={{ listStyle: 'none', margin: '0 0 10px', padding: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {s.credentials.split('\n').filter(Boolean).slice(0, 3).map((cred, i) => (
+                    <li key={i} style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(75), lineHeight: '1.6' }}>{cred}</li>
                   ))}
-                </div>
+                </ul>
               )}
               {/* 自己紹介 */}
               {s.bio && (
-                <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.7', margin: 0, fontStyle: 'italic' }}>「{s.bio}」</p>
+                <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.8', margin: 0, whiteSpace: 'pre-wrap' }}>{s.bio}</p>
               )}
               {s.gallery?.length > 0 && (
                 <div style={{ marginTop: '14px' }}>
@@ -364,18 +367,22 @@ function StaffSection({ staff }) {
 // 横幅に収まらず、日本語テキストが折り返されて縦書き風・2行になっていた
 // （flexがボタンを押し縮め、white-space指定が無いため文字単位で折り返されていた）。
 // 各ボタンをflexShrink:0+whiteSpace:nowrapで固定幅化し、外側を横スクロールに。
+// 2026-10-22 UI刷新：スクロールしても上に残るようにし、タブは横幅を等分（4〜5個なら折り返さず全部見える）
 function TabBar({ activeTab, onSelect, tabs }) {
+  const list = tabs || TABS;
   return (
-    <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderBottom: '2px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', marginBottom: '28px', gap: '4px' }}>
-      {(tabs || TABS).map(t => (
-        <button key={t.id} onClick={() => onSelect(t.id)} style={{
-          flexShrink: 0, whiteSpace: 'nowrap',
-          padding: '12px 20px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: activeTab === t.id ? '800' : '500',
-          color: activeTab === t.id ? 'color-mix(in srgb, var(--pv-text) 90%, transparent)' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)', background: 'none', border: 'none',
-          borderBottom: activeTab === t.id ? '2px solid var(--pv-accent)' : '2px solid transparent',
-          marginBottom: '-2px', cursor: 'pointer', transition: 'all .15s',
-        }}>{t.label}</button>
-      ))}
+    <div role="tablist" style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--pv-bg)', display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderBottom: `1px solid ${tx(15)}`, margin: '0 -4px 24px', padding: '0 4px' }}>
+      {list.map(t => {
+        const on = activeTab === t.id;
+        return (
+          <button key={t.id} role="tab" aria-selected={on} onClick={() => { onSelect(t.id); }} style={{
+            flex: list.length <= 5 ? '1 0 auto' : '0 0 auto', whiteSpace: 'nowrap', minHeight: '48px',
+            padding: '0 14px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: on ? '800' : '500',
+            color: on ? 'var(--pv-text)' : tx(62), background: 'none', border: 'none',
+            boxShadow: on ? 'inset 0 -2px 0 var(--pv-accent)' : 'none', cursor: 'pointer', transition: 'color .15s',
+          }}>{t.label}</button>
+        );
+      })}
     </div>
   );
 }
@@ -387,11 +394,11 @@ function NewMeMapSection({ diagnosis, matchData }) {
 
   if (!diagnosis) {
     return (
-      <div style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-        <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', margin: '0 0 6px' }}>Me Scanを受けると、このガイドとの接点がわかります</p>
-        <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、8軸で確認できます。</p>
-        <a href="/diagnosis" style={{ display: 'inline-block', padding: '10px 22px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
-          無料でMe Scanを受ける（約12〜18分）
+      <div style={PV_CARD}>
+        <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: tx(92), margin: '0 0 6px' }}>Me Scanを受けると、このお店があなたに合うかが分かります</p>
+        <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(65), margin: '0 0 16px', lineHeight: '1.7' }}>外見の8つの項目から、あなたが最初に整えるとよい所と、このお店が得意な所を照らし合わせます。</p>
+        <a href="/diagnosis" style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', padding: '0 20px', border: `1px solid ${tx(25)}`, color: 'var(--pv-text)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
+          無料でMe Scanを受ける
         </a>
       </div>
     );
@@ -400,61 +407,51 @@ function NewMeMapSection({ diagnosis, matchData }) {
   const narratives = buildNarrative(diagnosis, matchData);
 
   return (
-    <div style={{ borderRadius: '16px', border: '1.5px solid #bfdbfe', background: 'linear-gradient(135deg,#eff6ff,#dbeafe)', overflow: 'hidden' }}>
+    <div style={{ ...PV_CARD, padding: 0, overflow: 'hidden' }}>
       {/* スコアヘッダー */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #bfdbfe' }}>
-        <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', color: '#2563eb', letterSpacing: '.05em', marginBottom: '8px' }}>
-          {isNewStyle ? 'New Me Navi との接点' : 'あなたの診断との一致度'}
-        </div>
+      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${tx(10)}` }}>
+        <p style={PV_LABEL}>あなたとの相性（Me Scanより）</p>
         {score !== null ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 'calc(36px * var(--pv-fs))', fontWeight: '800', color: '#1d4ed8', lineHeight: 1 }}>{score}%</span>
+              <span style={{ fontSize: 'calc(36px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{score}%</span>
               <div style={{ flex: 1, minWidth: '120px' }}>
-                <div style={{ height: '10px', background: '#dbeafe', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', background: score >= 70 ? '#1d4ed8' : score >= 45 ? '#3b82f6' : '#93c5fd', borderRadius: '99px', width: `${score}%`, transition: 'width .5s' }} />
+                <div style={{ height: '8px', background: tx(12), borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: 'var(--pv-accent)', borderRadius: '99px', width: `${score}%`, transition: 'width .5s' }} />
                 </div>
               </div>
-              {detail?.isCompassProvider && (
-                <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '4px 12px', background: '#1d4ed8', color: '#fff', borderRadius: '99px' }}>コンパス一致</span>
-              )}
+              {detail?.isCompassProvider && <span style={PV_CHIP_ACCENT}>最初の一手に合うお店</span>}
             </div>
-            <p style={{ fontSize: 'calc(11px * var(--pv-fs))', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 8軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
           </>
         ) : (
-          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#111', margin: 0 }}>診断結果と照らし合わせています。</p>
+          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(75), margin: 0 }}>診断結果と照らし合わせています。</p>
         )}
       </div>
 
       {/* カバー軸リスト */}
       {isNewStyle && detail?.coveredAxes?.length > 0 && (
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #bfdbfe' }}>
-          <p style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: '#1e40af', margin: '0 0 10px' }}>このガイドがカバーするあなたのトラック</p>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${tx(10)}` }}>
+          <p style={{ ...PV_LABEL, margin: '0 0 10px' }}>このお店が対応している、あなたの項目</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {detail.coveredAxes.map(ax => (
-              <div key={ax.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: ax.isCompass ? 'rgba(29,78,216,0.1)' : 'rgba(255,255,255,0.7)', borderRadius: '10px', border: ax.isCompass ? '1px solid #93c5fd' : '1px solid rgba(255,255,255,0.5)' }}>
-                <span style={{ fontSize: 'calc(18px * var(--pv-fs))', flexShrink: 0 }}>{AXIS_ICONS[ax.id]}</span>
+              <div key={ax.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: ax.isCompass ? ac(10) : 'transparent', borderRadius: '10px', border: `1px solid ${ax.isCompass ? 'var(--pv-accent)' : tx(12)}` }}>
+                <span aria-hidden="true" style={{ width: '30px', height: '30px', borderRadius: '8px', border: `1px solid ${tx(20)}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pv-hfont)', fontWeight: '700', flexShrink: 0 }}>{AXIS_ICONS[ax.id]}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '800', color: '#111' }}>{AXIS_LABELS[ax.id]}</span>
-                    {ax.isCompass && <span style={{ fontSize: 'calc(11px * var(--pv-fs))', color: '#2563eb', fontWeight: '700' }}>← 最優先</span>}
-                    {ax.path_type && (
-                      <span style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '2px 8px', background: PATH_COLORS[ax.path_type] + '25', color: PATH_COLORS[ax.path_type], borderRadius: '99px' }}>
-                        {PATH_LABELS[ax.path_type]}
-                      </span>
-                    )}
+                    <span style={{ fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '800', color: tx(92) }}>{AXIS_LABELS[ax.id]}</span>
+                    {ax.isCompass && <span style={PV_CHIP_ACCENT}>最初の一手</span>}
+                    {ax.path_type && <span style={PV_CHIP}>{PATH_LABELS[ax.path_type]}</span>}
                   </div>
                   {/* 現在地→理想バー */}
                   {ax.gap > 0 && (
-                    <div style={{ position: 'relative', height: '6px', background: '#dbeafe', borderRadius: '99px', overflow: 'visible' }}>
-                      <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: '#2563eb', borderRadius: '99px', width: `${Math.max(10, (10 - ax.gap) / 10 * 100)}%` }} />
-                      <span style={{ position: 'absolute', right: 0, top: '-14px', fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '700', color: '#111' }}>理想</span>
+                    <div style={{ position: 'relative', height: '6px', background: tx(12), borderRadius: '99px' }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: ax.isCompass ? 'var(--pv-accent)' : tx(55), borderRadius: '99px', width: `${Math.max(10, (10 - ax.gap) / 10 * 100)}%` }} />
                     </div>
                   )}
                 </div>
                 {ax.gap > 0 && (
-                  <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: ax.gap >= 4 ? '#dc2626' : ax.gap >= 2 ? '#d97706' : '#059669', flexShrink: 0 }}>
-                    +{ax.gap}
+                  <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: tx(75), flexShrink: 0 }}>
+                    伸びしろ {ax.gap >= 4 ? '大' : ax.gap >= 2 ? '中' : '小'}
                   </span>
                 )}
               </div>
@@ -467,7 +464,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
       {narratives.length > 0 && (
         <div style={{ padding: '16px 20px' }}>
           {narratives.map((n, i) => (
-            <p key={i} style={{ fontSize: 'calc(14px * var(--pv-fs))', color: '#1e3a8a', lineHeight: '1.7', margin: i < narratives.length - 1 ? '0 0 8px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{n}</p>
+            <p key={i} style={{ fontSize: 'calc(14px * var(--pv-fs))', color: tx(i === 0 ? 92 : 75), lineHeight: '1.7', margin: i < narratives.length - 1 ? '0 0 8px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{n}</p>
           ))}
         </div>
       )}
@@ -483,8 +480,8 @@ function PhilosophySection({ provider }) {
     : [];
 
   const personCards = [
-    ...(provider.handles_failure_patterns || []).map(f => ({ icon: FAILURE_ICONS[f] || '✓', text: FAILURE_PERSON[f] || f })),
-    ...(provider.suitable_triggers || []).map(t => ({ icon: TRIGGER_ICONS[t] || '✓', text: TRIGGER_PERSON[t] || t })),
+    ...(provider.handles_failure_patterns || []).map(f => ({ text: FAILURE_PERSON[f] || f })),
+    ...(provider.suitable_triggers || []).map(t => ({ text: TRIGGER_PERSON[t] || t })),
   ];
 
   const hasTargetBlock = targetLines.length > 0 || personCards.length > 0;
@@ -494,8 +491,8 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 1: こんな方へ ━━ */}
       {hasTargetBlock && (
-        <div style={{ background: 'var(--pv-surface)', borderRadius: '20px', padding: '28px 24px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>このガイドが伴走できる人</div>
+        <div style={PV_CARD}>
+          <p style={PV_LABEL}>こんな方に</p>
 
           {/* target_desc 行リスト */}
           {targetLines.length > 0 && (
@@ -511,29 +508,26 @@ function PhilosophySection({ provider }) {
 
           {/* failure/trigger カードグリッド */}
           {personCards.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {personCards.map((card, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px', background: 'var(--pv-surface)', borderRadius: '14px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
-                  <span style={{ fontSize: 'calc(22px * var(--pv-fs))', flexShrink: 0, lineHeight: 1 }}>{card.icon}</span>
-                  <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.55' }}>{card.text}</span>
-                </div>
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: 'calc(14px * var(--pv-fs))', color: tx(85), lineHeight: '1.6' }}>
+                  <span aria-hidden="true" style={{ color: 'var(--pv-accent)', fontWeight: '800', flexShrink: 0 }}>✓</span>{card.text}
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       )}
 
       {/* ━━ Block 2: 哲学 pull-quote ━━ */}
       {provider.philosophy && (
-        <div style={{ position: 'relative', background: 'color-mix(in srgb, var(--pv-accent) 16%, #0d1117)', borderRadius: '20px', padding: '40px 28px 32px', overflow: 'hidden' }}>
-          {/* 装飾クオート */}
-          <div style={{ position: 'absolute', top: '8px', left: '18px', fontSize: 'calc(96px * var(--pv-fs))', color: 'rgba(255,255,255,0.05)', fontFamily: 'Georgia, serif', lineHeight: 1, userSelect: 'none', pointerEvents: 'none' }}></div>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '.12em', marginBottom: '18px', position: 'relative', textTransform: 'uppercase' }}>このガイドが大切にしていること</div>
-          <p style={{ fontSize: 'calc(16px * var(--pv-fs))', color: 'rgba(255,255,255,0.92)', lineHeight: '1.95', margin: '0', whiteSpace: 'pre-wrap', fontWeight: '500', position: 'relative', zIndex: 1 }}>{provider.philosophy}</p>
+        <div style={{ ...PV_CARD, padding: '28px 24px' }}>
+          <p style={PV_LABEL}>大切にしていること</p>
+          <p style={{ fontSize: 'calc(16px * var(--pv-fs))', color: tx(92), lineHeight: '1.95', margin: '0', whiteSpace: 'pre-wrap', fontWeight: '500', fontFamily: 'var(--pv-hfont)' }}>{provider.philosophy}</p>
           {provider.provider_style && (
-            <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '.05em', textTransform: 'uppercase' }}>スタイル</span>
-              <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>{STYLE_LABELS[provider.provider_style] || provider.provider_style}</span>
+            <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: `1px solid ${tx(10)}`, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ ...PV_LABEL, margin: 0 }}>進め方</span>
+              <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(85), fontWeight: '500' }}>{STYLE_LABELS[provider.provider_style] || provider.provider_style}</span>
             </div>
           )}
         </div>
@@ -541,30 +535,30 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 2.5: 変容ストーリー（AIマッチング用テキストフィールド） ━━ */}
       {(provider.ideal_client_desc || provider.client_before_state || provider.transformation_pattern || provider.best_fit_desc) && (
-        <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '18px', padding: '22px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
+        <div style={PV_CARD}>
+          <p style={PV_LABEL}>通っている方のこと</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {provider.ideal_client_desc && (
               <div>
-                <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', color: '#6366f1', marginBottom: '6px', letterSpacing: '.05em' }}>よく来るお客様の状況・背景</div>
+                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', marginBottom: '6px', letterSpacing: '.05em' }}>よく来るお客様の状況・背景</div>
                 <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.ideal_client_desc}</p>
               </div>
             )}
             {provider.client_before_state && (
               <div>
-                <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', color: '#818cf8', marginBottom: '6px', letterSpacing: '.05em' }}>来る前の典型的な状態</div>
+                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', marginBottom: '6px', letterSpacing: '.05em' }}>来る前の典型的な状態</div>
                 <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.client_before_state}</p>
               </div>
             )}
             {provider.transformation_pattern && (
               <div>
-                <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', color: '#34d399', marginBottom: '6px', letterSpacing: '.05em' }}>よく起きる変化のパターン</div>
+                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', marginBottom: '6px', letterSpacing: '.05em' }}>よく起きる変化のパターン</div>
                 <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.transformation_pattern}</p>
               </div>
             )}
             {provider.best_fit_desc && (
-              <div style={{ background: 'rgba(5,150,105,0.12)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(5,150,105,0.2)' }}>
-                <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', color: '#34d399', marginBottom: '6px', letterSpacing: '.05em' }}>特に向いている人・状況</div>
+              <div style={{ background: ac(8), borderRadius: '12px', padding: '16px', border: `1px solid ${ac(30)}` }}>
+                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', marginBottom: '6px', letterSpacing: '.05em' }}>特に向いている人・状況</div>
                 <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.best_fit_desc}</p>
               </div>
             )}
@@ -574,8 +568,8 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 3: サービス詳細 ━━ */}
       {provider.description && (
-        <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '18px', padding: '22px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>この一手でできること</div>
+        <div style={PV_CARD}>
+          <p style={PV_LABEL}>サービスの内容</p>
           <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.description}</p>
         </div>
       )}
@@ -587,73 +581,45 @@ function PhilosophySection({ provider }) {
 function StoriesSection({ stories, provider }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800', margin: '0' }}>変容の証言</h2>
-        {stories.length > 0 && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontWeight: '600', background: 'var(--pv-surface)', padding: '2px 10px', borderRadius: '99px' }}>{stories.length}件</span>}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '14px' }}>
+        <h2 style={{ fontSize: 'calc(17px * var(--pv-hs))', fontWeight: '800', margin: '0' }}>お客様の体験談</h2>
+        {stories.length > 0 && <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(62) }}>{stories.length}件</span>}
       </div>
       {stories.length === 0 ? (
-        <div style={{ background: '#fffbeb', border: '1px dashed #fde68a', borderRadius: '18px', padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: 'calc(36px * var(--pv-fs))', marginBottom: '12px' }}>️</div>
-          <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>このガイドへの最初の証言を残す人になれます</p>
-          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#111', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
+        <div style={{ ...PV_CARD, borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: tx(80), margin: 0, lineHeight: '1.7', flex: '1 1 240px' }}>まだ体験談はありません。通ったことがある方は、変わる前と今を書いてみませんか。</p>
           {provider?.slug && (
-            <a href={`/story-submit?providerId=${provider.id || ''}`} style={{ display: 'inline-block', padding: '10px 22px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
-              体験談を書く（無料）
+            <a href={`/story-submit?providerId=${provider.id || ''}`} style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', padding: '0 18px', border: `1px solid ${tx(25)}`, color: 'var(--pv-text)', borderRadius: '10px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
+              体験談を書く
             </a>
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {stories.map(s => (
-            <div key={s.id} style={{ borderRadius: '18px', overflow: 'hidden', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-              {/* ヘッダー: 軸・来た道 */}
+            <article key={s.id} style={{ ...PV_CARD, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(s.axis_id || s.path_type) && (
-                <div style={{ background: 'var(--pv-surface)', padding: '10px 16px', borderBottom: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {s.axis_id && (
-                    <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: '#ecfdf5', color: '#059669', borderRadius: '99px' }}>
-                      {AXIS_ICONS[s.axis_id]} {AXIS_LABELS[s.axis_id] || s.axis_id}トラック
-                    </span>
-                  )}
-                  {s.path_type && (
-                    <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: (PATH_COLORS[s.path_type] || '#6b7280') + '20', color: PATH_COLORS[s.path_type] || '#6b7280', borderRadius: '99px' }}>
-                      {PATH_LABELS[s.path_type] || s.path_type}
-                    </span>
-                  )}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {s.axis_id && <span style={PV_CHIP}>{AXIS_LABELS[s.axis_id] || s.axis_id}</span>}
+                  {s.path_type && <span style={PV_CHIP}>{PATH_LABELS[s.path_type] || s.path_type}</span>}
                 </div>
               )}
-
-              {/* AFTER ブロック（先頭・タイトル扱い） */}
-              <div style={{ background: '#f0fdf4', padding: '20px 20px 16px' }}>
-                <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: '#059669', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>After — 今ここにいる</div>
-                <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: '#111', margin: s.tags?.length ? '0 0 12px' : '0', lineHeight: '1.75' }}>{s.change_after}</p>
-                {s.tags?.length > 0 && (
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {s.tags.map(t => <span key={t} style={{ fontSize: 'calc(11px * var(--pv-fs))', padding: '3px 10px', background: '#dcfce7', color: '#15803d', borderRadius: '99px' }}>#{t}</span>)}
-                  </div>
-                )}
+              <div>
+                <p style={{ ...PV_LABEL, margin: '0 0 4px' }}>今</p>
+                <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: tx(92), margin: 0, lineHeight: '1.75' }}>{s.change_after}</p>
               </div>
-
-              {/* 中継地点 or 矢印（逆向き） */}
-              <div style={{ background: 'linear-gradient(to bottom, #f0fdf4 0%, #1f2937 100%)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '44px' }}>
-                {s.milestone_reached ? (
-                  <>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(16,185,129,0.25)' }} />
-                    <div style={{ padding: '6px 14px', background: 'var(--pv-surface)', border: '1px solid #a7f3d0', borderRadius: '99px', fontSize: 'calc(12px * var(--pv-fs))', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
-                      {s.milestone_reached}
-                    </div>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
-                  </>
-                ) : (
-                  <div style={{ padding: '6px 14px', background: 'var(--pv-surface)', borderRadius: '99px', fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: '600', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>出会う前</div>
-                )}
-              </div>
-
-              {/* BEFORE ブロック（折りたたみ気味に小さく） */}
-              <div style={{ background: '#1f2937', padding: '14px 20px' }}>
-                <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'rgba(255,255,255,0.35)', letterSpacing: '.12em', marginBottom: '8px', textTransform: 'uppercase' }}>Before</div>
-                <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: '1.7' }}>{s.concern_before}</p>
-              </div>
-            </div>
+              {s.concern_before && (
+                <div style={{ paddingTop: '12px', borderTop: `1px solid ${tx(10)}` }}>
+                  <p style={{ ...PV_LABEL, margin: '0 0 4px' }}>{s.milestone_reached ? `通う前（${s.milestone_reached}）` : '通う前'}</p>
+                  <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(70), margin: 0, lineHeight: '1.7' }}>{s.concern_before}</p>
+                </div>
+              )}
+              {s.tags?.length > 0 && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {s.tags.map(t => <span key={t} style={{ fontSize: 'calc(12px * var(--pv-fs))', color: tx(62) }}>#{t}</span>)}
+                </div>
+              )}
+            </article>
           ))}
         </div>
       )}
@@ -696,7 +662,7 @@ function renderCustomBlockElement(b) {
   }
   if (b.block_type === 'quote' && c.text) {
     return (
-      <blockquote key={b.id} style={{ margin: 0, padding: '16px 20px', borderLeft: '3px solid #c9a84c', background: 'var(--pv-surface)', borderRadius: '0 12px 12px 0' }}>
+      <blockquote key={b.id} style={{ margin: 0, padding: '16px 20px', borderLeft: '3px solid var(--pv-accent)', background: 'var(--pv-surface)', borderRadius: '0 12px 12px 0' }}>
         <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontStyle: 'italic', color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)', margin: 0, lineHeight: '1.8' }}>「{c.text}」</p>
         {c.attribution && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: '8px 0 0' }}>— {c.attribution}</p>}
       </blockquote>
@@ -720,14 +686,14 @@ function AppealBlocksSection({ blocks }) {
 function GuideMessageCard({ provider }) {
   if (!provider.guide_message) return null;
   return (
-    <div style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--pv-accent) 7%, transparent) 0%, rgba(79,70,229,0.04) 100%)', border: '1px solid color-mix(in srgb, var(--pv-accent) 25%, transparent)', borderRadius: '16px', padding: '22px 24px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+    <div style={{ ...PV_CARD, display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
       {provider.photo_url ? (
         <img src={provider.photo_url} alt={provider.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid color-mix(in srgb, var(--pv-accent) 30%, transparent)' }} />
       ) : (
-        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'color-mix(in srgb, var(--pv-accent) 15%, transparent)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(22px * var(--pv-fs))' }}></div>
+        <div aria-hidden="true" style={{ width: '48px', height: '48px', borderRadius: '50%', background: ac(14), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(20px * var(--pv-fs))', fontFamily: 'var(--pv-hfont)', fontWeight: '700', color: tx(85) }}>{(provider.name || '').trim().charAt(0)}</div>
       )}
       <div>
-        <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>ガイドからのひと言</div>
+        <p style={{ ...PV_LABEL, margin: '0 0 8px' }}>お店からのひと言</p>
         <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'var(--pv-text)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.guide_message}</p>
       </div>
     </div>
@@ -739,7 +705,7 @@ function ProgramSection({ services, onConsult, userPathType, provider, matchData
   if (!services || services.length === 0) return null;
   return (
     <div>
-      <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.1em', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textTransform: 'uppercase', margin: '0 0 12px' }}>プログラム</p>
+      <h2 style={{ fontSize: 'calc(17px * var(--pv-hs))', fontWeight: '800', margin: '0 0 14px' }}>メニュー</h2>
       <ProgramTab services={services} onConsult={onConsult} userPathType={userPathType} provider={provider} matchData={matchData} />
     </div>
   );
@@ -812,10 +778,10 @@ function AppealTab({ provider, diagnosis, matchData, stories, staff, facilities,
         )}
       </div>
       {/* スティッキーCTA */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '10px 16px 24px', background: 'linear-gradient(to top, var(--pv-surface) 70%, rgba(10,15,30,0))', zIndex: 50, pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 16px calc(16px + env(safe-area-inset-bottom, 0px))', background: 'linear-gradient(to top, var(--pv-bg) 65%, transparent)', zIndex: 50, pointerEvents: 'none' }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', pointerEvents: 'all' }}>
           <button onClick={onGoToConsult} style={{ width: '100%', padding: '16px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', border: 'none', borderRadius: '14px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 24px rgba(0,0,0,0.22)', letterSpacing: '.02em' }}>
-            予約する →
+            予約する
           </button>
         </div>
       </div>
@@ -837,24 +803,14 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
       : [];
 
   const hasDetails = !!(service.before_text || service.before_image_url || service.after_text || service.after_image_url || benefits.length > 0 || suitablePaths.length > 0);
-  const borderColor = isCompassMatch ? '#1d4ed8' : isPathMatch ? '#2563eb' : '#e5e7eb';
 
   return (
-    <div style={{ background: 'var(--pv-surface)', borderRadius: '20px', overflow: 'hidden', border: `${isCompassMatch || isPathMatch ? '2px' : '1px'} solid ${isCompassMatch ? '#1d4ed8' : isPathMatch ? '#2563eb' : 'color-mix(in srgb, var(--pv-text) 15%, transparent)'}`, boxShadow: isCompassMatch ? '0 0 0 4px rgba(29,78,216,.1),0 4px 24px rgba(0,0,0,0.4)' : '0 4px 24px rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
+    <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', overflow: 'hidden', border: `1px solid ${isCompassMatch || isPathMatch ? 'var(--pv-accent)' : tx(12)}` }}>
 
-      {/* バナー */}
-      {isCompassMatch && (
-        <div style={{ background: 'linear-gradient(90deg,#1d4ed8,#4f46e5)', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: 'calc(16px * var(--pv-fs))' }}></span>
-          <div>
-            <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)' }}>あなたのコンパス軸「{AXIS_LABELS[service.target_axis]}」の最初の一手</div>
-            <div style={{ fontSize: 'calc(11px * var(--pv-fs))', color: 'rgba(255,255,255,.75)', marginTop: '1px' }}>Me Scanで導き出された最優先プログラム</div>
-          </div>
-        </div>
-      )}
-      {!isCompassMatch && isPathMatch && (
-        <div style={{ background: '#2563eb', padding: '9px 18px' }}>
-          <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)' }}>あなたの「来た道」に合っています</span>
+      {/* あなたに合っている印（Me Scanを受けた方だけ） */}
+      {(isCompassMatch || isPathMatch) && (
+        <div style={{ background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', padding: '9px 18px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '800' }}>
+          {isCompassMatch ? `あなたの最初の一手「${AXIS_LABELS[service.target_axis]}」に合うメニュー` : 'あなたのこれまでに合うメニュー'}
         </div>
       )}
 
@@ -863,7 +819,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
           <img src={service.image_url} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.4) 100%)' }} />
-          {service.is_featured && <div style={{ position: 'absolute', top: '12px', right: '12px', background: '#fbbf24', color: '#78350f', fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', padding: '5px 12px', borderRadius: '99px' }}>⭐ おすすめ</div>}
+          {service.is_featured && <div style={{ ...PV_CHIP_ACCENT, position: 'absolute', top: '12px', right: '12px' }}>おすすめ</div>}
         </div>
       )}
 
@@ -872,23 +828,21 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         <div style={{ marginBottom: '14px' }}>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '7px' }}>
             {service.target_axis && (
-              <span style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: isCompassMatch ? '#dbeafe' : '#f1f5f9', color: isCompassMatch ? '#1d4ed8' : '#475569', borderRadius: '99px' }}>
-                {AXIS_ICONS[service.target_axis]} {AXIS_LABELS[service.target_axis]}対応
-              </span>
+              <span style={PV_CHIP}>{AXIS_LABELS[service.target_axis]}</span>
             )}
-            {!service.image_url && service.is_featured && <span style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: '#fef3c7', color: '#d97706', borderRadius: '99px' }}>⭐ おすすめ</span>}
+            {!service.image_url && service.is_featured && <span style={PV_CHIP_ACCENT}>おすすめ</span>}
           </div>
           <h3 style={{ fontSize: 'calc(17px * var(--pv-hs))', fontWeight: '900', margin: '0 0 7px', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', lineHeight: '1.3' }}>{service.name}</h3>
           {service.transformation_promise && (
-            <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: '0', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 12px', background: 'var(--pv-surface)', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
-              「{service.transformation_promise}」
+            <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: '0', lineHeight: '1.6' }}>
+              {service.transformation_promise}
             </p>
           )}
         </div>
 
         {/* 価格 */}
         <div style={{ marginBottom: '12px' }}>
-          <span style={{ fontSize: 'calc(24px * var(--pv-fs))', fontWeight: '900', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
+          <span style={{ fontSize: 'calc(22px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{service.price != null ? `¥${Number(service.price).toLocaleString()}` : ''}</span>
           {(service.duration_minutes || service.duration) && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', marginLeft: '6px' }}>/ {service.duration_minutes ? `${service.duration_minutes}分` : service.duration}</span>}
         </div>
 
@@ -896,9 +850,10 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {hasDetails && (
           <button
             onClick={() => setExpanded(v => !v)}
-            style={{ width: '100%', padding: '13px', marginBottom: '10px', background: expanded ? 'var(--pv-surface)' : 'color-mix(in srgb, var(--pv-accent) 7%, transparent)', color: expanded ? 'color-mix(in srgb, var(--pv-text) 75%, transparent)' : '#c9a84c', border: `1.5px solid ${expanded ? 'color-mix(in srgb, var(--pv-text) 15%, transparent)' : 'color-mix(in srgb, var(--pv-accent) 35%, transparent)'}`, borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer', transition: 'all .15s', letterSpacing: '.02em' }}
+            aria-expanded={expanded}
+            style={{ width: '100%', minHeight: '44px', marginBottom: '10px', background: 'transparent', color: 'var(--pv-text)', border: `1px solid ${tx(20)}`, borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer' }}
           >
-            {expanded ? '閉じる ▲' : '変容の旅を覗く ▾'}
+            {expanded ? '閉じる' : '詳しく見る'}
           </button>
         )}
 
@@ -912,10 +867,10 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
                   {service.before_image_url && <img src={service.before_image_url} alt="Before" style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }} />}
                   {service.before_text && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: 0, lineHeight: '1.6', padding: service.before_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.before_text}</p>}
                 </div>
-                <div style={{ background: '#f0fdf4', borderRadius: '10px', overflow: 'hidden', border: '1px solid #bbf7d0' }}>
-                  <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: '#059669', letterSpacing: '.1em', padding: service.after_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>AFTER</div>
+                <div style={{ background: 'var(--pv-surface)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--pv-accent)' }}>
+                  <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', letterSpacing: '.1em', padding: service.after_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>AFTER</div>
                   {service.after_image_url && <img src={service.after_image_url} alt="After" style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }} />}
-                  {service.after_text && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: '#065f46', margin: 0, lineHeight: '1.6', padding: service.after_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.after_text}</p>}
+                  {service.after_text && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: tx(85), margin: 0, lineHeight: '1.6', padding: service.after_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.after_text}</p>}
                 </div>
               </div>
             )}
@@ -925,7 +880,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   {benefits.slice(0, 5).map((line, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      <span style={{ color: '#34d399', fontWeight: '800', fontSize: 'calc(13px * var(--pv-fs))', flexShrink: 0, lineHeight: '1.4' }}>✓</span>
+                      <span style={{ color: 'var(--pv-accent)', fontWeight: '800', fontSize: 'calc(13px * var(--pv-fs))', flexShrink: 0, lineHeight: '1.4' }}>✓</span>
                       <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.5' }}>{line}</span>
                     </div>
                   ))}
@@ -937,9 +892,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
                 <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', marginBottom: '7px', textTransform: 'uppercase' }}>こんな方に向いています</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {suitablePaths.map(p => (
-                    <span key={p} style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: (PATH_COLORS[p] || '#6b7280') + '18', color: PATH_COLORS[p] || '#6b7280', borderRadius: '99px' }}>
-                      {PATH_LABELS[p]}タイプ
-                    </span>
+                    <span key={p} style={PV_CHIP}>{PATH_PERSON[p] || PATH_LABELS[p]}</span>
                   ))}
                 </div>
               </div>
@@ -950,11 +903,11 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {/* CTA */}
         <button
           onClick={() => onConsult(service)}
-          style={{ width: '100%', padding: '15px', background: isCompassMatch ? 'linear-gradient(90deg,#1d4ed8,#4f46e5)' : 'var(--pv-accent)', color: isCompassMatch ? '#fff' : 'var(--pv-on-accent)', border: 'none', borderRadius: '14px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer', letterSpacing: '.02em', transition: 'opacity .15s' }}
+          style={{ width: '100%', minHeight: '48px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer', transition: 'opacity .15s' }}
           onMouseOver={e => e.currentTarget.style.opacity = '.88'}
           onMouseOut={e => e.currentTarget.style.opacity = '1'}
         >
-          {isCompassMatch ? 'この一歩を踏み出す →' : 'このガイドと一歩を踏み出す →'}
+          このメニューを予約する
         </button>
       </div>
     </div>
@@ -965,8 +918,7 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
   if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
   if (!services.length) return (
     <div style={{ textAlign: 'center', padding: '60px 20px', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', background: 'var(--pv-surface)', borderRadius: '18px', border: '1px dashed color-mix(in srgb, var(--pv-text) 20%, transparent)' }}>
-      <div style={{ fontSize: 'calc(32px * var(--pv-fs))', marginBottom: '12px', opacity: 0.3 }}></div>
-      <p style={{ fontSize: 'calc(15px * var(--pv-fs))', margin: 0, fontWeight: '600' }}>プログラムはまだ登録されていません</p>
+      <p style={{ fontSize: 'calc(15px * var(--pv-fs))', margin: 0, fontWeight: '600' }}>メニューはまだ登録されていません</p>
     </div>
   );
 
@@ -989,21 +941,12 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* Me Scan連携バナー */}
+      {/* Me Scanを受けた方には、このお店が対応しているあなたの項目を出す */}
       {hasScan && (
-        <div style={{ background: isCompassProvider ? 'rgba(29,78,216,0.15)' : 'var(--pv-surface)', border: `1px solid ${isCompassProvider ? '#6366f1' : 'color-mix(in srgb, var(--pv-text) 15%, transparent)'}`, borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', backdropFilter: 'blur(8px)' }}>
-          <span style={{ fontSize: 'calc(20px * var(--pv-fs))', flexShrink: 0 }}>{isCompassProvider ? '' : '️'}</span>
-          <div>
-            <div style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', color: isCompassProvider ? '#818cf8' : 'color-mix(in srgb, var(--pv-text) 75%, transparent)', marginBottom: '6px' }}>
-              {isCompassProvider ? 'あなたのコンパス軸を専門とするガイドです' : 'あなたの変容軸をカバーするガイドです'}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {coveredAxes.map(ax => (
-                <span key={ax.id} style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: ax.isCompass ? '#1d4ed8' : 'color-mix(in srgb, var(--pv-text) 12%, transparent)', color: ax.isCompass ? '#fff' : 'color-mix(in srgb, var(--pv-text) 75%, transparent)', borderRadius: '99px' }}>
-                  {AXIS_ICONS[ax.id]} {AXIS_LABELS[ax.id]}{ax.gap > 0 ? ` +${ax.gap}` : ''}
-                </span>
-              ))}
-            </div>
+        <div style={{ ...PV_CARD, padding: '14px 16px', borderColor: isCompassProvider ? 'var(--pv-accent)' : tx(12) }}>
+          <p style={{ ...PV_LABEL, margin: '0 0 8px' }}>{isCompassProvider ? 'あなたの最初の一手を得意とするお店です' : 'あなたの項目に対応しているお店です'}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {coveredAxes.map(ax => <span key={ax.id} style={ax.isCompass ? PV_CHIP_ACCENT : PV_CHIP}>{AXIS_LABELS[ax.id]}</span>)}
           </div>
         </div>
       )}
@@ -1040,25 +983,22 @@ function BasicInfoTab({ provider }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '60px' }}>
+      <FacilityPhotosStrip provider={provider} />
       {status && (
-        <div style={{
-          padding: '12px 16px', borderRadius: '12px', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700',
-          background: status === '本日は定休日' ? 'rgba(107,114,128,0.15)' : 'rgba(5,150,105,0.15)',
-          color: status === '本日は定休日' ? 'color-mix(in srgb, var(--pv-text) 62%, transparent)' : '#10b981',
-          border: `1px solid ${status === '本日は定休日' ? 'color-mix(in srgb, var(--pv-text) 15%, transparent)' : 'rgba(5,150,105,0.3)'}`,
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderRadius: '12px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', background: 'var(--pv-surface)', border: `1px solid ${status.startsWith('営業中') ? 'var(--pv-accent)' : tx(15)}`, color: 'var(--pv-text)' }}>
+          <span aria-hidden="true" style={{ width: '8px', height: '8px', borderRadius: '50%', background: status.startsWith('営業中') ? 'var(--pv-accent)' : tx(35), flexShrink: 0 }} />
           {status}
         </div>
       )}
 
       {(sh('basic_address') || sh('basic_station')) && (
       <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
-        <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>所在地・アクセス</p>
+        <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', letterSpacing: '.06em', color: tx(62), margin: '0 0 4px' }}>所在地・アクセス</p>
         <InfoRow label="住所" value={sh('basic_address') ? (fullAddress || null) : null} />
         <InfoRow label="最寄り駅" value={sh('basic_station') ? (provider.nearest_station || null) : null} />
         {sh('basic_address') && mapsHref && (
-          <a href={mapsHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: '#c9a84c', textDecoration: 'none' }}>
-            地図で見る →
+          <a href={mapsHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', color: 'var(--pv-text)', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: 'var(--pv-accent)' }}>
+            地図で見る
           </a>
         )}
       </div>
@@ -1066,7 +1006,7 @@ function BasicInfoTab({ provider }) {
 
       {sh('basic_hours') && provider.business_hours && (
         <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
-          <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>営業時間</p>
+          <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', letterSpacing: '.06em', color: tx(62), margin: '0 0 4px' }}>営業時間</p>
           {WEEKDAY_KEYS_BH.map(key => {
             const h = provider.business_hours[key];
             const isToday = key === todayKey;
@@ -1083,7 +1023,7 @@ function BasicInfoTab({ provider }) {
 
       {(sh('basic_price') || sh('basic_payment') || sh('basic_online')) && (
       <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
-        <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>料金・お支払い</p>
+        <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', letterSpacing: '.06em', color: tx(62), margin: '0 0 4px' }}>料金・お支払い</p>
         <InfoRow label="料金" value={sh('basic_price') && provider.price_from ? `¥${provider.price_from.toLocaleString()}〜` : null} />
         <InfoRow label="お支払い" value={paymentText} />
         <InfoRow label="オンライン対応" value={sh('basic_online') && provider.online_available ? 'あり' : null} />
@@ -1092,7 +1032,7 @@ function BasicInfoTab({ provider }) {
 
       {((sh('basic_trial') && provider.trial_available) || (sh('basic_response') && provider.response_hours) || (sh('basic_cancel') && provider.cancellation_policy) || (sh('basic_first_session') && provider.first_session_desc)) && (
         <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
-          <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>予約前に知っておきたいこと</p>
+          <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', letterSpacing: '.06em', color: tx(62), margin: '0 0 4px' }}>予約前に知っておきたいこと</p>
           <InfoRow label="お試し" value={sh('basic_trial') && provider.trial_available ? (provider.trial_desc || 'あり') : null} />
           <InfoRow label="返信目安" value={sh('basic_response') && provider.response_hours ? `${provider.response_hours}時間以内` : null} />
           <InfoRow label="初回について" value={sh('basic_first_session') ? (provider.first_session_desc || null) : null} />
@@ -1248,7 +1188,7 @@ function ClassTab({ provider, classId }) {
                   return (
                     <button key={x.id} type="button" disabled={full && !done} onClick={() => setPickedId(x.id)}
                       style={{ position: 'relative', textAlign: 'center', padding: '12px 8px', borderRadius: '12px', border: pickedId === x.id ? '2px solid var(--pv-accent, #c9a84c)' : line, background: 'var(--pv-surface)', color: 'var(--pv-text)', cursor: full ? 'default' : 'pointer', opacity: full && !done ? 0.5 : 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                      {(full || done) && <span style={{ position: 'absolute', top: 0, right: 0, background: done ? '#34d399' : '#b42318', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '0 12px 0 8px' }}>{done ? '予約済み' : '満席'}</span>}
+                      {(full || done) && <span style={{ position: 'absolute', top: 0, right: 0, background: done ? 'var(--pv-accent)' : 'var(--pv-text)', color: done ? 'var(--pv-on-accent)' : 'var(--pv-bg)', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '0 12px 0 8px' }}>{done ? '予約済み' : '満席'}</span>}
                       <span style={{ fontWeight: 800, fontSize: 'calc(13px * var(--pv-fs))' }}>{String(x.start_time).slice(0, 5)}{x.end_time ? ` - ${String(x.end_time).slice(0, 5)}` : ''}</span>
                       {x.staff?.photo_url
                         ? <img src={x.staff.photo_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
@@ -1288,7 +1228,7 @@ function ClassTab({ provider, classId }) {
             </div>
           )}
           {doneSlotIds.includes(picked.id) ? (
-            <p style={{ margin: 0, fontWeight: 700, color: '#34d399' }}>予約しました。</p>
+            <p style={{ margin: 0, fontWeight: 700, color: 'var(--pv-text)' }}>予約しました。</p>
           ) : pickedClass?.needs_ticket && !pickedRule?.ok ? null : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1298,7 +1238,7 @@ function ClassTab({ provider, classId }) {
                   <input placeholder="電話番号" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ flex: 1, minWidth: 0, padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
                 </div>
               </div>
-              {error && <p style={{ color: '#f87171', fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
+              {error && <p role="alert" style={{ color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
               <button type="button" onClick={() => bookSession(picked.id, picked.class_name, pickedClass?.needs_ticket ? chosenTicket : null)} disabled={bookingSlotId === picked.id}
                 style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
                 {bookingSlotId === picked.id ? '予約中…' : 'このレッスンを予約する'}
@@ -1360,11 +1300,11 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
           </>}
     </div>
   );
-  const consultProps = { provider, services, staff, onServiceSelect: setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, embedded: true };
+  const consultProps = { provider, services, staff, onServiceSelect: setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId };
   const empty = !visibleServices.length && !(lessonsOn && visibleLessons.length);
 
   return (
-    <div style={{ maxWidth: '620px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
+    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
       {!hideMemberCard && elig?.logged_in && <MemberCard provider={provider} elig={elig} onChanged={onEligChanged} />}
       {onlyTicket ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', margin: '0 0 4px' }}>
@@ -1602,12 +1542,12 @@ function PackagesTab({ provider }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '60px' }}>
       {confirmMsg && (
-        <div style={{ padding: '14px 16px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '12px', color: '#4ade80', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700' }}>
+        <div role="status" style={{ padding: '14px 16px', background: ac(10), border: '1px solid var(--pv-accent)', borderRadius: '12px', color: 'var(--pv-text)', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700' }}>
           {confirmMsg}
         </div>
       )}
       {error && (
-        <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', color: '#f87171', fontSize: 'calc(13px * var(--pv-fs))' }}>
+        <div role="alert" style={{ padding: '12px 16px', background: 'var(--pv-surface)', border: `1px solid ${tx(40)}`, borderRadius: '12px', color: 'var(--pv-text)', fontWeight: '700', fontSize: 'calc(13px * var(--pv-fs))' }}>
           {error}
         </div>
       )}
@@ -1670,13 +1610,12 @@ function MemberCard({ provider, elig }) {
   );
 }
 
-// embedded：予約タブ（BookTab）でメニューを選んだ後に、その1つのメニューの日時選び・送信だけを出す（2026-10-22）
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, embedded }) {
+// 予約タブ（BookTab）でメニューを選んだ後に、その1つのメニューの日時選び・送信だけを出す（2026-10-22）
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
-  const [userPrefilled, setUserPrefilled] = useState(false);
   // ログイン中のお客様のFineme user_id。予約に紐づけておかないと、承認/代替提案の
   // LINE通知（notifyCustomerLine）が送り先を特定できず届かない（でお報告2026-09-12：
   // ログインして予約したのに代替提案のLINE通知が来なかった不具合の原因）。
@@ -1693,41 +1632,6 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // （'instant'=即時予約タブ、'request'=リクエストタブ、'closed'=両方OFFで受付停止）。
   const showInstantPicker = mode === 'instant';
 
-  // 友達紹介プログラム（でお要望2026-09-14）：ログイン中のお客様に、この店舗向けの
-  // 個人紹介リンクを発行して見せる。
-  const referralProgramOn = hasFeature(provider, 'referral_program');
-  const [referralCode, setReferralCode] = useState('');
-  const [referralRewardText, setReferralRewardText] = useState('');
-  // でお要望2026-09-30：「友達を紹介する」ボックスの文言・画像・ボタンを店舗が
-  // 自由に編集できるように（元は文言が固定文＋特典文言のみだった）。
-  const [referralMessageText, setReferralMessageText] = useState('');
-  const [referralImageUrl, setReferralImageUrl] = useState('');
-  const [referralButtonLabel, setReferralButtonLabel] = useState('');
-  const [referralButtonUrl, setReferralButtonUrl] = useState('');
-  const [referralCopied, setReferralCopied] = useState(false);
-  useEffect(() => {
-    if (!referralProgramOn || !userId || !provider?.slug) return;
-    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    if (!sbKey) return;
-    try {
-      const obj = JSON.parse(localStorage.getItem(sbKey));
-      const token = obj?.access_token;
-      if (!token) return;
-      fetch(`/api/me/referral-code?provider_slug=${provider.slug}`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (!d) return;
-          if (d.code) setReferralCode(d.code);
-          if (d.reward_text) setReferralRewardText(d.reward_text);
-          if (d.message_text) setReferralMessageText(d.message_text);
-          if (d.image_url) setReferralImageUrl(d.image_url);
-          if (d.button_label) setReferralButtonLabel(d.button_label);
-          if (d.button_url) setReferralButtonUrl(d.button_url);
-        })
-        .catch(() => {});
-    } catch {}
-  }, [referralProgramOn, userId, provider?.slug]);
-  const referralLink = referralCode && provider?.slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/provider/${provider.slug}?ref=${referralCode}` : '';
   const bookableStaff = (staff || []).filter(s => s.bookable !== false);
   // LINE通知「前回と同じで予約」から来た時は前回の担当を選んだ状態にする（指名できる担当のみ）
   const [staffId, setStaffId] = useState(() => (presetStaffId && bookableStaff.some(s => s.id === presetStaffId)) ? presetStaffId : '');
@@ -1753,7 +1657,6 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       .then(r => (r.ok ? r.json() : null)).then(setElig).catch(() => setElig(null));
   }, [provider?.slug, services, userId, eligTick]);
   const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
-  const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked') && !(elig?.hidden_for_member || []).includes(sv.id));
   // 即時予約でメニューを選ばずに枠だけ選んだ時は、枠に決まっているメニューで判定する
   const slotSvcId = selectedSlotId ? (slots || []).find(x => x.id === selectedSlotId)?.service_id : null;
   const effSvc = selectedService || (slotSvcId ? (services || []).find(x => x.id === slotSvcId) : null);
@@ -1764,7 +1667,6 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   useEffect(() => {
     if (ticketOnly?.length && !ticketOnly.includes(selectedPackageId)) setSelectedPackageId(ticketOnly[0]);
   }, [effSvc?.id, elig, myPackages.length]);
-  const loginHref = () => `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
   useEffect(() => {
     if (!userId || !provider?.id) { setMyPackages([]); return; }
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -1844,7 +1746,6 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             email: prev.email || realEmail,
             phone: prev.phone || phone,
           }));
-          if (fullName || realEmail || phone) setUserPrefilled(true);
         })
         .catch(() => {});
     } catch {}
@@ -1926,12 +1827,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   if (submitted) {
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: 'calc(48px * var(--pv-fs))', marginBottom: '16px' }}>✓</div>
-        <h2 style={{ fontSize: 'calc(20px * var(--pv-hs))', fontWeight: '800', color: '#34d399', margin: '0 0 8px' }}>{lastWasInstant ? '予約が確定しました' : '相談リクエストを送りました'}</h2>
+        <div aria-hidden="true" style={{ width: '56px', height: '56px', margin: '0 auto 16px', borderRadius: '50%', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(26px * var(--pv-fs))', fontWeight: 800 }}>✓</div>
+        <h2 style={{ fontSize: 'calc(20px * var(--pv-hs))', fontWeight: '800', color: 'var(--pv-text)', margin: '0 0 8px' }}>{lastWasInstant ? '予約が確定しました' : '予約リクエストを送りました'}</h2>
         <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: '0 0 24px', lineHeight: '1.7' }}>
           {lastWasInstant
             ? <>選んだ日時で確定しました。当日お待ちしております。</>
-            : <>このガイドからの返答をお待ちください。<br />連絡先にご連絡が届きます。</>}
+            : <>お店からの返事をお待ちください。<br />確定するとご連絡します。マイページの「予約」でも確認できます。</>}
         </p>
         <button onClick={() => setSubmitted(false)} style={{ padding: '10px 24px', background: 'var(--pv-surface)', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer' }}>
           {lastWasInstant ? '別の日時でもう一件予約する' : '別のリクエストを送る'}
@@ -1941,79 +1842,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   }
 
   return (
-    <div style={{ maxWidth: '520px' }}>
-      {!embedded && <MemberCard provider={provider} elig={elig} onChanged={() => setEligTick(x => x + 1)} />}
-      {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示。
-          文言・画像・任意ボタンは店舗のダッシュボード（友達紹介タブ）で自由に編集できる
-          （でお要望2026-09-30：「ここに書く内容も編集できるように、特典も設定できるように。
-          画像を入れられたりボタンをつけたりも自由に編集できるように」）。 */}
-      {/* 友達紹介は予約の中に出さない（でお指摘 2026-10-22：邪魔・ここではない） */}
-      {!embedded && referralProgramOn && userId && referralLink && (
-        <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px' }}>
-          {referralImageUrl && (
-            <img src={referralImageUrl} alt="" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', display: 'block' }} />
-          )}
-          <div style={{ padding: '16px 18px' }}>
-            <div style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>友達を紹介する</div>
-            <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: '#111', margin: '0 0 6px', lineHeight: '1.6' }}>
-              {referralMessageText || `${provider.name}を友達に紹介できます。`}
-            </p>
-            {referralRewardText && (
-              <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: '700', color: '#b45309', margin: '0 0 10px', lineHeight: '1.6' }}>
-                特典：{referralRewardText}
-              </p>
-            )}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input readOnly value={referralLink} onFocus={e => e.target.select()} style={{ flex: 1, padding: '8px 10px', fontSize: 'calc(12px * var(--pv-fs))', border: '1px solid #fde68a', borderRadius: '8px', background: '#fff', color: '#111', boxSizing: 'border-box' }} />
-              <button
-                type="button"
-                onClick={() => { navigator.clipboard?.writeText(referralLink); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
-                style={{ padding: '8px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: '8px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}
-              >
-                {referralCopied ? 'コピー済み' : 'コピー'}
-              </button>
-            </div>
-            {referralButtonLabel && /^https?:\/\//i.test(referralButtonUrl || '') && (
-              <a href={referralButtonUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', marginTop: '10px', padding: '10px 14px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '8px', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
-                {referralButtonLabel}
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ① 相談の流れ 3ステップ（予約タブに埋め込む時は出さない） */}
-      {!embedded && <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-        <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {(showInstantPicker ? [
-            { n: '1', label: '空いている時間を選ぶ', desc: '表から空いている日時をタップします' },
-            { n: '2', label: 'その場で予約確定', desc: '店舗の承認を待たず、選んだ時点で予約が確定します' },
-            { n: '3', label: '当日 → 変容の旅スタート', desc: '準備ができたら当日を迎えましょう。まず話を聞くだけでも大丈夫です' },
-          ] : [
-            { n: '1', label: 'リクエストを送る', desc: 'このフォームで希望日時と連絡先を送信します' },
-            { n: '2', label: 'ガイドから返信が届く', desc: `通常${provider.response_hours ? provider.response_hours + '時間以内' : '2〜3日以内'}に、ご連絡先へ返信が届きます` },
-            { n: '3', label: '日程確定 → 変容の旅スタート', desc: '準備ができたら当日を迎えましょう。まず話を聞くだけでも大丈夫です' },
-          ]).map(step => (
-            <div key={step.n} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>{step.n}</span>
-              <div>
-                <div style={{ fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', marginBottom: '2px' }}>{step.label}</div>
-                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', lineHeight: '1.5' }}>{step.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>}
-
-      {/* ② お試し・無料相談がある場合の強調カード */}
-      {!embedded && provider.trial_available && (
-        <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
-          <div style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>まずお試しから始めることができます</div>
-          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#111', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
-        </div>
-      )}
-
+    <div style={{ maxWidth: '560px' }}>
       {/* ③ 初回セッション説明 */}
       {provider.first_session_desc && (
         <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
@@ -2024,68 +1853,18 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
       {/* Me Scanデータ添付パネル */}
       {meScanSummary && (
-        <div style={{ padding: '16px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', marginBottom: '20px' }}>
+        <div style={{ ...PV_CARD, padding: '16px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-            <p style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: '#2563eb', margin: 0 }}>以下のMe Scanデータがこのガイドに送られます</p>
+            <p style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: tx(75), margin: 0 }}>Me Scanの結果をお店に送ると、話が早く進みます</p>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flexShrink: 0 }}>
-              <input type="checkbox" checked={includeMeScan} onChange={e => setIncludeMeScan(e.target.checked)} style={{ accentColor: '#2563eb' }} />
-              <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: '#111' }}>送る</span>
+              <input type="checkbox" checked={includeMeScan} onChange={e => setIncludeMeScan(e.target.checked)} style={{ accentColor: 'var(--pv-accent)', width: '18px', height: '18px' }} />
+              <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)' }}>送る</span>
             </label>
           </div>
           {meScanSummary.map((line, i) => (
-            <p key={i} style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#1e40af', margin: i < meScanSummary.length - 1 ? '0 0 4px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{line}</p>
+            <p key={i} style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(i === 0 ? 92 : 75), margin: i < meScanSummary.length - 1 ? '0 0 4px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{line}</p>
           ))}
-          {!includeMeScan && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: '#111', margin: '8px 0 0' }}>チェックを外したためデータは送られません。</p>}
-        </div>
-      )}
-
-      {!embedded && userPrefilled && (
-        <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', marginBottom: '20px', fontSize: 'calc(13px * var(--pv-fs))', color: '#15803d' }}>
-          ✓ ログイン中のアカウント情報を自動入力しました
-        </div>
-      )}
-
-      {/* プログラム選択（予約タブに埋め込む時は、選んだメニューが決まっているので出さない） */}
-      {!embedded && visibleServices.length > 0 && (
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '8px' }}>相談したいプログラム（任意）</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${!selectedService ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
-              <input type="radio" name="menu" checked={!selectedService} onChange={() => onServiceSelect(null)} style={{ accentColor: '#111' }} />
-              <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>まず話を聞いてみたい（プログラム未定）</span>
-            </label>
-            {visibleServices.map(s => {
-              const st = svcState(s);
-              const locked = st === 'locked';
-              const via = elig?.services?.[s.id]?.via;
-              return (
-                <div key={s.id} style={{ border: `${selectedService?.id === s.id ? '2.5px' : '1.5px'} solid ${selectedService?.id === s.id ? 'var(--pv-text)' : '#e5e7eb'}`, borderRadius: '10px', opacity: locked ? 0.75 : 1 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: locked ? 'not-allowed' : 'pointer' }}>
-                    <input type="radio" name="menu" disabled={locked} checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
-                    <span style={{ flex: 1, fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)' }}>
-                      {s.name}{s.duration_minutes ? ` (${s.duration_minutes}分)` : (s.duration ? ` (${s.duration})` : '')}
-                      {s.booking_scope === 'limited' && (
-                        <span style={{ display: 'block', fontSize: 'calc(11.5px * var(--pv-fs))', fontWeight: 700, marginTop: '2px', color: 'var(--pv-text)' }}>
-                          {st === 'ok' ? `チケットで予約できます（1回${s.ticket_cost || 1}枚）` : `${s.scope_label || '対象のお客様'}専用`}
-                        </span>
-                      )}
-                    </span>
-                    <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: 'var(--pv-text)', flexShrink: 0 }}>{st === 'ok' && via === 'ticket' ? 'チケット' : Number(s.price) > 0 ? `¥${Number(s.price).toLocaleString()}` : ''}</span>
-                  </label>
-                  {locked && (
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0 14px 10px 40px', fontSize: 'calc(12px * var(--pv-fs))' }}>
-                      {!elig?.logged_in
-                        ? <a href={loginHref()} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>ログインすると予約できるか確認できます</a>
-                        : <>
-                            <a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>
-                            <a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>月額プランに入会する</a>
-                          </>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {!includeMeScan && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: tx(62), margin: '8px 0 0' }}>チェックを外したので送りません。</p>}
         </div>
       )}
 
@@ -2096,15 +1875,15 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '8px' }}>スタッフの指名（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${!staffId ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
-              <input type="radio" name="staff" checked={!staffId} onChange={() => setStaffId('')} style={{ accentColor: '#111' }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1px solid ${!staffId ? 'var(--pv-accent)' : tx(15)}`, background: !staffId ? ac(8) : 'transparent', borderRadius: '10px', cursor: 'pointer' }}>
+              <input type="radio" name="staff" checked={!staffId} onChange={() => setStaffId('')} style={{ accentColor: 'var(--pv-accent)' }} />
               <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>指名なし（お任せ）</span>
             </label>
             {bookableStaff.map(s => (
-              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${staffId === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
-                <input type="radio" name="staff" checked={staffId === s.id} onChange={() => setStaffId(s.id)} style={{ accentColor: '#111' }} />
+              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1px solid ${staffId === s.id ? 'var(--pv-accent)' : tx(15)}`, background: staffId === s.id ? ac(8) : 'transparent', borderRadius: '10px', cursor: 'pointer' }}>
+                <input type="radio" name="staff" checked={staffId === s.id} onChange={() => setStaffId(s.id)} style={{ accentColor: 'var(--pv-accent)' }} />
                 <span style={{ flex: 1, fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>{s.name}{s.role ? `（${s.role}）` : ''}</span>
-                <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: s.booking_fee > 0 ? '#c9a84c' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)', flexShrink: 0 }}>
+                <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: s.booking_fee > 0 ? 'var(--pv-text)' : tx(62), flexShrink: 0 }}>
                   {s.booking_fee > 0 ? `指名料 ¥${Number(s.booking_fee).toLocaleString()}` : '無料'}
                 </span>
               </label>
@@ -2192,9 +1971,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                       onClick={() => { setGridStaffFilter(o.id || ''); setSelectedSlotId(''); }}
                       style={{
                         flexShrink: 0, padding: '8px 12px', borderRadius: '10px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer',
-                        border: active ? '1.5px solid #111' : '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)',
-                        background: active ? '#111' : 'transparent',
-                        color: active ? '#fff' : 'color-mix(in srgb, var(--pv-text) 85%, transparent)',
+                        border: active ? '1px solid var(--pv-accent)' : `1px solid ${tx(15)}`,
+                        background: active ? 'var(--pv-accent)' : 'transparent',
+                        color: active ? 'var(--pv-on-accent)' : 'color-mix(in srgb, var(--pv-text) 85%, transparent)',
                       }}
                     >
                       {o.name}
@@ -2226,12 +2005,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(11px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textAlign: 'left' }}></th>
+                    <th style={{ position: 'sticky', left: 0, background: 'var(--pv-surface)', padding: '6px 8px', fontSize: 'calc(11px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textAlign: 'left' }}></th>
                     {gridWeekDates.map(date => {
                       const d = new Date(`${date}T00:00:00`);
                       const wd = d.getDay();
                       return (
-                        <th key={date} style={{ padding: '6px 4px', fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', whiteSpace: 'nowrap', color: wd === 0 ? '#f87171' : wd === 6 ? '#60a5fa' : 'color-mix(in srgb, var(--pv-text) 85%, transparent)' }}>
+                        <th key={date} style={{ padding: '6px 4px', fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', whiteSpace: 'nowrap', color: wd === 0 || wd === 6 ? 'var(--pv-text)' : tx(75) }}>
                           {d.getMonth() + 1}/{d.getDate()}<br /><span style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: 400 }}>{WEEKDAY_JA_SLUG[wd]}</span>
                         </th>
                       );
@@ -2243,7 +2022,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                     <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>この条件で予約できる時間がありません</td></tr>
                   ) : gridTimes.map(t => (
                     <tr key={t}>
-                      <td style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
+                      <td style={{ position: 'sticky', left: 0, background: 'var(--pv-surface)', padding: '6px 8px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
                       {gridWeekDates.map(date => {
                         const s = gridCellMap[`${date}|${t}`];
                         const available = s && s.remaining > 0;
@@ -2256,9 +2035,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                                 aria-label={`${date} ${t.slice(0, 5)} 予約可能`}
                                 style={{
                                   width: '30px', height: '30px', borderRadius: '8px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer',
-                                  border: selectedSlotId === s.id ? '2px solid #111' : '1px solid rgba(74,222,128,0.4)',
-                                  background: selectedSlotId === s.id ? '#111' : 'rgba(74,222,128,0.12)',
-                                  color: selectedSlotId === s.id ? '#fff' : '#4ade80',
+                                  border: selectedSlotId === s.id ? '1px solid var(--pv-accent)' : `1px solid ${ac(45)}`,
+                                  background: selectedSlotId === s.id ? 'var(--pv-accent)' : ac(10),
+                                  color: selectedSlotId === s.id ? 'var(--pv-on-accent)' : 'var(--pv-text)',
                                 }}
                               >
                                 ○
@@ -2276,7 +2055,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             </div>
 
             {selectedSlotObj && (
-              <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: '700', color: '#4ade80', margin: '10px 0 0' }}>
+              <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: '700', color: 'var(--pv-text)', margin: '10px 0 0' }}>
                 選択中：{selectedSlotObj.date}（{new Date(`${selectedSlotObj.date}T00:00:00`).toLocaleDateString('ja-JP', { weekday: 'short' })}）{selectedSlotObj.start_time?.slice(0, 5)}〜{gridStaffFilter && selectedSlotObj.staff_name ? `　担当：${selectedSlotObj.staff_name}` : gridHasNamedStaff ? '　担当：お店におまかせ' : ''}
               </p>
             )}
@@ -2316,11 +2095,11 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           </>
         )}
         <div>
-          <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>このガイドに一番聞きたいこと（任意）</label>
+          <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>お店に伝えたいこと・聞きたいこと（任意）</label>
           <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', resize: 'vertical', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
         </div>
         {formError && <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#ef4444', margin: 0 }}>{formError}</p>}
-        <button type="submit" disabled={submitting} style={{ padding: '14px', background: submitting ? '#9ca3af' : '#111', color: 'var(--pv-text)', border: 'none', borderRadius: '12px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+        <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'var(--pv-accent)', opacity: submitting ? 0.5 : 1, color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', minHeight: '52px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
           {submitting ? '送信中…' : (showInstantPicker ? 'この日時で予約を確定する' : '相談リクエストを送る')}
         </button>
       </form>
@@ -2547,63 +2326,74 @@ function ProviderPageContent() {
         font-style: var(--pv-hstyle) !important;
       }
       .pv-theme :is(h2, h3):not(.pv-hero *) { color: var(--pv-heading) !important; }
+      /* 入力欄の見た目をそろえる（白い欄・暗い欄・黒い枠が混ざっていた。2026-10-22） */
+      .pv-theme form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+        background: var(--pv-surface) !important; color: var(--pv-text) !important;
+        border: 1px solid color-mix(in srgb, var(--pv-text) 25%, transparent) !important; border-radius: 10px !important;
+        min-height: 44px; font-size: 16px !important; box-sizing: border-box;
+      }
+      .pv-theme form :is(input, select, textarea):focus { outline: 2px solid var(--pv-accent); outline-offset: 1px; }
+      .pv-theme form ::placeholder { color: color-mix(in srgb, var(--pv-text) 40%, transparent); }
+      .pv-theme button:focus-visible, .pv-theme a:focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 2px; }
     `}</style>
     <div style={{ maxWidth: '780px', margin: '0 auto', padding: '32px 20px 80px' }}>
-      {/* ヒーロー */}
-      <div className={provider.cover_image_url ? 'pv-hero' : 'pv-hero fm-contour'} style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', marginBottom: '28px', minHeight: '320px', background: provider.cover_image_url ? `url(${provider.cover_image_url}) center/cover no-repeat` : 'color-mix(in srgb, var(--pv-accent) 24%, #0d1117)' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.75) 100%)' }} />
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '320px', padding: '28px 28px 32px' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-            <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '4px 12px', background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>{catLabel}</span>
-            {provider.area && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', padding: '4px 12px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '99px' }}>{provider.area}</span>}
-            {matchData?.detail?.isCompassProvider && (
-              <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', padding: '4px 12px', background: 'rgba(37,99,235,0.85)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>あなたの最優先</span>
-            )}
+      {/* ヒーロー（2026-10-22 UI刷新）：写真の上に文字やボタンを重ねると読みにくく、ボタンも4つ並んで
+          どれを押せばいいか分からなかった。写真は写真だけで見せ、その下に店名・場所・今日の営業・予約ボタンを置く */}
+      <header className="pv-hero" style={{ marginBottom: '20px' }}>
+        {provider.cover_image_url && (
+          <div style={{ borderRadius: '16px', overflow: 'hidden', aspectRatio: '16 / 9', maxHeight: '340px', width: '100%', marginBottom: '20px', background: 'var(--pv-surface)' }}>
+            <img src={provider.cover_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px', marginBottom: '8px' }}>
-            {provider.photo_url && (
-              <img src={provider.photo_url} alt={provider.name} style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.6)', flexShrink: 0 }} />
-            )}
-            <div style={{ flex: 1 }}>
-              <h1 style={{ fontSize: 'calc(clamp(22px,4vw,30px) * var(--pv-hs))', fontWeight: '800', margin: '0 0 6px', lineHeight: '1.3', color: '#fff' }}>{provider.name}</h1>
-              {provider.catchphrase && <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'rgba(255,255,255,0.88)', margin: '0', lineHeight: '1.6', fontWeight: '600' }}>{provider.catchphrase}</p>}
-              {/* 「お店で、どこにあって、予約できるのはここ、この日のここは空いてる、と
-                  直感的にわかることが重要」（でお要望2026-09-29）への対応：名前・
-                  キャッチコピー直下に場所と本日の営業状況を一行で出す。 */}
-              {isShown(provider, 'hero_status') && (provider.nearest_station || todayStatusText(provider)) && (
-                <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: 'rgba(255,255,255,0.7)', margin: '8px 0 0', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {provider.nearest_station && <span>{provider.nearest_station}</span>}
-                  {todayStatusText(provider) && <span>{todayStatusText(provider)}</span>}
-                </p>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginTop: '16px' }}>
-            {provider.price_from && (
-              <span style={{ padding: '10px 18px', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', color: '#fff', backdropFilter: 'blur(4px)', background: 'rgba(255,255,255,0.1)' }}>
-                ¥{provider.price_from.toLocaleString()}〜
-              </span>
-            )}
-            <button onClick={() => { setActiveTab(primaryBookingTabId(provider)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer' }}>
-              予約する
-            </button>
-            <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: 'calc(18px * var(--pv-fs))', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
-              {isFavorited ? '★' : '☆'}
-            </button>
-            {services && services.length > 0 && isShown(provider, 'tab_appeal') && (
-              <button onClick={() => setActiveTab('appeal')} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
-                プログラムを見る
-              </button>
-            )}
+        )}
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+          {provider.photo_url && (
+            <img src={provider.photo_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `1px solid ${tx(15)}`, flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: '0 0 4px', fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(65), display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <span>{catLabel}</span>
+              {provider.area && <span>{provider.area}</span>}
+            </p>
+            <h1 style={{ fontSize: 'calc(clamp(22px,5vw,30px) * var(--pv-hs))', fontWeight: '800', margin: 0, lineHeight: '1.35', color: 'var(--pv-text)', textWrap: 'balance' }}>{provider.name}</h1>
           </div>
         </div>
-      </div>
+        {provider.catchphrase && <p style={{ fontSize: 'calc(15px * var(--pv-fs))', color: tx(85), margin: '12px 0 0', lineHeight: '1.7' }}>{provider.catchphrase}</p>}
+        {/* 「お店で、どこにあって、予約できるのはここ、この日のここは空いてる、と直感的にわかることが重要」（でお要望2026-09-29） */}
+        {(() => {
+          const status = isShown(provider, 'hero_status') ? todayStatusText(provider) : null;
+          const station = isShown(provider, 'hero_status') ? provider.nearest_station : null;
+          const items = [
+            status && { key: 's', text: status, strong: status.startsWith('営業中') },
+            station && { key: 'st', text: station },
+            provider.price_from && { key: 'p', text: `¥${provider.price_from.toLocaleString()}〜` },
+          ].filter(Boolean);
+          if (!items.length) return null;
+          return (
+            <p style={{ margin: '12px 0 0', display: 'flex', gap: '6px 14px', flexWrap: 'wrap', fontSize: 'calc(13px * var(--pv-fs))', color: tx(75) }}>
+              {items.map(it => (
+                <span key={it.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: it.strong ? 'var(--pv-text)' : undefined, fontWeight: it.strong ? '700' : '500' }}>
+                  {it.key === 's' && <span aria-hidden="true" style={{ width: '7px', height: '7px', borderRadius: '50%', background: it.strong ? 'var(--pv-accent)' : tx(35) }} />}
+                  {it.text}
+                </span>
+              ))}
+            </p>
+          );
+        })()}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+          <button onClick={() => { setActiveTab(primaryBookingTabId(provider)); document.getElementById('pv-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{ flex: '1 1 auto', maxWidth: '360px', minHeight: '48px', padding: '0 24px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer' }}>
+            予約する
+          </button>
+          <button onClick={toggleFavorite} aria-pressed={isFavorited} style={{ flex: '0 0 auto', minHeight: '48px', padding: '0 16px', background: 'transparent', color: 'var(--pv-text)', border: `1px solid ${isFavorited ? 'var(--pv-accent)' : tx(25)}`, borderRadius: '12px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {isFavorited ? '★ 保存済み' : '☆ 保存'}
+          </button>
+        </div>
+      </header>
 
-      {/* 施設写真 + クイックファクト */}
-      <FacilityPhotosStrip provider={provider} />
+      {/* クイックファクト（施設写真は基本情報タブへ。予約までの距離を短くするため 2026-10-22） */}
       <QuickFactsStrip provider={provider} />
 
       {/* タブ */}
+      <div id="pv-tabs" style={{ scrollMarginTop: '0px' }} />
       <TabBar activeTab={activeTab} tabs={tabsFor(provider, { member: isMemberish })} onSelect={tab => { setActiveTab(tab); if (tab !== 'book') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
