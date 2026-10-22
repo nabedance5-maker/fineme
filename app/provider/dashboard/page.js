@@ -9,6 +9,7 @@ import { ALL_AXES } from '@/lib/log-axes';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
+import { CYCLES as SHIFT_CYCLES, normalizeCycle, upcomingWindows } from '@/lib/shift-windows';
 import { rangeLabel } from '@/lib/time-span';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
@@ -3614,9 +3615,11 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/shift-settings', { headers: authHeadersShift() });
         if (!res.ok) return;
         const data = await res.json();
+        shiftSettings = data;
         const sel = document.getElementById('shift-rule-type-select');
         if (sel) { sel.value = data.rule_type; sel.dispatchEvent(new Event('change')); }
         renderSubmitNotify(data.submit_notify || {});
+        renderSubmitCard();
       }
 
       // ── 提出の通知（でお要望2026-10-07）：スタッフが提出を完了したら、選んだ先へ知らせる ──
@@ -3880,11 +3883,17 @@ export default function ProviderDashboardPage() {
         renderLaborPanel();
       }
 
-      // ── 期間 ──
-      const PERIOD_STATUS_LABEL = { collecting: '希望募集中', draft: '下書き（調整中）', confirmed: '確定済み' };
-      const PERIOD_STATUS_COLOR = { collecting: '#f59e0b', draft: '#6366f1', confirmed: '#10b981' };
+      // ── 期間（＝作るシフトの範囲） ──
+      // でお指摘（2026-10-16）：最初に期間を作らせるのは不要な手間で分かりづらい。希望はスタッフが
+      // お店の提出ルール（1か月ごと・締切など）に沿っていつでも出し、期間はシフトを作る時に選ぶだけにした。
+      const PERIOD_STATUS_LABEL = { draft: '作成中', confirmed: '確定済み' };
+      const PERIOD_STATUS_COLOR = { draft: '#6366f1', confirmed: '#10b981' };
 
       let shiftPeriods = [];
+      let shiftSettings = null;
+      const ymd = d => d.toISOString().slice(0, 10);
+      const addDaysStr = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return ymd(d); };
+      const mdShort = s => (s ? `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}` : '');
       function setDetailBody(show) {
         const body = document.getElementById('shift-detail-body');
         if (body) body.style.display = show ? '' : 'none';
@@ -3896,44 +3905,19 @@ export default function ProviderDashboardPage() {
         const badge = document.getElementById('shift-period-badge');
         if (badge && p) {
           badge.textContent = PERIOD_STATUS_LABEL[p.status] || p.status;
-          badge.style.background = `${PERIOD_STATUS_COLOR[p.status]}20`;
-          badge.style.color = PERIOD_STATUS_COLOR[p.status];
-        }
-        const meta = document.getElementById('shift-period-meta');
-        if (meta && p) {
-          const over = p.status === 'collecting' && p.request_deadline && p.request_deadline < shiftTodayStr();
-          meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}${p.status === 'collecting' ? (over ? '（締切超過・未提出のスタッフは遅れて提出できます。提出済みのスタッフは変更できません）' : '（締切後は提出済みのスタッフが変更できなくなります）') : ''}` : '';
-        }
-        renderPeriodFormat(p);
-        const nd = document.getElementById('shift-period-notify-days');
-        if (nd && p) {
-          nd.value = (p.notify_days_before || [1, 0]).join(',');
-          document.getElementById('shift-period-notify-wrap').style.display = p.status === 'collecting' && p.request_deadline ? '' : 'none';
+          badge.style.background = `${PERIOD_STATUS_COLOR[p.status] || '#6b7280'}20`;
+          badge.style.color = PERIOD_STATUS_COLOR[p.status] || '#6b7280';
         }
       }
-      // ── 提出のしかた（でお要望2026-10-07）：募集ごとに、基本・雇用形態ごと・スタッフ個別で決める ──
+      // ── 提出のしかた（でお要望2026-10-07）：お店の設定として、基本・雇用形態ごと・スタッフ個別で決める ──
       const ruleOf = (fmt, staffId) => resolveRule(fmt, staffId, shiftConditions[staffId]?.employment_type || null);
-      function renderPeriodFormat(p) {
-        const box = document.getElementById('shift-period-format');
-        if (!box || !p) return;
-        const fmt = normalizeFormat(p.request_format);
-        const extra = Object.keys(fmt.by_employment_type).length + Object.keys(fmt.by_staff).length;
-        box.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid rgba(201,168,76,.45);border-radius:10px;background:rgba(201,168,76,.06)">
-            <div style="flex:1;min-width:180px">
-              <div style="font-size:12px;font-weight:800;color:#84651a">希望の提出のしかた</div>
-              <div style="font-size:13px;margin-top:2px">基本：${esc(describeRule(fmt.default))}${extra ? `<span class="muted" style="font-size:12px">（雇用形態・個別の設定 ${extra}件）</span>` : ''}</div>
-            </div>
-            <button type="button" class="btn btn-ghost" id="shift-format-edit" style="font-size:12px;padding:6px 12px">変更する</button>
-          </div>`;
-        box.querySelector('#shift-format-edit').addEventListener('click', () => openFormatEditor(p));
-      }
-      async function openFormatEditor(p) {
+      async function openFormatEditor() {
         if (!shiftStaffList.length) await loadStaffLinks();
         if (!Object.keys(shiftConditions).length) {
           const r = await fetch('/api/provider/shift-staff-conditions', { headers: authHeadersShift() });
           (r.ok ? await r.json() : []).forEach(c => { shiftConditions[c.staff_id] = c; });
         }
-        const fmt = normalizeFormat(p.request_format);
+        const fmt = normalizeFormat(shiftSettings?.request_format);
         const modeOptions = (cur, inheritLabel) => (inheritLabel ? `<option value=""${cur ? '' : ' selected'}>${inheritLabel}</option>` : '')
           + Object.entries(REQUEST_MODES).map(([k, v]) => `<option value="${k}"${cur?.mode === k ? ' selected' : ''}>${v}</option>`).join('');
         const ruleRow = (key, label, cur, inheritLabel, sub) => `
@@ -3947,19 +3931,18 @@ export default function ProviderDashboardPage() {
         ov.style.display = 'flex';
         ov.innerHTML = `<div class="cal-modal-card" style="max-width:560px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-            <h3 style="margin:0;font-size:16px">希望の提出のしかた（${esc(p.period_start)}〜${esc(p.period_end)}）</h3>
+            <h3 style="margin:0;font-size:16px">希望の提出のしかた</h3>
             <button type="button" class="btn btn-ghost" data-fmt-close style="font-size:12px;padding:5px 10px">閉じる</button>
           </div>
-          <p class="muted" style="font-size:12px;line-height:1.7;margin:6px 0 10px">スタッフの提出画面は、この設定に合わせて出せる操作だけになります。優先順は「スタッフ個別 ＞ 雇用形態 ＞ 基本」。「休み希望だけ」の人は、休み以外の日に自動作成で労働条件の範囲内で配置されます。「出勤希望（時間帯つき）だけ」の人は、希望した日時の中でだけ配置されます。</p>
+          <p class="muted" style="font-size:12px;line-height:1.7;margin:6px 0 10px">スタッフの提出画面は、この設定に合わせて出せる操作だけになります。優先順は「スタッフ個別 ＞ 雇用形態 ＞ 基本」。「休み希望だけ」の人は、休み以外の日に自動作成で労働条件の範囲内で配置されます。「出勤希望（時間帯つき）だけ」の人は、希望した日時の中でだけ配置されます。休みの日数の上限は、提出ルールの1回分（例：1か月）あたりです。</p>
           <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:6px">基本</div>
           ${ruleRow('default', 'このお店の基本', fmt.default, null)}
           <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:14px">雇用形態ごと</div>
           ${Object.entries(SHIFT_EMP_LABEL).map(([k, v]) => ruleRow('emp:' + k, v, fmt.by_employment_type[k], '基本と同じ', `${shiftStaffList.filter(st => (shiftConditions[st.id]?.employment_type || 'fulltime') === k).length}人`)).join('')}
           <div style="font-size:12px;font-weight:800;color:#84651a;margin-top:14px">スタッフ個別</div>
           ${shiftStaffList.map(st => ruleRow('staff:' + st.id, esc(st.name), fmt.by_staff[st.id], '雇用形態・基本と同じ', esc(SHIFT_EMP_LABEL[shiftConditions[st.id]?.employment_type || 'fulltime'] || ''))).join('') || '<p class="muted" style="font-size:12px">スタッフが登録されていません。</p>'}
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:14px 0 4px"><input type="checkbox" data-fmt-default-too style="width:16px;height:16px" />次回以降の募集でも、この設定を最初から使う</label>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button type="button" class="btn" data-fmt-save>この募集に保存</button>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button type="button" class="btn" data-fmt-save>保存</button>
             <span data-fmt-msg class="muted" style="font-size:12px;align-self:center"></span>
           </div>
         </div>`;
@@ -3985,21 +3968,107 @@ export default function ProviderDashboardPage() {
           });
           const msg = ov.querySelector('[data-fmt-msg]');
           msg.textContent = '保存中…';
-          const res = await fetch('/api/provider/shift-periods/' + p.id, {
+          const res = await fetch('/api/provider/shift-settings', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
             body: JSON.stringify({ request_format: next }),
           });
           if (!res.ok) { msg.textContent = '保存に失敗しました'; return; }
-          if (ov.querySelector('[data-fmt-default-too]').checked) {
-            await fetch('/api/provider/shift-settings', {
-              method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-              body: JSON.stringify({ request_format: next }),
-            });
-          }
           close();
           showToast('提出のしかたを保存しました');
-          await loadPeriods();
+          await loadRuleSettings();
+          if (currentPeriodId) loadRequestsSummary();
         });
+      }
+
+      // ── 希望の提出ルール（何ごとに・締切・通知日）。一度決めれば、期間を作らなくてもスタッフは提出できる ──
+      async function openSubmitRuleEditor() {
+        const c = shiftSettings?.submit_cycle || { cycle: 'monthly', deadline_day: 20, deadline_days_before: 7, notify_days_before: [1, 0] };
+        const ov = document.createElement('div');
+        ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        const st = { cycle: c.cycle, day: c.deadline_day, before: c.deadline_days_before, notify: (c.notify_days_before || []).join(',') };
+        const render = () => {
+          const preview = upcomingWindows(normalizeCycle({ cycle: st.cycle, deadline_day: st.day, deadline_days_before: st.before }), { today: shiftTodayStr(), count: 2 });
+          ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h3 style="margin:0;font-size:16px">希望の提出ルール</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+            <p class="muted" style="font-size:12px;line-height:1.7;margin:6px 0 12px">お店のルールを一度決めておけば、スタッフはいつでも提出リンクから希望を出せます。シフトを作る時は、作りたい期間を選ぶだけです。</p>
+            <p style="font-size:13px;font-weight:700;margin:0 0 6px">何ごとに希望を出してもらいますか？</p>
+            <div style="display:grid;gap:6px">${Object.entries(SHIFT_CYCLES).map(([k, v]) => `<label style="display:flex;gap:8px;align-items:center;padding:8px 12px;border:1.5px solid ${st.cycle === k ? '#c9a84c' : '#e5e7eb'};border-radius:10px;cursor:pointer;font-size:13px"><input type="radio" name="sr-cycle" value="${k}" ${st.cycle === k ? 'checked' : ''} />${esc(v)}</label>`).join('')}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;font-size:13px">締切：${st.cycle === 'monthly'
+              ? `前の月の<input type="number" data-day min="1" max="31" value="${st.day}" style="width:64px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日まで`
+              : `始まる<input type="number" data-before min="0" max="60" value="${st.before}" style="width:64px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日前まで`}</div>
+            <div class="form-field" style="margin:12px 0 0"><label style="font-size:12px">締切の何日前に、未提出の人数をお店のLINEに知らせるか（カンマ区切り・0は締切当日）</label><input type="text" data-notify value="${esc(st.notify)}" placeholder="1,0" style="max-width:160px" /></div>
+            <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#f9fafb;font-size:12.5px;line-height:1.7">次の提出：${preview.map(w => `<b>${esc(w.label)}</b>（${mdShort(w.start)}〜${mdShort(w.end)}・締切 ${mdShort(w.deadline)}）`).join('、')}</div>
+            <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">締切後も、未提出のスタッフは遅れて提出できます。提出を完了したスタッフは、締切後は内容を変えられなくなります。</p>
+            <p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p>
+            <div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="btn" data-save>保存</button></div>
+          </div>`;
+          ov.querySelector('[data-x]').addEventListener('click', close);
+          const keep = () => {
+            const d = ov.querySelector('[data-day]'); if (d) st.day = Number(d.value) || st.day;
+            const b = ov.querySelector('[data-before]'); if (b) st.before = b.value === '' ? st.before : Number(b.value);
+            st.notify = ov.querySelector('[data-notify]').value;
+          };
+          ov.querySelectorAll('input[name="sr-cycle"]').forEach(r => r.addEventListener('change', () => { keep(); st.cycle = r.value; render(); }));
+          ov.querySelectorAll('[data-day],[data-before]').forEach(i => i.addEventListener('change', () => { keep(); render(); }));
+          ov.querySelector('[data-save]').addEventListener('click', async e => {
+            keep();
+            if (st.notify.trim() && !/^\s*\d+(\s*[,、，]\s*\d+)*\s*$/.test(st.notify)) { ov.querySelector('[data-msg]').textContent = '通知日は数字をカンマで区切って入力してください（例：3,1,0）'; return; }
+            e.currentTarget.disabled = true;
+            const notify = st.notify.split(/[,、，\s]+/).filter(Boolean).map(Number);
+            const res = await fetch('/api/provider/shift-settings', {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+              body: JSON.stringify({ submit_cycle: { cycle: st.cycle, deadline_day: st.day, deadline_days_before: st.before, notify_days_before: notify } }),
+            });
+            if (!res.ok) { e.currentTarget.disabled = false; ov.querySelector('[data-msg]').textContent = '保存に失敗しました'; return; }
+            close();
+            showToast('提出ルールを保存しました');
+            loadRuleSettings();
+          });
+        };
+        render();
+      }
+
+      // シフト管理の上部：お店の提出ルールと、次の提出の集まり具合
+      async function renderSubmitCard() {
+        const box = document.getElementById('shift-submit-card');
+        if (!box || !shiftSettings) return;
+        if (!shiftStaffList.length) await loadStaffLinks();
+        const wins = (shiftSettings.windows || []).slice(0, 2);
+        const counts = await Promise.all(wins.map(async w => {
+          const r = await fetch(`/api/provider/shift-submissions?from=${w.start}&to=${w.end}`, { headers: authHeadersShift() });
+          return r.ok ? (await r.json()).length : 0;
+        }));
+        const fmt = normalizeFormat(shiftSettings.request_format);
+        const extra = Object.keys(fmt.by_employment_type).length + Object.keys(fmt.by_staff).length;
+        const total = shiftStaffList.length;
+        const today = shiftTodayStr();
+        box.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px">
+              <div style="font-size:15px;font-weight:800">希望の提出</div>
+              <div class="muted" style="font-size:12.5px;line-height:1.7;margin-top:2px">${esc(shiftSettings.submit_cycle_label || '')}・提出のしかた：${esc(describeRule(fmt.default))}${extra ? `（個別の設定 ${extra}件）` : ''}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button type="button" class="btn btn-ghost" data-sr-rule style="font-size:12px;padding:6px 12px">提出ルールを変える</button>
+              <button type="button" class="btn btn-ghost" data-sr-format style="font-size:12px;padding:6px 12px">提出のしかたを変える</button>
+            </div>
+          </div>
+          ${shiftSettings.submit_cycle_configured ? '' : '<p style="font-size:12.5px;margin:10px 0 0;padding:8px 12px;border-radius:8px;background:#fffbeb;color:#92400e;line-height:1.6">お店の提出ルールがまだ決まっていません。いまは「1か月ごと・前の月の20日締め」で受け付けています。「提出ルールを変える」から決めてください。</p>'}
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;margin-top:12px">
+            ${wins.map((w, i) => `<div style="padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff">
+              <div style="font-size:13.5px;font-weight:800">${esc(w.label)}<span class="muted" style="font-size:11.5px;font-weight:500">（${mdShort(w.start)}〜${mdShort(w.end)}）</span></div>
+              <div style="font-size:12px;margin-top:2px;color:${w.deadline < today ? '#b42318' : '#6b7280'}">締切 ${mdShort(w.deadline)}${w.deadline < today ? '（過ぎました）' : ''}</div>
+              <div style="font-size:13px;font-weight:700;margin-top:4px">提出完了 ${counts[i]} / ${total}人</div>
+              <button type="button" class="btn ${i === 0 ? '' : 'btn-ghost'}" data-sr-win="${i}" style="font-size:12px;padding:5px 12px;margin-top:8px">提出リンクを送る</button>
+            </div>`).join('')}
+          </div>
+          <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">提出リンクはスタッフ一人にひとつで、期間に関係なくずっと使えます。希望がそろったら「新しいシフトを作る」で作りたい期間を選んでください。</p>`;
+        box.querySelector('[data-sr-rule]').addEventListener('click', openSubmitRuleEditor);
+        box.querySelector('[data-sr-format]').addEventListener('click', openFormatEditor);
+        box.querySelectorAll('[data-sr-win]').forEach(b => b.addEventListener('click', () => openLinksPanel(wins[Number(b.dataset.srWin)])));
       }
 
       async function loadPeriods() {
@@ -4010,7 +4079,7 @@ export default function ProviderDashboardPage() {
         const periods = await res.json();
         shiftPeriods = periods;
         if (!periods.length) {
-          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだシフトがありません。上の「＋ 新しいシフトを作る」から始めてください。</p>';
+          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだシフトがありません。上の「＋ 新しいシフトを作る」から、作りたい期間を選んで始めてください。</p>';
           currentPeriodId = null;
           setDetailBody(false);
           return;
@@ -4022,27 +4091,7 @@ export default function ProviderDashboardPage() {
               ${periods.map(p => `<option value="${p.id}">${esc(p.period_start)} 〜 ${esc(p.period_end)}（${PERIOD_STATUS_LABEL[p.status] || p.status}）</option>`).join('')}
             </select>
             <span id="shift-period-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
-          </div>
-          <div id="shift-period-meta" class="muted" style="font-size:12px;margin-top:4px"></div>
-          <div id="shift-period-notify-wrap" style="margin-top:8px;display:none">
-            <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">締切の何日前にLINEで通知するか（カンマ区切り・0は締切当日）</label>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <input id="shift-period-notify-days" type="text" placeholder="3,1,0" style="width:140px;padding:7px 10px;font-size:14px;border:1px solid #d1d5db;border-radius:8px" />
-              <button type="button" class="btn btn-ghost" id="shift-period-notify-save" style="font-size:12px;padding:6px 12px">保存</button>
-            </div>
-          </div>
-          <div id="shift-period-format" style="margin-top:10px"></div>`;
-        el.querySelector('#shift-period-notify-save').addEventListener('click', async () => {
-          if (!currentPeriodId) return;
-          const raw = document.getElementById('shift-period-notify-days').value;
-          if (!/^\s*\d+(\s*[,、，]\s*\d+)*\s*$/.test(raw)) { showToast('数字をカンマで区切って入力してください（例：3,1,0）'); return; }
-          const res = await fetch('/api/provider/shift-periods/' + currentPeriodId, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-            body: JSON.stringify({ notify_days_before: raw.replace(/[、，]/g, ',') }),
-          });
-          if (res.ok) { showToast('通知日を保存しました'); await loadPeriods(); }
-          else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-        });
+          </div>`;
         el.querySelector('#shift-period-select').addEventListener('change', e => {
           const p = shiftPeriods.find(x => x.id === e.target.value);
           if (p) selectPeriod(p.id, p.status, p.period_start, p.period_end);
@@ -4056,11 +4105,8 @@ export default function ProviderDashboardPage() {
         }
         if (target) await selectPeriod(target.id, target.status, target.period_start, target.period_end);
       }
-      // ── 新しいシフトを作る（でお指摘 2026-10-16：「期間を作成」を最初にやるのが分かりづらい） ──
-      // 1つのボタンから「期間 → 提出のしかた → スタッフへのお知らせ」を順にたどる。
-      const ymd = d => d.toISOString().slice(0, 10);
-      const addDaysStr = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return ymd(d); };
-      const mdShort = s => (s ? `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}` : '');
+
+      // ── 新しいシフトを作る：作りたい期間を選ぶだけ（でお指摘 2026-10-16） ──
       function periodPresets() {
         const t = shiftTodayStr();
         const [y, m] = t.split('-').map(Number);
@@ -4071,148 +4117,135 @@ export default function ProviderDashboardPage() {
         const d16 = Number(t.slice(8, 10)) < 16;
         const halfStart = d16 ? `${t.slice(0, 7)}-16` : nmStart;
         const halfEnd = d16 ? ymd(new Date(Date.UTC(y, m, 0))) : `${nmStart.slice(0, 7)}-15`;
-        return [
-          { key: 'month', label: `来月（${mdShort(nmStart)}〜${mdShort(nmEnd)}）`, start: nmStart, end: nmEnd },
-          { key: 'half', label: `次の半月（${mdShort(halfStart)}〜${mdShort(halfEnd)}）`, start: halfStart, end: halfEnd },
-          { key: 'two', label: `次の2週間（${mdShort(nextMon)}〜${mdShort(addDaysStr(nextMon, 13))}）`, start: nextMon, end: addDaysStr(nextMon, 13) },
+        const list = [
+          // お店の提出ルールで区切った期間を先頭に（希望はこの単位で集まっている）
+          ...(shiftSettings?.windows || []).slice(0, 2).map(w => ({ label: `${w.label}（${mdShort(w.start)}〜${mdShort(w.end)}）`, start: w.start, end: w.end })),
+          { label: `来月（${mdShort(nmStart)}〜${mdShort(nmEnd)}）`, start: nmStart, end: nmEnd },
+          { label: `次の半月（${mdShort(halfStart)}〜${mdShort(halfEnd)}）`, start: halfStart, end: halfEnd },
+          { label: `次の2週間（${mdShort(nextMon)}〜${mdShort(addDaysStr(nextMon, 13))}）`, start: nextMon, end: addDaysStr(nextMon, 13) },
         ];
+        const seen = new Set();
+        return list.filter(p => { const k = `${p.start}|${p.end}`; if (seen.has(k)) return false; seen.add(k); return true; });
       }
 
       async function openShiftWizard() {
         if (!shiftStaffList.length) await loadStaffLinks();
+        if (!shiftSettings) await loadRuleSettings();
         const presets = periodPresets();
-        let fmtDefault = { mode: 'free', max_off_days: null };
-        try {
-          const r = await fetch('/api/provider/shift-settings', { headers: authHeadersShift() });
-          if (r.ok) { const d = await r.json(); if (d.request_format?.default) fmtDefault = d.request_format.default; }
-        } catch {}
-        const st = { step: 1, start: presets[0].start, end: presets[0].end, deadline: addDaysStr(presets[0].start, -7), notify: '1,0', mode: fmtDefault.mode, maxOff: fmtDefault.max_off_days, period: null };
-        if (st.deadline < shiftTodayStr()) st.deadline = '';
+        const st = { start: presets[0].start, end: presets[0].end, info: '' };
         const ov = document.createElement('div');
         ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
         document.body.appendChild(ov);
         const close = () => ov.remove();
         ov.addEventListener('click', e => { if (e.target === ov) close(); });
-        const STEPS = ['期間', '提出のしかた', 'スタッフに知らせる'];
-        const head = () => `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-            <h3 style="margin:0;font-size:16px">新しいシフトを作る</h3>
-            <button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
-          <div style="display:flex;gap:6px;margin:12px 0 14px">${STEPS.map((l, i) => `<div style="flex:1;text-align:center;font-size:11.5px;font-weight:700;padding-top:6px;border-top:3px solid ${i + 1 <= st.step ? '#c9a84c' : '#e5e7eb'};color:${i + 1 === st.step ? '#1a1410' : '#9ca3af'}">${i + 1}. ${l}</div>`).join('')}</div>`;
+        let infoToken = 0;
+        async function loadInfo() {
+          const my = ++infoToken;
+          const infoEl = ov.querySelector('[data-info]');
+          if (!infoEl || !st.start || !st.end || st.end < st.start) { if (infoEl) infoEl.textContent = ''; return; }
+          infoEl.textContent = '希望の集まり具合を確認中…';
+          const [s, r] = await Promise.all([
+            fetch(`/api/provider/shift-submissions?from=${st.start}&to=${st.end}`, { headers: authHeadersShift() }),
+            fetch(`/api/provider/shift-requests?from=${st.start}&to=${st.end}`, { headers: authHeadersShift() }),
+          ]);
+          if (my !== infoToken) return;
+          const subs = s.ok ? await s.json() : [];
+          const reqs = r.ok ? await r.json() : [];
+          const missing = shiftStaffList.filter(x => !subs.some(y => y.staff_id === x.id)).map(x => x.name);
+          infoEl.innerHTML = `この期間の希望：提出完了 <b>${subs.length} / ${shiftStaffList.length}人</b>・希望 ${reqs.length}件${missing.length ? `<br><span class="muted">未提出：${esc(missing.join('、'))}（作った後でも、提出された希望はそのまま反映できます）</span>` : ''}`;
+        }
         function render() {
-          let body = '';
-          if (st.step === 1) {
-            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 8px">どの期間のシフトを作りますか？</p>
-              <div style="display:grid;gap:6px;margin-bottom:12px">${presets.map(p => `<button type="button" class="btn ${st.start === p.start && st.end === p.end ? '' : 'btn-ghost'}" data-preset="${p.key}" style="text-align:left;font-size:13px">${esc(p.label)}</button>`).join('')}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="form-field" style="margin:0"><label>開始日</label><input type="date" data-start value="${st.start}" /></div>
-                <div class="form-field" style="margin:0"><label>終了日</label><input type="date" data-end value="${st.end}" /></div>
-              </div>
-              <div class="form-field" style="margin:10px 0 0"><label>希望の提出締切（任意）</label><input type="date" data-deadline value="${st.deadline}" /></div>
-              <p class="muted" style="font-size:11.5px;margin:4px 0 0;line-height:1.6">締切の前日と当日の朝に、未提出の人数をお店のLINEに知らせます。締切後は、提出済みのスタッフは内容を変えられなくなります。</p>`;
-          } else if (st.step === 2) {
-            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 8px">スタッフにどう希望を出してもらいますか？</p>
-              <div style="display:grid;gap:6px">${Object.entries(REQUEST_MODES).map(([k, v]) => `<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid ${st.mode === k ? '#c9a84c' : '#e5e7eb'};border-radius:10px;cursor:pointer;font-size:13px;line-height:1.5"><input type="radio" name="wz-mode" value="${k}" ${st.mode === k ? 'checked' : ''} style="margin-top:3px" /><span><b>${esc(v)}</b><br><span class="muted" style="font-size:12px">${k === 'free' ? '出たい日・休みたい日を自由に選べます' : k === 'off_only' ? '休みたい日だけ出してもらい、それ以外の日に労働条件の範囲内で配置します（正社員向け）' : '出られる日と時間帯を出してもらい、その中でだけ配置します（パート・アルバイト向け）'}</span></span></label>`).join('')}</div>
-              <div data-max-wrap style="display:${st.mode === 'work_time' ? 'none' : 'flex'};align-items:center;gap:6px;margin-top:10px;font-size:13px">休み希望は<input type="number" data-maxoff min="0" max="31" value="${st.maxOff ?? ''}" placeholder="上限なし" style="width:84px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日まで</div>
-              <p class="muted" style="font-size:11.5px;margin:10px 0 0;line-height:1.6">雇用形態ごと・スタッフごとに変えたい場合は、作成後に「希望の提出のしかた」の「変更する」から設定できます。</p>`;
-          } else {
-            body = `<p style="font-size:13.5px;font-weight:700;margin:0 0 4px">${mdShort(st.period.period_start)}〜${mdShort(st.period.period_end)}のシフトを作りました</p>
-              <p class="muted" style="font-size:12.5px;margin:0 0 10px;line-height:1.6">最後に、スタッフへ希望の提出をお願いします。リンクはこの期間専用です。</p>
-              <div data-links>読み込み中…</div>`;
-          }
-          const foot = st.step === 1
-            ? `<button type="button" class="btn" data-next>次へ</button>`
-            : st.step === 2
-              ? `<button type="button" class="btn btn-ghost" data-back>戻る</button><button type="button" class="btn" data-create>この内容で作る</button>`
-              : `<button type="button" class="btn" data-done>完了</button>`;
-          ov.innerHTML = `<div class="cal-modal-card" style="max-width:540px">${head()}${body}<p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">${foot}</div></div>`;
+          ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <h3 style="margin:0;font-size:16px">新しいシフトを作る</h3>
+              <button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+            <p style="font-size:13.5px;font-weight:700;margin:12px 0 8px">どの期間のシフトを作りますか？</p>
+            <div style="display:grid;gap:6px;margin-bottom:12px">${presets.map((p, i) => `<button type="button" class="btn ${st.start === p.start && st.end === p.end ? '' : 'btn-ghost'}" data-preset="${i}" style="text-align:left;font-size:13px">${esc(p.label)}</button>`).join('')}</div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+              <div class="form-field" style="margin:0"><label>開始日</label><input type="date" data-start value="${st.start}" /></div>
+              <div class="form-field" style="margin:0"><label>終了日</label><input type="date" data-end value="${st.end}" /></div>
+            </div>
+            <p data-info style="font-size:12.5px;margin:12px 0 0;line-height:1.7"></p>
+            <p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px"><button type="button" class="btn" data-create>この期間のシフトを作る</button></div>
+          </div>`;
           ov.querySelector('[data-x]').addEventListener('click', close);
-          const msg = t => { ov.querySelector('[data-msg]').textContent = t; };
-          if (st.step === 1) {
-            ov.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
-              const p = presets.find(x => x.key === b.dataset.preset);
-              st.start = p.start; st.end = p.end;
-              const dl = addDaysStr(p.start, -7); st.deadline = dl >= shiftTodayStr() ? dl : '';
-              render();
-            }));
-            ov.querySelector('[data-next]').addEventListener('click', () => {
-              st.start = ov.querySelector('[data-start]').value; st.end = ov.querySelector('[data-end]').value; st.deadline = ov.querySelector('[data-deadline]').value;
-              if (!st.start || !st.end) { msg('開始日と終了日を入れてください'); return; }
-              if (st.end < st.start) { msg('終了日は開始日より後にしてください'); return; }
-              if (st.deadline && st.deadline >= st.start) { msg('締切は開始日より前の日にしてください'); return; }
-              st.step = 2; render();
+          ov.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+            const p = presets[Number(b.dataset.preset)];
+            st.start = p.start; st.end = p.end; render();
+          }));
+          ['start', 'end'].forEach(k => ov.querySelector(`[data-${k}]`).addEventListener('change', e => { st[k] = e.target.value; render(); }));
+          ov.querySelector('[data-create]').addEventListener('click', async e => {
+            const msg = t => { ov.querySelector('[data-msg]').textContent = t; };
+            if (!st.start || !st.end) { msg('開始日と終了日を入れてください'); return; }
+            if (st.end < st.start) { msg('終了日は開始日より後にしてください'); return; }
+            const dup = shiftPeriods.find(p => p.period_start <= st.end && p.period_end >= st.start);
+            if (dup) { msg(`${mdShort(dup.period_start)}〜${mdShort(dup.period_end)}のシフトと期間が重なっています。下の一覧から開いてください`); return; }
+            e.currentTarget.disabled = true;
+            const res = await fetch('/api/provider/shift-periods', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+              body: JSON.stringify({ period_start: st.start, period_end: st.end }),
             });
-          } else if (st.step === 2) {
-            ov.querySelectorAll('input[name="wz-mode"]').forEach(r => r.addEventListener('change', () => { st.mode = r.value; render(); }));
-            ov.querySelector('[data-back]').addEventListener('click', () => { st.step = 1; render(); });
-            ov.querySelector('[data-create]').addEventListener('click', async e => {
-              const raw = ov.querySelector('[data-maxoff]')?.value ?? '';
-              st.maxOff = st.mode === 'work_time' || raw === '' ? null : Number(raw);
-              e.currentTarget.disabled = true;
-              const res = await fetch('/api/provider/shift-periods', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-                body: JSON.stringify({ period_start: st.start, period_end: st.end, request_deadline: st.deadline || null, notify_days_before: st.notify, request_format: { default: { mode: st.mode, max_off_days: st.maxOff }, by_employment_type: {}, by_staff: {} } }),
-              });
-              const d = await res.json().catch(() => ({}));
-              if (!res.ok) { e.currentTarget.disabled = false; msg(d.error || '作成できませんでした'); return; }
-              st.period = d; st.step = 3; render();
-              currentPeriodId = d.id;
-              loadPeriods(); loadCalendar();
-              renderLinksInto(ov.querySelector('[data-links]'), d);
-            });
-          } else {
-            ov.querySelector('[data-done]').addEventListener('click', () => { close(); document.getElementById('shift-detail-section')?.scrollIntoView({ behavior: 'smooth' }); });
-          }
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) { e.currentTarget.disabled = false; msg(d.error || '作成できませんでした'); return; }
+            close();
+            currentPeriodId = d.id;
+            await loadPeriods(); loadCalendar();
+            document.getElementById('shift-detail-section')?.scrollIntoView({ behavior: 'smooth' });
+            showToast('シフトの期間を作りました。「自動作成」で下書きを作れます');
+          });
+          loadInfo();
         }
         render();
       }
       document.getElementById('shift-wizard-btn')?.addEventListener('click', openShiftWizard);
 
-      // この期間の提出リンク：スタッフごとにコピー・まとめてコピー・LINEで送る
-      async function renderLinksInto(el, period) {
+      // 提出リンク：スタッフごとにコピー・まとめてコピー・LINEで送る。win は提出ルールで区切った期間
+      async function renderLinksInto(el, win) {
         if (!el) return;
         if (!shiftStaffList.length) await loadStaffLinks();
-        const subRes = await fetch(`/api/provider/shift-submissions?periodId=${period.id}`, { headers: authHeadersShift() });
+        const subRes = await fetch(`/api/provider/shift-submissions?from=${win.start}&to=${win.end}`, { headers: authHeadersShift() });
         const submitted = new Set((subRes.ok ? await subRes.json() : []).map(x => x.staff_id));
-        const linkOf = s => `${location.origin}/staff-shift/${s.shift_access_token}?period=${period.id}`;
+        const linkOf = s => `${location.origin}/staff-shift/${s.shift_access_token}?period=${win.key}`;
         if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'; return; }
         const lineCount = shiftStaffList.filter(s => s.line_user_id && !submitted.has(s.id)).length;
-        const collecting = period.status === 'collecting';
         el.innerHTML = `
-          ${collecting ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
             <button type="button" class="btn" data-send-line ${lineCount ? '' : 'disabled'} style="font-size:12.5px">未提出の人にLINEで送る（${lineCount}人）</button>
             <button type="button" class="btn btn-ghost" data-copy-all style="font-size:12.5px">全員分のリンクをまとめてコピー</button>
-          </div>` : '<p class="muted" style="font-size:12.5px;margin:0 0 8px">この期間は希望の募集を締め切っています。</p>'}
+          </div>
           <div style="display:grid;gap:6px">${shiftStaffList.map(s => `
             <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;flex-wrap:wrap">
               <span style="flex:1;font-size:13px;font-weight:700">${esc(s.name)}</span>
               <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;${submitted.has(s.id) ? 'background:#dcfce7;color:#166534' : 'background:#f3f4f6;color:#6b7280'}">${submitted.has(s.id) ? '提出済み' : '未提出'}</span>
               <span class="muted" style="font-size:11px">${s.line_user_id ? 'LINE連携済み' : 'LINE未連携'}</span>
-              ${collecting ? `<button type="button" class="btn btn-ghost" data-copy-one="${s.id}" style="font-size:12px;padding:4px 10px">リンクをコピー</button>` : ''}
+              <button type="button" class="btn btn-ghost" data-copy-one="${s.id}" style="font-size:12px;padding:4px 10px">リンクをコピー</button>
             </div>`).join('')}</div>
-          <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">LINE未連携の人には、コピーしたリンクを個別に送ってください。スタッフが提出画面の「LINEで受け取る」を押すと、次回からLINEで送れます。</p>`;
+          <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">リンクは期間に関係なく使えます（開くと${esc(win.label)}から表示されます）。LINE未連携の人には、コピーしたリンクを個別に送ってください。スタッフが提出画面の「LINEで受け取る」を押すと、次回からLINEで送れます。</p>`;
         const copy = async text => { try { await navigator.clipboard.writeText(text); showToast('コピーしました'); } catch { showToast('コピーできませんでした'); } };
         el.querySelectorAll('[data-copy-one]').forEach(b => b.addEventListener('click', () => copy(linkOf(shiftStaffList.find(x => x.id === b.dataset.copyOne)))));
         el.querySelector('[data-copy-all]')?.addEventListener('click', () => copy(
-          `${mdShort(period.period_start)}〜${mdShort(period.period_end)}のシフト希望の提出をお願いします。${period.request_deadline ? `締切：${mdShort(period.request_deadline)}` : ''}\n` +
+          `${win.label}（${mdShort(win.start)}〜${mdShort(win.end)}）のシフト希望の提出をお願いします。締切：${mdShort(win.deadline)}\n` +
           shiftStaffList.map(s => `${s.name}さん：${linkOf(s)}`).join('\n')));
         el.querySelector('[data-send-line]')?.addEventListener('click', async e => {
           e.currentTarget.disabled = true;
-          const res = await fetch(`/api/provider/shift-periods/${period.id}/send-links`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: '{}' });
+          const res = await fetch('/api/provider/shift-submissions/send-links', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ window: win.key }) });
           const d = await res.json().catch(() => ({}));
           if (!res.ok) { showToast(d.error || '送れませんでした'); e.currentTarget.disabled = false; return; }
           showToast(`${d.sent.length}人にLINEで送りました${d.skipped.length ? `（送れなかった人：${d.skipped.join('・')}）` : ''}`);
         });
       }
-      function openLinksPanel(period) {
+      function openLinksPanel(win) {
+        if (!win) return;
         const ov = document.createElement('div');
         ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
         ov.innerHTML = `<div class="cal-modal-card" style="max-width:540px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h3 style="margin:0;font-size:16px">提出リンク（${mdShort(period.period_start)}〜${mdShort(period.period_end)}）</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h3 style="margin:0;font-size:16px">提出リンク（${esc(win.label)}・締切 ${mdShort(win.deadline)}）</h3><button type="button" class="btn btn-ghost" data-x style="font-size:12px;padding:5px 10px">閉じる</button></div>
           <div data-links style="margin-top:12px">読み込み中…</div></div>`;
         document.body.appendChild(ov);
         ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
         ov.querySelector('[data-x]').addEventListener('click', () => ov.remove());
-        renderLinksInto(ov.querySelector('[data-links]'), period);
+        renderLinksInto(ov.querySelector('[data-links]'), win);
       }
 
       // この期間の進み具合（希望を集める → 自動で作る → 確定）
@@ -4221,17 +4254,19 @@ export default function ProviderDashboardPage() {
         const p = shiftPeriods.find(x => x.id === currentPeriodId);
         if (!el || !p) return;
         const total = shiftStaffList.length;
-        const stage = p.status === 'confirmed' ? 3 : (entryCount > 0 || p.status === 'draft') ? 2 : 1;
+        const stage = p.status === 'confirmed' ? 3 : entryCount > 0 ? 2 : 1;
+        // この期間に重なる、まだ始まっていない提出の区切り（リンクを送れるのはこれだけ）
+        const win = (shiftSettings?.windows || []).find(w => w.start <= p.period_end && w.end >= p.period_start);
         const box = (n, title, sub, action) => `<div style="flex:1;min-width:170px;padding:10px 12px;border-radius:10px;border:1.5px solid ${n === stage ? '#c9a84c' : n < stage ? '#86efac' : '#e5e7eb'};background:${n === stage ? 'rgba(201,168,76,.08)' : n < stage ? '#f0fdf4' : '#fff'}">
             <div style="font-size:11.5px;font-weight:800;color:${n < stage ? '#166534' : n === stage ? '#84651a' : '#9ca3af'}">${n < stage ? '完了' : n === stage ? 'いまここ' : 'このあと'}</div>
             <div style="font-size:13.5px;font-weight:800;margin-top:2px">${n}. ${title}</div>
             <div class="muted" style="font-size:12px;margin-top:2px;line-height:1.5">${sub}</div>${action || ''}</div>`;
         el.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${box(1, '希望を集める', `提出 ${submittedCount} / ${total}人${p.request_deadline ? `・締切 ${mdShort(p.request_deadline)}` : ''}`, `<button type="button" class="btn ${stage === 1 ? '' : 'btn-ghost'}" data-flow-links style="font-size:12px;padding:5px 12px;margin-top:8px">提出リンクを送る</button>`)}
-          ${box(2, '自動で作る', stage >= 2 ? `${entryCount}件のシフト${p.status === 'confirmed' ? '' : '（下で確認・調整）'}` : '希望が集まったら、下の「自動作成」を押す', '')}
+          ${box(1, '希望を確認', `提出完了 ${submittedCount} / ${total}人${win ? `・締切 ${mdShort(win.deadline)}` : ''}`, win ? `<button type="button" class="btn ${stage === 1 ? '' : 'btn-ghost'}" data-flow-links style="font-size:12px;padding:5px 12px;margin-top:8px">提出リンクを送る</button>` : '')}
+          ${box(2, '自動で作る', stage >= 2 ? `${entryCount}件のシフト${p.status === 'confirmed' ? '' : '（下で確認・調整）'}` : '下の「自動作成」を押す', '')}
           ${box(3, '確認して確定', p.status === 'confirmed' ? '確定済み' : '問題がなければ「この期間を確定する」', '')}
         </div>`;
-        el.querySelector('[data-flow-links]')?.addEventListener('click', () => openLinksPanel(p));
+        el.querySelector('[data-flow-links]')?.addEventListener('click', () => openLinksPanel(win));
       }
 
       // ── 期間の詳細（希望一覧・シフト表） ──
@@ -4335,7 +4370,7 @@ export default function ProviderDashboardPage() {
         // 誰が「これで完了です」を押したか一目で分かるようにする）
         const statusHtml = shiftStaffList.length
           ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${shiftStaffList.map(s => `
-              <span title="${esc(describeRule(ruleOf(shiftPeriods.find(x => x.id === currentPeriodId)?.request_format, s.id)))}" style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${submittedIds.has(s.id) ? '#10b98120' : '#f3f4f6'};color:${submittedIds.has(s.id) ? '#10b981' : '#9ca3af'}">${submittedIds.has(s.id) ? '✓' : '…'} ${esc(s.name)}<span style="font-weight:500;opacity:.8">・${esc(describeRule(ruleOf(shiftPeriods.find(x => x.id === currentPeriodId)?.request_format, s.id)))}</span></span>
+              <span title="${esc(describeRule(ruleOf(shiftSettings?.request_format, s.id)))}" style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${submittedIds.has(s.id) ? '#10b98120' : '#f3f4f6'};color:${submittedIds.has(s.id) ? '#10b981' : '#9ca3af'}">${submittedIds.has(s.id) ? '✓' : '…'} ${esc(s.name)}<span style="font-weight:500;opacity:.8">・${esc(describeRule(ruleOf(shiftSettings?.request_format, s.id)))}</span></span>
             `).join('')}</div>`
           : '';
 
@@ -15771,12 +15806,13 @@ export default function ProviderDashboardPage() {
               ①月カレンダー（日付タップでその日のシフト編集ポップアップ）→②期間ごとの管理
               （希望一覧・シフト表・自動作成・確定）→③設定（提出リンク・期間作成・ルール・
               時間帯パターン・優先度）の順に並べ替え、初期設定系は折りたたみにした。 */}
-          {/* でお指摘（2026-10-16）：「期間を作成」を最初にやるのが分かりづらい。シフト作りの流れを
-              1つのボタンから順にたどれるようにした（期間 → 提出のしかた → スタッフへのお知らせ）。 */}
+          {/* でお指摘（2026-10-16）：最初に期間を作らせるのは不要な手間で分かりづらい。希望はお店の提出ルールに
+              沿っていつでも出してもらい（上の「希望の提出」）、シフトを作る時に作りたい期間を選ぶだけにした。 */}
+          <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', marginBottom: '12px' }}>読み込み中…</div>
           <div className="card" style={{ padding: '18px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', border: '1px solid rgba(201,168,76,.45)', background: 'rgba(201,168,76,.06)' }}>
             <div style={{ flex: 1, minWidth: '240px' }}>
               <div style={{ fontSize: '15px', fontWeight: 800 }}>シフトを作る</div>
-              <div className="muted" style={{ fontSize: '12.5px', lineHeight: 1.7, marginTop: '2px' }}>期間を決める → スタッフに希望を出してもらう → 自動で作る → 確定する、の順に進みます。</div>
+              <div className="muted" style={{ fontSize: '12.5px', lineHeight: 1.7, marginTop: '2px' }}>作りたい期間を選ぶ → 自動で作る → 確認して確定する。スタッフの希望は上の提出ルールで集まっています。</div>
             </div>
             <button type="button" className="btn" id="shift-wizard-btn" style={{ fontSize: '14px', padding: '10px 18px' }}>＋ 新しいシフトを作る</button>
           </div>

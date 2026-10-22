@@ -1,7 +1,9 @@
-// GET /api/provider/shift-submissions?periodId=X → 店舗側が見る、指定期間の提出完了スタッフ一覧
+// GET /api/provider/shift-submissions?periodId=X | ?from=&to= → 店舗側が見る、その日付範囲に重なる区切りで
+//     「提出を完了」したスタッフ一覧（区切りは店舗の提出ルールで決まる。でお指摘 2026-10-16）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { planLockedResponse } from '@/lib/plan-features';
+import { loadSubmittedInRange } from '@/lib/shift-windows';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -21,16 +23,15 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const periodId = searchParams.get('periodId');
-  if (!periodId) return Response.json({ error: 'periodIdは必須です' }, { status: 400 });
+  let from = searchParams.get('from');
+  let to = searchParams.get('to');
+  if (periodId) {
+    const { data: period } = await supabase.from('provider_shift_periods').select('period_start, period_end').eq('id', periodId).eq('provider_id', provider.id).single();
+    if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
+    from = period.period_start; to = period.period_end;
+  }
+  if (!from || !to) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
 
-  const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', periodId).eq('provider_id', provider.id).single();
-  if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
-
-  const { data, error } = await supabase
-    .from('provider_shift_submissions')
-    .select('staff_id, submitted_at')
-    .eq('period_id', periodId);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  return Response.json(data || []);
+  const map = await loadSubmittedInRange(supabase, provider.id, from, to);
+  return Response.json(Object.entries(map).map(([staff_id, submitted_at]) => ({ staff_id, submitted_at })));
 }

@@ -77,7 +77,8 @@ export default function StaffShiftPage({ params }) {
   const [multiNote, setMultiNote] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
 
-  // 期間ごとの提出リンク（?period=）で開かれたらその期間を、無ければ未提出の直近の期間を開く
+  // ?period=（区切りの開始日）で開かれたらその区切りを、無ければ未提出の直近の区切りを開く。
+  // 区切りは店舗の提出ルール（1か月ごと等）から自動で決まる（でお指摘 2026-10-16：期間を先に作らせない）
   const [periodId, setPeriodId] = useState(() => {
     if (typeof window === 'undefined') return '';
     return new URLSearchParams(window.location.search).get('period') || '';
@@ -298,18 +299,18 @@ export default function StaffShiftPage({ params }) {
       </div>
 
       {data.requested_closed && (
-        <p style={{ fontSize: '13px', color: '#c9a84c', margin: '0 0 12px' }}>このリンクの期間は、すでに希望の募集を締め切っています。{data.period ? '今募集中の期間を表示しています。' : ''}</p>
+        <p style={{ fontSize: '13px', color: '#c9a84c', margin: '0 0 12px' }}>このリンクの期間はすでに始まっています。{data.period ? 'これから先の期間を表示しています。' : ''}</p>
       )}
       {(data.periods || []).length > 1 && (
         <div style={{ marginBottom: '16px' }}>
-          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'rgba(232,228,220,0.7)', fontWeight: 700 }}>募集中の期間（{data.periods.length}件）</p>
+          <p style={{ margin: '0 0 6px', fontSize: '12px', color: 'rgba(232,228,220,0.7)', fontWeight: 700 }}>提出する期間（お店のルールで区切っています）</p>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {data.periods.map(p => {
               const on = data.period?.id === p.id;
               return (
                 <button key={p.id} type="button" onClick={() => !on && switchPeriod(p.id)}
                   style={{ padding: '8px 12px', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700, cursor: on ? 'default' : 'pointer', border: on ? '1.5px solid #c9a84c' : '1px solid rgba(232,228,220,0.25)', background: on ? 'rgba(201,168,76,0.15)' : 'transparent', color: '#e8e4dc', textAlign: 'left', lineHeight: 1.5 }}>
-                  {p.period_start.slice(5).replace('-', '/')}〜{p.period_end.slice(5).replace('-', '/')}
+                  {p.label || `${p.period_start.slice(5).replace('-', '/')}〜${p.period_end.slice(5).replace('-', '/')}`}
                   <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: p.submitted ? '#4ade80' : '#c9a84c' }}>{p.submitted ? '提出済み' : '未提出'}{p.request_deadline ? `・締切 ${p.request_deadline.slice(5).replace('-', '/')}` : ''}</span>
                 </button>
               );
@@ -322,7 +323,7 @@ export default function StaffShiftPage({ params }) {
       ) : (
         <>
           <div style={{ ...cardStyle, marginBottom: '16px' }}>
-            <p style={{ margin: 0, fontSize: '13px' }}>対象期間：{data.period.period_start} 〜 {data.period.period_end}</p>
+            <p style={{ margin: 0, fontSize: '13px' }}>対象：{data.period.label ? `${data.period.label}（${data.period.period_start} 〜 ${data.period.period_end}）` : `${data.period.period_start} 〜 ${data.period.period_end}`}</p>
             {data.period.request_deadline && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#c9a84c', fontWeight: '700' }}>提出締切：{data.period.request_deadline}</p>}
             <p style={{ margin: '10px 0 0', fontSize: '13px', fontWeight: '800', color: '#c9a84c' }}>提出のしかた：{rule.label || '出勤・休みどちらでも'}</p>
             <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', lineHeight: 1.7 }}>{ruleGuide}</p>

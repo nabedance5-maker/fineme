@@ -1,12 +1,10 @@
 // GET  /api/provider/shift-periods → 自店舗のシフト募集期間一覧（新しい順）
-// POST /api/provider/shift-periods → 新しい期間を作成（対象月・締切）
+// POST /api/provider/shift-periods → 作るシフトの期間を作成（開始日・終了日）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
-import { parseNotifyDays } from '@/lib/shift-deadline';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
-import { normalizeFormat } from '@/lib/shift-request-format';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
@@ -41,19 +39,17 @@ async function __POST(request) {
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
-  const { period_start, period_end, request_deadline } = body;
-  const notifyDays = parseNotifyDays(body.notify_days_before);
+  const { period_start, period_end } = body;
   if (!period_start || !period_end) {
     return Response.json({ error: '対象期間（開始日・終了日）は必須です' }, { status: 400 });
   }
+  if (period_end < period_start) return Response.json({ error: '終了日は開始日より後にしてください' }, { status: 400 });
 
-  // 提出のしかたは、店舗の初期設定を募集ごとに写して使う（作成後に募集ごと変更できる）
-  const { data: settings } = await supabase.from('provider_shift_settings').select('request_format').eq('provider_id', provider.id).maybeSingle();
-  const request_format = normalizeFormat(body.request_format !== undefined ? body.request_format : settings?.request_format);
-
+  // 期間は「作るシフトの範囲」。希望の募集・締切は店舗の提出ルールで決まるため、作った時点から作成中
+  // （でお指摘 2026-10-16：最初に期間を作らせない。どの期間を作るかはシフトを作る時に選ぶ）
   const { data, error } = await supabase
     .from('provider_shift_periods')
-    .insert({ provider_id: provider.id, period_start, period_end, request_deadline: request_deadline || null, request_format, ...(notifyDays ? { notify_days_before: notifyDays } : {}) })
+    .insert({ provider_id: provider.id, period_start, period_end, status: 'draft' })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });

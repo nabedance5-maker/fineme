@@ -32,8 +32,8 @@ async function __POST(request, { params }) {
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
 
   const [{ data: settings }, { data: rawRequests }, { data: priorities }, { data: dayPatternRows }, { data: patternRows }, { data: leaves }] = await Promise.all([
-    supabase.from('provider_shift_settings').select('rule_type').eq('provider_id', provider.id).single(),
-    supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('period_id', period.id),
+    supabase.from('provider_shift_settings').select('rule_type, request_format').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('provider_id', provider.id).gte('date', period.period_start).lte('date', period.period_end),
     supabase.from('provider_shift_priorities').select('staff_id, priority_score').eq('provider_id', provider.id),
     supabase.from('provider_shift_period_day_patterns').select('date, pattern_id').eq('period_id', period.id),
     supabase.from('provider_shift_patterns').select('id, slots').eq('provider_id', provider.id),
@@ -58,10 +58,10 @@ async function __POST(request, { params }) {
     supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id).eq('source', 'manual'),
   ]);
 
-  // 「出勤希望（時間帯つき）だけ」の人は、希望した日時以外には入れない
+  // 「出勤希望（時間帯つき）だけ」の人は、希望した日時以外には入れない（提出のしかたは店舗の設定。でお指摘 2026-10-16）
   const empOf = Object.fromEntries((conditions || []).map(c => [c.staff_id, c.employment_type]));
   const availability = (await loadAvailability(supabase, provider.id, period, requests || []))
-    .filter(a => resolveRule(period.request_format, a.staff_id, empOf[a.staff_id]).mode !== 'work_time');
+    .filter(a => resolveRule(settings?.request_format, a.staff_id, empOf[a.staff_id]).mode !== 'work_time');
   const { entries, warnings, skipped } = generateShift({
     period,
     requests: requests || [],

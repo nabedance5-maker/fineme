@@ -36,7 +36,7 @@ async function __POST(request, { params }) {
   const wanted = new Set(items.map(i => `${i?.staff_id}|${i?.date}`));
 
   const [{ data: requests }, { data: ownEntries }, conditions, neighborEntries] = await Promise.all([
-    supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('period_id', period.id),
+    supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('provider_id', provider.id).gte('date', period.period_start).lte('date', period.period_end),
     supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id),
     loadConditions(supabase, provider.id),
     loadNeighborEntries(supabase, provider.id, period),
