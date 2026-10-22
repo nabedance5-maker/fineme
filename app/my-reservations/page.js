@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
-import { customerAccessToken } from '@/lib/browser-auth';
+import { freshAccessToken } from '@/lib/browser-auth';
 import Link from 'next/link';
 import MypageSideNav from '@/app/mypage/_components/MypageSideNav';
 import { STATUS, RES_CSS, splitReservations, fmtDay, fmtUntil, hhmm } from '@/app/mypage/_components/reservation-format';
@@ -122,7 +122,7 @@ function MyReservationsContent() {
   }
 
   useEffect(() => {
-    customerAccessToken().then(tk => {
+    freshAccessToken().then(tk => {
       if (tk) { setToken(tk); loadMine(tk); }
       setAuthChecked(true);
     });

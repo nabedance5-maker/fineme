@@ -1257,12 +1257,10 @@ function ClassTab({ provider, classId }) {
 // ticketFilter：マイページのチケットから来た時は、そのチケットで予約できるメニュー・レッスンだけを並べる（でお要望 2026-10-22）
 function BookTab({ provider, services, staff, elig, onEligChanged, selectedService, setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, presetLessonId, hideMemberCard, ticketFilter }) {
   const [onlyTicket, setOnlyTicket] = useState(ticketFilter || null);
-  const instantOn = hasFeature(provider, 'instant_booking');
   const requestOn = hasFeature(provider, 'booking_request');
   const lessonsOn = hasFeature(provider, 'class_management') && isShown(provider, 'tab_class');
   const [lessons, setLessons] = useState([]);
   const [picked, setPicked] = useState(() => (selectedService ? { kind: 'service', id: selectedService.id } : null));
-  const [how, setHow] = useState(instantOn ? 'instant' : 'request');
   useEffect(() => {
     if (!lessonsOn || !provider?.slug) return;
     fetch(`/api/providers/${provider.slug}/classes`).then(r => (r.ok ? r.json() : { classes: [] })).then(d => {
@@ -1337,16 +1335,7 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
                     {lockedLinks}
                   </div>
                 ) : (
-                  <>
-                    {instantOn && requestOn && (
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {[['instant', '空いている時間から予約'], ['request', '希望日時を相談（リクエスト）']].map(([k, label]) => (
-                          <button key={k} type="button" onClick={() => setHow(k)} style={{ padding: '8px 12px', borderRadius: '99px', border: how === k ? '2px solid var(--pv-text)' : line, background: how === k ? 'var(--pv-text)' : 'transparent', color: how === k ? 'var(--pv-bg)' : 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>{label}</button>
-                        ))}
-                      </div>
-                    )}
-                    <ConsultTab {...consultProps} selectedService={s} mode={instantOn && (how === 'instant' || !requestOn) ? 'instant' : requestOn ? 'request' : 'closed'} />
-                  </>
+                  <ServiceBooking provider={provider} service={s} consultProps={consultProps} />
                 )}
               </div>
             )}
@@ -1393,67 +1382,181 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
   );
 }
 
-// ── 会員タブ（でお要望 2026-10-22：会員・回数券・月額プランの方は、お店の魅力より予約だけが必要）。
-//    持っているチケット・次の予約（その場でキャンセル）・前回と同じ内容で予約。予約そのものは「予約」タブで行う。 ──
-function MemberTab({ provider, services, elig, onEligChanged, onRebook }) {
+// メニュー1つ分の日時選び（空いている時間から予約／希望日時を相談）。予約タブと会員タブで共通（2026-10-22）
+function ServiceBooking({ provider, service, consultProps }) {
+  const instantOn = hasFeature(provider, 'instant_booking');
+  const requestOn = hasFeature(provider, 'booking_request');
+  const [how, setHow] = useState(instantOn ? 'instant' : 'request');
+  return (
+    <>
+      {instantOn && requestOn && (
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[['instant', '空いている時間から予約'], ['request', '希望日時を相談（リクエスト）']].map(([k, label]) => (
+            <button key={k} type="button" aria-pressed={how === k} onClick={() => setHow(k)} style={{ minHeight: '40px', padding: '0 14px', borderRadius: '99px', border: `1px solid ${how === k ? 'var(--pv-accent)' : tx(20)}`, background: how === k ? 'var(--pv-accent)' : 'transparent', color: how === k ? 'var(--pv-on-accent)' : 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>{label}</button>
+          ))}
+        </div>
+      )}
+      <ConsultTab {...consultProps} selectedService={service} mode={instantOn && (how === 'instant' || !requestOn) ? 'instant' : requestOn ? 'request' : 'closed'} onAskRequest={requestOn ? () => setHow('request') : null} />
+    </>
+  );
+}
+
+// ── 会員タブ（でお要望 2026-10-22：会員・回数券・月額プランの方は、ここだけ見れば予約まで終わるように）。
+//    お持ちのチケットを選ぶと、そのチケットで予約できるメニュー・レッスンの空き枠がその場に出て、そのまま予約できる。
+//    次のご予約（その場でキャンセル）・前回と同じ内容での予約もこのタブの中で完結させる（予約タブへ移らない）。 ──
+function MemberTab({ provider, services, staff, elig, onEligChanged, diagnosis, matchData, onGoBook }) {
   const [resv, setResv] = useState(null);
   const [msg, setMsg] = useState('');
+  const [askCancel, setAskCancel] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [pickTicket, setPickTicket] = useState(null);  // customer_packages.id
+  const [pickItem, setPickItem] = useState(null);      // { kind: 'service'|'lesson', id }
+  const [submitted, setSubmitted] = useState(false);
+  const lessonsOn = hasFeature(provider, 'class_management') && isShown(provider, 'tab_class');
   const load = async () => {
     const t = await freshAccessToken();
     if (!t) { setResv([]); return; }
-    const me = await fetch('/api/me/profile', { headers: { Authorization: `Bearer ${t}` } }).then(r => (r.ok ? r.json() : null)).catch(() => null);
-    if (!me?.id) { setResv([]); return; }
-    const rows = await fetch(`/api/reservations?userId=${me.id}`, { headers: { Authorization: `Bearer ${t}` } }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+    const rows = await fetch('/api/me/reservations', { headers: { Authorization: `Bearer ${t}` } }).then(r => (r.ok ? r.json() : [])).catch(() => []);
     setResv((rows || []).filter(r => r.provider_id === provider.id));
   };
   useEffect(() => { load(); }, [provider?.id, elig?.logged_in]);
+  useEffect(() => {
+    if (!lessonsOn || !provider?.slug) return;
+    fetch(`/api/providers/${provider.slug}/classes`).then(r => (r.ok ? r.json() : { classes: [] })).then(d => setLessons(d.classes || [])).catch(() => setLessons([]));
+  }, [provider?.slug, lessonsOn]);
+
+  const tickets = (elig?.tickets || []).filter(t => t.ticket_id);
+  const ticket = tickets.find(t => t.id === pickTicket) || tickets[0] || null;
+  const hidden = new Set(elig?.hidden_for_member || []);
+  const items = ticket ? [
+    ...(services || []).filter(sv => (sv.ticket_ids || []).includes(ticket.ticket_id) && !hidden.has(sv.id) && elig?.services?.[sv.id]?.ok).map(sv => ({ kind: 'service', id: sv.id, name: sv.name, sub: [sv.duration_minutes ? `${sv.duration_minutes}分` : null, `チケット${sv.ticket_cost || 1}枚`].filter(Boolean).join('・'), svc: sv })),
+    ...lessons.filter(c => (c.ticket_ids || []).includes(ticket.ticket_id) && elig?.classes?.[c.id]?.ok).map(c => ({ kind: 'lesson', id: c.id, name: c.name, sub: `グループレッスン・チケット${c.ticket_cost || 1}枚` })),
+  ] : [];
+  const item = items.find(i => pickItem && i.kind === pickItem.kind && i.id === pickItem.id) || items[0] || null;
+
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
-  const dateOf = r => r.confirmed_date || r.reserved_date;
-  const upcoming = (resv || []).filter(r => ['pending', 'approved', 'counter_proposed'].includes(r.status) && (dateOf(r) || '') >= today)
-    .sort((a, b) => `${dateOf(a)} ${a.confirmed_time || a.start_time || ''}`.localeCompare(`${dateOf(b)} ${b.confirmed_time || b.start_time || ''}`));
-  const last = (resv || []).filter(r => r.status === 'visited' && r.service_id).sort((a, b) => String(dateOf(b)).localeCompare(String(dateOf(a))))[0];
-  const lastService = last ? (services || []).find(s => s.id === last.service_id) : null;
-  const svcName = id => (services || []).find(s => s.id === id)?.name || '';
+  const upcoming = (resv || []).filter(r => ['pending', 'approved', 'counter_proposed'].includes(r.status) && (r.date || '') >= today)
+    .sort((x, y) => `${x.date} ${x.time || ''}`.localeCompare(`${y.date} ${y.time || ''}`));
+  const last = (resv || []).filter(r => r.status === 'visited' && r.service_id).sort((x, y) => String(y.date).localeCompare(String(x.date)))[0];
+  const lastService = last ? (services || []).find(sv => sv.id === last.service_id) : null;
+  // 前回のメニューがチケットで予約できるなら、このタブの中でそのメニューの空き枠を開く
+  const lastTicket = lastService ? tickets.find(t => (lastService.ticket_ids || []).includes(t.ticket_id)) : null;
+  function rebookLast() {
+    if (lastTicket) { setPickTicket(lastTicket.id); setPickItem({ kind: 'service', id: lastService.id }); setSubmitted(false); document.getElementById('pv-member-book')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    else onGoBook(lastService);
+  }
   async function cancel(r) {
-    if (!window.confirm('この予約をキャンセルしますか？（チケットで予約した場合はチケットが戻ります）')) return;
     const t = await freshAccessToken();
     const res = await fetch(`/api/reservations/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }, body: JSON.stringify({ status: 'cancelled' }) });
     const d = await res.json().catch(() => ({}));
-    setMsg(res.ok ? 'キャンセルしました' : (d.error || 'キャンセルできませんでした'));
+    setMsg(res.ok ? 'キャンセルしました。使ったチケットは戻りました。' : (d.error || 'キャンセルできませんでした'));
+    setAskCancel(null);
     load(); onEligChanged?.();
   }
-  const box = { border: '1px solid color-mix(in srgb, var(--pv-text) 14%, transparent)', borderRadius: '14px', padding: '14px 16px', background: 'var(--pv-surface)', color: 'var(--pv-text)' };
-  const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
+  // 予約が終わったら、次のご予約と残り枚数を最新にする
+  const onSubmitted = v => { setSubmitted(v); if (v) { load(); onEligChanged?.(); } };
+  const consultProps = { provider, services, staff, onServiceSelect: () => {}, submitted, setSubmitted: onSubmitted, diagnosis, matchData, menuNameHint: '', presetStaffId: last?.staff_id || '', forMember: true };
+  const ghostBtn = { minHeight: '40px', padding: '0 14px', borderRadius: '10px', border: `1px solid ${tx(22)}`, background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(13px * var(--pv-fs))', cursor: 'pointer' };
+  const pill = on => ({ minHeight: '40px', padding: '0 14px', borderRadius: '99px', border: `1px solid ${on ? 'var(--pv-accent)' : tx(20)}`, background: on ? 'var(--pv-accent)' : 'transparent', color: on ? 'var(--pv-on-accent)' : 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(13px * var(--pv-fs))', cursor: 'pointer', textAlign: 'left' });
+  const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
+
+  if (!elig) return <div style={{ ...PV_CARD, color: tx(62) }}>読み込み中…</div>;
+  if (!elig.logged_in) {
+    return (
+      <div style={{ ...PV_CARD, display: 'grid', gap: '12px' }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: 'calc(15px * var(--pv-fs))' }}>通っている方は、ログインするとここから予約できます</p>
+        <p style={{ margin: 0, color: tx(70), fontSize: 'calc(13px * var(--pv-fs))', lineHeight: 1.7 }}>お持ちの回数券・チケットと、それで予約できる空いている時間が表示されます。</p>
+        <a href={loginHref} style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', minHeight: '48px', padding: '0 22px', borderRadius: '12px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', fontWeight: 800, textDecoration: 'none' }}>ログインする</a>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: 'grid', gap: '14px', maxWidth: '620px', paddingBottom: '40px' }}>
-      <MemberCard provider={provider} elig={elig} />
-      {elig?.logged_in && (
-        <div style={box}>
-          <div style={{ fontWeight: 800, fontSize: 'calc(13.5px * var(--pv-fs))', marginBottom: '6px' }}>次のご予約</div>
-          {resv === null ? <p style={{ margin: 0, color: muted, fontSize: 'calc(13px * var(--pv-fs))' }}>読み込み中…</p>
-            : !upcoming.length ? <p style={{ margin: 0, color: muted, fontSize: 'calc(13px * var(--pv-fs))' }}>これからのご予約はありません。</p>
-            : upcoming.map(r => (
-              <div key={r.id} style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', padding: '6px 0', borderTop: '1px solid color-mix(in srgb, var(--pv-text) 8%, transparent)' }}>
-                <span style={{ fontSize: 'calc(13px * var(--pv-fs))' }}>
-                  {dateOf(r)} {String(r.confirmed_time || r.start_time || '').slice(0, 5)}　{svcName(r.service_id) || (r.class_id ? 'グループレッスン' : 'ご予約')}
-                  {r.status !== 'approved' && <span style={{ color: muted }}>（お店の確認待ち）</span>}
-                </span>
-                <button type="button" onClick={() => cancel(r)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12px * var(--pv-fs))', cursor: 'pointer' }}>キャンセル</button>
+    <div style={{ display: 'grid', gap: '24px', paddingBottom: '40px', minWidth: 0 }}>
+      {/* 次のご予約 */}
+      <section style={{ display: 'grid', gap: '10px' }}>
+        <h2 style={{ margin: 0, fontSize: 'calc(15px * var(--pv-hs))', fontWeight: '800' }}>次のご予約</h2>
+        {resv === null ? <div style={{ ...PV_CARD, color: tx(62) }}>読み込み中…</div>
+          : !upcoming.length ? <div style={{ ...PV_CARD, color: tx(70), fontSize: 'calc(13.5px * var(--pv-fs))' }}>これからのご予約はありません。</div>
+          : upcoming.map(r => (
+            <div key={r.id} style={{ ...PV_CARD, padding: '14px 16px', display: 'grid', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 'calc(18px * var(--pv-fs))', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{r.date ? `${Number(r.date.slice(5, 7))}月${Number(r.date.slice(8, 10))}日（${'日月火水木金土'[new Date(`${r.date}T00:00:00`).getDay()]}）` : ''} {r.time || ''}</span>
+                <span style={r.status === 'approved' ? PV_CHIP_ACCENT : PV_CHIP}>{r.status === 'approved' ? '確定' : r.status === 'counter_proposed' ? '日時の提案あり' : 'お店の確認待ち'}</span>
               </div>
-            ))}
-          {msg && <p style={{ margin: '6px 0 0', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: 700 }}>{msg}</p>}
+              <span style={{ fontSize: 'calc(13.5px * var(--pv-fs))', color: tx(80) }}>{r.menu_name || (r.is_lesson ? 'グループレッスン' : 'ご予約')}{r.tickets_used ? `・チケット${r.tickets_used}枚` : ''}</span>
+              {askCancel === r.id ? (
+                <div role="group" aria-label="キャンセルの確認" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700 }}>キャンセルしますか？</span>
+                  <button type="button" onClick={() => cancel(r)} style={{ ...ghostBtn, borderColor: 'var(--pv-text)' }}>キャンセルする</button>
+                  <button type="button" onClick={() => setAskCancel(null)} style={{ ...ghostBtn, border: 'none' }}>やめる</button>
+                </div>
+              ) : (
+                <div><button type="button" onClick={() => { setAskCancel(r.id); setMsg(''); }} style={ghostBtn}>キャンセル</button></div>
+              )}
+            </div>
+          ))}
+        {msg && <p role="status" style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700 }}>{msg}</p>}
+      </section>
+
+      {/* チケットで予約（空いている時間がその場に出る） */}
+      <section id="pv-member-book" style={{ display: 'grid', gap: '12px', scrollMarginTop: '60px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0, fontSize: 'calc(15px * var(--pv-hs))', fontWeight: '800' }}>チケットで予約する</h2>
+          {lastService && <button type="button" onClick={rebookLast} style={ghostBtn}>前回と同じ（{lastService.name}）</button>}
         </div>
-      )}
-      {lastService && (
-        <button type="button" onClick={() => onRebook(lastService)} style={{ padding: '14px', borderRadius: '14px', border: 'none', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', fontWeight: 800, fontSize: 'calc(14.5px * var(--pv-fs))', cursor: 'pointer' }}>
-          前回と同じ内容で予約する（{lastService.name}）
-        </button>
-      )}
-      {elig?.logged_in && (
-        <button type="button" onClick={() => onRebook(null)} style={{ padding: '12px', borderRadius: '14px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(13.5px * var(--pv-fs))', cursor: 'pointer' }}>
-          メニュー・レッスンを選んで予約する
-        </button>
-      )}
+        {!tickets.length ? (
+          <div style={{ ...PV_CARD, display: 'grid', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: 'calc(13.5px * var(--pv-fs))', color: tx(80), lineHeight: 1.7 }}>使えるチケットがありません。回数券を買うか、チケットを使わないメニューから予約できます。</p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <a href={`/provider/${provider.slug}?tab=packages`} style={{ ...ghostBtn, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>回数券を見る</a>
+              <button type="button" onClick={() => onGoBook(null)} style={ghostBtn}>メニューから予約する</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* お持ちのチケット（押すと、そのチケットで予約できるものに切り替わる） */}
+            <div role="radiogroup" aria-label="使うチケット" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: '8px' }}>
+              {tickets.map(t => {
+                const on = ticket?.id === t.id;
+                return (
+                  <button key={t.id} type="button" role="radio" aria-checked={on} onClick={() => { setPickTicket(t.id); setPickItem(null); setSubmitted(false); }}
+                    style={{ textAlign: 'left', padding: '12px 14px', borderRadius: '14px', border: `1px solid ${on ? 'var(--pv-accent)' : tx(15)}`, background: on ? ac(10) : 'var(--pv-surface)', color: 'var(--pv-text)', cursor: 'pointer', display: 'grid', gap: '2px' }}>
+                    <span style={{ fontWeight: 800, fontSize: 'calc(14px * var(--pv-fs))' }}>{t.name}</span>
+                    <span style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(75) }}>
+                      {t.unlimited ? '通い放題' : <>残り<b style={{ fontSize: 'calc(17px * var(--pv-fs))', color: 'var(--pv-text)', margin: '0 2px' }}>{t.remaining}</b>枚</>}
+                      {t.expires_at ? `・${new Date(t.expires_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}まで` : ''}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {!items.length ? (
+              <div style={{ ...PV_CARD, color: tx(75), fontSize: 'calc(13.5px * var(--pv-fs))' }}>このチケットで予約できるメニューは今ありません。お店にお問い合わせください。</div>
+            ) : (
+              <div style={{ ...PV_CARD, display: 'grid', gap: '14px', minWidth: 0 }}>
+                {items.length > 1 ? (
+                  <div role="radiogroup" aria-label="予約するメニュー" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {items.map(i => {
+                      const on = item && i.kind === item.kind && i.id === item.id;
+                      return <button key={`${i.kind}-${i.id}`} type="button" role="radio" aria-checked={on} onClick={() => { setPickItem({ kind: i.kind, id: i.id }); setSubmitted(false); }} style={pill(on)}>{i.name}</button>;
+                    })}
+                  </div>
+                ) : null}
+                <div>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: 'calc(15px * var(--pv-fs))' }}>{item.name}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(65) }}>{item.sub}</p>
+                </div>
+                {item.kind === 'service'
+                  ? <ServiceBooking key={`s-${item.id}-${ticket.id}`} provider={provider} service={item.svc} consultProps={consultProps} />
+                  : <ClassTab key={`l-${item.id}`} provider={provider} classId={item.id} />}
+              </div>
+            )}
+          </>
+        )}
+        <button type="button" onClick={() => onGoBook(null)} style={{ ...ghostBtn, justifySelf: 'start', border: 'none', textDecoration: 'underline', textUnderlineOffset: '4px', padding: 0 }}>チケットを使わないメニューを見る</button>
+      </section>
     </div>
   );
 }
@@ -1611,7 +1714,11 @@ function MemberCard({ provider, elig }) {
 }
 
 // 予約タブ（BookTab）でメニューを選んだ後に、その1つのメニューの日時選び・送信だけを出す（2026-10-22）
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode }) {
+// forMember：会員タブから使う時（初回の説明は出さない）
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, forMember, onAskRequest }) {
+  // ログイン中でアカウントに名前と連絡先がある時は、入力欄を畳んで「予約者」1行にする（毎回入力させない。2026-10-22）
+  const [contactFromAccount, setContactFromAccount] = useState(false);
+  const [editContact, setEditContact] = useState(false);
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -1688,7 +1795,15 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
     if (selectedService?.id) params.set('service_id', selectedService.id);
     fetch(`/api/providers/${provider.slug}/availability?${params}`)
       .then(r => r.ok ? r.json() : [])
-      .then(data => { setSlots(data); setSelectedSlotId(''); })
+      .then(data => {
+        setSlots(data); setSelectedSlotId('');
+        // 今週に空きが無ければ、最初に空いている週を開く（空の表を見せない。2026-10-22）
+        const first = (Array.isArray(data) ? data : []).map(x => x.date).filter(Boolean).sort()[0];
+        if (first) {
+          const days = Math.round((new Date(`${first}T00:00:00`) - new Date(`${today}T00:00:00`)) / 86400000);
+          setGridWeekOffset(Math.max(0, Math.floor(days / 7)));
+        }
+      })
       .catch(() => setSlots([]));
   }, [showInstantPicker, provider?.slug, selectedService?.id, today]);
 
@@ -1746,6 +1861,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             email: prev.email || realEmail,
             phone: prev.phone || phone,
           }));
+          if (fullName && (realEmail || phone)) setContactFromAccount(true);
         })
         .catch(() => {});
     } catch {}
@@ -1843,8 +1959,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   return (
     <div style={{ maxWidth: '560px' }}>
-      {/* ③ 初回セッション説明 */}
-      {provider.first_session_desc && (
+      {/* ③ 初回セッション説明（会員タブでは出さない） */}
+      {!forMember && provider.first_session_desc && (
         <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
           <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>初回はこんな内容です</div>
           <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.first_session_desc}</p>
@@ -1899,6 +2015,15 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
       ) : (
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {contactFromAccount && !editContact ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', padding: '10px 14px', borderRadius: '10px', border: `1px solid ${tx(15)}` }}>
+            <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(80), minWidth: 0 }}>
+              <span style={{ fontWeight: 700, color: 'var(--pv-text)', marginRight: '8px' }}>予約者</span>{formState.name}{formState.email || formState.phone ? `・${formState.email || formState.phone}` : ''}
+            </span>
+            <button type="button" onClick={() => setEditContact(true)} style={{ background: 'none', border: 'none', color: 'var(--pv-text)', textDecoration: 'underline', textUnderlineOffset: '3px', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer', padding: '6px 0' }}>変更</button>
+          </div>
+        ) : (
+        <>
         <div>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
           <input value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} placeholder="山田 太郎" style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} required />
@@ -1929,6 +2054,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           <p style={{ fontSize: 'calc(11px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
         </div>
 
+        </>
+        )}
+
         {/* 使用チケット選択（でお要望2026-09-27：「予約時にどのチケットで行くか選択
             できれば」）。この店舗の有効なチケットを持っている会員にだけ表示。選んだ
             チケットは予約した時点で使い、キャンセルすると戻る（2026-10-22。それ以前は来店確認時に消化していた。複数持っている場合の
@@ -1936,6 +2064,11 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         {ticketChoices.length > 0 && (
           <div>
             <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>{ticketOnly ? `使うチケット *（このメニューは1回${effSvc?.ticket_cost || 1}枚。予約した時点で使い、キャンセルすると戻ります）` : '使うチケット（任意）'}</label>
+            {ticketOnly && ticketChoices.length === 1 ? (
+              <p style={{ margin: 0, padding: '10px 14px', borderRadius: '10px', border: `1px solid ${tx(15)}`, fontSize: 'calc(14px * var(--pv-fs))' }}>
+                {ticketChoices[0].package_name}（{ticketChoices[0].package_type === 'unlimited' ? '通い放題' : `残り${ticketChoices[0].remaining_sessions}回`}）
+              </p>
+            ) : (
             <select
               value={selectedPackageId}
               onChange={e => setSelectedPackageId(e.target.value)}
@@ -1948,10 +2081,18 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                 </option>
               ))}
             </select>
+            )}
           </div>
         )}
 
-        {showInstantPicker ? (
+        {showInstantPicker && slots !== null && usableSlots.length === 0 ? (
+          // 空いている時間が1つも無い時は、空の表と「確定する」ボタンを出さず、相談へ切り替えられるようにする（2026-10-22）
+          <div style={{ padding: '16px', borderRadius: '12px', border: `1px dashed ${tx(25)}`, display: 'grid', gap: '10px' }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 'calc(14px * var(--pv-fs))' }}>今、オンラインで予約できる空き時間がありません</p>
+            <p style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', color: tx(70), lineHeight: 1.7 }}>{onAskRequest ? '希望の日時を送ると、お店が空きを確認して返事をします。' : 'お手数ですが、お店に直接お問い合わせください。'}</p>
+            {onAskRequest && <button type="button" onClick={onAskRequest} style={{ justifySelf: 'start', minHeight: '44px', padding: '0 18px', borderRadius: '10px', border: '1px solid var(--pv-accent)', background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(14px * var(--pv-fs))', cursor: 'pointer' }}>希望日時を相談する</button>}
+          </div>
+        ) : showInstantPicker ? (
           // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。空き枠を選んだ時点で
           // その場で確定する——店舗の承認を待たない。
           // でお要望2026-09-27（一般的な予約サイトの「スタイリスト指名・日時選択」画面の
@@ -2098,10 +2239,10 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>お店に伝えたいこと・聞きたいこと（任意）</label>
           <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', resize: 'vertical', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
         </div>
-        {formError && <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: '#ef4444', margin: 0 }}>{formError}</p>}
-        <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'var(--pv-accent)', opacity: submitting ? 0.5 : 1, color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', minHeight: '52px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+        {formError && <p role="alert" style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: 700, margin: 0 }}>{formError}</p>}
+        {!(showInstantPicker && slots !== null && usableSlots.length === 0) && <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'var(--pv-accent)', opacity: submitting ? 0.5 : 1, color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', minHeight: '52px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
           {submitting ? '送信中…' : (showInstantPicker ? 'この日時で予約を確定する' : '相談リクエストを送る')}
-        </button>
+        </button>}
       </form>
       )}
 
@@ -2427,8 +2568,8 @@ function ProviderPageContent() {
         />
       )}
       {activeTab === 'mine' && (
-        <MemberTab provider={provider} services={services} elig={elig} onEligChanged={() => setEligTick(x => x + 1)}
-          onRebook={svc => { setSelectedService(svc); setSubmitted(false); setActiveTab('book'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+        <MemberTab provider={provider} services={services} staff={staff} elig={elig} diagnosis={diagnosis} matchData={matchData} onEligChanged={() => setEligTick(x => x + 1)}
+          onGoBook={svc => { setSelectedService(svc); setSubmitted(false); setActiveTab('book'); document.getElementById('pv-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} />
       )}
       {activeTab === 'packages' && <PackagesTab provider={provider} />}
     </div>

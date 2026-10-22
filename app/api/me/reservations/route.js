@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
-const COLS = 'id,provider_id,user_id,user_contact,status,reserved_date,start_time,confirmed_date,confirmed_time,counter_date,counter_time,counter_expires_at,provider_comment,note,service_id,class_id,created_at';
+const COLS = 'id,provider_id,user_id,user_contact,status,reserved_date,start_time,confirmed_date,confirmed_time,counter_date,counter_time,counter_expires_at,provider_comment,note,service_id,class_id,staff_id,created_at';
 
 export async function GET(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');

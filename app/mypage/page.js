@@ -2,7 +2,7 @@
 import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { customerAccessToken } from '@/lib/browser-auth';
+import { freshAccessToken } from '@/lib/browser-auth';
 import MypageSideNav from './_components/MypageSideNav';
 import { mypageMenu } from './_components/menu';
 import { STATUS, RES_CSS, splitReservations, fmtDay, fmtUntil, hhmm } from './_components/reservation-format';
@@ -48,7 +48,7 @@ export default function MypagePage() {
       if (raw) setDiagnosis(JSON.parse(raw));
     } catch {}
 
-    customerAccessToken().then(token => {
+    freshAccessToken().then(token => {
       if (!token) { setReservations([]); setPackages([]); return; }
       const headers = { Authorization: `Bearer ${token}` };
       // 診断結果はアカウントに保存されたものを正とする（この端末で診断していなくても出す）
