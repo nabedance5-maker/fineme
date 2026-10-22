@@ -1,4 +1,5 @@
 -- ✅ 本番適用済 2026-10-22
+-- ⚠️ 2026-10-22 廃止：provider_store_members は supabase-drop-store-members.sql で削除済み（会員かどうかはプラン・チケットで判定）
 -- お店の会員（でお要望 2026-10-22：会員登録＝お店の会員になる。プラン契約・チケットは別）。
 -- ※ provider_members はスタッフ個別ログイン用の既存テーブルのため、別の名前で作る
 --   （supabase-tickets.sql の CREATE TABLE IF NOT EXISTS provider_members は既存表があったため何もしていない）。

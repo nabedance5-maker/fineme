@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
-import { ensureManualLinked } from '@/lib/store-members';
+import { ensureManualLinked } from '@/lib/customer-accounts';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 

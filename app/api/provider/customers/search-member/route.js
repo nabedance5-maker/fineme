@@ -47,12 +47,12 @@ export async function GET(request) {
   (pr || []).forEach(p => {
     const key = p.user_id || `m:${p.manual_customer_id}`;
     if (seenStore.has(key)) return; seenStore.add(key);
-    storeHits.push({ id: p.user_id || null, manual_id: p.manual_customer_id || null, name: [p.last_name, p.first_name].filter(Boolean).join(' ') || '(お名前未登録)', maskedPhone: p.phone || '', phone: p.phone || '', store_member: true });
+    storeHits.push({ id: p.user_id || null, manual_id: p.manual_customer_id || null, name: [p.last_name, p.first_name].filter(Boolean).join(' ') || '(お名前未登録)', maskedPhone: p.phone || '', phone: p.phone || '', store_customer: true });
   });
   (mc || []).forEach(m => {
     const key = m.linked_user_id || `m:${m.id}`;
     if (seenStore.has(key)) return; seenStore.add(key);
-    storeHits.push({ id: m.linked_user_id || null, manual_id: m.id, name: m.display_name || '(お名前未登録)', maskedPhone: '', phone: '', store_member: true, manual: !m.linked_user_id });
+    storeHits.push({ id: m.linked_user_id || null, manual_id: m.id, name: m.display_name || '(お名前未登録)', maskedPhone: '', phone: '', store_customer: true, manual: !m.linked_user_id });
   });
   if (q.length < 3) return Response.json(storeHits);
   const { data, error } = await supabase

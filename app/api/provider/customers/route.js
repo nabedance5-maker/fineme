@@ -51,14 +51,12 @@ function computeStatus(log, noVisitDays) {
 
 // New Me Log以外でこの店舗とつながっている会員（予約・オンライン入会・回数券・カルテ・基本情報）
 async function loadNonLogCustomers(provider, logUserIds) {
-  const [res, mem, pkg, kar, prof, sm] = await Promise.all([
+  const [res, mem, pkg, kar, prof] = await Promise.all([
     supabase.from('reservations').select('user_id, user_name, status, reserved_date, confirmed_date, created_at').eq('provider_id', provider.id).not('user_id', 'is', null).limit(5000),
     supabase.from('provider_memberships').select('user_id, last_name, first_name, phone, created_at, status').eq('provider_id', provider.id).neq('status', 'draft'),
     supabase.from('customer_packages').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null),
     supabase.from('provider_karte_entries').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null).limit(5000),
     supabase.from('provider_customer_profiles').select('user_id, created_at').eq('provider_id', provider.id).not('user_id', 'is', null),
-    // お店の会員登録（でお要望 2026-10-22）。会員登録だけしてまだ予約していない方も一覧に出す
-    supabase.from('provider_store_members').select('user_id, joined_at').eq('provider_id', provider.id).neq('status', 'withdrawn'),
   ]);
   const by = {};
   const phones = {};
@@ -81,7 +79,6 @@ async function loadNonLogCustomers(provider, logUserIds) {
   (pkg.data || []).forEach(x => touch(x.user_id, x.created_at));
   (kar.data || []).forEach(x => touch(x.user_id, x.created_at));
   (prof.data || []).forEach(x => touch(x.user_id, x.created_at));
-  (sm.data || []).forEach(x => touch(x.user_id, x.joined_at));
   const rows = Object.values(by).map(r => ({
     id: `nolog-${r.user_id}`, user_id: r.user_id, axis: null, name: null, last_visit: r.last_visit, next_visit: null,
     frequency_weeks: null, frequency_months: null, cost: null, created_at: r.created_at,
@@ -221,8 +218,6 @@ export async function GET(request) {
     if (remaining != null && remaining <= 1) cur.low = true;
   });
   const memberActive = new Set((memRows || []).map(m => m.user_id));
-  const { data: smRows } = await supabase.from('provider_store_members').select('user_id').eq('provider_id', provider.id).eq('status', 'active');
-  const storeMemberSet = new Set((smRows || []).map(m => m.user_id));
   const nextBooked = {};
   (futureRows || []).forEach(r => {
     const d = r.confirmed_date || r.reserved_date;
@@ -236,7 +231,6 @@ export async function GET(request) {
     packages_active: pkgInfo[uid]?.count || 0,
     package_low: !!pkgInfo[uid]?.low,
     membership_active: memberActive.has(uid),
-    store_member: storeMemberSet.has(uid),
     next_booked_date: nextBooked[uid] || null,
   });
 

@@ -1019,7 +1019,7 @@ export default function ProviderDashboardPage() {
     const SPINNER_TRACKED_TABS = ['calendar', 'today', 'requests', 'customers', 'sales'];
 
     // 2026-10-22：グループレッスンはメニュータブに統合（旧 ?tab=classes のリンクはメニュータブへ）
-    const TAB_ALIASES = { classes: 'service', 'store-members': 'customers', 'account-settings': 'members' };
+    const TAB_ALIASES = { classes: 'service', 'store-members': 'customers', 'account-settings': 'members' }; // 統合・廃止した旧タブ
     const tabParam = (t => TAB_ALIASES[t] || t)(new URLSearchParams(location.search).get('tab'));
     // 統合したタブの古いリンクは、URLも統合先に直す（各タブの読み込みが ?tab= を見て始まるため）
     if (TAB_ALIASES[new URLSearchParams(location.search).get('tab')]) { try { history.replaceState(null, '', `?tab=${tabParam}`); } catch {} }
@@ -7784,7 +7784,6 @@ export default function ProviderDashboardPage() {
         if (!passesLabelFilters(c, isManual, v)) return false;
         if (v['cf-kind'] === 'member' && isManual) return false;
         if (v['cf-kind'] === 'manual' && !isManual) return false;
-        if (v['cf-kind'] === 'store' && (isManual || !c.store_member)) return false;
         const lineStore = !isManual && !!c.line_store, lineAny = !isManual && !!c.line_any;
         if (v['cf-line'] === 'store' && !lineStore) return false;
         if (v['cf-line'] === 'any' && !lineAny) return false;
@@ -8757,7 +8756,7 @@ export default function ProviderDashboardPage() {
               ${isManual ? '<p class="muted" style="font-size:12px;margin:4px 0;">チケット・回数券はまだありません。</p>'
                 : (pkgs.length ? pkgs.map(caPackageRow).join('') : '<p class="muted" style="font-size:12px;margin:4px 0;">チケット・回数券はまだありません。</p>')}
               <div data-ca-grant class="ca-sub"></div>
-              ${isManual ? `<div class="sm-inline" data-ca-tomember style="margin-top:6px"><input type="email" placeholder="メールアドレス（任意）" data-ca-tm-email style="flex:1 1 200px"><button type="button" class="btn btn-ghost" data-ca-tm-go>会員にする（月額プランやお客様自身の予約に使う）</button></div>` : ''}
+              ${isManual ? `<div class="sm-inline" data-ca-tomember style="margin-top:6px"><input type="email" placeholder="メールアドレス（任意）" data-ca-tm-email style="flex:1 1 200px"><button type="button" class="btn btn-ghost" data-ca-tm-go>アカウントを用意する（月額プランの入会リンクや、ご本人のログイン予約に使う）</button></div>` : ''}
             </div>
           </details>
           ${!isManual ? '<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;">月額プランの入会を案内</summary><div data-ca-plan class="ca-sub"></div></details>' : ''}
@@ -8771,7 +8770,7 @@ export default function ProviderDashboardPage() {
         bindCaTicketsAndPlan(isManual);
       }
 
-      // チケットを付ける・月額プランの入会を案内・非会員を会員にする（でお要望 2026-10-22：会員タブは作らず顧客管理にまとめる）
+      // チケットを付ける・月額プランの入会を案内・非会員のお客様にアカウントを用意する（でお要望 2026-10-22：会員タブは作らず顧客管理にまとめる）
       let caRefs = null;
       async function caLoadRefs() {
         if (caRefs) return caRefs;
@@ -8786,11 +8785,11 @@ export default function ProviderDashboardPage() {
           const box = custActivityEl.querySelector('[data-ca-tomember]');
           box?.querySelector('[data-ca-tm-go]')?.addEventListener('click', async e => {
             e.target.disabled = true;
-            const r = await fetch('/api/provider/store-members/from-manual', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ manual_id: uid, email: box.querySelector('[data-ca-tm-email]').value.trim() }) });
+            const r = await fetch(`/api/provider/customers/manual/${uid}/account`, { method: 'POST', headers: caHeaders(), body: JSON.stringify({ email: box.querySelector('[data-ca-tm-email]').value.trim() }) });
             const d = await r.json().catch(() => ({}));
             e.target.disabled = false;
             if (!r.ok) { showToast(d.error || '会員にできませんでした'); return; }
-            showToast('会員にしました。チケットを付けられます');
+            showToast('アカウントを用意しました');
             openCustomerModal(d.user_id, 'member');
             loadAll();
           });
@@ -9435,16 +9434,16 @@ export default function ProviderDashboardPage() {
         const display_name = manualNameInput?.value || '';
         if (!display_name.trim()) { showToast('お名前を入力してください'); return; }
         const manualPhoneInput = document.getElementById('manual-phone-input');
-        // メールアドレスを入れた時は会員として登録する（でお要望 2026-10-22：チケットや月額プランを使える。会員タブは作らず顧客管理にまとめる）
+        // メールアドレスを入れた時はFinemeのアカウントと紐づけて追加する（でお要望 2026-10-22：チケットや月額プランを使える。会員タブは作らず顧客管理にまとめる）
         const emailEl = document.getElementById('manual-email-input');
         const email = emailEl?.value.trim() || '';
         if (email) {
           const [last, ...rest] = display_name.trim().split(/\s+/);
-          const r = await fetch('/api/provider/store-members', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ last_name: last, first_name: rest.join(' '), phone: manualPhoneInput?.value || '', email }) });
+          const r = await fetch('/api/provider/customers/register', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ last_name: last, first_name: rest.join(' '), phone: manualPhoneInput?.value || '', email }) });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
           [manualNameInput, manualMemoInput, manualPhoneInput, emailEl].forEach(el => { if (el) el.value = ''; });
-          showToast('会員として登録しました');
+          showToast('お客様を追加しました');
           loadAll();
           return;
         }
@@ -13345,7 +13344,7 @@ export default function ProviderDashboardPage() {
             if (!rows.length) { resultsEl.innerHTML = opts.allowManual ? '' : '<p class="muted" style="font-size:12px;margin:4px 0">見つかりませんでした</p>'; return; }
             resultsEl.innerHTML = rows.map((r, i) => `
               <div data-member-idx="${i}" style="padding:6px 8px;border:1px solid rgba(26,20,16,0.1);border-radius:6px;margin-top:4px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between;gap:8px;background:#fff">
-                <span>${esc(r.name)}${r.store_member ? '' : '<span class="muted">（Fineme会員）</span>'}${!r.id ? '<span class="muted">（非会員）</span>' : ''}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
+                <span>${esc(r.name)}${r.store_customer ? '' : '<span class="muted">（Fineme会員）</span>'}${!r.id ? '<span class="muted">（非会員）</span>' : ''}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
               </div>
             `).join('');
             resultsEl.querySelectorAll('[data-member-idx]').forEach(row => row.addEventListener('click', () => {
@@ -13391,7 +13390,7 @@ export default function ProviderDashboardPage() {
         const cost = svc.ticket_cost || 1;
         if (!manualCtx?.userId) { manualTicketEl.innerHTML = ''; manualTicketNote.textContent = `このメニューはチケットが${cost}枚必要です。お客様名から候補を選んでください`; return; }
         manualTicketNote.textContent = '読み込み中…';
-        const r = await fetch(`/api/provider/store-members?user_id=${encodeURIComponent(manualCtx.userId)}`, { headers: authHeadersCal() }).catch(() => null);
+        const r = await fetch(`/api/provider/customer-tickets?user_id=${encodeURIComponent(manualCtx.userId)}`, { headers: authHeadersCal() }).catch(() => null);
         if (seq !== manualTicketSeq) return;
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
@@ -13518,7 +13517,7 @@ export default function ProviderDashboardPage() {
         if (!need) return;
         const cost = csClassRule.ticket_cost || 1;
         if (!csUserId) { csTicketEl.innerHTML = ''; csTicketNote.textContent = `このレッスンはチケットが${cost}枚必要です。会員を選んでください`; return; }
-        const r = await fetch(`/api/provider/store-members?user_id=${encodeURIComponent(csUserId)}`, { headers: authHeadersCal() }).catch(() => null);
+        const r = await fetch(`/api/provider/customer-tickets?user_id=${encodeURIComponent(csUserId)}`, { headers: authHeadersCal() }).catch(() => null);
         if (seq !== csSeq) return;
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
@@ -17289,7 +17288,7 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <input id="manual-phone-input" type="tel" inputMode="tel" placeholder="電話番号（任意）" style={{ flex: '1 1 140px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
-              <input id="manual-email-input" type="email" placeholder="メールアドレス（任意・入れると会員として登録）" style={{ flex: '2 1 220px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', fontSize: '14px' }} />
+              <input id="manual-email-input" type="email" placeholder="メールアドレス（任意・月額プランの案内などに使います）" style={{ flex: '2 1 220px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', fontSize: '14px' }} />
               <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 180px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <button type="button" id="manual-add-btn" className="btn">追加する</button>
             </div>
@@ -17324,7 +17323,7 @@ export default function ProviderDashboardPage() {
             </div>
             {/* 顧客一覧の絞り込み（でお要望 2026-10-17：LINE連携中のお客様など、もっと色々な条件で） */}
             <div id="cf-panel" className="cf-panel" hidden>
-              <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="store">お店の会員登録済み</option><option value="manual">非会員</option></select></label>
+              <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="manual">非会員</option></select></label>
               <label>メンバータイプ<select id="cf-type"><option value="">すべて</option></select></label>
               <label>タグ<select id="cf-tag"><option value="">すべて</option></select></label>
               <label>LINE<select id="cf-line"><option value="">すべて</option><option value="store">お店のLINEと連携中</option><option value="any">LINEで連絡できる</option><option value="none">LINEで連絡できない</option></select></label>

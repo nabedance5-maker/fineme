@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
-import { isStoreCustomer, ensureManualLinked } from '@/lib/store-members';
+import { isStoreCustomer, ensureManualLinked } from '@/lib/customer-accounts';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -21,7 +21,7 @@ async function __POST(request) {
     if (r.error) return Response.json({ error: r.error }, { status: 400 });
     b.user_id = r.userId;
   }
-  // このお店のお客様（会員登録・予約・回数券などでつながっている方）だけに付けられる
+  // このお店のお客様（基本情報・予約・回数券などでつながっている方）だけに付けられる
   if (!(await isStoreCustomer(a.provider.id, b.user_id))) return Response.json({ error: 'このお店のお客様を選んでください' }, { status: 400 });
   const unlimited = !!b.unlimited;
   const count = parseInt(b.count, 10);
