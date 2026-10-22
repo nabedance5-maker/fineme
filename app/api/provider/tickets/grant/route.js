@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
+import { isStoreCustomer } from '@/lib/store-members';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -14,9 +15,8 @@ async function __POST(request) {
   const b = await request.json().catch(() => ({}));
   const { data: tk } = await supabase.from('provider_tickets').select('id, name').eq('id', b.ticket_id || '').eq('provider_id', a.provider.id).maybeSingle();
   if (!tk) return Response.json({ error: 'チケットを選んでください' }, { status: 400 });
-  // このお店とつながっているお客様（会員）だけに付けられる
-  const { data: mem } = await supabase.from('provider_store_members').select('id').eq('provider_id', a.provider.id).eq('user_id', b.user_id || '').maybeSingle();
-  if (!mem) return Response.json({ error: '会員のお客様を選んでください' }, { status: 400 });
+  // このお店のお客様（会員登録・予約・回数券などでつながっている方）だけに付けられる
+  if (!(await isStoreCustomer(a.provider.id, b.user_id))) return Response.json({ error: 'このお店のお客様を選んでください' }, { status: 400 });
   const unlimited = !!b.unlimited;
   const count = parseInt(b.count, 10);
   if (!unlimited && !(count >= 1 && count <= 200)) return Response.json({ error: '枚数は1〜200で入れてください' }, { status: 400 });

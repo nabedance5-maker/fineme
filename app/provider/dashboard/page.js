@@ -689,7 +689,9 @@ const DASHBOARD_CSS = `
       .cs-sel { align-items: center; gap: 8px; padding: 6px 10px; background: rgba(26,20,16,0.05); border-radius: 8px; font-weight: 700; }
       .cs-sel .btn { margin-left: auto; font-size: 11px; padding: 3px 8px; }
       #cal-cs-member-results [data-member-pick] { background: #fff; }
-      /* 会員（2026-10-22） */
+      /* 会員・チケット（顧客管理のお客様の詳細。2026-10-22） */
+      .ca-sub { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(26,20,16,0.15); color: #1a1410; font-size: 13px; }
+
       .sm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
       .sm-grid select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
       .sm-search { padding: 9px 12px; border: 1px solid rgba(26,20,16,0.2); border-radius: 10px; font-size: 13.5px; color: #1a1410; background: #fff; }
@@ -1014,8 +1016,10 @@ export default function ProviderDashboardPage() {
     const SPINNER_TRACKED_TABS = ['calendar', 'today', 'requests', 'customers', 'sales'];
 
     // 2026-10-22：グループレッスンはメニュータブに統合（旧 ?tab=classes のリンクはメニュータブへ）
-    const TAB_ALIASES = { classes: 'service' };
+    const TAB_ALIASES = { classes: 'service', 'store-members': 'customers' };
     const tabParam = (t => TAB_ALIASES[t] || t)(new URLSearchParams(location.search).get('tab'));
+    // 統合したタブの古いリンクは、URLも統合先に直す（各タブの読み込みが ?tab= を見て始まるため）
+    if (TAB_ALIASES[new URLSearchParams(location.search).get('tab')]) { try { history.replaceState(null, '', `?tab=${tabParam}`); } catch {} }
     const DASHBOARD_VISITED_KEY = 'fineme:provider:dashboard-visited';
     let needsLandingTabApply = false;
     if (tabParam) {
@@ -7756,6 +7760,7 @@ export default function ProviderDashboardPage() {
         if (!passesLabelFilters(c, isManual, v)) return false;
         if (v['cf-kind'] === 'member' && isManual) return false;
         if (v['cf-kind'] === 'manual' && !isManual) return false;
+        if (v['cf-kind'] === 'store' && (isManual || !c.store_member)) return false;
         const lineStore = !isManual && !!c.line_store, lineAny = !isManual && !!c.line_any;
         if (v['cf-line'] === 'store' && !lineStore) return false;
         if (v['cf-line'] === 'any' && !lineAny) return false;
@@ -8719,12 +8724,15 @@ export default function ProviderDashboardPage() {
         custActivityEl.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">${card}</div>
           <details style="margin-top:4px;" ${pkgs.some(p => !p.expired && !p.used_up) ? 'open' : ''}>
-            <summary style="cursor:pointer;font-size:13px;font-weight:700;">回数券（${pkgs.length}件）</summary>
+            <summary style="cursor:pointer;font-size:13px;font-weight:700;">チケット・回数券（${pkgs.length}件）</summary>
             <div style="margin-top:8px;">
-              ${isManual ? '<p class="muted" style="font-size:12px;margin:4px 0;">回数券はFineme会員のお客様に発行できます。会員と紐付けると、ここに表示されます。</p>'
-                : pkgs.length ? pkgs.map(caPackageRow).join('') : '<p class="muted" style="font-size:12px;margin:4px 0;">回数券はまだありません。</p>'}
+              ${isManual ? `<p class="muted" style="font-size:12px;margin:4px 0;">チケットや月額プランは会員のお客様が使えます。</p>
+                  <div class="sm-inline" data-ca-tomember><input type="email" placeholder="メールアドレス（任意・無ければ店頭だけでご利用）" data-ca-tm-email style="flex:1 1 220px"><button type="button" class="btn" data-ca-tm-go>会員にしてチケットを使えるようにする</button></div>`
+                : (pkgs.length ? pkgs.map(caPackageRow).join('') : '<p class="muted" style="font-size:12px;margin:4px 0;">チケット・回数券はまだありません。</p>')}
+              ${!isManual ? '<div data-ca-grant class="ca-sub"></div>' : ''}
             </div>
           </details>
+          ${!isManual ? '<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;">月額プランの入会を案内</summary><div data-ca-plan class="ca-sub"></div></details>' : ''}
           ${caResBlock('予約', d.reservations || {}, 'この店舗での予約はまだありません。')}
           ${caResBlock('グループレッスン', d.lessons || {}, 'グループレッスンの予約はまだありません。')}
           ${isManual && d.matched_by ? `<p class="muted" style="font-size:11px;margin:6px 0 0;">非会員のお客様の予約は、${caEsc(d.matched_by)}を表示しています。</p>` : ''}
@@ -8732,6 +8740,69 @@ export default function ProviderDashboardPage() {
         custActivityEl.querySelectorAll('[data-ca-pkg]').forEach(box => {
           box.querySelectorAll('[data-ca-act]').forEach(btn => btn.addEventListener('click', () => caPackageAction(box.dataset.caPkg, btn.dataset.caAct, box)));
         });
+        bindCaTicketsAndPlan(isManual);
+      }
+
+      // チケットを付ける・月額プランの入会を案内・非会員を会員にする（でお要望 2026-10-22：会員タブは作らず顧客管理にまとめる）
+      let caRefs = null;
+      async function caLoadRefs() {
+        if (caRefs) return caRefs;
+        const get = u => fetch(u, { headers: caHeaders() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        const [tickets, plans] = await Promise.all([get('/api/provider/tickets'), get('/api/provider/membership-plans')]);
+        caRefs = { tickets: (tickets || []).filter(t => t.active), plans: (Array.isArray(plans) ? plans : []).filter(p => p.active) };
+        return caRefs;
+      }
+      async function bindCaTicketsAndPlan(isManual) {
+        const uid = currentCustUid;
+        if (isManual) {
+          const box = custActivityEl.querySelector('[data-ca-tomember]');
+          box?.querySelector('[data-ca-tm-go]')?.addEventListener('click', async e => {
+            e.target.disabled = true;
+            const r = await fetch('/api/provider/store-members/from-manual', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ manual_id: uid, email: box.querySelector('[data-ca-tm-email]').value.trim() }) });
+            const d = await r.json().catch(() => ({}));
+            e.target.disabled = false;
+            if (!r.ok) { showToast(d.error || '会員にできませんでした'); return; }
+            showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で会員にしました' : '会員にしました。チケットを付けられます');
+            openCustomerModal(d.user_id, 'member');
+            loadAll();
+          });
+          return;
+        }
+        const R = await caLoadRefs();
+        if (uid !== currentCustUid) return;
+        const g = custActivityEl.querySelector('[data-ca-grant]');
+        if (g) {
+          g.innerHTML = R.tickets.length ? `<b>チケットを付ける</b><div class="sm-inline">
+              <select data-g="ticket">${R.tickets.map(t => `<option value="${t.id}">${caEsc(t.name)}</option>`).join('')}</select>
+              <input type="number" min="1" max="200" value="1" data-g="count">枚
+              <label><input type="checkbox" data-g="unlimited">使い放題</label>
+              有効<input type="number" min="1" max="730" placeholder="無期限" data-g="days">日
+              <input data-g="note" placeholder="メモ（例：店頭で10回券を購入）" maxlength="30" style="flex:1;min-width:150px">
+              <button type="button" class="btn" data-g="go">付ける</button></div>
+            <p class="muted" style="font-size:11.5px;margin:2px 0 0">店頭で回数券を現金で買った時や、おわびなどで付ける時に使います。</p>` : '<p class="muted" style="font-size:12px;margin:4px 0;">チケットがまだありません（「チケット・回数券」タブで作れます）。</p>';
+          const q = k => g.querySelector(`[data-g="${k}"]`);
+          if (q('unlimited')) q('unlimited').onchange = () => { q('count').disabled = q('unlimited').checked; };
+          if (q('go')) q('go').onclick = async () => {
+            q('go').disabled = true;
+            const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ user_id: uid, ticket_id: q('ticket').value, count: q('count').value, unlimited: q('unlimited').checked, valid_days: q('days').value, note: q('note').value }) });
+            const d = await r.json().catch(() => ({}));
+            q('go').disabled = false;
+            if (!r.ok) { showToast(d.error || '付けられませんでした'); return; }
+            showToast('チケットを付けました'); loadCustActivity();
+          };
+        }
+        const pb = custActivityEl.querySelector('[data-ca-plan]');
+        if (pb) {
+          const slug = loadProviderData()?.slug || '';
+          const base = `${location.origin}/provider/${encodeURIComponent(slug)}/join`;
+          pb.innerHTML = R.plans.length ? `<div class="sm-inline"><select data-p="plan">${R.plans.map(p => `<option value="${p.id}">${caEsc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" data-p="copy">入会のリンクをコピー</button></div>
+            <div class="sm-url" data-p="url"></div>
+            <p class="muted" style="font-size:11.5px;margin:2px 0 0">月会費はカードの自動引き落としです。このリンクをLINEやメールでお送りください。お客様がFinemeにログインしてカードを登録すると申込が届き、入会手続きタブで承認すると課金が始まってプランのチケットが付きます。</p>` : '<p class="muted" style="font-size:12px;margin:4px 0;">会員プランがまだありません（入会手続きタブで作れます）。</p>';
+          const sel = pb.querySelector('[data-p="plan"]'); const url = pb.querySelector('[data-p="url"]');
+          const sync = () => { if (sel && url) url.textContent = `${base}?plan=${sel.value}`; };
+          sync(); sel?.addEventListener('change', sync);
+          pb.querySelector('[data-p="copy"]')?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(url.textContent); showToast('入会のリンクをコピーしました'); } catch { showToast('コピーできませんでした'); } });
+        }
       }
 
       // 契約書（店舗とお客様が交わした契約書のアップロード・保管）
@@ -9335,6 +9406,19 @@ export default function ProviderDashboardPage() {
         const display_name = manualNameInput?.value || '';
         if (!display_name.trim()) { showToast('お名前を入力してください'); return; }
         const manualPhoneInput = document.getElementById('manual-phone-input');
+        // メールアドレスを入れた時は会員として登録する（でお要望 2026-10-22：チケットや月額プランを使える。会員タブは作らず顧客管理にまとめる）
+        const emailEl = document.getElementById('manual-email-input');
+        const email = emailEl?.value.trim() || '';
+        if (email) {
+          const [last, ...rest] = display_name.trim().split(/\s+/);
+          const r = await fetch('/api/provider/store-members', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ last_name: last, first_name: rest.join(' '), phone: manualPhoneInput?.value || '', email }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
+          [manualNameInput, manualMemoInput, manualPhoneInput, emailEl].forEach(el => { if (el) el.value = ''; });
+          showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で登録しました。お店のページで会員登録を確認してもらってください' : '会員として登録しました');
+          loadAll();
+          return;
+        }
         const res = await fetch('/api/provider/customers/manual', {
           method: 'POST', headers: authHeaders(), body: JSON.stringify({ display_name, memo: manualMemoInput?.value || '', phone: manualPhoneInput?.value || '' }),
         });
@@ -9435,120 +9519,6 @@ export default function ProviderDashboardPage() {
       });
       document.querySelectorAll('[data-tab="account-settings"]').forEach(b => b.addEventListener('click', load));
       if (new URLSearchParams(location.search).get('tab') === 'account-settings') load();
-    })();
-
-    // ── 会員タブ（でお要望 2026-10-22：お店の会員を管理サイトから登録・チケットを付ける・プランの入会を案内） ──
-    (() => {
-      const token = getSupabaseToken();
-      if (!token) return;
-      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
-      const listEl = document.getElementById('sm-list');
-      const detailEl = document.getElementById('sm-detail');
-      const formEl = document.getElementById('sm-form');
-      const STATUS = { active: '', invited: '確認待ち', withdrawn: '退会' };
-      let rows = [];
-      let refs = null;
-      async function loadRefs() {
-        if (refs) return refs;
-        const get = u => fetch(u, { headers: H() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
-        const [tickets, plans] = await Promise.all([get('/api/provider/tickets'), get('/api/provider/membership-plans')]);
-        refs = { tickets: (tickets || []).filter(t => t.active), plans: (Array.isArray(plans) ? plans : []).filter(p => p.active) };
-        return refs;
-      }
-      async function loadMembers() {
-        if (!listEl) return;
-        const q = document.getElementById('sm-search')?.value.trim() || '';
-        const res = await fetch(`/api/provider/store-members${q ? `?q=${encodeURIComponent(q)}` : ''}`, { headers: H() });
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        rows = await res.json();
-        listEl.innerHTML = rows.length ? rows.map(m => `
-          <button type="button" class="sm-row" data-sm-open="${m.user_id}">
-            <span><span class="sm-name">${esc(m.name)}</span>${STATUS[m.status] ? `<span class="sm-chip">${STATUS[m.status]}</span>` : ''}${m.registered_by === 'store' ? '<span class="sm-chip">お店で登録</span>' : ''}</span>
-            <span class="sm-meta">${[m.plan, m.phone, m.joined_at ? `${m.joined_at.slice(0, 10)} 登録` : ''].filter(Boolean).map(esc).join(' / ')}</span>
-          </button>`).join('') : `<p style="font-size:13px;margin:0;color:#1a1410">${q ? '見つかりませんでした。' : 'まだ会員がいません。「＋ 会員を登録」か、お客様がお店のページから会員登録すると、ここに並びます。'}</p>`;
-        listEl.querySelectorAll('[data-sm-open]').forEach(b => b.addEventListener('click', () => openMember(b.dataset.smOpen)));
-      }
-      let searchTimer = null;
-      document.getElementById('sm-search')?.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadMembers, 300); });
-      document.getElementById('sm-add-btn')?.addEventListener('click', () => { formEl.style.display = 'grid'; formEl.querySelectorAll('[data-sm]').forEach(i => { i.value = ''; }); document.getElementById('sm-msg').textContent = ''; });
-      document.getElementById('sm-form-close')?.addEventListener('click', () => { formEl.style.display = 'none'; });
-      document.getElementById('sm-noemail')?.addEventListener('change', e => { const em = formEl.querySelector('[data-sm="email"]'); em.disabled = e.target.checked; if (e.target.checked) em.value = ''; });
-      document.getElementById('sm-save')?.addEventListener('click', async () => {
-        const body = Object.fromEntries([...formEl.querySelectorAll('[data-sm]')].map(i => [i.dataset.sm, i.value.trim()]));
-        body.no_email = !!document.getElementById('sm-noemail')?.checked;
-        const btn = document.getElementById('sm-save'); btn.disabled = true;
-        const res = await fetch('/api/provider/store-members', { method: 'POST', headers: H(), body: JSON.stringify(body) });
-        btn.disabled = false;
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) { document.getElementById('sm-msg').textContent = d.error || '登録できませんでした'; return; }
-        formEl.style.display = 'none';
-        showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で登録しました。お店のページで会員登録を確認してもらってください' : '会員を登録しました');
-        await loadMembers();
-        openMember(d.user_id);
-      });
-
-      async function openMember(userId) {
-        if (!detailEl) return;
-        detailEl.style.display = 'grid';
-        detailEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const [res, R] = await Promise.all([fetch(`/api/provider/store-members?user_id=${encodeURIComponent(userId)}`, { headers: H() }), loadRefs()]);
-        const m = await res.json().catch(() => null);
-        if (!res.ok || !m) { detailEl.innerHTML = '<p>会員が見つかりません。</p>'; return; }
-        const slug = loadProviderData()?.slug || '';
-        const joinBase = `${location.origin}/provider/${encodeURIComponent(slug)}/join`;
-        detailEl.innerHTML = `
-          <div class="tk-ed-head"><h3 style="margin:0;font-size:16px">${esc(m.name)}${STATUS[m.status] ? `<span class="sm-chip">${STATUS[m.status]}</span>` : ''}</h3><button type="button" class="btn btn-ghost" data-sm-close>閉じる</button></div>
-          <p style="margin:0;font-size:13px;color:#1a1410">${[m.kana, m.phone, m.email && !m.email.endsWith('.invalid') ? m.email : '', m.plan ? `プラン：${m.plan}` : 'プラン契約なし'].filter(Boolean).map(esc).join(' / ')}</p>
-          ${m.status === 'invited' ? '<p style="margin:0;font-size:12.5px;color:#1a1410">すでにFinemeを使っている方です。ご本人がお店のページで「会員登録」を押すと有効になります（チケットはそれまでも付けられます）。</p>' : ''}
-          <div class="sm-sec"><h4>持っているチケット</h4>
-            ${m.tickets.length ? m.tickets.map(t => `<div class="sm-tk"><span>${esc(t.name)}</span><span>${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}</span></div>`).join('') : '<p style="font-size:13px;margin:0">使えるチケットはありません。</p>'}
-          </div>
-          <div class="sm-sec"><h4>チケットを付ける</h4>
-            ${R.tickets.length ? `<div class="sm-inline">
-              <select data-g="ticket">${R.tickets.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
-              <input type="number" min="1" max="200" value="1" data-g="count">枚
-              <label><input type="checkbox" data-g="unlimited">使い放題</label>
-              有効<input type="number" min="1" max="730" placeholder="無期限" data-g="days">日
-              <input data-g="note" placeholder="メモ（例：店頭で10回券を購入）" maxlength="30" style="flex:1;min-width:160px">
-              <button type="button" class="btn" data-g="go">付ける</button>
-            </div><p style="font-size:12px;margin:0">店頭で回数券を現金で買った時や、おわびなどで付ける時に使います。</p>` : '<p style="font-size:13px;margin:0">チケットがまだありません（「チケット・回数券」タブで作れます）。</p>'}
-          </div>
-          <div class="sm-sec"><h4>月額プランの入会を案内する</h4>
-            ${R.plans.length ? `<div class="sm-inline"><select data-p="plan">${R.plans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" data-p="copy">入会のリンクをコピー</button></div>
-              <div class="sm-url" data-p="url"></div>
-              <p style="font-size:12px;margin:0">月会費はカードの自動引き落としです。このリンクをLINEやメールでお送りください。お客様が会員登録したメールアドレスでFinemeにログインし、カードを登録すると申込が届きます（入会手続きタブで承認すると課金が始まり、プランのチケットが付きます）。店頭だけのプランもこのリンクからは申し込めます。</p>` : '<p style="font-size:13px;margin:0">会員プランがまだありません（入会手続きタブで作れます）。</p>'}
-          </div>
-          <div class="sm-sec"><div class="sm-inline">${m.status === 'withdrawn' ? '<button type="button" class="btn btn-ghost" data-sm-status="active">会員に戻す</button>' : '<button type="button" class="btn btn-ghost" data-sm-status="withdrawn" style="color:#b91c1c">退会にする</button>'}</div></div>`;
-        detailEl.querySelector('[data-sm-close]').onclick = () => { detailEl.style.display = 'none'; };
-        const g = k => detailEl.querySelector(`[data-g="${k}"]`);
-        if (g('unlimited')) g('unlimited').onchange = () => { g('count').disabled = g('unlimited').checked; };
-        if (g('go')) g('go').onclick = async () => {
-          g('go').disabled = true;
-          const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: H(), body: JSON.stringify({ user_id: userId, ticket_id: g('ticket').value, count: g('count').value, unlimited: g('unlimited').checked, valid_days: g('days').value, note: g('note').value }) });
-          const d = await r.json().catch(() => ({}));
-          g('go').disabled = false;
-          if (!r.ok) { showToast(d.error || '付けられませんでした'); return; }
-          showToast('チケットを付けました');
-          openMember(userId);
-        };
-        const pSel = detailEl.querySelector('[data-p="plan"]'); const pUrl = detailEl.querySelector('[data-p="url"]');
-        const syncUrl = () => { if (pSel && pUrl) pUrl.textContent = `${joinBase}?plan=${pSel.value}`; };
-        syncUrl(); pSel?.addEventListener('change', syncUrl);
-        detailEl.querySelector('[data-p="copy"]')?.addEventListener('click', async () => {
-          try { await navigator.clipboard.writeText(pUrl.textContent); showToast('入会のリンクをコピーしました'); } catch { showToast('コピーできませんでした。リンクを長押しして選んでください'); }
-        });
-        detailEl.querySelectorAll('[data-sm-status]').forEach(b => b.addEventListener('click', async () => {
-          if (b.dataset.smStatus === 'withdrawn' && !confirm('この方を退会にしますか？（持っているチケット・契約中のプランはそのままです）')) return;
-          const memberRow = rows.find(x => x.user_id === userId) || m;
-          const r = await fetch(`/api/provider/store-members/${memberRow.id}`, { method: 'PATCH', headers: H(), body: JSON.stringify({ status: b.dataset.smStatus }) });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok) { showToast(d.error || '変更できませんでした'); return; }
-          showToast('変更しました'); loadMembers(); openMember(userId);
-        }));
-        detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      document.querySelectorAll('[data-tab="store-members"]').forEach(b => b.addEventListener('click', () => { refs = null; loadMembers(); }));
-      if (new URLSearchParams(location.search).get('tab') === 'store-members') loadMembers();
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
@@ -13362,8 +13332,8 @@ export default function ProviderDashboardPage() {
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('');
-        manualTicketNote.textContent = !d ? 'この方はお店の会員ではありません（会員の画面で登録すると、チケットを付けられます）'
-          : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+        manualTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません（お客様タブで追加すると、チケットを付けられます）'
+          : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（お客様タブでお客様を開くと付けられます）';
       }
       manualServiceEl?.addEventListener('change', refreshManualTickets);
       bindMemberSearch(
@@ -13484,7 +13454,7 @@ export default function ProviderDashboardPage() {
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('');
-        csTicketNote.textContent = !d ? 'この方はお店の会員ではありません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+        csTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（お客様タブでお客様を開くと付けられます）';
       }
       async function loadCsAttendees() {
         if (!csCtx || !csAttEl) return;
@@ -14051,7 +14021,7 @@ export default function ProviderDashboardPage() {
         // 任意追加カード（でお要望2026-10-01）
         builtin_referrals: { title: '紹介実績', gotoTab: 'member-referral', gotoLabel: '友達紹介タブを開く', mountId: 'today-referrals-list' },
         builtin_events: { title: 'イベント出欠', gotoTab: 'events', gotoLabel: '出欠確認タブを開く', mountId: 'today-events-list', featureGate: 'attendance_confirm' },
-        builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: '顧客管理タブを開く', mountId: 'today-dormant-list' },
+        builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: 'お客様タブを開く', mountId: 'today-dormant-list' },
         builtin_classes: { title: 'グループレッスンの状況', gotoTab: 'service', gotoLabel: 'メニュー（グループレッスン）を開く', mountId: 'today-classes-list', featureGate: 'class_management' },
       };
       // 「＋カードを追加」で選べる任意カード一覧（1枚まで・削除可）。常設4カードは含めない。
@@ -15425,8 +15395,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
-                  <button className="tab-btn" data-tab="store-members">会員</button>
+                  <button className="tab-btn" data-tab="customers">お客様</button>
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
                   <button className="tab-btn" data-tab="surveys">アンケート</button>
@@ -17236,7 +17205,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: 12 }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>休眠判定の設定</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
-              最終来店からこの日数を超えたお客様を「休眠」として顧客管理タブに表示します（既定90日）。
+              最終来店からこの日数を超えたお客様を「休眠」としてお客様タブに表示します（既定90日）。
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ minWidth: '120px' }}>
@@ -17254,12 +17223,13 @@ export default function ProviderDashboardPage() {
           {/* 非会員のお客様の追加は一覧の上に（でお指摘 2026-10-16：ページの上部にないとだめ） */}
           <div className="card" style={{ padding: '16px 24px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-              <h2 style={{ margin: 0, fontSize: '15px' }}>＋ 非会員のお客様を追加</h2>
+              <h2 style={{ margin: 0, fontSize: '15px' }}>＋ お客様を追加</h2>
               <span className="muted" style={{ fontSize: '12px' }}>Finemeに登録していないお客様も一覧に並びます。後から会員と分かったら、お客様を開いて「会員と紐付ける」で記録を引き継げます。</span>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <input id="manual-phone-input" type="tel" inputMode="tel" placeholder="電話番号（任意）" style={{ flex: '1 1 140px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
+              <input id="manual-email-input" type="email" placeholder="メールアドレス（任意・入れると会員として登録）" style={{ flex: '2 1 220px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', fontSize: '14px' }} />
               <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 180px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <button type="button" id="manual-add-btn" className="btn">追加する</button>
             </div>
@@ -17294,7 +17264,7 @@ export default function ProviderDashboardPage() {
             </div>
             {/* 顧客一覧の絞り込み（でお要望 2026-10-17：LINE連携中のお客様など、もっと色々な条件で） */}
             <div id="cf-panel" className="cf-panel" hidden>
-              <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="manual">非会員</option></select></label>
+              <label>種別<select id="cf-kind"><option value="">すべて</option><option value="member">会員</option><option value="store">お店の会員登録済み</option><option value="manual">非会員</option></select></label>
               <label>メンバータイプ<select id="cf-type"><option value="">すべて</option></select></label>
               <label>タグ<select id="cf-tag"><option value="">すべて</option></select></label>
               <label>LINE<select id="cf-line"><option value="">すべて</option><option value="store">お店のLINEと連携中</option><option value="any">LINEで連絡できる</option><option value="none">LINEで連絡できない</option></select></label>
@@ -17302,7 +17272,7 @@ export default function ProviderDashboardPage() {
               <label>最終来店<select id="cf-last"><option value="">すべて</option><option value="30">30日以内</option><option value="60">31〜60日前</option><option value="90">61〜90日前</option><option value="91+">91日以上前</option><option value="none">来店なし</option></select></label>
               <label>次回予約<select id="cf-next"><option value="">すべて</option><option value="yes">あり</option><option value="no">なし</option></select></label>
               <label>担当スタッフ<select id="cf-staff"><option value="">すべて</option><option value="none">担当なし</option></select></label>
-              <label>回数券<select id="cf-pkg"><option value="">すべて</option><option value="yes">有効な回数券あり</option><option value="low">残り1回以下</option><option value="no">なし</option></select></label>
+              <label>チケット<select id="cf-pkg"><option value="">すべて</option><option value="yes">使えるチケットあり</option><option value="low">残り1枚以下</option><option value="no">なし</option></select></label>
               <label>会員プラン（月額）<select id="cf-mem"><option value="">すべて</option><option value="yes">入会中</option><option value="no">なし</option></select></label>
               <label>誕生月<select id="cf-bday"><option value="">すべて</option><option value="this">今月</option><option value="next">来月</option></select></label>
               <label>性別<select id="cf-gender"><option value="">すべて</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他</option><option value="unknown">未登録</option></select></label>
@@ -17575,38 +17545,6 @@ export default function ProviderDashboardPage() {
             </div>
             <div className="sm-inline"><button type="button" className="btn" id="as-notify-save">保存する</button><span id="as-notify-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span></div>
           </div>
-        </div>
-
-        {/* 会員（でお要望 2026-10-22：お店の会員登録を管理サイトからも。会員登録とプラン契約・チケットは別） */}
-        <div className="tab-pane" id="tab-store-members">
-          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
-            <div className="tk-head">
-              <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>会員</h2>
-                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>お店の会員の一覧です。お客様はお店のページから会員登録でき、ここからも登録できます。会員になると、チケットを付けたり、月額プランの入会のご案内を送ったり、予約カレンダーで予約に紐づけたりできます。</p>
-              </div>
-              <button type="button" className="btn" id="sm-add-btn">＋ 会員を登録</button>
-            </div>
-            <div id="sm-form" className="tk-ed" style={{ display: 'none' }}>
-              <div className="tk-ed-head"><b>会員を登録</b><button type="button" className="btn btn-ghost" id="sm-form-close">閉じる</button></div>
-              <div className="sm-grid">
-                <label className="tk-field">姓 *<input data-sm="last_name" maxLength={30} /></label>
-                <label className="tk-field">名 *<input data-sm="first_name" maxLength={30} /></label>
-                <label className="tk-field">セイ<input data-sm="last_name_kana" maxLength={30} /></label>
-                <label className="tk-field">メイ<input data-sm="first_name_kana" maxLength={30} /></label>
-                <label className="tk-field">電話番号<input data-sm="phone" maxLength={20} inputMode="tel" /></label>
-                <label className="tk-field">生年月日<input data-sm="birthday" type="date" /></label>
-                <label className="tk-field">性別<select data-sm="gender"><option value="">選ばない</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他</option></select></label>
-                <label className="tk-field">メールアドレス *<input data-sm="email" type="email" maxLength={120} /></label>
-              </div>
-              <label style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '13px' }}><input type="checkbox" id="sm-noemail" />メールアドレスをお持ちでない（店頭だけでご利用・カードの月額プランには入れません）</label>
-              <p style={{ fontSize: '12px', margin: 0 }}>メールアドレスでFinemeのアカウントを用意します。すでにFinemeを使っている方のアドレスの場合は、ご本人がお店のページで会員登録を確認するまで「確認待ち」になります。</p>
-              <div className="tk-ed-actions"><button type="button" className="btn" id="sm-save">登録する</button><span id="sm-msg"></span></div>
-            </div>
-            <input type="search" id="sm-search" placeholder="お名前・フリガナ・電話番号・メールで探す" className="sm-search" />
-            <div id="sm-list" className="stack" style={{ gap: '8px' }}><p className="muted">読み込み中…</p></div>
-          </div>
-          <div id="sm-detail" className="card stack" style={{ padding: '24px', gap: '12px', display: 'none' }}></div>
         </div>
 
         <div className="tab-pane" id="tab-packages">

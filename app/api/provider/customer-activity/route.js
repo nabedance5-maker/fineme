@@ -10,6 +10,7 @@
 // （回数券購入・デポジットは都度払いでカードを保存しない）。番号は扱わない。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { isStoreCustomer } from '@/lib/store-members';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -67,7 +68,8 @@ export async function GET(request) {
         ? await supabase.from('user_service_logs').select('id', { count: 'exact', head: true }).eq('provider_slug', provider.slug).eq('user_id', userId)
         : { count: 0 };
       const { count: noteCount } = await supabase.from('provider_customer_notes').select('user_id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('user_id', userId);
-      if (!count && !noteCount) return Response.json({ error: 'お客様が見つかりません' }, { status: 404 });
+      // お店の会員登録・基本情報だけでつながっているお客様も含める（2026-10-22）
+      if (!count && !noteCount && !(await isStoreCustomer(provider.id, userId))) return Response.json({ error: 'お客様が見つかりません' }, { status: 404 });
     }
     if (pkgs.length) {
       const { data: usages } = await supabase.from('package_usages').select('id, customer_package_id, used_at, undone_at').in('customer_package_id', pkgs.map(p => p.id));

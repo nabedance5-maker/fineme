@@ -1,4 +1,4 @@
-// GET  /api/provider/store-members → お店の会員の一覧（持っているチケット・契約中のプランつき）
+// GET  /api/provider/store-members → お店の会員の一覧（?user_id= で1人分の持っているチケット。顧客管理・予約カレンダーから使う）
 // POST /api/provider/store-members → 管理画面から会員を登録する（でお要望 2026-10-22）
 //   メールアドレスのFinemeアカウントが無ければ作る。既にFinemeを使っている方のアドレスなら、
 //   ご本人がお店のページで「会員登録」を確認するまでは「確認待ち」（他のお客様の情報に勝手に紐づけないため）。
@@ -8,6 +8,7 @@ import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
 import { profileFields, upsertProfile, findOrCreateUser } from '@/lib/store-members';
 import { customerEntitlements } from '@/lib/booking-eligibility';
+import { isStoreCustomer } from '@/lib/store-members';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -37,12 +38,13 @@ export async function GET(request) {
   });
   const kw = (q.get('q') || '').trim();
   if (kw) list = list.filter(m => [m.name, m.kana, m.phone, m.email].some(v => (v || '').includes(kw)));
-  // 1人だけ詳しく（持っているチケット）
+  // 1人だけ詳しく（持っているチケット）。会員登録していなくても、このお店のお客様なら返す
   if (q.get('user_id')) {
-    const m = list.find(x => x.user_id === q.get('user_id'));
-    if (!m) return Response.json({ error: '会員が見つかりません' }, { status: 404 });
-    const ent = await customerEntitlements(supabase, pid, m.user_id);
-    return Response.json({ ...m, tickets: ent.tickets });
+    const uid = q.get('user_id');
+    const m = list.find(x => x.user_id === uid);
+    if (!m && !(await isStoreCustomer(pid, uid))) return Response.json({ error: 'このお店のお客様ではありません' }, { status: 404 });
+    const ent = await customerEntitlements(supabase, pid, uid);
+    return Response.json({ ...(m || { user_id: uid, status: null }), tickets: ent.tickets });
   }
   return Response.json(list);
 }
@@ -53,7 +55,7 @@ async function __POST(request) {
   const pid = a.provider.id;
   const b = await request.json().catch(() => ({}));
   const f = profileFields(b);
-  if (!f.last_name || !f.first_name) return Response.json({ error: 'お名前（姓・名）を入れてください' }, { status: 400 });
+  if (!f.last_name && !f.first_name) return Response.json({ error: 'お名前を入れてください' }, { status: 400 });
   const noEmail = !!b.no_email;
   const email = String(b.email || '').trim().toLowerCase();
   if (!noEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: 'メールアドレスを入れてください（お持ちでない方は「メールアドレスなし」）' }, { status: 400 });
