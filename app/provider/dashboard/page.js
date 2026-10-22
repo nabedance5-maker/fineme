@@ -8720,6 +8720,43 @@ export default function ProviderDashboardPage() {
         </div>`;
       }
 
+      // 月額プランの月ごとの支払い状況（でお要望 2026-10-23：月ごとに支払い済みかが表で分かるように）
+      const MB_STATE = {
+        paid: { mark: '✓', label: '支払い済み', bg: 'rgba(22,163,74,0.12)', fg: '#15803d' },
+        failed: { mark: '×', label: '未払い（引き落とし失敗）', bg: 'rgba(220,38,38,0.1)', fg: '#b91c1c' },
+        open: { mark: '…', label: '請求中', bg: '#fff7ed', fg: '#9a3412' },
+        void: { mark: '−', label: '請求取り消し', bg: '#f3f4f6', fg: '#6b7280' },
+        paused: { mark: '休', label: '休会', bg: '#f3f4f6', fg: '#4b5563' },
+        none: { mark: '−', label: '記録なし', bg: '#f9fafb', fg: '#9ca3af' },
+      };
+      function caMembershipBlock(m) {
+        const months = m.months || [];
+        const unpaid = months.filter(x => x.state === 'failed');
+        const statusChip = m.status === 'cancelled' ? '<span style="font-size:11px;padding:1px 8px;border-radius:99px;background:#f3f4f6;color:#6b7280;">退会</span>'
+          : m.paused ? '<span style="font-size:11px;padding:1px 8px;border-radius:99px;background:#f3f4f6;color:#4b5563;">休会中</span>'
+          : (m.payment_status === 'past_due' || m.payment_status === 'unpaid') ? '<span style="font-size:11px;padding:1px 8px;border-radius:99px;background:rgba(220,38,38,0.1);color:#b91c1c;">未払いあり</span>'
+          : '<span style="font-size:11px;padding:1px 8px;border-radius:99px;background:rgba(22,163,74,0.12);color:#15803d;">入会中</span>';
+        const cells = months.map((x, i) => {
+          const st = MB_STATE[x.state] || MB_STATE.none;
+          const [y, mo] = x.month.split('-');
+          const tip = `${y}年${Number(mo)}月：${st.label}${x.amount != null && x.state !== 'none' ? `（¥${Number(x.amount).toLocaleString()}）` : ''}${x.paid_at ? `・${caDate(x.paid_at)}に支払い` : ''}`;
+          return `<div title="${caEsc(tip)}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:44px;padding:6px 4px;border-radius:8px;background:${st.bg};">
+            <span style="font-size:11px;color:#4b5563;white-space:nowrap;">${i === 0 || mo === '12' ? `${y.slice(2)}年` : ''}${Number(mo)}月</span>
+            <span aria-label="${caEsc(st.label)}" style="font-size:16px;font-weight:800;color:${st.fg};line-height:1;">${st.mark}</span>
+          </div>`;
+        }).join('');
+        return `<div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:0 0 10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:13px;">月額プラン：${caEsc(m.plan)}</strong>${statusChip}
+            <span class="muted" style="font-size:11.5px;margin-left:auto;">${m.monthly_price != null ? `月¥${Number(m.monthly_price).toLocaleString()}` : ''}${m.enrollment_date ? `・${caEsc(caDate(m.enrollment_date))}入会` : ''}</span>
+          </div>
+          <div style="font-size:12px;font-weight:700;margin:10px 0 6px;">月会費の支払い状況（新しい月から）</div>
+          ${months.length ? `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">${cells}</div>` : '<p class="muted" style="font-size:12px;margin:0;">まだ請求はありません。</p>'}
+          <p class="muted" style="font-size:11px;margin:6px 0 0;">✓ 支払い済み　× 未払い　… 請求中　休 休会　− 記録なし</p>
+          ${unpaid.length ? `<p style="font-size:12px;margin:6px 0 0;color:#b91c1c;font-weight:700;">未払い：${unpaid.map(x => `${Number(x.month.slice(5))}月${x.failure ? `（${caEsc(x.failure)}）` : ''}`).join('、')}　<a href="?tab=membership-billing" style="color:#b91c1c;">月会費の支払い状況で対応する</a></p>` : ''}
+        </div>`;
+      }
+
       async function caPackageAction(pkgId, act, box) {
         let res;
         if (act === 'edit') { const e = box.querySelector('[data-ca-edit]'); e.style.display = e.style.display === 'none' ? '' : 'none'; return; }
@@ -8764,6 +8801,7 @@ export default function ProviderDashboardPage() {
         const pkgs = d.packages || [];
         custActivityEl.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">${card}</div>
+          ${(d.memberships || []).map(caMembershipBlock).join('')}
           <details style="margin-top:4px;" ${pkgs.some(p => !p.expired && !p.used_up) ? 'open' : ''}>
             <summary style="cursor:pointer;font-size:13px;font-weight:700;">チケット・回数券（${pkgs.length}件）</summary>
             <div style="margin-top:8px;">

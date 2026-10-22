@@ -41,6 +41,56 @@ function reservationView(r, classNameOf) {
   };
 }
 
+// 月額プランの月ごとの支払い状況（でお要望 2026-10-23：顧客情報で、月ごとに支払い済みかが表で分かるように）。
+// 入会した月から今月まで（解約した方は解約した月まで・直近12か月）を1か月ずつ並べ、
+// 月会費の請求記録（provider_membership_payments。Stripeの請求ごとに1行）から状態を決める。
+const ym = d => String(d || '').slice(0, 7);
+function monthsBetween(from, to) {
+  const out = [];
+  let [y, m] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  while (y < ty || (y === ty && m <= tm)) { out.push(`${y}-${String(m).padStart(2, '0')}`); m++; if (m > 12) { m = 1; y++; } }
+  return out.slice(-12);
+}
+async function membershipPayments(providerId, mems) {
+  if (!mems.length) return [];
+  const planIds = [...new Set(mems.map(m => m.plan_id).filter(Boolean))];
+  const [{ data: plans }, { data: pays }] = await Promise.all([
+    planIds.length ? supabase.from('provider_membership_plans').select('id, name, monthly_price').in('id', planIds) : { data: [] },
+    supabase.from('provider_membership_payments').select('membership_id, amount, status, period_start, paid_at, failure_message, created_at').eq('provider_id', providerId).in('membership_id', mems.map(m => m.id)),
+  ]);
+  const planOf = Object.fromEntries((plans || []).map(p => [p.id, p]));
+  const jst = d => (d ? new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(d)) : null);
+  const thisMonth = ym(jst(new Date()));
+  const RANK = { paid: 4, failed: 3, open: 2, void: 1 };
+  return mems.map(m => {
+    const start = ym(m.enrollment_date || jst(m.approved_at) || jst(m.created_at)) || thisMonth;
+    const endDay = m.status === 'cancelled' ? jst(m.cancelled_at || m.cancel_at) : null;
+    const end = endDay && ym(endDay) < thisMonth ? ym(endDay) : thisMonth;
+    const mine = (pays || []).filter(p => p.membership_id === m.id);
+    const pausedFrom = ym(jst(m.paused_at));
+    const pausedTo = m.pause_until ? ym(m.pause_until) : null;
+    const months = (start <= end ? monthsBetween(start, end) : []).map(month => {
+      const rows = mine.filter(p => ym(p.period_start || jst(p.paid_at) || jst(p.created_at)) === month).sort((a, b) => (RANK[b.status] || 0) - (RANK[a.status] || 0));
+      const top = rows[0];
+      let state = top ? top.status : 'none';
+      if (!top && pausedFrom && month >= pausedFrom && (!pausedTo || month < pausedTo)) state = 'paused';
+      return { month, state, amount: top?.amount ?? null, paid_at: top?.paid_at || null, failure: top?.status === 'failed' ? top.failure_message : null };
+    }).reverse();
+    return {
+      id: m.id,
+      plan: planOf[m.plan_id]?.name || '月額プラン',
+      monthly_price: planOf[m.plan_id]?.monthly_price ?? null,
+      status: m.status,
+      payment_status: m.payment_status || null,
+      enrollment_date: m.enrollment_date || jst(m.approved_at),
+      cancelled_at: m.cancelled_at || null,
+      paused: !!m.paused_at,
+      months,
+    };
+  });
+}
+
 export async function GET(request) {
   const provider = await getProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -53,12 +103,13 @@ export async function GET(request) {
   let packages = [];
   let hasCard = false;
   let cardSource = null;
+  let memberships = [];
 
   if (userId) {
     const [resRes, pkgRes, memRes] = await Promise.all([
       supabase.from('reservations').select(RES_COLS).eq('provider_id', provider.id).eq('user_id', userId).order('reserved_date', { ascending: false }).limit(200),
       supabase.from('customer_packages').select('id, package_name, package_type, total_sessions, purchased_at, expires_at, subscription_status, next_grant_at').eq('provider_id', provider.id).eq('user_id', userId).order('purchased_at', { ascending: false }),
-      supabase.from('provider_memberships').select('id, status, stripe_payment_method_id').eq('provider_id', provider.id).eq('user_id', userId).neq('status', 'draft'),
+      supabase.from('provider_memberships').select('id, status, plan_id, payment_status, enrollment_date, approved_at, created_at, paused_at, pause_until, cancel_at, cancelled_at, stripe_payment_method_id').eq('provider_id', provider.id).eq('user_id', userId).neq('status', 'draft'),
     ]);
     reservations = resRes.data || [];
     const pkgs = pkgRes.data || [];
@@ -91,6 +142,7 @@ export async function GET(request) {
         };
       });
     }
+    memberships = await membershipPayments(provider.id, (memRes.data || []).filter(m => ['active', 'cancelled'].includes(m.status)));
     const withCard = (memRes.data || []).filter(m => m.stripe_payment_method_id);
     hasCard = withCard.length > 0;
     cardSource = hasCard ? 'オンライン入会で登録' : null;
@@ -125,6 +177,7 @@ export async function GET(request) {
   const lessons = views.filter(v => v.class_name);
 
   return Response.json({
+    memberships,
     has_card: hasCard,
     card_source: cardSource,
     packages,
