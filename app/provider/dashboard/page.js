@@ -680,6 +680,38 @@ const DASHBOARD_CSS = `
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
       /* 予約できる人（2026-10-20） */
       /* メニュー（個別メニュー・グループレッスンを1つの一覧に。2026-10-22） */
+      /* 会員プラン（2026-10-22：プランごとにオプション・割引・回数券・予約を紐づける） */
+      .pl-row { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; }
+      .pl-main { flex: 1 1 280px; min-width: 0; }
+      .pl-title { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+      .pl-chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: rgba(26,20,16,0.08); font-weight: 700; }
+      .pl-sum { font-size: 12.5px; margin-top: 3px; line-height: 1.6; }
+      .pl-desc { font-size: 12px; margin-top: 2px; }
+      .pl-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .pl-actions .btn { font-size: 12px; padding: 5px 10px; }
+      .pl-del { color: #b91c1c; }
+      .pl-ed { border: 2px solid #1a1410; border-radius: 12px; padding: 18px; color: #1a1410; background: #fff; }
+      .pl-ed-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+      .pl-ed-head h3 { margin: 0; font-size: 15px; }
+      .pl-ed-head .btn { font-size: 12px; padding: 5px 10px; }
+      .pl-sec { border-top: 1px solid rgba(26,20,16,0.12); padding: 12px 0 4px; display: grid; gap: 8px; }
+      .pl-sec h4 { margin: 0; font-size: 14px; }
+      .pl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+      .pl-grid label, .pl-wide { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; }
+      .pl-ed input:not([type=checkbox]), .pl-ed select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .pl-inline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; font-weight: 700; }
+      .pl-inline input[type=number] { width: 80px; }
+      .pl-note { margin: 0; font-size: 12px; }
+      .pl-sub { font-size: 13px; }
+      .pl-checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+      .pl-checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+      .pl-opts { display: grid; gap: 6px; }
+      .pl-opt { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 13px; }
+      .pl-grant { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; padding: 6px 0; }
+      .pl-grant label { display: inline-flex; gap: 4px; align-items: center; }
+      .pl-grant input[type=number] { width: 64px; }
+      .pl-grant .btn, .pl-sec > .btn { font-size: 12px; padding: 5px 10px; width: fit-content; }
+      .pl-ed-actions { display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 12.5px; }
       .pv-group { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; color: #1a1410; font-size: 13px; }
       .pv-group > span { font-size: 12px; }
       .pv-items { display: flex; flex-wrap: wrap; gap: 6px 16px; }
@@ -3982,13 +4014,13 @@ export default function ProviderDashboardPage() {
 
       // ── 希望の提出ルール（何ごとに・締切・通知日）。一度決めれば、期間を作らなくてもスタッフは提出できる ──
       async function openSubmitRuleEditor() {
-        const c = shiftSettings?.submit_cycle || { cycle: 'monthly', deadline_day: 20, deadline_days_before: 7, notify_days_before: [1, 0] };
+        const c = shiftSettings?.submit_cycle || { cycle: 'monthly', deadline_day: 20, deadline_days_before: 7, notify_days_before: [1, 0], remind_staff: true, staff_notify_days_before: [3, 1, 0] };
         const ov = document.createElement('div');
         ov.className = 'cal-modal-overlay'; ov.style.display = 'flex';
         document.body.appendChild(ov);
         const close = () => ov.remove();
         ov.addEventListener('click', e => { if (e.target === ov) close(); });
-        const st = { cycle: c.cycle, day: c.deadline_day, before: c.deadline_days_before, notify: (c.notify_days_before || []).join(',') };
+        const st = { cycle: c.cycle, day: c.deadline_day, before: c.deadline_days_before, notify: (c.notify_days_before || []).join(','), remind: c.remind_staff !== false, staffNotify: (c.staff_notify_days_before || [3, 1, 0]).join(',') };
         const render = () => {
           const preview = upcomingWindows(normalizeCycle({ cycle: st.cycle, deadline_day: st.day, deadline_days_before: st.before }), { today: shiftTodayStr(), count: 2 });
           ov.innerHTML = `<div class="cal-modal-card" style="max-width:520px">
@@ -4000,6 +4032,9 @@ export default function ProviderDashboardPage() {
               ? `前の月の<input type="number" data-day min="1" max="31" value="${st.day}" style="width:64px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日まで`
               : `始まる<input type="number" data-before min="0" max="60" value="${st.before}" style="width:64px;padding:5px 8px;border:1px solid #d1d5db;border-radius:8px" />日前まで`}</div>
             <div class="form-field" style="margin:12px 0 0"><label style="font-size:12px">締切の何日前に、未提出の人数をお店のLINEに知らせるか（カンマ区切り・0は締切当日）</label><input type="text" data-notify value="${esc(st.notify)}" placeholder="1,0" style="max-width:160px" /></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:14px 0 0"><input type="checkbox" data-remind ${st.remind ? 'checked' : ''} style="width:16px;height:16px" />未提出のスタッフ本人にもLINEで提出を催促する</label>
+            <div data-remind-wrap style="display:${st.remind ? '' : 'none'}"><div class="form-field" style="margin:6px 0 0"><label style="font-size:12px">締切の何日前に催促するか（カンマ区切り・0は締切当日）</label><input type="text" data-staff-notify value="${esc(st.staffNotify)}" placeholder="3,1,0" style="max-width:160px" /></div>
+            <p class="muted" style="font-size:11.5px;margin:4px 0 0;line-height:1.6">提出を完了していない人にだけ、提出画面を開くボタン付きで届きます。届くのは提出画面の「LINEで受け取る」から連携したスタッフです。</p></div>
             <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#f9fafb;font-size:12.5px;line-height:1.7">次の提出：${preview.map(w => `<b>${esc(w.label)}</b>（${mdShort(w.start)}〜${mdShort(w.end)}・締切 ${mdShort(w.deadline)}）`).join('、')}</div>
             <p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">締切後も、未提出のスタッフは遅れて提出できます。提出を完了したスタッフは、締切後は内容を変えられなくなります。</p>
             <p data-msg style="color:#b42318;font-size:12px;margin:8px 0 0;min-height:1em"></p>
@@ -4010,17 +4045,22 @@ export default function ProviderDashboardPage() {
             const d = ov.querySelector('[data-day]'); if (d) st.day = Number(d.value) || st.day;
             const b = ov.querySelector('[data-before]'); if (b) st.before = b.value === '' ? st.before : Number(b.value);
             st.notify = ov.querySelector('[data-notify]').value;
+            st.remind = ov.querySelector('[data-remind]').checked;
+            st.staffNotify = ov.querySelector('[data-staff-notify]').value;
           };
+          ov.querySelector('[data-remind]').addEventListener('change', e => { ov.querySelector('[data-remind-wrap]').style.display = e.target.checked ? '' : 'none'; });
           ov.querySelectorAll('input[name="sr-cycle"]').forEach(r => r.addEventListener('change', () => { keep(); st.cycle = r.value; render(); }));
           ov.querySelectorAll('[data-day],[data-before]').forEach(i => i.addEventListener('change', () => { keep(); render(); }));
           ov.querySelector('[data-save]').addEventListener('click', async e => {
             keep();
-            if (st.notify.trim() && !/^\s*\d+(\s*[,、，]\s*\d+)*\s*$/.test(st.notify)) { ov.querySelector('[data-msg]').textContent = '通知日は数字をカンマで区切って入力してください（例：3,1,0）'; return; }
+            const daysOk = v => !v.trim() || /^\s*\d+(\s*[,、，]\s*\d+)*\s*$/.test(v);
+            if (!daysOk(st.notify) || !daysOk(st.staffNotify)) { ov.querySelector('[data-msg]').textContent = '通知日は数字をカンマで区切って入力してください（例：3,1,0）'; return; }
             e.currentTarget.disabled = true;
-            const notify = st.notify.split(/[,、，\s]+/).filter(Boolean).map(Number);
+            const toDays = v => v.split(/[,、，\s]+/).filter(Boolean).map(Number);
+            const notify = toDays(st.notify);
             const res = await fetch('/api/provider/shift-settings', {
               method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-              body: JSON.stringify({ submit_cycle: { cycle: st.cycle, deadline_day: st.day, deadline_days_before: st.before, notify_days_before: notify } }),
+              body: JSON.stringify({ submit_cycle: { cycle: st.cycle, deadline_day: st.day, deadline_days_before: st.before, notify_days_before: notify, remind_staff: st.remind, staff_notify_days_before: toDays(st.staffNotify) } }),
             });
             if (!res.ok) { e.currentTarget.disabled = false; ov.querySelector('[data-msg]').textContent = '保存に失敗しました'; return; }
             close();
@@ -4049,7 +4089,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
             <div style="flex:1;min-width:220px">
               <div style="font-size:15px;font-weight:800">希望の提出</div>
-              <div class="muted" style="font-size:12.5px;line-height:1.7;margin-top:2px">${esc(shiftSettings.submit_cycle_label || '')}・提出のしかた：${esc(describeRule(fmt.default))}${extra ? `（個別の設定 ${extra}件）` : ''}</div>
+              <div class="muted" style="font-size:12.5px;line-height:1.7;margin-top:2px">${esc(shiftSettings.submit_cycle_label || '')}・提出のしかた：${esc(describeRule(fmt.default))}${extra ? `（個別の設定 ${extra}件）` : ''}${shiftSettings.submit_cycle?.remind_staff ? `<br>未提出の人への催促：締切の${(shiftSettings.submit_cycle.staff_notify_days_before || []).map(d => (d === 0 ? '当日' : `${d}日前`)).join('・') || '（日付未設定）'}にLINEで送る` : '<br>未提出の人への催促：送らない'}</div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button type="button" class="btn btn-ghost" data-sr-rule style="font-size:12px;padding:6px 12px">提出ルールを変える</button>
@@ -6325,24 +6365,54 @@ export default function ProviderDashboardPage() {
         } catch {}
       }
 
+      // ── 会員プラン（でお要望 2026-10-22：「回数券やオプションの情報が全く紐づかない。プランごとに編集できない」）。
+      //    hacomono のプラン（基本設定・予約制限・契約制限・チケット自動付与）を参考に、1プランずつ開いて
+      //    料金・予約できるメニューと月の回数・オプション・割引・付与する回数券・申込の受け方をまとめて決める。
+      let planRows = [];
+      let planRefs = null; // { options, discounts, packages, services }
+      async function loadPlanRefs() {
+        const get = u => fetch(u, { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        const [options, discounts, packages, services] = await Promise.all([get('/api/provider/membership-options'), get('/api/provider/membership-discounts'), get('/api/provider/packages'), get('/api/provider/services')]);
+        planRefs = { options, discounts, packages, services };
+        return planRefs;
+      }
+      const nameOf = (list, id) => (list || []).find(x => x.id === id)?.name || '';
+      function planSummary(p) {
+        const R = planRefs || {};
+        const menus = (R.services || []).filter(s => s.booking_scope === 'limited' && s.allow_membership && (!(s.eligible_plan_ids || []).length || s.eligible_plan_ids.includes(p.id)));
+        const grants = (p.ticket_grants || []).map(g => `${nameOf(R.packages, g.package_id)} ${g.sessions}回（${g.timing === 'monthly' ? '毎月' : '入会時'}）`).filter(x => !x.startsWith(' '));
+        const parts = [
+          `月会費 ${fmtYen(p.monthly_price)}`,
+          p.initial_fee > 0 ? `入会金 ${fmtYen(p.initial_fee)}` : null,
+          p.monthly_booking_limit ? `予約 月${p.monthly_booking_limit}回まで` : '予約 回数の上限なし',
+          menus.length ? `会員専用メニュー ${menus.length}件` : null,
+          (p.included_option_ids || []).length ? `必ず付くオプション ${(p.included_option_ids || []).map(id => nameOf(R.options, id)).filter(Boolean).join('・')}` : null,
+          grants.length ? `回数券 ${grants.join('・')}` : null,
+          p.online_enabled === false ? '店頭でのみ申込' : null,
+        ];
+        return parts.filter(Boolean).join(' / ');
+      }
       async function loadPlans() {
         if (!planListEl) return;
-        const res = await fetch('/api/provider/membership-plans', { headers: authH() });
+        const [res] = await Promise.all([fetch('/api/provider/membership-plans', { headers: authH() }), loadPlanRefs()]);
         if (!res.ok) { planListEl.innerHTML = authErrorHtml(res); return; }
-        const rows = await res.json();
-        if (!rows.length) { planListEl.innerHTML = '<p class="muted" style="font-size:13px">まだプランがありません。上のフォームから追加してください。</p>'; return; }
-        planListEl.innerHTML = rows.map(p => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <strong style="font-size:14px">${esc(p.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(p.monthly_price)}</span>
-              ${p.description ? `<div class="muted" style="font-size:12px;margin-top:2px">${esc(p.description)}</div>` : ''}
-              ${!p.active ? '<div style="font-size:11px;color:#9ca3af;margin-top:2px">非公開</div>' : ''}
+        planRows = await res.json();
+        if (!planRows.length) { planListEl.innerHTML = '<p style="font-size:13px;margin:0;color:#1a1410">まだプランがありません。「＋ プランを追加」から作ってください。</p>'; return; }
+        planListEl.innerHTML = planRows.map(p => `
+          <div class="pl-row">
+            <div class="pl-main">
+              <div class="pl-title"><strong>${esc(p.name)}</strong>${!p.active ? '<span class="pl-chip">非公開</span>' : ''}</div>
+              <div class="pl-sum">${esc(planSummary(p))}</div>
+              ${p.description ? `<div class="pl-desc">${esc(p.description)}</div>` : ''}
             </div>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-mbr-plan-toggle="${p.id}" data-active="${p.active}">${p.active ? '非公開にする' : '公開する'}</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-mbr-plan-del="${p.id}">削除</button>
+            <div class="pl-actions">
+              <button type="button" class="btn" data-mbr-plan-edit="${p.id}">編集</button>
+              <button type="button" class="btn btn-ghost" data-mbr-plan-toggle="${p.id}" data-active="${p.active}">${p.active ? '非公開にする' : '公開する'}</button>
+              <button type="button" class="btn btn-ghost pl-del" data-mbr-plan-del="${p.id}">削除</button>
+            </div>
           </div>
         `).join('');
+        planListEl.querySelectorAll('[data-mbr-plan-edit]').forEach(btn => btn.addEventListener('click', () => openPlanEditor(planRows.find(x => x.id === btn.dataset.mbrPlanEdit))));
         planListEl.querySelectorAll('[data-mbr-plan-toggle]').forEach(btn => btn.addEventListener('click', async () => {
           const res = await fetch(`/api/provider/membership-plans/${btn.dataset.mbrPlanToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ active: btn.dataset.active !== 'true' }) });
           if (res.ok) loadPlans(); else showToast('更新に失敗しました');
@@ -6353,6 +6423,97 @@ export default function ProviderDashboardPage() {
           if (res.ok) loadPlans(); else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
         }));
       }
+
+      const editorEl = document.getElementById('mbr-plan-editor');
+      async function openPlanEditor(p) {
+        if (!editorEl) return;
+        const R = planRefs || await loadPlanRefs();
+        const isNew = !p;
+        p = p || { name: '', monthly_price: '', description: '', initial_fee: 0, monthly_booking_limit: null, included_option_ids: [], selectable_option_ids: null, discount_ids: null, ticket_grants: [], online_enabled: true };
+        const optState = o => (p.included_option_ids || []).includes(o.id) ? 'included' : (p.selectable_option_ids == null || p.selectable_option_ids.includes(o.id)) ? 'selectable' : 'none';
+        const limited = (R.services || []).filter(s => s.booking_scope === 'limited');
+        const publicCount = (R.services || []).filter(s => s.booking_scope !== 'limited').length;
+        const menuOn = s => !isNew && s.allow_membership && (!(s.eligible_plan_ids || []).length || s.eligible_plan_ids.includes(p.id));
+        const pkgOpts = sel => (R.packages || []).map(k => `<option value="${k.id}" ${k.id === sel ? 'selected' : ''}>${esc(k.name)}</option>`).join('');
+        const grantRow = g => `<div class="pl-grant" data-pl-grant>
+            <select data-g="package_id">${pkgOpts(g.package_id)}</select>
+            <label>回数<input type="number" min="1" max="99" data-g="sessions" value="${g.sessions || 1}"></label>
+            <select data-g="timing"><option value="join" ${g.timing !== 'monthly' ? 'selected' : ''}>入会した時に</option><option value="monthly" ${g.timing === 'monthly' ? 'selected' : ''}>毎月1日に</option></select>
+            <label>有効<input type="number" min="1" max="730" data-g="valid_days" value="${g.valid_days || ''}" placeholder="回数券の設定">日</label>
+            <button type="button" class="btn btn-ghost" data-pl-grant-del>外す</button>
+          </div>`;
+        editorEl.innerHTML = `
+          <div class="pl-ed-head"><h3>${isNew ? '会員プランを追加' : `「${esc(p.name)}」を編集`}</h3><button type="button" class="btn btn-ghost" data-pl-close>閉じる</button></div>
+          <section class="pl-sec"><h4>料金</h4>
+            <div class="pl-grid">
+              <label>プラン名 *<input data-f="name" value="${esc(p.name)}" placeholder="例：月4回プラン" maxlength="60"></label>
+              <label>月会費（円）*<input data-f="monthly_price" type="number" min="1" value="${p.monthly_price || ''}" placeholder="8000"></label>
+              <label>入会金（円）<input data-f="initial_fee" type="number" min="0" value="${p.initial_fee || ''}" placeholder="0（なし）"></label>
+            </div>
+            <label class="pl-wide">説明（入会ページに出ます）<input data-f="description" value="${esc(p.description || '')}" placeholder="任意"></label>
+            <p class="pl-note">入会金は最初のお支払いに1回だけ足して請求します。初月の日割りは「入会手続きの設定」で決めます。</p>
+          </section>
+          <section class="pl-sec"><h4>予約</h4>
+            <label class="pl-inline">このプランで予約できる回数　月<input data-f="monthly_booking_limit" type="number" min="1" max="999" value="${p.monthly_booking_limit || ''}" placeholder="無制限">回まで</label>
+            <p class="pl-note">空欄なら回数の上限はありません。上限に達した後は、回数券をお持ちの方は回数券で予約できます。</p>
+            <b class="pl-sub">このプランの方が予約できる会員専用メニュー</b>
+            ${limited.length ? `<div class="pl-checks">${limited.map(s => `<label><input type="checkbox" data-pl-menu value="${s.id}" ${menuOn(s) ? 'checked' : ''}>${esc(s.name)}</label>`).join('')}</div>` : '<p class="pl-note">会員・回数券の方だけが予約できるメニューはまだありません（メニュータブで「予約できる人」を決めます）。</p>'}
+            ${publicCount ? `<p class="pl-note">誰でも予約できるメニュー（${publicCount}件）は、会員の方ももちろん予約できます。</p>` : ''}
+          </section>
+          <section class="pl-sec"><h4>オプション</h4>
+            ${(R.options || []).length ? `<div class="pl-opts">${R.options.map(o => `<div class="pl-opt"><span>${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</span><select data-pl-opt="${o.id}">
+                <option value="none" ${optState(o) === 'none' ? 'selected' : ''}>このプランでは付けない</option>
+                <option value="selectable" ${optState(o) === 'selectable' ? 'selected' : ''}>お客様が選べる</option>
+                <option value="included" ${optState(o) === 'included' ? 'selected' : ''}>必ず付く（月会費に足して請求）</option>
+              </select></div>`).join('')}</div>` : '<p class="pl-note">オプションはまだありません（下の「オプション」で登録すると、ここでプランごとに付け方を決められます）。</p>'}
+          </section>
+          <section class="pl-sec"><h4>割引・クーポン</h4>
+            ${(R.discounts || []).length ? `<div class="pl-checks">${R.discounts.map(d => `<label><input type="checkbox" data-pl-disc value="${d.id}" ${p.discount_ids == null || p.discount_ids.includes(d.id) ? 'checked' : ''}>${esc(d.name)}${d.code ? `（コード ${esc(d.code)}）` : ''}</label>`).join('')}</div><p class="pl-note">チェックした割引だけ、このプランで使えます。</p>` : '<p class="pl-note">割引・クーポンはまだありません（下の「割引・クーポン」で登録します）。</p>'}
+          </section>
+          <section class="pl-sec"><h4>付与する回数券</h4>
+            <p class="pl-note">入会した時や毎月1日に、このプランの方へ回数券を自動で配ります（例：月4回のレッスン券）。</p>
+            <div data-pl-grants>${(p.ticket_grants || []).map(grantRow).join('')}</div>
+            ${(R.packages || []).length ? '<button type="button" class="btn btn-ghost" data-pl-grant-add>＋ 回数券を配る</button>' : '<p class="pl-note">回数券の種類がまだありません（「回数券」タブで作れます）。</p>'}
+          </section>
+          <section class="pl-sec"><h4>申込の受け方</h4>
+            <label class="pl-inline"><input type="checkbox" data-f="online_enabled" ${p.online_enabled !== false ? 'checked' : ''}>入会ページからお客様が申し込めるようにする（外すと入会ページに出ません）</label>
+          </section>
+          <div class="pl-ed-actions"><button type="button" class="btn" data-pl-save>${isNew ? 'プランを作る' : '保存する'}</button><span data-pl-msg></span></div>`;
+        editorEl.style.display = 'block';
+        editorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const q = sel => editorEl.querySelector(sel);
+        q('[data-pl-close]').addEventListener('click', () => { editorEl.style.display = 'none'; editorEl.innerHTML = ''; });
+        const bindGrantDel = () => editorEl.querySelectorAll('[data-pl-grant-del]').forEach(b => { b.onclick = () => b.closest('[data-pl-grant]').remove(); });
+        bindGrantDel();
+        q('[data-pl-grant-add]')?.addEventListener('click', () => { q('[data-pl-grants]').insertAdjacentHTML('beforeend', grantRow({ sessions: 1, timing: 'monthly' })); bindGrantDel(); });
+        q('[data-pl-save]').addEventListener('click', async () => {
+          const f = k => q(`[data-f="${k}"]`);
+          const name = f('name').value.trim(); const price = Number(f('monthly_price').value);
+          if (!name || !price) { showToast('プラン名と月会費を入れてください'); return; }
+          const opt = [...editorEl.querySelectorAll('[data-pl-opt]')];
+          const body = {
+            name, monthly_price: price, description: f('description').value.trim(),
+            initial_fee: f('initial_fee').value, monthly_booking_limit: f('monthly_booking_limit').value,
+            online_enabled: f('online_enabled').checked,
+            included_option_ids: opt.filter(x => x.value === 'included').map(x => x.dataset.plOpt),
+            selectable_option_ids: opt.filter(x => x.value === 'selectable').map(x => x.dataset.plOpt),
+            discount_ids: [...editorEl.querySelectorAll('[data-pl-disc]')].filter(x => x.checked).map(x => x.value),
+            ticket_grants: [...editorEl.querySelectorAll('[data-pl-grant]')].map(r => ({ package_id: r.querySelector('[data-g="package_id"]').value, sessions: r.querySelector('[data-g="sessions"]').value, timing: r.querySelector('[data-g="timing"]').value, valid_days: r.querySelector('[data-g="valid_days"]').value })),
+            menu_ids: [...editorEl.querySelectorAll('[data-pl-menu]')].filter(x => x.checked).map(x => x.value),
+          };
+          if (!(R.discounts || []).length) delete body.discount_ids;
+          const btn = q('[data-pl-save]'); btn.disabled = true;
+          const res = await fetch(isNew ? '/api/provider/membership-plans' : `/api/provider/membership-plans/${p.id}`, { method: isNew ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+          btn.disabled = false;
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { q('[data-pl-msg]').textContent = d.error || '保存できませんでした'; return; }
+          if (d.menu_skipped?.length) showToast(`「${d.menu_skipped.join('」「')}」は他に予約できる人がいなくなるため、外していません（メニュー側で変更してください）`);
+          else showToast(isNew ? 'プランを作りました' : '保存しました');
+          editorEl.style.display = 'none'; editorEl.innerHTML = '';
+          loadPlans();
+        });
+      }
+      document.getElementById('mbr-plan-add-btn')?.addEventListener('click', () => openPlanEditor(null));
 
       // ── オプション・割引・クーポン（でお要望 2026-10-19：hacomono差分 #5） ──
       const JH = () => ({ 'Content-Type': 'application/json', ...authH() });
@@ -6455,18 +6616,6 @@ export default function ProviderDashboardPage() {
         document.getElementById('mbr-ex-disc-rm')?.addEventListener('click', () => send({ kind: 'discount_remove' }, '割引を外しました'));
         document.getElementById('mbr-ex-disc-add')?.addEventListener('click', () => { const v = document.getElementById('mbr-ex-disc').value; if (v) send({ kind: 'discount_apply', discount_id: v }, '割引を付けました'); });
       }
-
-      document.getElementById('mbr-plan-add-btn')?.addEventListener('click', async () => {
-        const nameEl = document.getElementById('mbr-plan-name');
-        const priceEl = document.getElementById('mbr-plan-price');
-        const descEl = document.getElementById('mbr-plan-desc');
-        const name = nameEl.value.trim();
-        const price = Number(priceEl.value);
-        if (!name || !price) { showToast('プラン名と月額を入力してください'); return; }
-        const res = await fetch('/api/provider/membership-plans', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ name, monthly_price: price, description: descEl.value.trim() }) });
-        if (res.ok) { nameEl.value = ''; priceEl.value = ''; descEl.value = ''; loadPlans(); showToast('プランを追加しました'); }
-        else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-      });
 
       // ── 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10） ──
       let ffState = {}, cfList = [];
@@ -17464,14 +17613,15 @@ export default function ProviderDashboardPage() {
 
           {/* プラン管理 */}
           <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px' }}>会員プラン</h3>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>プラン名</label><input id="mbr-plan-name" placeholder="例：月4回プラン" /></div>
-              <div className="form-field" style={{ marginBottom: 0, minWidth: '120px' }}><label>月額（円）</label><input id="mbr-plan-price" type="number" min="1" placeholder="8000" /></div>
-              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>説明（任意）</label><input id="mbr-plan-desc" placeholder="任意" /></div>
-              <button type="button" className="btn" id="mbr-plan-add-btn">追加する</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 300px' }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>会員プラン</h3>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>プランごとに、料金・入会金、予約できるメニューと月の回数、オプション、使える割引、配る回数券、入会ページから申し込めるかを決めます。</p>
+              </div>
+              <button type="button" className="btn" id="mbr-plan-add-btn">＋ プランを追加</button>
             </div>
             <div id="mbr-plan-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
+            <div id="mbr-plan-editor" className="pl-ed" style={{ display: 'none' }}></div>
           </div>
 
           {/* オプション（でお要望 2026-10-19：hacomono差分 #5） */}
