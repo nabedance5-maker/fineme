@@ -708,6 +708,7 @@ const DASHBOARD_CSS = `
       .sm-tk { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(26,20,16,0.06); }
       .sm-url { font-size: 12px; word-break: break-all; background: rgba(26,20,16,0.05); padding: 8px 10px; border-radius: 8px; }
       /* チケット（2026-10-22） */
+      .tk-flow { margin-bottom: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(26,20,16,0.06); color: #1a1410; font-size: 13px; font-weight: 700; line-height: 1.6; }
       .tk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; color: #1a1410; }
       .tk-head > div { flex: 1 1 320px; }
       .tk-row { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; }
@@ -17513,12 +17514,14 @@ export default function ProviderDashboardPage() {
 
         {/* 回数券・パッケージ：店舗が記録して発行、またはお客様がオンライン購入（Stripe Connect）。店舗・顧客双方が残り回数を確認できる */}
         <div className="tab-pane" id="tab-packages">
+          {/* チケットと回数券の違いが分かるよう、流れの例を1行（でお要望 2026-10-22：名前はそのまま、役割を見出しに書く） */}
+          <div className="tk-flow">例）ストレッチ10回券（30,000円）を買う → ストレッチチケットが10枚付く → ストレッチを1回予約するごとに1枚使う</div>
           {/* チケット（でお要望 2026-10-22：「ストレッチ」などのメニューに対してチケットを消費して予約する） */}
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
             <div className="tk-head">
               <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>チケット</h2>
-                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約の時に使うチケットです（例：ストレッチチケット）。チケットごとに使えるメニューを決めると、そのメニューはチケットを持っている方だけが予約でき、予約1回でメニューに決めた枚数を使います。チケットは、下の回数券を買った時・月額プランで毎月・お店から直接、のどれでもお客様に付きます。</p>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>チケット（予約に使う券）</h2>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>何の予約に使えるか・1回で何枚使うかを決めます。値段は付けません（例：ストレッチチケット）。チケットは、下の回数券を買った時・月額プランで毎月・お店から直接、のどれでもお客様に付きます。</p>
               </div>
               <button type="button" className="btn" id="tk-add-btn">＋ チケットを作る</button>
             </div>
@@ -17527,14 +17530,12 @@ export default function ProviderDashboardPage() {
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px' }}>回数券を作る</h2>
-            <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-              ここでは「何回分・いくらで売ったか」を記録し、店舗と購入した顧客の両方がFinemeで残り回数を確認できるようにします。お店で直接代金を受け取った場合はこの画面で記録し、お客様がFineme上で購入する場合は、Stripe連携（Fineme利用契約タブ）の設定が必要です。
-            </p>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>回数券（チケットをまとめて売る商品）</h2>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>どのチケットを何枚・いくらで・いつまで使えるかを決めます（例：ストレッチ10回券＝ストレッチチケット10枚・30,000円・180日）。お店で代金を受け取った時は下の「購入を記録する」で記録します。お客様がFinemeで買えるようにするには、カード決済の受け取り設定（Fineme利用契約タブ）が必要です。</p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ minWidth: '180px' }}>
-                <label>パッケージ名</label>
-                <input id="pkg-name" type="text" placeholder="例：パーソナルトレーニング10回券" />
+                <label>回数券の名前</label>
+                <input id="pkg-name" type="text" placeholder="例：ストレッチ10回券" />
               </div>
               <div className="form-field" style={{ minWidth: '170px' }}>
                 <label>付くチケット</label>
@@ -17578,18 +17579,18 @@ export default function ProviderDashboardPage() {
 
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客への購入記録・残り回数</h2>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>回数券の購入記録・残りのチケット</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                購入があったら下で顧客とパッケージを選んで記録してください。予約カードの「来店確認」の隣にも消化ボタンが出るようになります。誤って消化した場合はここから直近1回分を取り消せます。
+                お店で回数券を売った時は、お客様と回数券を選んで記録してください。付いたチケットは予約した時点で使われ、来店前にキャンセルされると戻ります。誤って使った分は、ここから直近の1回を取り消せます。
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
               <div className="form-field" style={{ minWidth: '200px' }}>
-                <label>顧客（New Me Log連携済み）</label>
+                <label>お客様</label>
                 <select id="pkg-assign-user"></select>
               </div>
               <div className="form-field" style={{ minWidth: '200px' }}>
-                <label>パッケージ</label>
+                <label>回数券</label>
                 <select id="pkg-assign-package"></select>
               </div>
               <button className="btn" id="pkg-assign-btn" type="button">購入を記録する</button>
