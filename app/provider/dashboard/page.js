@@ -13332,8 +13332,8 @@ export default function ProviderDashboardPage() {
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('');
-        manualTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません（お客様タブで追加すると、チケットを付けられます）'
-          : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（お客様タブでお客様を開くと付けられます）';
+        manualTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません（メンバータブで追加すると、チケットを付けられます）'
+          : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（メンバータブでお客様を開くと付けられます）';
       }
       manualServiceEl?.addEventListener('change', refreshManualTickets);
       bindMemberSearch(
@@ -13454,7 +13454,7 @@ export default function ProviderDashboardPage() {
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('');
-        csTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（お客様タブでお客様を開くと付けられます）';
+        csTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（メンバータブでお客様を開くと付けられます）';
       }
       async function loadCsAttendees() {
         if (!csCtx || !csAttEl) return;
@@ -14021,7 +14021,7 @@ export default function ProviderDashboardPage() {
         // 任意追加カード（でお要望2026-10-01）
         builtin_referrals: { title: '紹介実績', gotoTab: 'member-referral', gotoLabel: '友達紹介タブを開く', mountId: 'today-referrals-list' },
         builtin_events: { title: 'イベント出欠', gotoTab: 'events', gotoLabel: '出欠確認タブを開く', mountId: 'today-events-list', featureGate: 'attendance_confirm' },
-        builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: 'お客様タブを開く', mountId: 'today-dormant-list' },
+        builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: 'メンバータブを開く', mountId: 'today-dormant-list' },
         builtin_classes: { title: 'グループレッスンの状況', gotoTab: 'service', gotoLabel: 'メニュー（グループレッスン）を開く', mountId: 'today-classes-list', featureGate: 'class_management' },
       };
       // 「＋カードを追加」で選べる任意カード一覧（1枚まで・削除可）。常設4カードは含めない。
@@ -15395,7 +15395,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="customers">お客様</button>
+                  <button className="tab-btn" data-tab="customers">メンバー</button>
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
                   <button className="tab-btn" data-tab="surveys">アンケート</button>
@@ -17204,7 +17204,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: 12 }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>休眠判定の設定</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
-              最終来店からこの日数を超えたお客様を「休眠」としてお客様タブに表示します（既定90日）。
+              最終来店からこの日数を超えたお客様を「休眠」としてメンバータブに表示します（既定90日）。
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ minWidth: '120px' }}>
