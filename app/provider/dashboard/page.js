@@ -9370,6 +9370,73 @@ export default function ProviderDashboardPage() {
       window.openCustomerModal = openCustomerModal;
     })();
 
+    // ── ログイン・通知先タブ（でお要望 2026-10-22） ──
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      let notify = [];
+      let loginEmail = '';
+      const $ = id => document.getElementById(id);
+      function renderNotify() {
+        const box = $('as-notify-list'); if (!box) return;
+        box.innerHTML = notify.length ? notify.map((e, i) => `<div class="sm-tk"><span>${esc(e)}</span><button type="button" class="btn btn-ghost" data-as-del="${i}" style="font-size:12px;padding:3px 10px">外す</button></div>`).join('')
+          : `<p style="font-size:13px;margin:0;color:#1a1410">登録はありません（ログイン用の ${esc(loginEmail)} に届きます）</p>`;
+        box.querySelectorAll('[data-as-del]').forEach(b => b.addEventListener('click', () => { notify.splice(Number(b.dataset.asDel), 1); renderNotify(); }));
+      }
+      async function load() {
+        const r = await fetch('/api/provider/account-settings', { headers: H() });
+        if (!r.ok) { $('as-login-email').textContent = '読み込めませんでした（店舗のオーナーのアカウントでログインしてください）'; return; }
+        const d = await r.json();
+        loginEmail = d.login_email || '';
+        $('as-login-email').textContent = loginEmail;
+        const pend = $('as-pending');
+        if (pend) { pend.style.display = d.pending_email ? '' : 'none'; pend.textContent = d.pending_email ? `${d.pending_email} への変更の確認待ちです（両方のアドレスに届いたメールのボタンを押してください）` : ''; }
+        notify = d.notify_emails || [];
+        renderNotify();
+      }
+      $('as-notify-add')?.addEventListener('click', () => {
+        const v = $('as-notify-new').value.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { $('as-notify-msg').textContent = 'メールアドレスの形を確かめてください'; return; }
+        if (!notify.includes(v)) notify.push(v);
+        $('as-notify-new').value = ''; $('as-notify-msg').textContent = '「保存する」を押すと反映されます';
+        renderNotify();
+      });
+      $('as-notify-save')?.addEventListener('click', async () => {
+        const r = await fetch('/api/provider/account-settings', { method: 'PUT', headers: H(), body: JSON.stringify({ notify_emails: notify }) });
+        const d = await r.json().catch(() => ({}));
+        $('as-notify-msg').textContent = r.ok ? '保存しました' : (d.error || '保存できませんでした');
+        if (r.ok) { notify = d.notify_emails; renderNotify(); }
+      });
+      $('as-email-save')?.addEventListener('click', async () => {
+        const v = $('as-new-email').value.trim().toLowerCase();
+        const msg = $('as-email-msg');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { msg.textContent = 'メールアドレスの形を確かめてください'; return; }
+        if (v === loginEmail.toLowerCase()) { msg.textContent = '今と同じアドレスです'; return; }
+        const { error } = await _sb.auth.updateUser({ email: v }, { emailRedirectTo: `${location.origin}/provider/dashboard?tab=account-settings` });
+        msg.textContent = error ? `送れませんでした：${error.message}` : '確認メールを送りました。今のアドレスと新しいアドレスの両方に届いたメールのボタンを押すと変更が完了します。';
+        if (!error) { $('as-new-email').value = ''; load(); }
+      });
+      $('as-pw-save')?.addEventListener('click', async () => {
+        const cur = $('as-pw-current').value, p1 = $('as-pw-new').value, p2 = $('as-pw-new2').value;
+        const msg = $('as-pw-msg');
+        if (!cur) { msg.textContent = '今のパスワードを入れてください'; return; }
+        if (p1.length < 8) { msg.textContent = '新しいパスワードは8文字以上にしてください'; return; }
+        if (p1 !== p2) { msg.textContent = '確認用のパスワードが一致しません'; return; }
+        const btn = $('as-pw-save'); btn.disabled = true; msg.textContent = '変更中…';
+        // 今のパスワードで本人を確かめてから変える（画面を開いたままの他人に変えられないように）
+        const { error: e1 } = await _sb.auth.signInWithPassword({ email: loginEmail, password: cur });
+        if (e1) { btn.disabled = false; msg.textContent = '今のパスワードが違います'; return; }
+        const { error: e2 } = await _sb.auth.updateUser({ password: p1 });
+        btn.disabled = false;
+        if (e2) { msg.textContent = `変更できませんでした：${e2.message}`; return; }
+        ['as-pw-current', 'as-pw-new', 'as-pw-new2'].forEach(id => { $(id).value = ''; });
+        msg.textContent = 'パスワードを変更しました。次からは新しいパスワードでログインしてください。';
+      });
+      document.querySelectorAll('[data-tab="account-settings"]').forEach(b => b.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'account-settings') load();
+    })();
+
     // ── 会員タブ（でお要望 2026-10-22：お店の会員を管理サイトから登録・チケットを付ける・プランの入会を案内） ──
     (() => {
       const token = getSupabaseToken();
@@ -13296,7 +13363,7 @@ export default function ProviderDashboardPage() {
         const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('');
         manualTicketNote.textContent = !d ? 'この方はお店の会員ではありません（会員の画面で登録すると、チケットを付けられます）'
-          : usable.length ? `1回で${cost}枚使います（来店を記録した時に使ったことになります）` : 'このメニューに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+          : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（会員の画面で付けられます）';
       }
       manualServiceEl?.addEventListener('change', refreshManualTickets);
       bindMemberSearch(
@@ -13417,7 +13484,7 @@ export default function ProviderDashboardPage() {
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
         csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('');
-        csTicketNote.textContent = !d ? 'この方はお店の会員ではありません' : usable.length ? `1回で${cost}枚使います（来店を記録した時に使ったことになります）` : 'このレッスンに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+        csTicketNote.textContent = !d ? 'この方はお店の会員ではありません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（会員の画面で付けられます）';
       }
       async function loadCsAttendees() {
         if (!csCtx || !csAttEl) return;
@@ -15410,6 +15477,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="line-channel" data-feature="line_channel">LINE連携<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
+                  <button className="tab-btn" data-tab="account-settings">ログイン・通知先</button>
                   <button className="tab-btn" data-tab="members">スタッフのログイン</button>
                   <button className="tab-btn" data-tab="activity-log" data-feature="activity_log">操作ログ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
@@ -17475,6 +17543,40 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* 回数券・パッケージ：店舗が記録して発行、またはお客様がオンライン購入（Stripe Connect）。店舗・顧客双方が残り回数を確認できる */}
+        {/* ログイン・通知先（でお要望 2026-10-22：管理画面に入るIDとパスワード、通知メールの宛先を変えられるように） */}
+        <div className="tab-pane" id="tab-account-settings">
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>ログイン用メールアドレス（ID）</h2>
+            <p style={{ fontSize: '13px', margin: 0, color: '#1a1410' }}>今のログイン用メールアドレス：<b id="as-login-email">読み込み中…</b></p>
+            <p id="as-pending" style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', display: 'none' }}></p>
+            <div className="sm-inline">
+              <input type="email" id="as-new-email" placeholder="新しいメールアドレス" style={{ flex: '1 1 240px' }} />
+              <button type="button" className="btn" id="as-email-save">変更の確認メールを送る</button>
+            </div>
+            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>今のアドレスと新しいアドレスの両方に確認メールが届きます。両方のメールのボタンを押すと変更が完了し、次からは新しいアドレスでログインします。お店の登録メールも自動で新しいアドレスに変わります。</p>
+            <span id="as-email-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>パスワード</h2>
+            <div className="sm-grid">
+              <label className="tk-field">今のパスワード<input type="password" id="as-pw-current" autoComplete="current-password" /></label>
+              <label className="tk-field">新しいパスワード（8文字以上）<input type="password" id="as-pw-new" autoComplete="new-password" /></label>
+              <label className="tk-field">新しいパスワード（確認）<input type="password" id="as-pw-new2" autoComplete="new-password" /></label>
+            </div>
+            <div className="sm-inline"><button type="button" className="btn" id="as-pw-save">パスワードを変更する</button><span id="as-pw-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span></div>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>通知を受け取るメールアドレス</h2>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約・キャンセル・入会の申込などのお知らせメールの宛先です。複数登録すると全員に届きます（10件まで）。登録が無い時は、ログイン用のメールアドレスに届きます。</p>
+            <div id="as-notify-list" className="stack" style={{ gap: '6px' }}></div>
+            <div className="sm-inline">
+              <input type="email" id="as-notify-new" placeholder="追加するメールアドレス" style={{ flex: '1 1 240px' }} />
+              <button type="button" className="btn btn-ghost" id="as-notify-add">追加</button>
+            </div>
+            <div className="sm-inline"><button type="button" className="btn" id="as-notify-save">保存する</button><span id="as-notify-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span></div>
+          </div>
+        </div>
+
         {/* 会員（でお要望 2026-10-22：お店の会員登録を管理サイトからも。会員登録とプラン契約・チケットは別） */}
         <div className="tab-pane" id="tab-store-members">
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>

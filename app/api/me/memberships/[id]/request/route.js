@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { CHANGE_LABEL } from '@/lib/membership-changes';
 import { sendMembershipRequestEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const today = () => new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
@@ -64,7 +65,7 @@ export async function POST(request, { params }) {
   // 店舗に知らせる（メール＋店舗オーナーのLINE）
   try {
     const [{ data: prov }, { data: plans }] = await Promise.all([
-      supabase.from('providers').select('name, email, line_user_id').eq('id', m.provider_id).single(),
+      supabase.from('providers').select('name, email, notify_emails, line_user_id').eq('id', m.provider_id).single(),
       supabase.from('provider_membership_plans').select('id, name').in('id', [m.plan_id, row.to_plan_id].filter(Boolean)),
     ]);
     const pn = Object.fromEntries((plans || []).map(p => [p.id, p.name]));
@@ -77,7 +78,7 @@ export async function POST(request, { params }) {
       row.reason && `理由：${row.reason}`,
     ].filter(Boolean);
     const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/provider/dashboard?tab=memberships`;
-    if (prov?.email) await sendMembershipRequestEmail({ to: prov.email, providerName: prov.name, customerName, kindLabel: CHANGE_LABEL[kind], lines, dashboardUrl });
+    if (providerRecipients(prov).length) await sendMembershipRequestEmail({ to: providerRecipients(prov), providerName: prov.name, customerName, kindLabel: CHANGE_LABEL[kind], lines, dashboardUrl });
     if (prov?.line_user_id) await sendLinePush(prov.line_user_id, `【Fineme】${customerName}様から会員プランの${CHANGE_LABEL[kind]}の申請がありました。\n${lines.join('\n')}\n管理画面の「入会手続き」で承認してください。\n${dashboardUrl}`);
   } catch (e) { console.error('[membership request notify]', e?.message); }
 

@@ -10,6 +10,7 @@ import { idealNextDate } from '@/lib/log-axes';
 import { SNOOZE_DAYS } from '@/lib/log-rebook';
 import { sendLineBookingRequestEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { logCustomerActivity } from '@/lib/activity-log';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -158,7 +159,7 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, name, email, line_user_id')
+    .select('id, name, email, notify_emails, line_user_id')
     .eq('slug', log.provider_slug)
     .single();
   if (!provider) return '店舗情報が見つかりませんでした。';
@@ -213,7 +214,7 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
 
   try {
     await sendLineBookingRequestEmail({
-      providerEmail: provider.email, providerName: provider.name, userName, note,
+      providerEmail: providerRecipients(provider), providerName: provider.name, userName, note,
       preferredDate, preferredTime,
     });
   } catch (e) { console.error('[line/webhook] book_request email', e); }
@@ -299,9 +300,9 @@ async function cancelReservationFromLine(rid, channelProviderId, lineUserId) {
     detail: { reserved_date: r.confirmed_date || r.reserved_date, start_time: r.confirmed_time || r.start_time, previous_status: r.status },
   });
 
-  const { data: provider } = await supabase.from('providers').select('name, email, line_user_id').eq('id', r.provider_id).single();
+  const { data: provider } = await supabase.from('providers').select('name, email, notify_emails, line_user_id').eq('id', r.provider_id).single();
   try {
-    await sendCancelledByUserEmail({ reservation: r, providerEmail: provider?.email, providerName: provider?.name });
+    await sendCancelledByUserEmail({ reservation: r, providerEmail: providerRecipients(provider), providerName: provider?.name });
   } catch (e) { console.error('[line/webhook] cancel_reservation email', e); }
   if (provider?.line_user_id) {
     try {

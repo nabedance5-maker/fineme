@@ -9,6 +9,7 @@ import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 import { autoConsumePackageForVisit } from '@/lib/consume-package';
 import { refundDepositIfPaid } from '@/lib/reservation-deposit';
 import { withAudit, logCustomerActivity } from '@/lib/activity-log';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 export async function GET(request, context) {
   try {
@@ -115,7 +116,7 @@ async function __PATCH(request, context) {
     }
 
     const { data: provider } = await db
-      .from('providers').select('name, email, line_user_id').eq('id', data.provider_id).single();
+      .from('providers').select('name, email, notify_emails, line_user_id').eq('id', data.provider_id).single();
 
     const notifyStatuses = ['approved', 'rejected', 'counter_proposed'];
     if (notifyStatuses.includes(newStatus)) {
@@ -240,7 +241,7 @@ async function __PATCH(request, context) {
     if (newStatus === 'cancelled') {
       if (provider?.email) {
         try {
-          await sendCancelledByUserEmail({ reservation: data, providerEmail: provider.email, providerName: provider.name });
+          await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider.name });
         } catch (e) { console.error('[cancel email]', e); }
       }
       if (provider?.line_user_id) {

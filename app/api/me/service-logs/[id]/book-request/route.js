@@ -13,6 +13,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendLineBookingRequestEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { logCustomerActivity } from '@/lib/activity-log';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -50,7 +51,7 @@ export async function POST(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, name, email, line_user_id')
+    .select('id, name, email, notify_emails, line_user_id')
     .eq('slug', log.provider_slug)
     .single();
   if (!provider) return Response.json({ error: '店舗情報が見つかりませんでした' }, { status: 404 });
@@ -105,7 +106,7 @@ export async function POST(request, { params }) {
 
   try {
     await sendLineBookingRequestEmail({
-      providerEmail: provider.email, providerName: provider.name, userName, note,
+      providerEmail: providerRecipients(provider), providerName: provider.name, userName, note,
       preferredDate, preferredTime,
     });
   } catch (e) { console.error('[book-request] email', e); }

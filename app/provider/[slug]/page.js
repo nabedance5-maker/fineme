@@ -1279,7 +1279,7 @@ function ClassTab({ provider }) {
                 <span>使えるチケットをお持ちではありません。<a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>・<a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>月額プランに入会する</a></span>
               ) : (
                 <label style={{ display: 'grid', gap: '4px', marginTop: '6px' }}>
-                  <span>使うチケット（1回{pickedClass.ticket_cost}枚）</span>
+                  <span>使うチケット（1回{pickedClass.ticket_cost}枚。予約した時点で使い、キャンセルすると戻ります）</span>
                   <select value={chosenTicket} onChange={e => setTicketId(e.target.value)} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}>
                     {pickedTickets.map(t => <option key={t.id} value={t.id} style={{ color: '#000' }}>{t.name}（{t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>)}
                   </select>
@@ -1971,11 +1971,11 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
         {/* 使用チケット選択（でお要望2026-09-27：「予約時にどのチケットで行くか選択
             できれば」）。この店舗の有効なチケットを持っている会員にだけ表示。選んだ
-            チケットは来店確認時に優先して自動消化される（複数持っている場合の
+            チケットは予約した時点で使い、キャンセルすると戻る（2026-10-22。それ以前は来店確認時に消化していた。複数持っている場合の
             「どれを自動消化すべきか判断できない」問題を、ここでの選択で解消する）。 */}
         {ticketChoices.length > 0 && (
           <div>
-            <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>{ticketOnly ? `使うチケット *（このメニューは1回${effSvc?.ticket_cost || 1}枚使います）` : '使うチケット（任意）'}</label>
+            <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>{ticketOnly ? `使うチケット *（このメニューは1回${effSvc?.ticket_cost || 1}枚。予約した時点で使い、キャンセルすると戻ります）` : '使うチケット（任意）'}</label>
             <select
               value={selectedPackageId}
               onChange={e => setSelectedPackageId(e.target.value)}

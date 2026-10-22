@@ -12,6 +12,7 @@ import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
 import { customerEntitlements, checkService, scopeLabel, needsTicket, hiddenForMember } from '@/lib/booking-eligibility';
 import { checkAndAssign } from '@/lib/availability-engine';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -325,7 +326,7 @@ export async function POST(request) {
   // 掲載者情報を取得（通知用）
   const { data: provider } = await supabase
     .from('providers')
-    .select('name, email, line_user_id, billing_started, id')
+    .select('name, email, notify_emails, line_user_id, billing_started, id')
     .eq('id', provider_id)
     .single();
 
@@ -340,7 +341,7 @@ export async function POST(request) {
   try {
     await sendReservationCreatedEmails({
       reservation: { ...data, preferred_date: data.reserved_date, preferred_time: data.start_time, message },
-      providerEmail: provider?.email,
+      providerEmail: providerRecipients(provider),
       providerName: provider?.name,
     });
   } catch (e) { console.error('[reservation email]', e); }
