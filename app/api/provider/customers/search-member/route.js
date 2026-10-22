@@ -34,16 +34,26 @@ export async function GET(request) {
   if (!q) return Response.json([]);
   const esc = q.replace(/[%_]/g, c => '\\' + c);
 
-  // このお店の会員（でお要望 2026-10-22）を先に出す。お店が登録した情報なので1文字から探せる
-  const { data: mem } = await supabase.from('provider_store_members').select('user_id').eq('provider_id', provider.id).eq('status', 'active');
-  const memIds = (mem || []).map(m => m.user_id);
-  let storeHits = [];
-  if (memIds.length) {
-    const { data: pr } = await supabase.from('provider_customer_profiles').select('user_id, last_name, first_name, last_name_kana, first_name_kana, phone')
-      .eq('provider_id', provider.id).in('user_id', memIds)
-      .or(`phone.ilike.%${esc}%,last_name.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name_kana.ilike.%${esc}%,first_name_kana.ilike.%${esc}%`).limit(8);
-    storeHits = (pr || []).map(p => ({ id: p.user_id, name: [p.last_name, p.first_name].filter(Boolean).join(' ') || '(お名前未登録)', maskedPhone: p.phone || '', store_member: true }));
-  }
+  // このお店のお客様（会員・非会員とも。でお要望 2026-10-22：予約入力で名前を入れたら候補が出るように）を先に出す。
+  // お店が登録した情報なので1文字から探せ、電話番号もそのまま出す
+  const [{ data: pr }, { data: mc }] = await Promise.all([
+    supabase.from('provider_customer_profiles').select('user_id, manual_customer_id, last_name, first_name, last_name_kana, first_name_kana, phone')
+      .eq('provider_id', provider.id)
+      .or(`phone.ilike.%${esc}%,last_name.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name_kana.ilike.%${esc}%,first_name_kana.ilike.%${esc}%`).limit(10),
+    supabase.from('provider_manual_customers').select('id, display_name, linked_user_id').eq('provider_id', provider.id).ilike('display_name', `%${esc}%`).limit(10),
+  ]);
+  const storeHits = [];
+  const seenStore = new Set();
+  (pr || []).forEach(p => {
+    const key = p.user_id || `m:${p.manual_customer_id}`;
+    if (seenStore.has(key)) return; seenStore.add(key);
+    storeHits.push({ id: p.user_id || null, manual_id: p.manual_customer_id || null, name: [p.last_name, p.first_name].filter(Boolean).join(' ') || '(お名前未登録)', maskedPhone: p.phone || '', phone: p.phone || '', store_member: true });
+  });
+  (mc || []).forEach(m => {
+    const key = m.linked_user_id || `m:${m.id}`;
+    if (seenStore.has(key)) return; seenStore.add(key);
+    storeHits.push({ id: m.linked_user_id || null, manual_id: m.id, name: m.display_name || '(お名前未登録)', maskedPhone: '', phone: '', store_member: true, manual: !m.linked_user_id });
+  });
   if (q.length < 3) return Response.json(storeHits);
   const { data, error } = await supabase
     .from('profiles')
@@ -53,7 +63,7 @@ export async function GET(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  const seen = new Set(storeHits.map(h => h.id));
+  const seen = new Set(storeHits.map(h => h.id).filter(Boolean));
   const results = storeHits.concat((data || []).filter(p => !seen.has(p.id)).map(p => ({
     id: p.id,
     name: [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name || '(お名前未登録)',

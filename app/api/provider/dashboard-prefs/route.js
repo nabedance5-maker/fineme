@@ -97,7 +97,7 @@ export async function PATCH(request) {
     updates.tab_category_overrides = body.tab_category_overrides;
   } else if (categoriesChanged) {
     const healed = { ...current.tab_category_overrides };
-    Object.keys(healed).forEach(tabKey => { if (!validCategoryKeys.includes(healed[tabKey])) delete healed[tabKey]; });
+    Object.keys(healed).forEach(tabKey => { if (!validCategoryKeys.includes(healed[tabKey]) && healed[tabKey] !== 'hidden') delete healed[tabKey]; });
     updates.tab_category_overrides = healed;
   }
 

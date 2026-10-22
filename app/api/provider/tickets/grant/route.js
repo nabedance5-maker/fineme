@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
-import { isStoreCustomer } from '@/lib/store-members';
+import { isStoreCustomer, ensureManualLinked } from '@/lib/store-members';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -15,6 +15,12 @@ async function __POST(request) {
   const b = await request.json().catch(() => ({}));
   const { data: tk } = await supabase.from('provider_tickets').select('id, name').eq('id', b.ticket_id || '').eq('provider_id', a.provider.id).maybeSingle();
   if (!tk) return Response.json({ error: 'チケットを選んでください' }, { status: 400 });
+  // 非会員のお客様（manual_id）には、チケットを持てるようアカウントを用意して紐づけてから付ける
+  if (!b.user_id && b.manual_id) {
+    const r = await ensureManualLinked(a.provider.id, b.manual_id).catch(e => ({ error: e.message }));
+    if (r.error) return Response.json({ error: r.error }, { status: 400 });
+    b.user_id = r.userId;
+  }
   // このお店のお客様（会員登録・予約・回数券などでつながっている方）だけに付けられる
   if (!(await isStoreCustomer(a.provider.id, b.user_id))) return Response.json({ error: 'このお店のお客様を選んでください' }, { status: 400 });
   const unlimited = !!b.unlimited;
@@ -30,6 +36,6 @@ async function __POST(request) {
     source: 'manual',
   }).select().single();
   if (error) return Response.json({ error: '付けられませんでした' }, { status: 500 });
-  return Response.json(data, { status: 201 });
+  return Response.json({ ...data, user_id: b.user_id }, { status: 201 });
 }
 export const POST = withAudit(__POST);

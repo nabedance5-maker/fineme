@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { ensureManualLinked } from '@/lib/store-members';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -82,8 +83,16 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'customer_packages'); if (locked) return locked; }
 
-  const { user_id, package_id } = await request.json().catch(() => ({}));
-  if (!user_id || !package_id) return Response.json({ error: 'user_id と package_id は必須です' }, { status: 400 });
+  const body = await request.json().catch(() => ({}));
+  let { user_id } = body;
+  const { package_id } = body;
+  // 非会員のお客様（manual_id）にも回数券を記録できる（でお要望 2026-10-22）。チケットを持てるよう裏でアカウントを用意して紐づける
+  if (!user_id && body.manual_id) {
+    const r = await ensureManualLinked(provider.id, body.manual_id).catch(e => ({ error: e.message }));
+    if (r.error) return Response.json({ error: r.error }, { status: 400 });
+    user_id = r.userId;
+  }
+  if (!user_id || !package_id) return Response.json({ error: 'お客様と回数券を選んでください' }, { status: 400 });
 
   const { data: pkg, error: pkgError } = await supabase
     .from('service_packages')

@@ -60,6 +60,8 @@ const DASHBOARD_CSS = `
       .pd-session-card h2 { font-size: 19px; margin: 0 0 10px; }
       .pd-session-card p { font-size: 14px; line-height: 1.8; color: rgba(26,20,16,.7); margin: 0 0 22px; }
       .pd-session-btn { display: inline-flex; justify-content: center; width: 100%; padding: 14px 20px; border-radius: 999px; font-weight: 800; font-size: 15px; color: #1a1410; background: linear-gradient(180deg, #e8cf7e, #c9a84c); text-decoration: none; }
+      .cal-loading { display: flex; align-items: center; gap: 10px; padding: 24px 20px; color: #1a1410; font-size: 13.5px; font-weight: 700; }
+      .cal-loading-spin { width: 20px; height: 20px; border: 3px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; flex-shrink: 0; }
       #tab-calendar.pd-cal-loading { position: relative; }
       #tab-calendar.pd-cal-loading::after { content: ''; position: absolute; inset: 0; background: rgba(250,248,243,.6); z-index: 5; }
       #tab-calendar.pd-cal-loading::before { content: ''; position: absolute; left: 50%; top: 160px; width: 36px; height: 36px; margin-left: -18px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; z-index: 6; }
@@ -1172,6 +1174,10 @@ export default function ProviderDashboardPage() {
           if (btn) section.appendChild(btn);
         });
       });
+      // 非表示にしたタブがあれば、サイドメニューの「非表示」を出す
+      const hiddenSection = document.querySelector('.pd-panel-section[data-panel="hidden"]');
+      const hiddenRailBtn = document.getElementById('pd-rail-hidden-btn');
+      if (hiddenSection && hiddenRailBtn) hiddenRailBtn.style.display = hiddenSection.children.length ? '' : 'none';
       window.__pdSyncRails?.();
     }
 
@@ -2735,7 +2741,11 @@ export default function ProviderDashboardPage() {
         }
         const sel = new Set(s?.ticket_ids || []);
         document.getElementById('svc-ticket-list').innerHTML = ticketTypes.length
-          ? ticketTypes.filter(t => t.active || sel.has(t.id)).map(t => `<label><input type="checkbox" name="ticket_ids" value="${t.id}" ${sel.has(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('')
+          ? ticketTypes.filter(t => t.active || sel.has(t.id)).map(t => {
+              // このチケットが付く回数券・月額プラン（メニューにチケットを選べば、それらで予約できるようになる）
+              const from = [...(t.packages || []).map(p => `回数券「${esc(p.name)}」`), ...(t.plans || []).map(p => `月額プラン「${esc(p.name)}」`)];
+              return `<label style="align-items:flex-start"><input type="checkbox" name="ticket_ids" value="${t.id}" ${sel.has(t.id) ? 'checked' : ''} style="margin-top:3px"><span>${esc(t.name)}<span style="display:block;font-size:11.5px">${from.length ? `付く：${from.join('・')}` : 'まだどの回数券・プランにも付いていません（お店から直接付ける時だけ）'}</span></span></label>`;
+            }).join('')
           : '<span>チケットがまだありません（「チケット・回数券」タブで作れます）</span>';
         editForm.elements['ticket_cost'].value = s?.ticket_cost || 1;
         editForm.elements['hide_when_locked'].checked = !!s?.hide_when_locked;
@@ -8670,6 +8680,7 @@ export default function ProviderDashboardPage() {
             ${!unlimited ? `<button type="button" class="fx-pill" data-ca-act="use">1回消化</button>` : ''}
             ${p.last_usage_id ? `<button type="button" class="fx-pill" data-ca-act="undo">直近の消化を取り消す</button>` : ''}
             <button type="button" class="fx-pill" data-ca-act="edit">編集</button>
+            <button type="button" class="fx-pill" data-ca-act="delete" style="color:#b91c1c;">削除</button>
             ${p.package_type === 'subscription' && p.subscription_status !== 'cancelled' ? `<button type="button" class="fx-pill" data-ca-act="cancel" style="color:#dc2626;">自動付与を解約</button>` : ''}
           </div>
           <div data-ca-edit style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb;">
@@ -8692,6 +8703,9 @@ export default function ProviderDashboardPage() {
         } else if (act === 'undo') {
           if (!confirm('直近の消化を1回分取り消しますか？')) return;
           res = await fetch(`/api/provider/customer-packages/${pkgId}/usages`, { method: 'DELETE', headers: caHeaders() });
+        } else if (act === 'delete') {
+          if (!confirm('このチケットを削除しますか？（使った記録も消えます。元に戻せません）')) return;
+          res = await fetch(`/api/provider/customer-packages/${pkgId}`, { method: 'DELETE', headers: caHeaders() });
         } else if (act === 'cancel') {
           if (!confirm('月額の自動付与を解約しますか？（次回以降のチケット付与が止まります）')) return;
           res = await fetch(`/api/provider/customer-packages/${pkgId}`, { method: 'PATCH', headers: caHeaders(), body: JSON.stringify({ subscription_status: 'cancelled' }) });
@@ -8704,7 +8718,7 @@ export default function ProviderDashboardPage() {
         }
         if (!res) return;
         if (!res.ok) { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || res.status)); return; }
-        showToast(act === 'save' ? '回数券を更新しました' : act === 'use' ? '1回消化しました' : act === 'undo' ? '消化を取り消しました' : '解約しました');
+        showToast(act === 'delete' ? '削除しました' : act === 'save' ? '回数券を更新しました' : act === 'use' ? '1回消化しました' : act === 'undo' ? '消化を取り消しました' : '解約しました');
         loadCustActivity();
       }
 
@@ -8727,10 +8741,10 @@ export default function ProviderDashboardPage() {
           <details style="margin-top:4px;" ${pkgs.some(p => !p.expired && !p.used_up) ? 'open' : ''}>
             <summary style="cursor:pointer;font-size:13px;font-weight:700;">チケット・回数券（${pkgs.length}件）</summary>
             <div style="margin-top:8px;">
-              ${isManual ? `<p class="muted" style="font-size:12px;margin:4px 0;">チケットや月額プランは会員のお客様が使えます。</p>
-                  <div class="sm-inline" data-ca-tomember><input type="email" placeholder="メールアドレス（任意・無ければ店頭だけでご利用）" data-ca-tm-email style="flex:1 1 220px"><button type="button" class="btn" data-ca-tm-go>会員にしてチケットを使えるようにする</button></div>`
+              ${isManual ? '<p class="muted" style="font-size:12px;margin:4px 0;">チケット・回数券はまだありません。</p>'
                 : (pkgs.length ? pkgs.map(caPackageRow).join('') : '<p class="muted" style="font-size:12px;margin:4px 0;">チケット・回数券はまだありません。</p>')}
-              ${!isManual ? '<div data-ca-grant class="ca-sub"></div>' : ''}
+              <div data-ca-grant class="ca-sub"></div>
+              ${isManual ? `<div class="sm-inline" data-ca-tomember style="margin-top:6px"><input type="email" placeholder="メールアドレス（任意）" data-ca-tm-email style="flex:1 1 200px"><button type="button" class="btn btn-ghost" data-ca-tm-go>会員にする（月額プランやお客様自身の予約に使う）</button></div>` : ''}
             </div>
           </details>
           ${!isManual ? '<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;">月額プランの入会を案内</summary><div data-ca-plan class="ca-sub"></div></details>' : ''}
@@ -8767,7 +8781,6 @@ export default function ProviderDashboardPage() {
             openCustomerModal(d.user_id, 'member');
             loadAll();
           });
-          return;
         }
         const R = await caLoadRefs();
         if (uid !== currentCustUid) return;
@@ -8785,11 +8798,13 @@ export default function ProviderDashboardPage() {
           if (q('unlimited')) q('unlimited').onchange = () => { q('count').disabled = q('unlimited').checked; };
           if (q('go')) q('go').onclick = async () => {
             q('go').disabled = true;
-            const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ user_id: uid, ticket_id: q('ticket').value, count: q('count').value, unlimited: q('unlimited').checked, valid_days: q('days').value, note: q('note').value }) });
+            // 非会員のお客様は manual_id で送る（チケットを持てるよう、裏でアカウントを用意して紐づける）
+            const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ ...(isManual ? { manual_id: uid } : { user_id: uid }), ticket_id: q('ticket').value, count: q('count').value, unlimited: q('unlimited').checked, valid_days: q('days').value, note: q('note').value }) });
             const d = await r.json().catch(() => ({}));
             q('go').disabled = false;
             if (!r.ok) { showToast(d.error || '付けられませんでした'); return; }
-            showToast('チケットを付けました'); loadCustActivity();
+            showToast('チケットを付けました');
+            if (isManual && d.user_id) { openCustomerModal(d.user_id, 'member'); loadAll(); } else loadCustActivity();
           };
         }
         const pb = custActivityEl.querySelector('[data-ca-plan]');
@@ -9660,7 +9675,11 @@ export default function ProviderDashboardPage() {
           seen.add(r.user_id);
           opts.push(`<option value="${r.user_id}">${esc(r.customer_name)}</option>`);
         });
-        userSel.innerHTML = opts.length ? opts.join('') : '<option value="">New Me Log連携済みの顧客がいません</option>';
+        // 非会員のお客様にも記録できる（でお要望 2026-10-22）
+        const mres = await fetch('/api/provider/customers/manual', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }).catch(() => null);
+        const manuals = mres?.ok ? await mres.json() : [];
+        manuals.filter(m => !m.linked_user_id).forEach(m => opts.push(`<option value="m:${m.id}">${esc(m.display_name)}（非会員）</option>`));
+        userSel.innerHTML = opts.length ? opts.join('') : '<option value="">お客様がいません</option>';
       }
 
       async function loadCustomerPackages() {
@@ -9818,7 +9837,7 @@ export default function ProviderDashboardPage() {
           const res = await fetch('/api/provider/customer-packages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
-            body: JSON.stringify({ user_id, package_id }),
+            body: JSON.stringify({ ...(user_id.startsWith('m:') ? { manual_id: user_id.slice(2) } : { user_id }), package_id }),
           });
           assignBtn.disabled = false;
           if (!res.ok) { const e = await res.json().catch(() => {}); if (assignMsg) { assignMsg.style.color = '#ef4444'; assignMsg.textContent = e?.error || '記録に失敗しました'; } return; }
@@ -10103,6 +10122,7 @@ export default function ProviderDashboardPage() {
         const orderOverrides = prefs.tab_order_overrides || {};
         const byCategory = {};
         (prefs.sidebar_order || []).forEach(key => { byCategory[key] = []; });
+        byCategory.hidden = [];
         TAB_CATALOG.forEach(t => {
           const cat = overrides[t.key] || t.category;
           if (byCategory[cat]) byCategory[cat].push(t.key);
@@ -10149,13 +10169,31 @@ export default function ProviderDashboardPage() {
                     <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-down="${key}" data-tl-cat="${catKey}"${i === tabs.length - 1 ? ' disabled' : ''}>↓</button>
                     <select data-tl-move="${key}" style="font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px">
                       ${defs.map(c2 => `<option value="${c2.key}"${c2.key === catKey ? ' selected' : ''}>${esc(c2.label)}</option>`).join('')}
+                      <option value="hidden">非表示にする</option>
                     </select>
                   </div>
                 `).join('') : `<p class="muted" style="font-size:11.5px;margin:0">タブがありません。他のカテゴリーのタブをここへ移動できます。</p>`}
               </div>
             </div>
           `;
-        }).join('');
+        }).join('') + (() => {
+          // 非表示にしたタブ（サイドメニューでは「非表示」の中にまとまる。ここから元のカテゴリーに戻せる）
+          const hid = byCategory.hidden || [];
+          return `<div style="border:1px dashed rgba(26,20,16,0.25);border-radius:10px;padding:10px 12px">
+            <strong style="font-size:13px">非表示</strong>
+            <p class="muted" style="font-size:11.5px;margin:2px 0 8px">使わないタブはここへ移すと、サイドメニューの「非表示」にまとまります（機能設定でOFFにしなくても隠せます）。</p>
+            <div class="stack" style="gap:6px">
+              ${hid.length ? hid.map(key => `
+                <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(26,20,16,0.03);border-radius:8px">
+                  <span style="flex:1;font-size:12.5px">${esc(labelOfTab(key))}</span>
+                  <select data-tl-move="${key}" style="font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px">
+                    <option value="hidden" selected>非表示</option>
+                    ${defs.map(c2 => `<option value="${c2.key}">${esc(c2.label)}に戻す</option>`).join('')}
+                  </select>
+                </div>`).join('') : '<p class="muted" style="font-size:11.5px;margin:0">非表示にしたタブはありません。</p>'}
+            </div>
+          </div>`;
+        })();
 
         layoutEl.querySelectorAll('[data-cat-up]').forEach(btn => btn.addEventListener('click', () => moveCategory(btn.dataset.catUp, -1)));
         layoutEl.querySelectorAll('[data-cat-down]').forEach(btn => btn.addEventListener('click', () => moveCategory(btn.dataset.catDown, 1)));
@@ -12258,6 +12296,9 @@ export default function ProviderDashboardPage() {
       let RANGE_START_MIN = 0;
       let RANGE_END_MIN = 24 * 60;
       let businessHoursData = {}; // {mon:{open,close,closed}, ...}。前後1時間の余白帯をグレー表示するために使う
+      // 営業時間と表示中の週の予約を読み終えるまでは「読み込み中」を出す。営業時間が空のうちに描くと
+      // どの日も「定休日です」と出てしまっていた（でお指摘 2026-10-22・繰り返し指摘）。
+      let hoursLoaded = false, weekLoaded = false;
       let closedDatesSet = new Set(); // 臨時休業日（YYYY-MM-DD）
       const WEEKDAY_KEYS_BH = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       async function loadCalendarRange() {
@@ -12269,6 +12310,7 @@ export default function ProviderDashboardPage() {
           const { business_hours } = await bhRes.json();
           businessHoursData = business_hours || {};
         }
+        hoursLoaded = true;
         if (closedRes.ok) {
           const rows = await closedRes.json();
           closedDatesSet = new Set((rows || []).map(r => r.date));
@@ -12831,6 +12873,10 @@ export default function ProviderDashboardPage() {
         const prevScrollTop = gridWrapEl.scrollTop;
         const prevScrollLeft = gridWrapEl.scrollLeft;
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
+        if (!hoursLoaded || !weekLoaded) {
+          gridWrapEl.innerHTML = '<div class="cal-loading"><span class="cal-loading-spin" aria-hidden="true"></span>読み込み中…</div>';
+          return;
+        }
         if (viewMode === 'class') { renderClassBoard(items); return; }
         // 定休日・臨時休業日はシンプルに「定休日です」とだけ出す（でお要望2026-09-28。
         // hacomonoの表示にならい、既に予約が入っている日は通常のグリッドのまま見せる）。
@@ -13159,6 +13205,7 @@ export default function ProviderDashboardPage() {
         try {
           const ok = await loadWeekData();
           if (ok === false) return;
+          weekLoaded = true;
           renderPills();
           renderDay();
         } finally {
@@ -13267,44 +13314,47 @@ export default function ProviderDashboardPage() {
       // Fineme会員検索の共通ヘルパー（でお要望2026-09-14：手動登録の予約を「その場で」
       // または「後から」Fineme会員と紐付けられるようにする。入力欄・結果表示欄・
       // 選択時コールバックを渡せば、手動予約モーダル・既存予約の詳細モーダル両方から使える）。
-      function bindMemberSearch(inputEl, resultsEl, onSelect) {
+      function bindMemberSearch(inputEl, resultsEl, onSelect, opts = {}) {
         if (!inputEl || !resultsEl) return;
         let timer = null;
         inputEl.addEventListener('input', () => {
           clearTimeout(timer);
           const q = inputEl.value.trim();
-          if (q.length < 3) { resultsEl.innerHTML = ''; return; }
+          // お店のお客様は1文字から候補を出す（Finemeの会員全体は3文字以上・APIで制御）
+          if (q.length < (opts.minLength || 3)) { resultsEl.innerHTML = ''; return; }
           timer = setTimeout(async () => {
             resultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">検索中…</p>';
             const res = await fetch(`/api/provider/customers/search-member?q=${encodeURIComponent(q)}`, { headers: authHeadersCal() });
             if (!res.ok) { resultsEl.innerHTML = ''; return; }
-            const rows = await res.json();
-            if (!rows.length) { resultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">見つかりませんでした</p>'; return; }
-            resultsEl.innerHTML = rows.map(r => `
-              <div data-member-pick="${r.id}" data-member-name="${esc(r.name)}" style="padding:6px 8px;border:1px solid rgba(26,20,16,0.1);border-radius:6px;margin-top:4px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between;gap:8px">
-                <span>${esc(r.name)}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
+            const all = await res.json();
+            // 非会員（Finemeアカウントの無いお客様）は、予約入力のように名前だけで使える所でだけ出す
+            const rows = all.filter(r => r.id || opts.allowManual);
+            if (!rows.length) { resultsEl.innerHTML = opts.allowManual ? '' : '<p class="muted" style="font-size:12px;margin:4px 0">見つかりませんでした</p>'; return; }
+            resultsEl.innerHTML = rows.map((r, i) => `
+              <div data-member-idx="${i}" style="padding:6px 8px;border:1px solid rgba(26,20,16,0.1);border-radius:6px;margin-top:4px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between;gap:8px;background:#fff">
+                <span>${esc(r.name)}${r.store_member ? '' : '<span class="muted">（Fineme会員）</span>'}${!r.id ? '<span class="muted">（非会員）</span>' : ''}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
               </div>
             `).join('');
-            resultsEl.querySelectorAll('[data-member-pick]').forEach(row => row.addEventListener('click', () => {
-              onSelect(row.dataset.memberPick, row.dataset.memberName);
+            resultsEl.querySelectorAll('[data-member-idx]').forEach(row => row.addEventListener('click', () => {
+              const r = rows[Number(row.dataset.memberIdx)];
+              onSelect(r.id, r.name, r);
               resultsEl.innerHTML = '';
-              inputEl.value = '';
+              if (!opts.keepValue) inputEl.value = '';
             }));
           }, 350);
         });
       }
 
-      const manualMemberSearchWrap = document.getElementById('cal-manual-member-search-wrap');
       const manualMemberSelectedEl = document.getElementById('cal-manual-member-selected');
       const manualMemberSelectedNameEl = document.getElementById('cal-manual-member-selected-name');
-      function setManualSelectedMember(userId, name) {
+      function setManualSelectedMember(userId, label) {
         if (manualCtx) manualCtx.userId = userId || null;
-        if (manualMemberSelectedEl) manualMemberSelectedEl.style.display = userId ? 'flex' : 'none';
-        if (manualMemberSearchWrap) manualMemberSearchWrap.style.display = userId ? 'none' : '';
-        if (manualMemberSelectedNameEl) manualMemberSelectedNameEl.textContent = name || '';
-        if (userId && manualNameEl && !manualNameEl.value.trim()) manualNameEl.value = name || '';
+        if (manualMemberSelectedEl) manualMemberSelectedEl.style.display = label ? 'flex' : 'none';
+        if (manualMemberSelectedNameEl) manualMemberSelectedNameEl.textContent = label || '';
         refreshManualTickets();
       }
+      // 候補を選んだ後に名前を書き換えたら、紐付けを外す（別の人の予約に紐づかないように）
+      manualNameEl?.addEventListener('input', () => { if (manualCtx?.userId || manualMemberSelectedEl?.style.display === 'flex') setManualSelectedMember(null, ''); });
       // メニューとチケット（でお要望 2026-10-22）
       const manualServiceEl = document.getElementById('cal-manual-service');
       const manualTicketField = document.getElementById('cal-manual-ticket-field');
@@ -13326,7 +13376,7 @@ export default function ProviderDashboardPage() {
         if (manualTicketField) manualTicketField.style.display = need ? '' : 'none';
         if (!need) return;
         const cost = svc.ticket_cost || 1;
-        if (!manualCtx?.userId) { manualTicketEl.innerHTML = ''; manualTicketNote.textContent = `このメニューはチケットが${cost}枚必要です。上で会員を選んでください`; return; }
+        if (!manualCtx?.userId) { manualTicketEl.innerHTML = ''; manualTicketNote.textContent = `このメニューはチケットが${cost}枚必要です。お客様名から候補を選んでください`; return; }
         manualTicketNote.textContent = '読み込み中…';
         const r = await fetch(`/api/provider/store-members?user_id=${encodeURIComponent(manualCtx.userId)}`, { headers: authHeadersCal() }).catch(() => null);
         if (seq !== manualTicketSeq) return;
@@ -13338,9 +13388,14 @@ export default function ProviderDashboardPage() {
       }
       manualServiceEl?.addEventListener('change', refreshManualTickets);
       bindMemberSearch(
-        document.getElementById('cal-manual-member-search'),
-        document.getElementById('cal-manual-member-results'),
-        (userId, name) => setManualSelectedMember(userId, name),
+        manualNameEl,
+        document.getElementById('cal-manual-name-suggest'),
+        (userId, name, r) => {
+          if (manualNameEl) manualNameEl.value = name || '';
+          if (r?.phone && manualContactEl && !manualContactEl.value.trim()) manualContactEl.value = r.phone;
+          setManualSelectedMember(userId, userId ? `${name}（紐付け済み）` : `${name}（非会員）`);
+        },
+        { minLength: 1, allowManual: true, keepValue: true },
       );
       document.getElementById('cal-manual-member-clear')?.addEventListener('click', () => setManualSelectedMember(null, ''));
 
@@ -13441,7 +13496,7 @@ export default function ProviderDashboardPage() {
         if (userId && csNameEl && !csNameEl.value.trim()) csNameEl.value = name || '';
         refreshCsTickets();
       }
-      bindMemberSearch(document.getElementById('cal-cs-member-search'), document.getElementById('cal-cs-member-results'), (id, name) => setCsMember(id, name));
+      bindMemberSearch(document.getElementById('cal-cs-member-search'), document.getElementById('cal-cs-member-results'), (id, name) => setCsMember(id, name), { minLength: 1 });
       document.getElementById('cal-cs-member-clear')?.addEventListener('click', () => setCsMember(null, ''));
       async function refreshCsTickets() {
         const seq = ++csSeq;
@@ -13785,9 +13840,9 @@ export default function ProviderDashboardPage() {
         // 入れる前から遅かった」。従来は設定データを全部待ってから週データの取得を
         // 始めていたため、直列2段階分の待ち時間がそのままカレンダー表示の遅さになっていた）。
         try {
-          const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
+          const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange().catch(() => { hoursLoaded = true; })]);
           renderViewToggle();
-          if (weekOk !== false) { renderPills(); renderDay(); }
+          if (weekOk !== false) { weekLoaded = true; renderPills(); renderDay(); }
         } finally {
           window.__pdMarkTabReady?.('calendar');
         }
@@ -15753,29 +15808,21 @@ export default function ProviderDashboardPage() {
             </div>
 
             <div id="cal-manual-reservation-fields">
+              {/* お名前を入れると、このお店のお客様（会員・非会員）が候補に出て、選ぶとそのまま紐づく（でお要望 2026-10-22：名前と紐付けが別の枠で二度手間だった） */}
               <div className="form-field">
                 <label>お客様名 *</label>
-                <input type="text" id="cal-manual-name" placeholder="例：山田 花子" />
+                <input type="text" id="cal-manual-name" placeholder="お名前・電話番号を入れると候補が出ます" autoComplete="off" />
+                <div id="cal-manual-name-suggest"></div>
+                <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(26,20,16,0.05)', borderRadius: '8px', fontSize: '13px', marginTop: '6px' }}>
+                  <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#1a1410' }}></span>
+                  <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>紐付けを外す</button>
+                </div>
               </div>
               <div className="form-field">
                 <label>連絡先（電話番号など）</label>
                 <input type="text" id="cal-manual-contact" placeholder="任意" />
               </div>
 
-              {/* このお客様が実はFineme会員だった場合、その場で紐付けておくとカルテ・
-                  来店履歴が引き継がれる（でお要望2026-09-14：「Finemeの会員情報と後からでも
-                  その時でも紐づけられるように」）。任意項目のため未紐付けのままでも作成できる。 */}
-              <div className="form-field">
-                <label>会員と紐付ける（チケットを使う予約は必須）</label>
-                <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
-                  <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
-                  <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
-                </div>
-                <div id="cal-manual-member-search-wrap">
-                  <input type="text" id="cal-manual-member-search" placeholder="お店の会員はお名前・電話番号で検索（Finemeの会員全体は3文字以上）" />
-                  <div id="cal-manual-member-results" style={{ marginTop: '4px' }}></div>
-                </div>
-              </div>
               {/* メニューと使うチケット（でお要望 2026-10-22：チケットが要るメニューは、会員が持っているチケットで予約する） */}
               <div className="form-field">
                 <label>メニュー（任意）</label>
@@ -15855,7 +15902,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="cal-cs-member-clear">解除</button>
               </div>
               <div id="cal-cs-member-search-wrap">
-                <input type="text" id="cal-cs-member-search" placeholder="会員をお名前・電話番号で検索" />
+                <input type="text" id="cal-cs-member-search" placeholder="お客様をお名前・電話番号で検索" />
                 <div id="cal-cs-member-results"></div>
               </div>
               <input type="text" id="cal-cs-name" placeholder="お名前（会員でない方は入力）" />
@@ -16791,7 +16838,7 @@ export default function ProviderDashboardPage() {
               {/* 予約に使うチケット（でお要望 2026-10-22：チケットを消費して予約する。チケットを選ばなければ誰でも予約できる） */}
               <div className="svc-scope">
                 <b>予約に使うチケット</b>
-                <span style={{ fontSize: '12px' }}>選んだチケットを持っている方だけが予約でき、1回の予約で決めた枚数を使います。選ばなければ誰でも予約できます。チケットは「チケット・回数券」タブで作れます。</span>
+                <span style={{ fontSize: '12px' }}>選んだチケットを持っている方だけが予約でき、1回の予約で決めた枚数を使います。そのチケットが付く回数券・月額プランを持っている方は、自動でこのメニューを予約できるようになります（回数券やプランを1つずつ選ぶ必要はありません）。選ばなければ誰でも予約できます。チケットは「チケット・回数券」タブで作れます。</span>
                 <div id="svc-ticket-list" className="svc-scope-list" style={{ paddingLeft: 0 }}></div>
                 <label id="svc-ticket-cost-wrap" style={{ display: 'none' }}>1回の予約で<input type="number" name="ticket_cost" min="1" max="20" defaultValue="1" style={{ width: '64px' }} />枚使う</label>
                 <label id="svc-ticket-hide-wrap" style={{ display: 'none' }}><input type="checkbox" name="hide_when_locked" />チケットを持っていないお客様には、このメニューを表示しない</label>
