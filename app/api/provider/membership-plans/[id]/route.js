@@ -7,6 +7,7 @@ import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizePlanLinks, setPlanMenus } from '@/lib/membership-plan';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -37,6 +38,10 @@ async function __PATCH(request, { params }) {
   if ('name' in body) update.name = body.name?.trim();
   if ('description' in body) update.description = body.description?.trim() || null;
   if ('active' in body) update.active = !!body.active;
+  // 入会金・オプション・割引・回数券・月の予約回数・入会ページからの申込（でお要望 2026-10-22）
+  const links = await normalizePlanLinks(supabase, provider.id, body);
+  if (links.error) return Response.json({ error: links.error }, { status: 400 });
+  Object.assign(update, links);
 
   if ('monthly_price' in body) {
     const price = parseInt(body.monthly_price, 10);
@@ -61,7 +66,8 @@ async function __PATCH(request, { params }) {
 
   const { data, error } = await supabase.from('provider_membership_plans').update(update).eq('id', id).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data);
+  const menu = Array.isArray(body.menu_ids) ? await setPlanMenus(supabase, provider.id, id, body.menu_ids) : null;
+  return Response.json({ ...data, menu_skipped: menu?.skipped || [] });
 }
 
 async function __DELETE(request, { params }) {

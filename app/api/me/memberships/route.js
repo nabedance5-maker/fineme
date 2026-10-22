@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { findCoupon } from '@/lib/membership-changes';
 import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
 import { validateAnswers } from '@/lib/surveys';
+import { planOptionIds, planAllowsDiscount } from '@/lib/membership-plan';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -80,11 +81,12 @@ export async function POST(request) {
   if (existing?.length) return Response.json({ error: 'この店舗への入会申込は既にあります' }, { status: 409 });
 
   const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
-    supabase.from('provider_membership_plans').select('monthly_price').eq('id', plan_id).eq('provider_id', provider_id).single(),
+    supabase.from('provider_membership_plans').select('id, monthly_price, active, online_enabled, included_option_ids, selectable_option_ids, discount_ids').eq('id', plan_id).eq('provider_id', provider_id).single(),
     supabase.from('provider_membership_settings').select('prorate_first_month, form_fields, custom_fields').eq('provider_id', provider_id).maybeSingle(),
     locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider_id).single() : Promise.resolve({ data: null }),
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
+  if (!plan.active || !plan.online_enabled) return Response.json({ error: 'このプランは店頭でのお申し込みのみです' }, { status: 409 });
 
   // 店舗が決めた入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
   const fields = normalizeFormFields(settings?.form_fields);
@@ -96,12 +98,14 @@ export async function POST(request) {
   const shown = k => fields[k] !== 'hidden';
 
   // オプション・クーポン（でお要望 2026-10-19：hacomono差分 #5）
-  const optIds = Array.isArray(option_ids) ? [...new Set(option_ids)].slice(0, 20) : [];
+  // このプランで選べるオプションと、プランに必ず付くオプション（でお要望 2026-10-22）
+  const optIds = planOptionIds(plan, Array.isArray(option_ids) ? option_ids.slice(0, 20) : []);
   const { data: opts } = optIds.length ? await supabase.from('provider_membership_options').select('id, monthly_price').eq('provider_id', provider_id).eq('active', true).in('id', optIds) : { data: [] };
   let discountId = null;
   if (coupon_code) {
     const r = await findCoupon(supabase, provider_id, coupon_code);
     if (r.error) return Response.json({ error: r.error }, { status: 400 });
+    if (!planAllowsDiscount(plan, r.discount.id)) return Response.json({ error: 'このクーポンは選んだプランでは使えません' }, { status: 400 });
     discountId = r.discount.id;
   }
 

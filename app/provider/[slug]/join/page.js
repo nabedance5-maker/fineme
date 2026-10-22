@@ -141,7 +141,10 @@ export default function JoinMembershipPage() {
   // ロッカーを選んだ場合は同じサブスクリプションの明細として一緒に課金されるため、
   // 見積もりにもロッカー代を含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
   // 課金したい」）。
-  const optionTotal = (info?.options || []).filter(o => form.option_ids.includes(o.id)).reduce((t, o) => t + o.monthly_price, 0);
+  // プランに必ず付くオプションと、このプランで選べるオプション（でお要望 2026-10-22）
+  const includedOptions = (info?.options || []).filter(o => (selectedPlan?.included_option_ids || []).includes(o.id));
+  const selectableOptions = (info?.options || []).filter(o => !includedOptions.includes(o) && (selectedPlan?.selectable_option_ids == null || selectedPlan.selectable_option_ids.includes(o.id)));
+  const optionTotal = [...includedOptions, ...selectableOptions.filter(o => form.option_ids.includes(o.id))].reduce((t, o) => t + o.monthly_price, 0);
   const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0) + optionTotal;
   const daysInMonth = form.enrollment_date ? new Date(new Date(form.enrollment_date).getFullYear(), new Date(form.enrollment_date).getMonth() + 1, 0).getDate() : null;
   const remainingDays = form.enrollment_date ? daysInMonth - new Date(form.enrollment_date).getDate() + 1 : null;
@@ -219,7 +222,7 @@ export default function JoinMembershipPage() {
             <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 16px' }}>プラン・入会日</h2>
             <div style={FIELD}>
               <label style={LABEL}>プラン *</label>
-              <select style={INPUT} value={form.plan_id} onChange={e => set('plan_id', e.target.value)}>
+              <select style={INPUT} value={form.plan_id} onChange={e => setForm(f => ({ ...f, plan_id: e.target.value, option_ids: [] }))}>
                 <option value="">選択してください</option>
                 {info?.plans.map(p => <option key={p.id} value={p.id}>{p.name}（月額¥{p.monthly_price.toLocaleString()}）</option>)}
               </select>
@@ -234,10 +237,18 @@ export default function JoinMembershipPage() {
                 </select>
               </div>
             )}
-            {info?.options?.length > 0 && (
+            {selectedPlan && (selectedPlan.description || selectedPlan.initial_fee > 0 || selectedPlan.monthly_booking_limit || includedOptions.length > 0) && (
+              <div style={{ ...FIELD, fontSize: '13px', color: '#fff', lineHeight: 1.8 }}>
+                {selectedPlan.description && <p style={{ margin: '0 0 4px' }}>{selectedPlan.description}</p>}
+                {selectedPlan.initial_fee > 0 && <p style={{ margin: 0 }}>入会金：¥{selectedPlan.initial_fee.toLocaleString()}（初回のみ）</p>}
+                {selectedPlan.monthly_booking_limit && <p style={{ margin: 0 }}>ご予約：月{selectedPlan.monthly_booking_limit}回まで</p>}
+                {includedOptions.map(o => <p key={o.id} style={{ margin: 0 }}>含まれるオプション：{o.name}（月額¥{o.monthly_price.toLocaleString()}）</p>)}
+              </div>
+            )}
+            {selectableOptions.length > 0 && (
               <div style={FIELD}>
                 <label style={LABEL}>オプション（任意・月会費と一緒にお支払い）</label>
-                {info.options.map(o => (
+                {selectableOptions.map(o => (
                   <label key={o.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', fontSize: '14px', color: '#fff', cursor: 'pointer' }}>
                     <input type="checkbox" checked={form.option_ids.includes(o.id)} onChange={() => toggleOption(o.id)} style={{ marginTop: '3px' }} />
                     <span>{o.name}（月額¥{o.monthly_price.toLocaleString()}）{o.description && <span style={{ display: 'block', fontSize: '12px', color: '#fff' }}>{o.description}</span>}</span>
@@ -258,7 +269,7 @@ export default function JoinMembershipPage() {
             )}
             {selectedPlan && form.enrollment_date && (
               <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 16px' }}>
-                {info.prorate_first_month ? `初回のお支払い目安：約¥${estimatedFirstAmount?.toLocaleString()}（日割り。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${monthlyTotal.toLocaleString()}（承認日から満額開始）`}
+                {info.prorate_first_month ? `初回のお支払い目安：約¥${(estimatedFirstAmount + (selectedPlan.initial_fee || 0))?.toLocaleString()}（日割り${selectedPlan.initial_fee > 0 ? '・入会金込み' : ''}。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${(monthlyTotal + (selectedPlan.initial_fee || 0)).toLocaleString()}（承認日から満額開始${selectedPlan.initial_fee > 0 ? '・入会金込み' : ''}）`}
               </p>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>

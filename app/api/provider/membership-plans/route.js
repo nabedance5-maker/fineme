@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizePlanLinks, setPlanMenus } from '@/lib/membership-plan';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -46,7 +47,10 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
-  const { name, monthly_price, description } = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({}));
+  const { name, monthly_price, description } = body;
+  const links = await normalizePlanLinks(supabase, provider.id, body);
+  if (links.error) return Response.json({ error: links.error }, { status: 400 });
   const price = parseInt(monthly_price, 10);
   if (!name?.trim() || !Number.isInteger(price) || price <= 0) {
     return Response.json({ error: 'プラン名と月額（1円以上の整数）は必須です' }, { status: 400 });
@@ -83,11 +87,14 @@ async function __POST(request) {
       description: description?.trim() || null,
       stripe_product_id: stripeProductId,
       stripe_price_id: stripePriceId,
+      ...links,
     })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data, { status: 201 });
+  // このプランで予約できるメニュー（メニュー側の「予約できる人」に反映）
+  const menu = Array.isArray(body.menu_ids) ? await setPlanMenus(supabase, provider.id, data.id, body.menu_ids) : null;
+  return Response.json({ ...data, menu_skipped: menu?.skipped || [] }, { status: 201 });
 }
 
 export const POST = withAudit(__POST);

@@ -24,6 +24,7 @@ import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
 import { planLockedResponse } from '@/lib/plan-features';
 import { profileFromMembership, fillEmpty } from '@/lib/customer-profile';
 import { ensureOptionProduct, ensureStripeCoupon } from '@/lib/membership-changes';
+import { grantPlanTickets } from '@/lib/membership-plan';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -58,7 +59,7 @@ async function __POST(request, { params }) {
   if (m.status !== 'pending_approval') return Response.json({ error: 'この申込は承認できる状態ではありません' }, { status: 409 });
   if (!m.stripe_customer_id || !m.stripe_payment_method_id) return Response.json({ error: 'お客様の支払い方法が未登録です' }, { status: 409 });
 
-  const { data: plan } = await supabase.from('provider_membership_plans').select('stripe_price_id').eq('id', m.plan_id).single();
+  const { data: plan } = await supabase.from('provider_membership_plans').select('*').eq('id', m.plan_id).single();
   if (!plan?.stripe_price_id) return Response.json({ error: 'プラン情報が見つかりません' }, { status: 409 });
 
   let locker = null;
@@ -122,6 +123,16 @@ async function __POST(request, { params }) {
 
     if (discount) subParams.discounts = [{ coupon: await ensureStripeCoupon(supabase, stripe, discount) }];
 
+    // 入会金（でお要望 2026-10-22：プランごとに決める）。最初の請求に1回だけ足す
+    if (plan.initial_fee > 0) {
+      let feeProduct = plan.initial_fee_product_id;
+      if (!feeProduct) {
+        feeProduct = (await stripe.products.create({ name: `入会金：${plan.name}`, metadata: { fineme_provider_id: String(provider.id) } })).id;
+        await supabase.from('provider_membership_plans').update({ initial_fee_product_id: feeProduct }).eq('id', plan.id);
+      }
+      subParams.add_invoice_items = [{ price_data: { currency: 'jpy', product: feeProduct, unit_amount: plan.initial_fee } }];
+    }
+
     const subscription = await stripe.subscriptions.create(subParams);
 
     if ((options || []).length) {
@@ -154,6 +165,9 @@ async function __POST(request, { params }) {
         membership_id: m.id,
       });
     }
+
+    // プランで入会時に配る回数券（でお要望 2026-10-22）
+    try { await grantPlanTickets(supabase, updated, plan, 'join'); } catch (e) { console.error('[memberships approve] tickets', e); }
 
     // 申込で入力してもらった内容を、顧客の基本情報に取り込む（空欄の項目だけ。店舗が入れた値は上書きしない）
     // でお要望（2026-10-16）：入会した時に入力してもらった情報を顧客情報内に入れておく。

@@ -5,6 +5,7 @@
 // service_packages.recurring_sessions分をtotal_sessionsへ加算し、次回付与日を1ヶ月進める。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { grantPlanTickets } from '@/lib/membership-plan';
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
@@ -46,5 +47,18 @@ export async function GET(request) {
     }
   }
 
-  return Response.json({ ok: true, checked: due?.length || 0, granted, results });
+  // 会員プランで毎月配る回数券（でお要望 2026-10-22）。毎日動くが、同じ月には1回だけ配る（その月の初回の実行で配る）
+  let planGranted = 0;
+  const { data: plans } = await db.from('provider_membership_plans').select('*');
+  const monthlyPlans = (plans || []).filter(p => (p.ticket_grants || []).some(g => g.timing === 'monthly'));
+  if (monthlyPlans.length) {
+    const { data: members } = await db.from('provider_memberships').select('id, provider_id, user_id, plan_id, paused_at')
+      .eq('status', 'active').is('paused_at', null).in('plan_id', monthlyPlans.map(p => p.id));
+    for (const m of members || []) {
+      try { planGranted += await grantPlanTickets(db, m, monthlyPlans.find(p => p.id === m.plan_id), 'monthly'); }
+      catch (e) { console.error('[cron/grant-subscription-tickets] plan', m.id, e); }
+    }
+  }
+
+  return Response.json({ ok: true, checked: due?.length || 0, granted, planGranted, results });
 }

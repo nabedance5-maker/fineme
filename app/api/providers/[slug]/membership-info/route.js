@@ -23,7 +23,8 @@ export async function GET(request, { params }) {
   }
 
   const [{ data: plans }, { data: settings }, { data: lockers }, { data: options }, { count: couponCount }] = await Promise.all([
-    supabase.from('provider_membership_plans').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
+    // 入会ページから申し込めるプランだけ（店頭だけのプランは出さない。でお要望 2026-10-22）
+    supabase.from('provider_membership_plans').select('id, name, monthly_price, description, initial_fee, included_option_ids, selectable_option_ids, monthly_booking_limit').eq('provider_id', provider.id).eq('active', true).eq('online_enabled', true).order('sort_order'),
     supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text, form_fields, custom_fields').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_lockers').select('id, name, monthly_fee').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_options').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
