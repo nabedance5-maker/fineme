@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
+import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
 import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
@@ -678,6 +679,10 @@ const DASHBOARD_CSS = `
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
       /* 予約できる人（2026-10-20） */
       /* メニュー（個別メニュー・グループレッスンを1つの一覧に。2026-10-22） */
+      .pv-group { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; color: #1a1410; font-size: 13px; }
+      .pv-group > span { font-size: 12px; }
+      .pv-items { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+      .pv-items label { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 400; margin: 0; cursor: pointer; }
       .mn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; color: #1a1410; }
       .mn-head > div:first-child { flex: 1 1 320px; }
       .mn-add { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -2143,6 +2148,21 @@ export default function ProviderDashboardPage() {
     document.getElementById('publish-toggle-input').addEventListener('change', async function () {
       document.getElementById('publish-label').textContent = this.checked ? '公開中' : '非公開';
       await saveToLocal({ published: this.checked });
+    });
+
+    // ── 公開ページに出すもの（でお要望 2026-10-22） ─────────────────
+    function fillPageVisibility() {
+      const v = loadProviderData()?.page_visibility || {};
+      document.querySelectorAll('[data-pv-key]').forEach(cb => { cb.checked = v[cb.dataset.pvKey] !== false; });
+    }
+    fillPageVisibility();
+    document.querySelectorAll('[data-tab="publish"]').forEach(b => b.addEventListener('click', fillPageVisibility));
+    document.getElementById('pv-save')?.addEventListener('click', async () => {
+      const page_visibility = {};
+      document.querySelectorAll('[data-pv-key]').forEach(cb => { if (!cb.checked) page_visibility[cb.dataset.pvKey] = false; });
+      const ok = await saveToLocal({ page_visibility });
+      const msg = document.getElementById('pv-msg');
+      if (msg) msg.textContent = ok ? '保存しました。公開ページに反映されています' : '';
     });
 
     // ── フォーム保存 ─────────────────────────────────────────────
@@ -17914,6 +17934,26 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
             <p className="muted" style={{ fontSize: '12px', margin: '0' }}>※ 掲載を完全に停止（解約）したい場合は「Fineme利用契約」タブからお手続きください。</p>
+          </div>
+
+          {/* 公開ページに出すもの（でお要望 2026-10-22：掲載者が公開ページに何を出すか選べるように） */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>公開ページに出すもの</h2>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>チェックを外した項目は、お客様が見る店舗ページに出ません。アピールタブの中身（ガイド・スタッフ・体験談など）の並び替えと表示の切り替えは「アピール設定」タブで行えます。</p>
+            </div>
+            {PAGE_VISIBILITY_GROUPS.map(g => (
+              <div key={g.label} className="pv-group">
+                <b>{g.label}</b>{g.note && <span>{g.note}</span>}
+                <div className="pv-items">
+                  {g.items.map(it => (<label key={it.key}><input type="checkbox" data-pv-key={it.key} defaultChecked />{it.label}</label>))}
+                </div>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="btn" id="pv-save">保存する</button>
+              <span id="pv-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span>
+            </div>
           </div>
         </div>
 

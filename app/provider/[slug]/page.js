@@ -8,6 +8,7 @@ import { isClosedWeekday } from '@/lib/closed-weekday';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { themeToCssVars } from '@/lib/provider-theme';
 import { freshAccessToken } from '@/lib/browser-auth';
+import { isShown } from '@/lib/page-visibility';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -74,18 +75,19 @@ const TABS = [
 function tabsFor(provider) {
   const instantOn = hasFeature(provider, 'instant_booking');
   const requestOn = hasFeature(provider, 'booking_request');
-  let tabs = [{ id: 'basic', label: '基本情報' }];
+  // 店舗が「出さない」にしたタブは除く（でお要望 2026-10-22。予約のタブはいつも出す）
+  let tabs = isShown(provider, 'tab_basic') ? [{ id: 'basic', label: '基本情報' }] : [];
   if (instantOn) tabs.push({ id: 'instant', label: '予約' });
   if (requestOn) tabs.push({ id: 'consult', label: 'リクエスト' });
   if (!instantOn && !requestOn) tabs.push({ id: 'consult', label: '予約' });
-  tabs.push({ id: 'appeal', label: 'アピール' });
-  if (hasFeature(provider, 'class_management')) {
+  if (isShown(provider, 'tab_appeal')) tabs.push({ id: 'appeal', label: 'アピール' });
+  if (hasFeature(provider, 'class_management') && isShown(provider, 'tab_class')) {
     tabs.push({ id: 'class', label: 'グループレッスン' });
   }
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
   // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
-  tabs.push({ id: 'packages', label: '回数券' });
+  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: '回数券' });
   return tabs;
 }
 // 「今すぐ予約する」系CTAの着地先（即時予約があればそちら、無ければリクエスト/受付停止タブ）
@@ -225,6 +227,7 @@ function FacilityPhotosStrip({ provider }) {
 
 // ── クイックファクトストリップ（比較用基礎情報）──────────────────────────────
 function QuickFactsStrip({ provider }) {
+  if (!isShown(provider, 'quick_facts')) return null;
   const chips = [];
   const areaText = [provider.nearest_station, provider.area].filter(Boolean).join(' ／ ');
   if (areaText) chips.push({ label: areaText, highlight: false });
@@ -1009,9 +1012,10 @@ function InfoRow({ label, value }) {
 function BasicInfoTab({ provider }) {
   const fullAddress = fullAddressOf(provider);
   const mapsHref = mapsHrefFor(provider);
-  const status = todayStatusText(provider);
+  const sh = key => isShown(provider, key);
+  const status = sh('basic_hours') ? todayStatusText(provider) : null;
   const todayKey = WEEKDAY_KEYS_BH[new Date().getDay()];
-  const paymentText = provider.payment_methods?.length
+  const paymentText = sh('basic_payment') && provider.payment_methods?.length
     ? provider.payment_methods.map(m => PAYMENT_METHOD_LABELS[m] || m).join('、')
     : null;
 
@@ -1028,18 +1032,20 @@ function BasicInfoTab({ provider }) {
         </div>
       )}
 
+      {(sh('basic_address') || sh('basic_station')) && (
       <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
         <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>所在地・アクセス</p>
-        <InfoRow label="住所" value={fullAddress || null} />
-        <InfoRow label="最寄り駅" value={provider.nearest_station || null} />
-        {mapsHref && (
+        <InfoRow label="住所" value={sh('basic_address') ? (fullAddress || null) : null} />
+        <InfoRow label="最寄り駅" value={sh('basic_station') ? (provider.nearest_station || null) : null} />
+        {sh('basic_address') && mapsHref && (
           <a href={mapsHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: '700', color: '#c9a84c', textDecoration: 'none' }}>
             地図で見る →
           </a>
         )}
       </div>
+      )}
 
-      {provider.business_hours && (
+      {sh('basic_hours') && provider.business_hours && (
         <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
           <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>営業時間</p>
           {WEEKDAY_KEYS_BH.map(key => {
@@ -1056,20 +1062,22 @@ function BasicInfoTab({ provider }) {
         </div>
       )}
 
+      {(sh('basic_price') || sh('basic_payment') || sh('basic_online')) && (
       <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
         <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>料金・お支払い</p>
-        <InfoRow label="料金" value={provider.price_from ? `¥${provider.price_from.toLocaleString()}〜` : null} />
+        <InfoRow label="料金" value={sh('basic_price') && provider.price_from ? `¥${provider.price_from.toLocaleString()}〜` : null} />
         <InfoRow label="お支払い" value={paymentText} />
-        <InfoRow label="オンライン対応" value={provider.online_available ? 'あり' : null} />
+        <InfoRow label="オンライン対応" value={sh('basic_online') && provider.online_available ? 'あり' : null} />
       </div>
+      )}
 
-      {(provider.trial_available || provider.response_hours || provider.cancellation_policy || provider.first_session_desc) && (
+      {((sh('basic_trial') && provider.trial_available) || (sh('basic_response') && provider.response_hours) || (sh('basic_cancel') && provider.cancellation_policy) || (sh('basic_first_session') && provider.first_session_desc)) && (
         <div style={{ background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)', borderRadius: '16px', padding: '18px 20px' }}>
           <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.08em', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', textTransform: 'uppercase', margin: '0 0 4px' }}>予約前に知っておきたいこと</p>
-          <InfoRow label="お試し" value={provider.trial_available ? (provider.trial_desc || 'あり') : null} />
-          <InfoRow label="返信目安" value={provider.response_hours ? `${provider.response_hours}時間以内` : null} />
-          <InfoRow label="初回について" value={provider.first_session_desc || null} />
-          <InfoRow label="キャンセル" value={provider.cancellation_policy || null} />
+          <InfoRow label="お試し" value={sh('basic_trial') && provider.trial_available ? (provider.trial_desc || 'あり') : null} />
+          <InfoRow label="返信目安" value={sh('basic_response') && provider.response_hours ? `${provider.response_hours}時間以内` : null} />
+          <InfoRow label="初回について" value={sh('basic_first_session') ? (provider.first_session_desc || null) : null} />
+          <InfoRow label="キャンセル" value={sh('basic_cancel') ? (provider.cancellation_policy || null) : null} />
         </div>
       )}
     </div>
@@ -2252,7 +2260,7 @@ function ProviderPageContent() {
               {/* 「お店で、どこにあって、予約できるのはここ、この日のここは空いてる、と
                   直感的にわかることが重要」（でお要望2026-09-29）への対応：名前・
                   キャッチコピー直下に場所と本日の営業状況を一行で出す。 */}
-              {(provider.nearest_station || todayStatusText(provider)) && (
+              {isShown(provider, 'hero_status') && (provider.nearest_station || todayStatusText(provider)) && (
                 <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: 'rgba(255,255,255,0.7)', margin: '8px 0 0', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {provider.nearest_station && <span>{provider.nearest_station}</span>}
                   {todayStatusText(provider) && <span>{todayStatusText(provider)}</span>}
@@ -2272,7 +2280,7 @@ function ProviderPageContent() {
             <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: 'calc(18px * var(--pv-fs))', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
               {isFavorited ? '★' : '☆'}
             </button>
-            {services && services.length > 0 && (
+            {services && services.length > 0 && isShown(provider, 'tab_appeal') && (
               <button onClick={() => setActiveTab('appeal')} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
                 プログラムを見る
               </button>

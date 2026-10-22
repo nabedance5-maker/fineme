@@ -1,6 +1,7 @@
 // PATCH /api/provider/profile - 掲載者が自分のプロフィールを更新
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { normalizeVisibility } from '@/lib/page-visibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -24,6 +25,8 @@ const ALLOWED_FIELDS = [
   'best_fit_desc',
   'ai_match_profile',
   'google_review_url',
+  // 公開ページに何を出すか（でお要望 2026-10-22）
+  'page_visibility',
 ];
 const BOOLEAN_FIELDS  = new Set(['online_available', 'trial_available', 'published']);
 const NUMBER_FIELDS   = new Set(['price_from', 'experience_years', 'response_hours']);
@@ -60,6 +63,7 @@ async function __PATCH(request) {
     const v = body[key];
     if (BOOLEAN_FIELDS.has(key))     updates[key] = v === true || v === 'true';
     else if (NUMBER_FIELDS.has(key)) updates[key] = v !== '' && v !== null ? Number(v) || null : null;
+    else if (key === 'page_visibility') updates[key] = normalizeVisibility(v);
     else if (ARRAY_FIELDS.has(key))  updates[key] = Array.isArray(v) ? v : [];
     else                             updates[key] = v;
   }
