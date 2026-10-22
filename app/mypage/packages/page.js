@@ -61,9 +61,12 @@ export default function MypagePackagesPage() {
                 ].filter(Boolean).join('｜');
                 // まだ使えるチケットは、押すとそのメニューの予約画面へ（でお要望 2026-10-22）
                 const usable = !p.expired && !usedUp && p.book_href;
-                const Wrap = usable ? 'a' : 'div';
+                // 使い切った・期限切れは、同じ回数券をもう一度買えるお店の回数券ページへ（でお要望 2026-10-22）
+                const rebuy = (p.expired || usedUp) && p.rebuy_href;
+                const href = usable ? p.book_href : rebuy ? p.rebuy_href : null;
+                const Wrap = href ? 'a' : 'div';
                 return (
-                  <Wrap key={p.id} {...(usable ? { href: p.book_href, 'aria-label': `${p.package_name}で予約する` } : {})} className={`fx-ticket${p.expired || usedUp ? ' is-done' : ''}${usable ? ' pk-link' : ''}`}>
+                  <Wrap key={p.id} {...(href ? { href, 'aria-label': usable ? `${p.package_name}で予約する` : `${p.package_name}をもう一度購入する` } : {})} className={`fx-ticket${p.expired || usedUp ? ' is-done' : ''}${href ? ' pk-link' : ''}`}>
                     <div className="fx-ticket-main">
                       <span className="fx-ticket-kicker">{kind}<span className="fx-ticket-who">{p.provider_name}</span></span>
                       <span className="fx-ticket-name">{p.package_name}</span>
@@ -75,6 +78,7 @@ export default function MypagePackagesPage() {
                       {!isUnlimited && total > 20 && <div className="fx-punches-more">{used}回利用 / 全{total}回</div>}
                       <span className="fx-ticket-sub">{sub}</span>
                       {usable && <span className="pk-book">このチケットで予約する →</span>}
+                      {rebuy && <span className="pk-book">もう一度購入する →</span>}
                     </div>
                     <div className="fx-ticket-stub">
                       {isUnlimited

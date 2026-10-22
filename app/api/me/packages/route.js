@@ -13,7 +13,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from('customer_packages')
-    .select('id, provider_id, ticket_id, package_name, total_sessions, package_type, purchased_at, expires_at, subscription_status, next_grant_at')
+    .select('id, provider_id, package_id, ticket_id, package_name, total_sessions, package_type, purchased_at, expires_at, subscription_status, next_grant_at')
     .eq('user_id', user.id)
     .order('purchased_at', { ascending: false });
 
@@ -69,6 +69,8 @@ export async function GET(request) {
       expires_at: r.expires_at,
       expired: r.expires_at ? new Date(r.expires_at) < new Date() : false,
       book_href: bookHref(r),
+      // 使い切った・期限切れの回数券は、同じ回数券をもう一度買えるお店の回数券ページへ（でお要望 2026-10-22）
+      rebuy_href: providerMap[r.provider_id]?.slug ? `/provider/${encodeURIComponent(providerMap[r.provider_id].slug)}?tab=packages${r.package_id ? `&package=${r.package_id}` : ''}` : null,
     };
   });
 

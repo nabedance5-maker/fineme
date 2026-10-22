@@ -1522,6 +1522,8 @@ function MemberTab({ provider, services, elig, onEligChanged, onRebook }) {
 //    回数券・パッケージ購入）。Stripe Checkout(mode:'payment')の hosted page に
 //    遷移し、決済完了後にこのタブへ戻ってconfirmを叩いて確定する。 ──
 function PackagesTab({ provider }) {
+  // マイページの使い切った回数券から来た時は、同じ回数券を目立たせてそこまで送る（でお要望 2026-10-22）
+  const highlightId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('package') : null;
   const [packages, setPackages] = useState(null); // null=未取得
   const [userId, setUserId] = useState('');
   const [purchasingId, setPurchasingId] = useState(null);
@@ -1538,7 +1540,10 @@ function PackagesTab({ provider }) {
     if (!provider?.slug) return;
     fetch(`/api/providers/${provider.slug}/packages`)
       .then(r => r.ok ? r.json() : [])
-      .then(setPackages)
+      .then(list => {
+        setPackages(list);
+        if (highlightId && (list || []).some(x => x.id === highlightId)) setTimeout(() => document.getElementById(`pkg-${highlightId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+      })
       .catch(() => setPackages([]));
   }, [provider?.slug]);
 
@@ -1608,8 +1613,13 @@ function PackagesTab({ provider }) {
       )}
       {!packages.length ? (
         <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在オンラインで購入できる回数券はありません。</p>
-      ) : packages.map(pkg => (
-        <div key={pkg.id} style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '16px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+      ) : (<>
+        {highlightId && !packages.some(x => x.id === highlightId) && (
+          <p style={{ margin: '0 0 4px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700 }}>前回お使いの回数券は、今はオンラインで購入できません。お店に直接お問い合わせください。</p>
+        )}
+        {packages.map(pkg => (
+        <div key={pkg.id} id={`pkg-${pkg.id}`} style={{ border: pkg.id === highlightId ? '2px solid var(--pv-text)' : '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '16px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          {pkg.id === highlightId && <span style={{ flexBasis: '100%', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 800 }}>前回お使いの回数券です</span>}
           <div>
             <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', color: 'var(--pv-text)', margin: '0 0 4px' }}>{pkg.name}</p>
             <p style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 65%, transparent)', margin: 0 }}>
@@ -1630,6 +1640,7 @@ function PackagesTab({ provider }) {
           </div>
         </div>
       ))}
+      </>)}
     </div>
   );
 }
