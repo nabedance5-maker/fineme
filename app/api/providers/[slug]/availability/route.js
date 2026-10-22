@@ -34,7 +34,8 @@ export async function GET(request, { params }) {
   if (serviceId && !service) return Response.json([]);
   const starts = availableStarts(ctx, { service, from, to, staffId: staffId || null });
   const staffName = Object.fromEntries(ctx.staff.map(s => [s.id, s.name]));
-  const limited = (service?.ticket_ids || []).length > 0; // チケットが要るメニュー（2026-10-22）
+  // チケット専用のメニューの枠（チケットが使えても単発で予約できるメニューは誰にでも出す。2026-10-22）
+  const limited = (service?.ticket_ids || []).length > 0 && !!service?.ticket_only;
   const rows = [];
   for (const x of starts) {
     const base = { date: x.date, start_time: x.start_time, end_time: x.end_time, service_id: serviceId || null, remaining: 1, limited };

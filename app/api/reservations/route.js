@@ -10,7 +10,7 @@ import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
-import { customerEntitlements, checkService, scopeLabel, needsTicket, hiddenForMember } from '@/lib/booking-eligibility';
+import { customerEntitlements, checkService, scopeLabel, needsTicket, requiresTicket, hiddenForMember } from '@/lib/booking-eligibility';
 import { checkAndAssign } from '@/lib/availability-engine';
 import { providerRecipients } from '@/lib/provider-recipients';
 
@@ -121,8 +121,9 @@ export async function POST(request) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
-  // チケットが要るメニュー（でお要望 2026-10-22：チケットを消費して予約する）。
-  // メニューに決まったチケットを ticket_cost 枚持っているお客様だけが予約でき、使うチケットを必ず決める。
+  // チケット（でお要望 2026-10-22）。同じメニューを「チケットを使う」か「単発（お支払い）」か、お客様が選んで予約する。
+  // package_id が届いた時だけチケットを使う（このメニューに使えるチケットか確かめる）。届かなければ単発の予約。
+  // チケット専用のメニュー（ticket_only）だけは、チケットが無いと予約できない（選んでいなければ使えるものを自動で使う）。
   // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する
   let effectiveServiceId = service_id || null;
   let ticketCost = 1;
@@ -132,27 +133,31 @@ export async function POST(request) {
     const { data: sl } = await supabase.from('provider_slots').select('service_id, class_id').eq('id', slot_id).eq('provider_id', provider_id).maybeSingle();
     if (!effectiveServiceId) effectiveServiceId = sl?.service_id || null;
     if (sl?.class_id) {
-      const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost').eq('id', sl.class_id).maybeSingle();
+      const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost, ticket_only').eq('id', sl.class_id).maybeSingle();
       lessonRule = cls || null;
     }
   }
-  if (effectiveServiceId || lessonRule) {
-    const { data: svcRow } = effectiveServiceId
-      ? await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle()
-      : { data: null };
-    const svc = lessonRule && (lessonRule.ticket_ids || []).length ? lessonRule : svcRow;
-    const what = svc === lessonRule ? 'このレッスン' : 'このメニュー';
-    const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
-    if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
-    if (needsTicket(svc)) {
-      const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
-      const label = scopeLabel(svc, Object.fromEntries((tk || []).map(x => [x.id, x.name])));
-      if (!authUser) return Response.json({ error: `${what}は${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
-      const chk = checkService(svc, ent);
-      if (!chk.ok) return Response.json({ error: `${what}は${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
-      if (!chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;
-      ticketCost = svc.ticket_cost || 1;
+  const { data: svcRow } = effectiveServiceId
+    ? await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, ticket_only, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle()
+    : { data: null };
+  const svc = lessonRule && needsTicket(lessonRule) ? lessonRule : svcRow;
+  const what = svc && svc === lessonRule ? 'このレッスン' : 'このメニュー';
+  const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
+  if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
+  if (svc && needsTicket(svc) && (requiresTicket(svc) || verifiedPackageId)) {
+    const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
+    const label = scopeLabel(svc, Object.fromEntries((tk || []).map(x => [x.id, x.name])));
+    if (!authUser) return Response.json({ error: `${what}は${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
+    const chk = checkService(svc, ent);
+    if (requiresTicket(svc) && !chk.tickets.length) return Response.json({ error: `${what}は${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
+    if (verifiedPackageId && !chk.tickets.some(t => t.id === verifiedPackageId)) {
+      return Response.json({ error: `選んだチケットは${what}に使えません。残りの枚数か有効期限をご確認ください`, code: 'ticket_not_usable' }, { status: 400 });
     }
+    if (!verifiedPackageId) verifiedPackageId = chk.tickets[0].id;
+    ticketCost = svc.ticket_cost || 1;
+  } else {
+    // チケットが使えないメニュー・メニュー未定の相談では、チケットを使わない
+    verifiedPackageId = null;
   }
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる

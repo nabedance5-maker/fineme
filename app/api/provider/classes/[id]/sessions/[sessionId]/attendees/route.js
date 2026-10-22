@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { planLockedResponse } from '@/lib/plan-features';
 import { withAudit } from '@/lib/activity-log';
-import { customerEntitlements, checkService, needsTicket } from '@/lib/booking-eligibility';
+import { customerEntitlements, checkService, needsTicket, requiresTicket } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -48,7 +48,7 @@ async function __POST(request, { params }) {
 
   const [{ data: slot }, { data: cls }] = await Promise.all([
     supabase.from('provider_slots').select('id, date, start_time, end_time, capacity, staff_id, resource_id').eq('id', sessionId).eq('provider_id', provider.id).eq('class_id', id).maybeSingle(),
-    supabase.from('provider_classes').select('id, name, ticket_ids, ticket_cost, instructor_staff_id, resource_id').eq('id', id).eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_classes').select('id, name, ticket_ids, ticket_cost, ticket_only, instructor_staff_id, resource_id').eq('id', id).eq('provider_id', provider.id).maybeSingle(),
   ]);
   if (!slot || !cls) return Response.json({ error: '開催回が見つかりません' }, { status: 404 });
   const b = await request.json().catch(() => ({}));
@@ -61,11 +61,13 @@ async function __POST(request, { params }) {
     if (dup?.length) return Response.json({ error: 'この方はすでにこの回を予約しています' }, { status: 409 });
   }
   let pkg = null;
-  if (needsTicket(cls)) {
-    if (!b.user_id) return Response.json({ error: 'このレッスンはチケットが必要です。会員を選んでください' }, { status: 400 });
+  // チケット専用のレッスンはチケットが必須。そうでないレッスンは、チケットを選んだ時だけ使う（選ばなければ単発）。2026-10-22
+  if (requiresTicket(cls) || (needsTicket(cls) && b.package_id)) {
+    if (!b.user_id) return Response.json({ error: 'チケットを使う参加は、会員を選んでください' }, { status: 400 });
     const chk = checkService(cls, await customerEntitlements(supabase, provider.id, b.user_id));
-    if (!chk.ok) return Response.json({ error: `この会員は「${cls.name}」に使えるチケットを${cls.ticket_cost || 1}枚お持ちではありません`, code: 'no_ticket' }, { status: 409 });
-    pkg = chk.tickets.find(t => t.id === b.package_id) || chk.tickets[0];
+    if (!chk.tickets.length) return Response.json({ error: `この方は「${cls.name}」に使えるチケットを${cls.ticket_cost || 1}枚お持ちではありません`, code: 'no_ticket' }, { status: 409 });
+    pkg = chk.tickets.find(t => t.id === b.package_id) || (requiresTicket(cls) ? chk.tickets[0] : null);
+    if (!pkg) return Response.json({ error: '選んだチケットはこのレッスンに使えません' }, { status: 400 });
   }
   const t = String(slot.start_time).slice(0, 5);
   const { data, error } = await supabase.from('reservations').insert({

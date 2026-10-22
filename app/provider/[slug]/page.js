@@ -1046,7 +1046,7 @@ function BasicInfoTab({ provider }) {
 // ── クラスタブ：スクール業態向け、クラスの開催回に直接予約する（でお指摘2026-09-16） ──
 const WEEKDAY_JA_CLASS = ['日', '月', '火', '水', '木', '金', '土'];
 // classId：予約タブ（BookTab）でレッスンを選んだ時は、そのレッスンの開催日時だけを出す（2026-10-22）
-function ClassTab({ provider, classId }) {
+function ClassTab({ provider, classId, preferTicket }) {
   const [classes, setClasses] = useState(null); // null=未取得
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [userId, setUserId] = useState('');
@@ -1150,7 +1150,11 @@ function ClassTab({ provider, classId }) {
   const pickedClass = picked ? (classes.classes || []).find(c => c.id === picked.class_id) : null;
   const pickedRule = pickedClass?.needs_ticket ? (elig?.classes?.[pickedClass.id] || { ok: false, ticket_ids: [] }) : null;
   const pickedTickets = pickedRule ? (elig?.tickets || []).filter(t => pickedRule.ticket_ids.includes(t.id)) : [];
-  const chosenTicket = pickedTickets.some(t => t.id === ticketId) ? ticketId : (pickedTickets[0]?.id || '');
+  // お支払い方法（2026-10-22）：チケット専用のレッスンはチケットのみ。そうでなければ「チケットを使う／単発」を選ぶ（ticketId '__single' が単発）
+  const onlyT = !!(pickedClass?.needs_ticket && pickedClass?.ticket_only);
+  const canTicket = !!(pickedClass?.needs_ticket && pickedTickets.length);
+  const choice = ticketId === '__single' || pickedTickets.some(t => t.id === ticketId) ? ticketId : (onlyT || preferTicket ? (pickedTickets[0]?.id || '') : '');
+  const chosenTicket = choice && choice !== '__single' ? choice : null;
   const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
   const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
   const line = '1px solid color-mix(in srgb, var(--pv-text) 12%, transparent)';
@@ -1210,26 +1214,37 @@ function ClassTab({ provider, classId }) {
           <p style={{ margin: '0 0 2px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: 800 }}>{picked.class_name}</p>
           <p style={{ margin: '0 0 10px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted }}>{fmtDay(picked.date).md}（{fmtDay(picked.date).wd}）{String(picked.start_time).slice(0, 5)}〜{String(picked.end_time || '').slice(0, 5)}{picked.staff?.name ? `・${picked.staff.name}` : ''}・残り{picked.remaining}枠</p>
           {(classes.classes || []).find(c => c.id === picked.class_id)?.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, lineHeight: 1.6 }}>{(classes.classes || []).find(c => c.id === picked.class_id).description}</p>}
-          {pickedClass?.needs_ticket && !doneSlotIds.includes(picked.id) && (
+          {onlyT && !doneSlotIds.includes(picked.id) && (
             <div style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', lineHeight: 1.7 }}>
               <p style={{ margin: 0, fontWeight: 700 }}>{pickedClass.scope_label}だけが予約できます</p>
               {!elig?.logged_in ? (
                 <a href={loginHref} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>ログインすると、お持ちのチケットで予約できます</a>
               ) : !pickedRule?.ok ? (
                 <span>使えるチケットをお持ちではありません。<a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>・<a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>月額プランに入会する</a></span>
-              ) : (
-                <label style={{ display: 'grid', gap: '4px', marginTop: '6px' }}>
-                  <span>使うチケット（1回{pickedClass.ticket_cost}枚。予約した時点で使い、キャンセルすると戻ります）</span>
-                  <select value={chosenTicket} onChange={e => setTicketId(e.target.value)} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}>
-                    {pickedTickets.map(t => <option key={t.id} value={t.id} style={{ color: '#000' }}>{t.name}（{t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>)}
-                  </select>
+              ) : null}
+            </div>
+          )}
+          {canTicket && !doneSlotIds.includes(picked.id) && (
+            <fieldset style={{ border: 'none', margin: '0 0 12px', padding: 0, display: 'grid', gap: '8px' }}>
+              <legend style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 700, color: tx(75), marginBottom: '6px', padding: 0 }}>{onlyT ? `使うチケット（1回${pickedClass.ticket_cost}枚）` : 'お支払い方法 *'}</legend>
+              {pickedTickets.map(t => (
+                <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', border: `1px solid ${choice === t.id ? 'var(--pv-accent)' : tx(18)}`, background: choice === t.id ? ac(8) : 'transparent', fontSize: 'calc(14px * var(--pv-fs))' }}>
+                  <input type="radio" name={`pay-${picked.id}`} checked={choice === t.id} onChange={() => setTicketId(t.id)} style={{ accentColor: 'var(--pv-accent)', width: '18px', height: '18px' }} />
+                  <span><b>チケットを使う</b>：{t.name}<span style={{ display: 'block', fontSize: 'calc(12px * var(--pv-fs))', color: tx(65) }}>{pickedClass.ticket_cost}枚使います（{t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</span></span>
+                </label>
+              ))}
+              {!onlyT && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', border: `1px solid ${choice === '__single' ? 'var(--pv-accent)' : tx(18)}`, background: choice === '__single' ? ac(8) : 'transparent', fontSize: 'calc(14px * var(--pv-fs))' }}>
+                  <input type="radio" name={`pay-${picked.id}`} checked={choice === '__single'} onChange={() => setTicketId('__single')} style={{ accentColor: 'var(--pv-accent)', width: '18px', height: '18px' }} />
+                  <span><b>単発で予約</b>{pickedClass.price != null ? `：¥${Number(pickedClass.price).toLocaleString()}` : ''}<span style={{ display: 'block', fontSize: 'calc(12px * var(--pv-fs))', color: tx(65) }}>チケットは使いません。料金はお店でお支払いください</span></span>
                 </label>
               )}
-            </div>
+              <p style={{ margin: 0, fontSize: 'calc(11.5px * var(--pv-fs))', color: tx(62) }}>チケットは予約した時点で使い、来店前にキャンセルすると戻ります。</p>
+            </fieldset>
           )}
           {doneSlotIds.includes(picked.id) ? (
             <p style={{ margin: 0, fontWeight: 700, color: 'var(--pv-text)' }}>予約しました。</p>
-          ) : pickedClass?.needs_ticket && !pickedRule?.ok ? null : (
+          ) : onlyT && !pickedRule?.ok ? null : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input placeholder="お名前 *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
@@ -1239,7 +1254,7 @@ function ClassTab({ provider, classId }) {
                 </div>
               </div>
               {error && <p role="alert" style={{ color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
-              <button type="button" onClick={() => bookSession(picked.id, picked.class_name, pickedClass?.needs_ticket ? chosenTicket : null)} disabled={bookingSlotId === picked.id}
+              <button type="button" onClick={() => { if (canTicket && !onlyT && !choice) { setError('チケットを使うか、単発で予約するかを選んでください'); return; } bookSession(picked.id, picked.class_name, chosenTicket); }} disabled={bookingSlotId === picked.id}
                 style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
                 {bookingSlotId === picked.id ? '予約中…' : 'このレッスンを予約する'}
               </button>
@@ -1271,7 +1286,7 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
   // 他の場所（アピールのプログラム・通知のリンク）からメニューを選んで来た時
   useEffect(() => { if (selectedService) setPicked({ kind: 'service', id: selectedService.id }); }, [selectedService?.id]);
   const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
-  const lessonState = c => (!c.needs_ticket ? 'open' : elig?.classes?.[c.id]?.ok ? 'ok' : 'locked');
+  const lessonState = c => (!c.ticket_only ? 'open' : elig?.classes?.[c.id]?.ok ? 'ok' : 'locked');
   const hidden = new Set(elig?.hidden_for_member || []);
   const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked') && !hidden.has(sv.id) && (!onlyTicket || (sv.ticket_ids || []).includes(onlyTicket)));
   const visibleLessons = lessons.filter(c => !onlyTicket || (c.ticket_ids || []).includes(onlyTicket));
@@ -1323,7 +1338,8 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
                   {[s.duration_minutes ? `${s.duration_minutes}分` : (/^\d+$/.test(String(s.duration || '')) ? `${s.duration}分` : s.duration), st === 'open' && Number(s.price) > 0 ? `¥${Number(s.price).toLocaleString()}` : null].filter(Boolean).join('・')}
                 </span>
               </span>
-              {st !== 'open' && <span style={chip}>{st === 'ok' ? `チケット${s.ticket_cost || 1}枚` : 'チケット専用'}</span>}
+              {st !== 'open' ? <span style={chip}>{st === 'ok' ? `チケット${s.ticket_cost || 1}枚` : 'チケット専用'}</span>
+                : s.ticket_label ? <span style={chip}>チケットも使えます</span> : null}
               <span aria-hidden="true" style={{ fontSize: '18px' }}>{on ? '−' : '＋'}</span>
             </button>
             {on && (
@@ -1354,7 +1370,8 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
                   {['グループレッスン', c.capacity ? `定員${c.capacity}名` : null, st === 'open' && c.price != null ? `¥${Number(c.price).toLocaleString()}` : null].filter(Boolean).join('・')}
                 </span>
               </span>
-              {st !== 'open' && <span style={chip}>{st === 'ok' ? `チケット${c.ticket_cost || 1}枚` : 'チケット専用'}</span>}
+              {st !== 'open' ? <span style={chip}>{st === 'ok' ? `チケット${c.ticket_cost || 1}枚` : 'チケット専用'}</span>
+                : c.needs_ticket ? <span style={chip}>チケットも使えます</span> : null}
               <span aria-hidden="true" style={{ fontSize: '18px' }}>{on ? '−' : '＋'}</span>
             </button>
             {on && (
@@ -1429,8 +1446,8 @@ function MemberTab({ provider, services, staff, elig, onEligChanged, diagnosis, 
   const ticket = tickets.find(t => t.id === pickTicket) || tickets[0] || null;
   const hidden = new Set(elig?.hidden_for_member || []);
   const items = ticket ? [
-    ...(services || []).filter(sv => (sv.ticket_ids || []).includes(ticket.ticket_id) && !hidden.has(sv.id) && elig?.services?.[sv.id]?.ok).map(sv => ({ kind: 'service', id: sv.id, name: sv.name, sub: [sv.duration_minutes ? `${sv.duration_minutes}分` : null, `チケット${sv.ticket_cost || 1}枚`].filter(Boolean).join('・'), svc: sv })),
-    ...lessons.filter(c => (c.ticket_ids || []).includes(ticket.ticket_id) && elig?.classes?.[c.id]?.ok).map(c => ({ kind: 'lesson', id: c.id, name: c.name, sub: `グループレッスン・チケット${c.ticket_cost || 1}枚` })),
+    ...(services || []).filter(sv => (sv.ticket_ids || []).includes(ticket.ticket_id) && !hidden.has(sv.id) && (elig?.services?.[sv.id]?.ticket_ids || []).length).map(sv => ({ kind: 'service', id: sv.id, name: sv.name, sub: [sv.duration_minutes ? `${sv.duration_minutes}分` : null, `チケット${sv.ticket_cost || 1}枚`].filter(Boolean).join('・'), svc: sv })),
+    ...lessons.filter(c => (c.ticket_ids || []).includes(ticket.ticket_id) && (elig?.classes?.[c.id]?.ticket_ids || []).length).map(c => ({ kind: 'lesson', id: c.id, name: c.name, sub: `グループレッスン・チケット${c.ticket_cost || 1}枚` })),
   ] : [];
   const item = items.find(i => pickItem && i.kind === pickItem.kind && i.id === pickItem.id) || items[0] || null;
 
@@ -1455,7 +1472,7 @@ function MemberTab({ provider, services, staff, elig, onEligChanged, diagnosis, 
   }
   // 予約が終わったら、次のご予約と残り枚数を最新にする
   const onSubmitted = v => { setSubmitted(v); if (v) { load(); onEligChanged?.(); } };
-  const consultProps = { provider, services, staff, onServiceSelect: () => {}, submitted, setSubmitted: onSubmitted, diagnosis, matchData, menuNameHint: '', presetStaffId: last?.staff_id || '', forMember: true };
+  const consultProps = { provider, services, staff, onServiceSelect: () => {}, submitted, setSubmitted: onSubmitted, diagnosis, matchData, menuNameHint: '', presetStaffId: last?.staff_id || '', forMember: true, preferTicket: true };
   const ghostBtn = { minHeight: '40px', padding: '0 14px', borderRadius: '10px', border: `1px solid ${tx(22)}`, background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(13px * var(--pv-fs))', cursor: 'pointer' };
   const pill = on => ({ minHeight: '40px', padding: '0 14px', borderRadius: '99px', border: `1px solid ${on ? 'var(--pv-accent)' : tx(20)}`, background: on ? 'var(--pv-accent)' : 'transparent', color: on ? 'var(--pv-on-accent)' : 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(13px * var(--pv-fs))', cursor: 'pointer', textAlign: 'left' });
   const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
@@ -1550,7 +1567,7 @@ function MemberTab({ provider, services, staff, elig, onEligChanged, diagnosis, 
                 </div>
                 {item.kind === 'service'
                   ? <ServiceBooking key={`s-${item.id}-${ticket.id}`} provider={provider} service={item.svc} consultProps={consultProps} />
-                  : <ClassTab key={`l-${item.id}`} provider={provider} classId={item.id} />}
+                  : <ClassTab key={`l-${item.id}`} provider={provider} classId={item.id} preferTicket />}
               </div>
             )}
           </>
@@ -1715,7 +1732,7 @@ function MemberCard({ provider, elig }) {
 
 // 予約タブ（BookTab）でメニューを選んだ後に、その1つのメニューの日時選び・送信だけを出す（2026-10-22）
 // forMember：会員タブから使う時（初回の説明は出さない）
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, forMember, onAskRequest }) {
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, forMember, onAskRequest, preferTicket }) {
   // ログイン中でアカウントに名前と連絡先がある時は、入力欄を畳んで「予約者」1行にする（毎回入力させない。2026-10-22）
   const [contactFromAccount, setContactFromAccount] = useState(false);
   const [editContact, setEditContact] = useState(false);
@@ -1767,13 +1784,22 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 即時予約でメニューを選ばずに枠だけ選んだ時は、枠に決まっているメニューで判定する
   const slotSvcId = selectedSlotId ? (slots || []).find(x => x.id === selectedSlotId)?.service_id : null;
   const effSvc = selectedService || (slotSvcId ? (services || []).find(x => x.id === slotSvcId) : null);
-  const selElig = effSvc?.booking_scope === 'limited' ? elig?.services?.[effSvc.id] : null;
-  // 回数券で予約するメニューでは、使える回数券の中から必ず1つ選ぶ
-  const ticketOnly = selElig?.ok && selElig.via === 'ticket' ? selElig.ticket_ids : null;
-  const ticketChoices = ticketOnly ? myPackages.filter(p => ticketOnly.includes(p.id)) : myPackages;
+  // お支払い方法（でお指摘 2026-10-22：チケット用と単発用でメニューを分けない）。
+  // このメニューに使えるチケットを持っていれば「チケットを使う／単発で予約」をお客様がはっきり選ぶ（勝手にチケットを使わない）。
+  // チケット専用のメニューは、チケットを使う以外の選択肢は無い。
+  const effElig = (effSvc?.ticket_ids || []).length ? elig?.services?.[effSvc.id] : null;
+  const ticketOnly = effSvc?.booking_scope === 'limited';
+  const usableIds = effElig?.ticket_ids || [];
+  const ticketChoices = myPackages.filter(p => usableIds.includes(p.id));
+  const payNeedsChoice = !ticketOnly && ticketChoices.length > 0;
+  const [payChosen, setPayChosen] = useState(false);
   useEffect(() => {
-    if (ticketOnly?.length && !ticketOnly.includes(selectedPackageId)) setSelectedPackageId(ticketOnly[0]);
+    if (ticketOnly) { if (!usableIds.includes(selectedPackageId)) setSelectedPackageId(usableIds[0] || ''); setPayChosen(true); return; }
+    // 会員タブ（チケットを選んで来た時）は、チケットを使う方を選んだ状態で開く。それ以外は選んでもらう
+    if (preferTicket && ticketChoices.length) { setSelectedPackageId(ticketChoices[0].id); setPayChosen(true); return; }
+    setSelectedPackageId(''); setPayChosen(false);
   }, [effSvc?.id, elig, myPackages.length]);
+  const singlePrice = effSvc && Number(effSvc.price) > 0 ? `¥${Number(effSvc.price).toLocaleString()}` : null;
   useEffect(() => {
     if (!userId || !provider?.id) { setMyPackages([]); return; }
     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -1891,6 +1917,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       setFormError('メールアドレスまたは電話番号のどちらかは必ず入力してください');
       return;
     }
+    if (payNeedsChoice && !payChosen) { setFormError('チケットを使うか、単発で予約するかを選んでください'); return; }
     setSubmitting(true); setFormError('');
     try {
       // Me Scanデータを添付
@@ -1898,7 +1925,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         ? `【New Me Navi より】\n${meScanSummary.join('\n')}\n\n`
         : '';
       const noteParts = [
-        selectedService ? `【プログラム】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',
+        selectedService ? `【メニュー】${selectedService.name}${selectedPackageId ? '（チケットを使用）' : Number(selectedService.price) > 0 ? `（単発 ¥${Number(selectedService.price).toLocaleString()}）` : ''}` : '',
         (!selectedService && menuNameHint) ? `【ご希望のメニュー】${menuNameHint}` : '',
         selectedStaff ? `【ご指名】${selectedStaff.name}${selectedStaff.booking_fee > 0 ? `（指名料¥${Number(selectedStaff.booking_fee).toLocaleString()}）` : ''}` : '',
         (!useInstant && formState.date2) ? `【第2希望】${formState.date2} ${formState.time2}` : '',
@@ -2057,32 +2084,36 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </>
         )}
 
-        {/* 使用チケット選択（でお要望2026-09-27：「予約時にどのチケットで行くか選択
-            できれば」）。この店舗の有効なチケットを持っている会員にだけ表示。選んだ
-            チケットは予約した時点で使い、キャンセルすると戻る（2026-10-22。それ以前は来店確認時に消化していた。複数持っている場合の
-            「どれを自動消化すべきか判断できない」問題を、ここでの選択で解消する）。 */}
-        {ticketChoices.length > 0 && (
-          <div>
-            <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>{ticketOnly ? `使うチケット *（このメニューは1回${effSvc?.ticket_cost || 1}枚。予約した時点で使い、キャンセルすると戻ります）` : '使うチケット（任意）'}</label>
-            {ticketOnly && ticketChoices.length === 1 ? (
-              <p style={{ margin: 0, padding: '10px 14px', borderRadius: '10px', border: `1px solid ${tx(15)}`, fontSize: 'calc(14px * var(--pv-fs))' }}>
-                {ticketChoices[0].package_name}（{ticketChoices[0].package_type === 'unlimited' ? '通い放題' : `残り${ticketChoices[0].remaining_sessions}回`}）
-              </p>
-            ) : (
-            <select
-              value={selectedPackageId}
-              onChange={e => setSelectedPackageId(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}
-            >
-              {!ticketOnly && <option value="" style={{ color: '#000' }}>選択しない（通常のお支払い）</option>}
-              {ticketChoices.map(p => (
-                <option key={p.id} value={p.id} style={{ color: '#000' }}>
-                  {p.package_name}（{p.package_type === 'unlimited' ? '通い放題' : `残り${p.remaining_sessions}回`}）
-                </option>
-              ))}
-            </select>
+        {/* お支払い方法（2026-10-22）：このメニューに使えるチケットを持っている時だけ出す。
+            チケット専用のメニューは「使うチケット」だけ。そうでなければ「チケットを使う／単発で予約」を選ぶ */}
+        {(ticketOnly ? ticketChoices.length > 0 : payNeedsChoice) && (
+          <fieldset style={{ border: 'none', margin: 0, padding: 0, display: 'grid', gap: '8px' }}>
+            <legend style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: tx(75), marginBottom: '6px', padding: 0 }}>
+              {ticketOnly ? `使うチケット（このメニューは1回${effSvc?.ticket_cost || 1}枚）` : 'お支払い方法 *'}
+            </legend>
+            {ticketChoices.map(p => {
+              const on = payChosen && selectedPackageId === p.id;
+              return (
+                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', border: `1px solid ${on ? 'var(--pv-accent)' : tx(18)}`, background: on ? ac(8) : 'transparent' }}>
+                  <input type="radio" name="pay" checked={on} onChange={() => { setSelectedPackageId(p.id); setPayChosen(true); }} style={{ accentColor: 'var(--pv-accent)', width: '18px', height: '18px' }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 'calc(14px * var(--pv-fs))' }}>
+                    <b>チケットを使う</b>：{p.package_name}
+                    <span style={{ display: 'block', fontSize: 'calc(12px * var(--pv-fs))', color: tx(65) }}>{effSvc?.ticket_cost || 1}枚使います（{p.package_type === 'unlimited' ? '通い放題' : `残り${p.remaining_sessions}回`}）</span>
+                  </span>
+                </label>
+              );
+            })}
+            {!ticketOnly && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', cursor: 'pointer', border: `1px solid ${payChosen && !selectedPackageId ? 'var(--pv-accent)' : tx(18)}`, background: payChosen && !selectedPackageId ? ac(8) : 'transparent' }}>
+                <input type="radio" name="pay" checked={payChosen && !selectedPackageId} onChange={() => { setSelectedPackageId(''); setPayChosen(true); }} style={{ accentColor: 'var(--pv-accent)', width: '18px', height: '18px' }} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 'calc(14px * var(--pv-fs))' }}>
+                  <b>単発で予約</b>{singlePrice ? `：${singlePrice}` : ''}
+                  <span style={{ display: 'block', fontSize: 'calc(12px * var(--pv-fs))', color: tx(65) }}>チケットは使いません。料金はお店でお支払いください</span>
+                </span>
+              </label>
             )}
-          </div>
+            <p style={{ margin: 0, fontSize: 'calc(11.5px * var(--pv-fs))', color: tx(62) }}>チケットは予約した時点で使い、来店前にキャンセルすると戻ります。</p>
+          </fieldset>
         )}
 
         {showInstantPicker && slots !== null && usableSlots.length === 0 ? (

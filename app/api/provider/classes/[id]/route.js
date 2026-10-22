@@ -34,8 +34,8 @@ async function __PATCH(request, { params }) {
   if ('instructor_staff_id' in body) update.instructor_staff_id = body.instructor_staff_id || null;
   if ('place' in body) update.place = String(body.place || '').trim().slice(0, 40) || null;
   if ('resource_id' in body) Object.assign(update, await normalizeAssignees(supabase, provider.id, { resource_id: body.resource_id || null }));
-  if ('ticket_ids' in body || 'ticket_cost' in body) {
-    const t = await normalizeTicketRule(supabase, provider.id, { ...('ticket_ids' in body ? { ticket_ids: body.ticket_ids } : {}), ...('ticket_cost' in body ? { ticket_cost: body.ticket_cost } : {}) });
+  if ('ticket_ids' in body || 'ticket_cost' in body || 'ticket_only' in body) {
+    const t = await normalizeTicketRule(supabase, provider.id, { ...('ticket_ids' in body ? { ticket_ids: body.ticket_ids } : {}), ...('ticket_cost' in body ? { ticket_cost: body.ticket_cost } : {}), ...('ticket_only' in body ? { ticket_only: body.ticket_only } : {}) });
     Object.assign(update, t);
   }
   if ('price' in body) update.price = Number.isFinite(Number(body.price)) && body.price !== '' ? Number(body.price) : null;

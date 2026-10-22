@@ -13,11 +13,11 @@ export async function GET(request, { params }) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const { data: { user } = {} } = token ? await supabase.auth.getUser(token).catch(() => ({ data: {} })) : { data: {} };
   const ent = user ? await customerEntitlements(supabase, provider.id, user.id) : { tickets: [], planIds: [], isMember: false };
-  const { data: svcs } = await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('provider_id', provider.id);
-  const services = Object.fromEntries((svcs || []).filter(needsTicket).map(s => { const c = checkService(s, ent); return [s.id, { ok: c.ok, via: c.via, ticket_ids: c.tickets.map(t => t.id) }]; }));
+  const { data: svcs } = await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, ticket_only, hide_for_members').eq('provider_id', provider.id);
+  const services = Object.fromEntries((svcs || []).filter(needsTicket).map(s => { const c = checkService(s, ent); return [s.id, { ok: c.ok, via: c.via, ticket_only: c.ticketOnly, ticket_ids: c.tickets.map(t => t.id) }]; }));
   const hidden = (svcs || []).filter(s => hiddenForMember(s, ent)).map(s => s.id);
   // グループレッスン（でお要望 2026-10-22：開催回の予約もチケットを使う）
-  const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost').eq('provider_id', provider.id);
-  const classes = Object.fromEntries((cls || []).filter(needsTicket).map(c => { const r = checkService(c, ent); return [c.id, { ok: r.ok, ticket_ids: r.tickets.map(t => t.id) }]; }));
+  const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost, ticket_only').eq('provider_id', provider.id);
+  const classes = Object.fromEntries((cls || []).filter(needsTicket).map(c => { const r = checkService(c, ent); return [c.id, { ok: r.ok, ticket_only: r.ticketOnly, ticket_ids: r.tickets.map(t => t.id) }]; }));
   return Response.json({ logged_in: !!user, tickets: ent.tickets, member: ent.isMember, services, classes, hidden_for_member: hidden });
 }

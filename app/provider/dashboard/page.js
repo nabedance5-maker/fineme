@@ -2620,7 +2620,7 @@ export default function ProviderDashboardPage() {
             const room = roomName[c.resource_id] || c.place || '';
             return `<div class="mn-row">
               <div class="mn-main">
-                <div class="mn-title"><strong>${esc(c.name)}</strong>${chip('グループレッスン', 'is-lesson')}${(c.ticket_ids || []).length ? chip(`チケット${c.ticket_cost || 1}枚`, 'is-limited') : ''}</div>
+                <div class="mn-title"><strong>${esc(c.name)}</strong>${chip('グループレッスン', 'is-lesson')}${(c.ticket_ids || []).length ? chip(c.ticket_only ? `チケット専用・${c.ticket_cost || 1}枚` : `チケット${c.ticket_cost || 1}枚 または 単発`, 'is-limited') : ''}</div>
                 <div class="mn-meta">${c.price != null ? `¥${Number(c.price).toLocaleString()}` : '金額未設定'}${c.capacity ? ` · 定員${c.capacity}名` : ''}${who ? ` · 講師 ${esc(who)}` : ''}${room ? ` · ${esc(room)}` : ''} · 在籍${c.enrolledCount || 0}名</div>
               </div>
               <div class="mn-actions">
@@ -2636,7 +2636,7 @@ export default function ProviderDashboardPage() {
           const roomTxt = (sv.resource_ids || []).length ? sv.resource_ids.map(id => roomName[id]).filter(Boolean).join('・') : '';
           return `<div class="mn-row">
             <div class="mn-main">
-              <div class="mn-title"><strong>${esc(sv.name)}</strong>${chip('個別')}${sv.is_trial ? chip('体験', 'is-trial') : ''}${(sv.ticket_ids || []).length ? chip(`チケット${sv.ticket_cost || 1}枚`, 'is-limited') : ''}${sv.hide_for_members ? chip('会員には非表示') : ''}${sv.is_featured ? chip('看板') : ''}${sv.target_axis ? chip(AXIS_LABELS_D[sv.target_axis] || sv.target_axis) : ''}</div>
+              <div class="mn-title"><strong>${esc(sv.name)}</strong>${chip('個別')}${sv.is_trial ? chip('体験', 'is-trial') : ''}${(sv.ticket_ids || []).length ? chip(sv.ticket_only ? `チケット専用・${sv.ticket_cost || 1}枚` : `チケット${sv.ticket_cost || 1}枚 または 単発`, 'is-limited') : ''}${sv.hide_for_members ? chip('会員には非表示') : ''}${sv.is_featured ? chip('看板') : ''}${sv.target_axis ? chip(AXIS_LABELS_D[sv.target_axis] || sv.target_axis) : ''}</div>
               <div class="mn-meta">¥${Number(sv.price).toLocaleString()}${sv.duration_minutes ? ` · ${sv.duration_minutes}分` : (sv.duration ? ' · ' + esc(sv.duration) : ' · 所要時間未設定')}${staffTxt ? ` · 担当 ${esc(staffTxt)}` : ''}${roomTxt ? ` · ${esc(roomTxt)}` : ''}</div>
               ${sv.transformation_promise ? `<div class="mn-promise">「${esc(sv.transformation_promise)}」</div>` : ''}
             </div>
@@ -2768,15 +2768,17 @@ export default function ProviderDashboardPage() {
           : '<span>チケットがまだありません（「チケット・回数券」タブで作れます）</span>';
         editForm.elements['ticket_cost'].value = s?.ticket_cost || 1;
         editForm.elements['hide_when_locked'].checked = !!s?.hide_when_locked;
+        editForm.elements['ticket_only'].checked = !!s?.ticket_only;
         editForm.elements['hide_for_members'].checked = !!s?.hide_for_members;
         syncTicketFields();
       }
       function syncTicketFields() {
         const on = editForm.querySelectorAll('[name=ticket_ids]:checked').length > 0;
         document.getElementById('svc-ticket-cost-wrap').style.display = on ? '' : 'none';
-        document.getElementById('svc-ticket-hide-wrap').style.display = on ? '' : 'none';
+        document.getElementById('svc-ticket-only-wrap').style.display = on ? '' : 'none';
+        document.getElementById('svc-ticket-hide-wrap').style.display = on && editForm.elements['ticket_only'].checked ? '' : 'none';
       }
-      editForm?.addEventListener('change', e => { if (e.target?.name === 'ticket_ids') syncTicketFields(); });
+      editForm?.addEventListener('change', e => { if (e.target?.name === 'ticket_ids' || e.target?.name === 'ticket_only') syncTicketFields(); });
       document.getElementById('btn-add-service')?.addEventListener('click', () => {
         editTitle.textContent = '個別メニューを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_service_id'].value = '';
@@ -2800,7 +2802,8 @@ export default function ProviderDashboardPage() {
         const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null, is_trial: !!editForm.elements['is_trial']?.checked,
           ticket_ids: [...editForm.querySelectorAll('[name=ticket_ids]:checked')].map(el => el.value),
           ticket_cost: Number(editForm.elements['ticket_cost']?.value) || 1,
-          hide_when_locked: !!editForm.elements['hide_when_locked']?.checked,
+          ticket_only: !!editForm.elements['ticket_only']?.checked,
+          hide_when_locked: !!editForm.elements['ticket_only']?.checked && !!editForm.elements['hide_when_locked']?.checked,
           hide_for_members: !!editForm.elements['hide_for_members']?.checked,
           axes: editForm.elements['is_trial']?.checked ? [...editForm.querySelectorAll('[name=axes]:checked')].map(el => el.value) : [],
           ...(document.getElementById('svc-assign-staff')?.style.display !== 'none' ? { staff_ids: [...editForm.querySelectorAll('[name=staff_ids]:checked')].map(el => el.value) } : {}),
@@ -5476,8 +5479,11 @@ export default function ProviderDashboardPage() {
         syncClassTicketCost();
       }
       function syncClassTicketCost() {
+        const on = editForm?.querySelectorAll('[name=cls_ticket_ids]:checked').length ? '' : 'none';
         const w = document.getElementById('cls-ticket-cost-wrap');
-        if (w) w.style.display = editForm?.querySelectorAll('[name=cls_ticket_ids]:checked').length ? '' : 'none';
+        if (w) w.style.display = on;
+        const o = document.getElementById('cls-ticket-only-wrap');
+        if (o) o.style.display = on;
       }
       editForm?.addEventListener('change', e => { if (e.target?.name === 'cls_ticket_ids') syncClassTicketCost(); });
       async function loadRoomOptionsForClasses() {
@@ -5526,6 +5532,7 @@ export default function ProviderDashboardPage() {
         editForm.dataset.ticketIds = (c.ticket_ids || []).join(',');
         renderClassTickets(c.ticket_ids || []);
         if (editForm.elements['ticket_cost']) editForm.elements['ticket_cost'].value = c.ticket_cost || 1;
+        if (editForm.elements['cls_ticket_only']) editForm.elements['cls_ticket_only'].checked = !!c.ticket_only;
         editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
         if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
         resetNewSessionInputs();
@@ -5662,6 +5669,7 @@ export default function ProviderDashboardPage() {
           ...(editForm.elements['resource_id'] && roomOptionsForClasses.length ? { resource_id: fd.get('resource_id') || null } : {}),
           ticket_ids: [...editForm.querySelectorAll('[name=cls_ticket_ids]:checked')].map(x => x.value),
           ticket_cost: Number(editForm.elements['ticket_cost']?.value) || 1,
+          ticket_only: !!editForm.elements['cls_ticket_only']?.checked,
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
@@ -13430,7 +13438,7 @@ export default function ProviderDashboardPage() {
         if (manualServices) return manualServices;
         const r = await fetch('/api/provider/services', { headers: authHeadersCal() }).catch(() => null);
         manualServices = r?.ok ? await r.json() : [];
-        if (manualServiceEl) manualServiceEl.innerHTML = '<option value="">選ばない</option>' + manualServices.map(x => `<option value="${x.id}">${esc(x.name)}${(x.ticket_ids || []).length ? `（チケット${x.ticket_cost || 1}枚）` : ''}</option>`).join('');
+        if (manualServiceEl) manualServiceEl.innerHTML = '<option value="">選ばない</option>' + manualServices.map(x => `<option value="${x.id}">${esc(x.name)}${(x.ticket_ids || []).length ? (x.ticket_only ? `（チケット専用・${x.ticket_cost || 1}枚）` : '（チケットも使える）') : ''}</option>`).join('');
         return manualServices;
       }
       let manualTicketSeq = 0;
@@ -13441,13 +13449,14 @@ export default function ProviderDashboardPage() {
         if (manualTicketField) manualTicketField.style.display = need ? '' : 'none';
         if (!need) return;
         const cost = svc.ticket_cost || 1;
-        if (!manualCtx?.userId) { manualTicketEl.innerHTML = ''; manualTicketNote.textContent = `このメニューはチケットが${cost}枚必要です。お客様名から候補を選んでください`; return; }
+        const single = svc.ticket_only ? '' : `<option value="">チケットを使わない（単発${Number(svc.price) > 0 ? ` ¥${Number(svc.price).toLocaleString()}` : ''}）</option>`;
+        if (!manualCtx?.userId) { manualTicketEl.innerHTML = single; manualTicketNote.textContent = svc.ticket_only ? `このメニューはチケット専用です（${cost}枚）。お客様名から候補を選んでください` : 'チケットを使う時は、お客様名から候補を選んでください（選ばなければ単発の予約）'; return; }
         manualTicketNote.textContent = '読み込み中…';
         const r = await fetch(`/api/provider/customer-tickets?user_id=${encodeURIComponent(manualCtx.userId)}`, { headers: authHeadersCal() }).catch(() => null);
         if (seq !== manualTicketSeq) return;
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
-        manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('');
+        manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">チケットを使う：${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('') + single;
         manualTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません（メンバータブで追加すると、チケットを付けられます）'
           : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（メンバータブでお客様を開くと付けられます）';
       }
@@ -13569,12 +13578,13 @@ export default function ProviderDashboardPage() {
         csTicketField.style.display = need ? '' : 'none';
         if (!need) return;
         const cost = csClassRule.ticket_cost || 1;
-        if (!csUserId) { csTicketEl.innerHTML = ''; csTicketNote.textContent = `このレッスンはチケットが${cost}枚必要です。会員を選んでください`; return; }
+        const single = csClassRule.ticket_only ? '' : `<option value="">チケットを使わない（単発${csClassRule.price != null ? ` ¥${Number(csClassRule.price).toLocaleString()}` : ''}）</option>`;
+        if (!csUserId) { csTicketEl.innerHTML = single; csTicketNote.textContent = csClassRule.ticket_only ? `このレッスンはチケット専用です（${cost}枚）。会員を選んでください` : 'チケットを使う時は会員を選んでください（選ばなければ単発の参加）'; return; }
         const r = await fetch(`/api/provider/customer-tickets?user_id=${encodeURIComponent(csUserId)}`, { headers: authHeadersCal() }).catch(() => null);
         if (seq !== csSeq) return;
         const d = r?.ok ? await r.json() : null;
         const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
-        csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('');
+        csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">チケットを使う：${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('') + single;
         csTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません' : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このレッスンに使えるチケットをお持ちではありません（メンバータブでお客様を開くと付けられます）';
       }
       async function loadCsAttendees() {
@@ -16903,10 +16913,11 @@ export default function ProviderDashboardPage() {
               {/* 予約に使うチケット（でお要望 2026-10-22：チケットを消費して予約する。チケットを選ばなければ誰でも予約できる） */}
               <div className="svc-scope">
                 <b>予約に使うチケット</b>
-                <span style={{ fontSize: '12px' }}>選んだチケットを持っている方だけが予約でき、1回の予約で決めた枚数を使います。そのチケットが付く回数券・月額プランを持っている方は、自動でこのメニューを予約できるようになります（回数券やプランを1つずつ選ぶ必要はありません）。選ばなければ誰でも予約できます。チケットは「チケット・回数券」タブで作れます。</span>
+                <span style={{ fontSize: '12px' }}>選んだチケットを持っているお客様は、予約の時に「チケットを使う」か「単発で予約（この金額）」かを選べます。チケット用と単発用でメニューを2つ作る必要はありません。そのチケットが付く回数券・月額プランを持っている方は、自動でこのメニューにチケットを使えるようになります。チケットは「チケット・回数券」タブで作れます。</span>
                 <div id="svc-ticket-list" className="svc-scope-list" style={{ paddingLeft: 0 }}></div>
                 <label id="svc-ticket-cost-wrap" style={{ display: 'none' }}>1回の予約で<input type="number" name="ticket_cost" min="1" max="20" defaultValue="1" style={{ width: '64px' }} />枚使う</label>
-                <label id="svc-ticket-hide-wrap" style={{ display: 'none' }}><input type="checkbox" name="hide_when_locked" />チケットを持っていないお客様には、このメニューを表示しない</label>
+                <label id="svc-ticket-only-wrap" style={{ display: 'none' }}><input type="checkbox" name="ticket_only" />チケット専用にする（チケットを持っていない方は単発で予約できない）</label>
+                <label id="svc-ticket-hide-wrap" style={{ display: 'none' }}><input type="checkbox" name="hide_when_locked" />チケット専用のこのメニューを、チケットを持っていないお客様には表示しない</label>
                 <label><input type="checkbox" name="hide_for_members" />会員には表示しない（体験メニューなど、初めての方だけに見せる）</label>
               </div>
               <h4 className="mn-sub">お店のページ・おすすめでの見せ方</h4>
@@ -17069,7 +17080,8 @@ export default function ProviderDashboardPage() {
                   <label>予約に使うチケット（任意）</label>
                   <div id="cls-ticket-list" className="svc-assign-list"></div>
                   <label id="cls-ticket-cost-wrap" style={{ display: 'none', fontWeight: 400, fontSize: '13px', marginTop: '6px' }}>1回の予約で<input type="number" name="ticket_cost" min="1" max="20" defaultValue="1" style={{ width: '64px', margin: '0 6px' }} />枚使う</label>
-                  <small style={{ color: '#1a1410' }}>選んだチケットを持っている方だけが、この回を予約できます。チケットは「チケット・回数券」タブで作れます。</small>
+                  <label id="cls-ticket-only-wrap" style={{ display: 'none', fontWeight: 400, fontSize: '13px', marginTop: '6px' }}><input type="checkbox" name="cls_ticket_only" style={{ marginRight: '6px' }} />チケット専用にする（チケットを持っていない方は単発で予約できない）</label>
+                  <small style={{ color: '#1a1410' }}>選んだチケットを持っているお客様は、予約の時に「チケットを使う」か「単発で予約（この金額）」かを選べます。チケットは「チケット・回数券」タブで作れます。</small>
                 </div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
 

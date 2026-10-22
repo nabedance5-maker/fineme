@@ -10,7 +10,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
-import { customerEntitlements, checkService, needsTicket } from '@/lib/booking-eligibility';
+import { customerEntitlements, checkService, needsTicket, requiresTicket } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -54,15 +54,17 @@ async function __POST(request) {
   // メニューとチケット（でお要望 2026-10-22）。チケットが要るメニューは、会員を選び、その方が持っているチケットで予約する
   let svc = null, ticketPkg = null;
   if (service_id) {
-    const { data } = await supabase.from('provider_services').select('id, name, ticket_ids, ticket_cost').eq('id', service_id).eq('provider_id', provider.id).maybeSingle();
+    const { data } = await supabase.from('provider_services').select('id, name, ticket_ids, ticket_cost, ticket_only').eq('id', service_id).eq('provider_id', provider.id).maybeSingle();
     if (!data) return Response.json({ error: 'メニューが見つかりません' }, { status: 400 });
     svc = data;
   }
-  if (svc && needsTicket(svc)) {
-    if (!user_id) return Response.json({ error: 'このメニューはチケットが必要です。会員を選んでください' }, { status: 400 });
+  // チケット専用のメニューはチケットが必須。そうでないメニューは、チケットを選んだ時だけ使う（選ばなければ単発）。2026-10-22
+  if (svc && (requiresTicket(svc) || (needsTicket(svc) && package_id))) {
+    if (!user_id) return Response.json({ error: 'チケットを使う予約は、お客様名から会員を選んでください' }, { status: 400 });
     const chk = checkService(svc, await customerEntitlements(supabase, provider.id, user_id));
-    if (!chk.ok) return Response.json({ error: `この会員は「${svc.name}」に使えるチケットを${svc.ticket_cost || 1}枚お持ちではありません`, code: 'no_ticket' }, { status: 409 });
-    ticketPkg = chk.tickets.find(t => t.id === package_id) || chk.tickets[0];
+    if (!chk.tickets.length) return Response.json({ error: `この方は「${svc.name}」に使えるチケットを${svc.ticket_cost || 1}枚お持ちではありません`, code: 'no_ticket' }, { status: 409 });
+    ticketPkg = chk.tickets.find(t => t.id === package_id) || (requiresTicket(svc) ? chk.tickets[0] : null);
+    if (!ticketPkg) return Response.json({ error: '選んだチケットはこのメニューに使えません' }, { status: 400 });
   }
 
   const insertPayload = {
