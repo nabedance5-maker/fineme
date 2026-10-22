@@ -184,11 +184,11 @@ export default function ProviderLandingPage({ params }) {
   // 既にあること自体、この問題が既知であることの証拠）、「予約する」と言い切らず
   // 「問い合わせる」+返信目安の注記にとどめる。でお指摘（2026-08-31）。
   const hasExternalBooking = !!provider.booking_url;
-  const consultHref = hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=consult`;
+  const consultHref = hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=book`;
   const consultLinkProps = hasExternalBooking ? { target: '_blank', rel: 'noopener noreferrer' } : {};
   const ctaLabel = hasExternalBooking ? '予約する' : '問い合わせる';
   function menuCtaHref(menuName) {
-    return hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=consult&menu_name=${encodeURIComponent(menuName)}`;
+    return hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=book&menu_name=${encodeURIComponent(menuName)}`;
   }
   const menuCtaLabel = hasExternalBooking ? 'このメニューで予約する' : 'このメニューについて問い合わせる';
   function trackCta(kind) {

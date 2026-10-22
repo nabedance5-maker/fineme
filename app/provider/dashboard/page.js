@@ -1591,7 +1591,7 @@ export default function ProviderDashboardPage() {
         document.getElementById('wg-opts').style.display = kind === 'button' ? 'none' : '';
         const pv = document.getElementById('wg-preview');
         pv.innerHTML = kind === 'button'
-          ? `<a href="${origin}/provider/${e(slug)}?tab=consult&from=widget" target="_blank" rel="noopener" class="wg-btn-preview">予約する</a>`
+          ? `<a href="${origin}/provider/${e(slug)}?tab=book&from=widget" target="_blank" rel="noopener" class="wg-btn-preview">予約する</a>`
           : `<iframe src="/embed/${e(slug)}?view=${view}&theme=${theme}" title="予約ウィジェットの見本" style="width:100%;height:520px;border:0;border-radius:14px;background:${theme === 'dark' ? '#111418' : '#fff'}"></iframe>`;
       }
       // 見本のiframeも、埋め込み先と同じく中身の高さに合わせる
@@ -1604,8 +1604,21 @@ export default function ProviderDashboardPage() {
       document.getElementById('wg-copy')?.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(codeEl.textContent); showToast('埋め込みコードをコピーしました'); } catch { showToast('コピーできませんでした。コードを選択してコピーしてください'); }
       });
-      document.querySelectorAll('[data-tab="widget"]').forEach(btn => btn.addEventListener('click', render));
-      if (new URLSearchParams(location.search).get('tab') === 'widget') render();
+      // 通っている方向けの予約リンクとQR（でお要望 2026-10-22：会員・回数券・月額プランの方が予約だけをすぐできる入り口）
+      async function renderMemberLink() {
+        const slug = loadProviderData()?.slug || '';
+        const link = `${location.origin}/provider/${encodeURIComponent(slug)}?view=member`;
+        const u = document.getElementById('wg-member-url'); if (u) u.textContent = link;
+        const img = document.getElementById('wg-member-qr');
+        if (img) {
+          try { const QRCode = (await import('qrcode')).default || (await import('qrcode')); img.src = await QRCode.toDataURL(link, { width: 240, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } }); img.style.display = ''; } catch { img.style.display = 'none'; }
+        }
+      }
+      document.getElementById('wg-member-copy')?.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(document.getElementById('wg-member-url').textContent); showToast('リンクをコピーしました'); } catch { showToast('コピーできませんでした'); }
+      });
+      document.querySelectorAll('[data-tab="widget"]').forEach(btn => btn.addEventListener('click', () => { render(); renderMemberLink(); }));
+      if (new URLSearchParams(location.search).get('tab') === 'widget') { render(); renderMemberLink(); }
     })();
 
     // ── お知らせ掲示（でお要望 2026-10-19：hacomono差分 #13） ──
@@ -18426,6 +18439,13 @@ export default function ProviderDashboardPage() {
             <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>空き状況は営業時間・シフト・入っている予約から自動で計算して表示します。ホームページ作成サービスによっては、「HTML」や「埋め込み」のブロックに貼り付けます。</p>
             <b style={{ fontSize: '13px' }}>見本</b>
             <div id="wg-preview" className="wg-preview"></div>
+          </div>
+          {/* 通っている方向けの予約リンク（でお要望 2026-10-22） */}
+          <div className="card stack" style={{ padding: '24px', gap: '10px', marginTop: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>通っている方向けの予約リンク</h2>
+            <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>会員・回数券・月額プランの方向けに、お店の紹介を省いて「持っているチケット・次の予約・予約」だけを出すページを開くリンクです。店頭のQR、お店のLINEのリッチメニュー、予約確認のメッセージに載せてください。会員・チケットをお持ちの方は、普通のリンクから来てもこの表示で開きます。</p>
+            <div className="sm-inline"><code id="wg-member-url" className="sm-url" style={{ flex: '1 1 260px' }}></code><button type="button" className="btn btn-ghost" id="wg-member-copy">コピー</button></div>
+            <img id="wg-member-qr" alt="通っている方向けの予約リンクのQRコード" style={{ width: '160px', height: '160px', display: 'none' }} />
           </div>
         </div>
 

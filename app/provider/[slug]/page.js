@@ -73,26 +73,22 @@ const TABS = [
 // クラス管理（スクール業態）がONの店舗だけ「クラス」タブを追加する
 // （でお指摘2026-09-16：クラス管理は名簿管理のみで、お客様が予約できる導線が無かった）
 function tabsFor(provider) {
-  const instantOn = hasFeature(provider, 'instant_booking');
-  const requestOn = hasFeature(provider, 'booking_request');
   // 店舗が「出さない」にしたタブは除く（でお要望 2026-10-22。予約のタブはいつも出す）
   let tabs = isShown(provider, 'tab_basic') ? [{ id: 'basic', label: '基本情報' }] : [];
-  if (instantOn) tabs.push({ id: 'instant', label: '予約' });
-  if (requestOn) tabs.push({ id: 'consult', label: 'リクエスト' });
-  if (!instantOn && !requestOn) tabs.push({ id: 'consult', label: '予約' });
+  // 予約・リクエスト・グループレッスンは1つの「予約」タブにまとめる（でお要望 2026-10-22：
+  // タブが分かれていてだるい。メニューとレッスンを並べ、押したら詳細と日時選びが出る形に）
+  tabs.push({ id: 'book', label: '予約' });
   if (isShown(provider, 'tab_appeal')) tabs.push({ id: 'appeal', label: 'アピール' });
-  if (hasFeature(provider, 'class_management') && isShown(provider, 'tab_class')) {
-    tabs.push({ id: 'class', label: 'グループレッスン' });
-  }
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
   // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
   if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: '回数券' });
   return tabs;
 }
-// 「今すぐ予約する」系CTAの着地先（即時予約があればそちら、無ければリクエスト/受付停止タブ）
-function primaryBookingTabId(provider) {
-  return hasFeature(provider, 'instant_booking') ? 'instant' : 'consult';
+// 「今すぐ予約する」系CTAの着地先。予約は1つのタブにまとめた（2026-10-22）。旧タブ名（instant/consult/class）のリンクもここへ
+const OLD_BOOKING_TABS = ['instant', 'consult', 'class'];
+function primaryBookingTabId() {
+  return 'book';
 }
 const PAYMENT_METHOD_LABELS = {
   cash: '現金', credit: 'クレジットカード', paypay: 'PayPay',
@@ -1106,7 +1102,8 @@ function BasicInfoTab({ provider }) {
 
 // ── クラスタブ：スクール業態向け、クラスの開催回に直接予約する（でお指摘2026-09-16） ──
 const WEEKDAY_JA_CLASS = ['日', '月', '火', '水', '木', '金', '土'];
-function ClassTab({ provider }) {
+// classId：予約タブ（BookTab）でレッスンを選んだ時は、そのレッスンの開催日時だけを出す（2026-10-22）
+function ClassTab({ provider, classId }) {
   const [classes, setClasses] = useState(null); // null=未取得
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [userId, setUserId] = useState('');
@@ -1189,8 +1186,8 @@ function ClassTab({ provider }) {
   }
 
   if (classes === null) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p>;
-  const sessions = classes.sessions || [];
-  if (!sessions.length) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約できるグループレッスンの開催日時がありません。</p>;
+  const sessions = (classes.sessions || []).filter(x => !classId || x.class_id === classId);
+  if (!sessions.length) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>{classId ? 'このレッスンは、今予約できる開催日時がありません。' : '現在予約できるグループレッスンの開催日時がありません。'}</p>;
 
   // でお要望（2026-10-16）：hacomonoの予約画面のように、日付を選ぶと部屋ごとの列に開催回のカードが並ぶ
   const dates = [...new Set(sessions.map(x => x.date))].sort();
@@ -1307,6 +1304,204 @@ function ClassTab({ provider }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ── 予約タブ（でお要望 2026-10-22：予約・リクエスト・グループレッスンを1か所に）。
+//    メニューとグループレッスンを並べ、押すとその場で詳細と日時選び（空いている時間／リクエスト／開催日時）が出る。 ──
+function BookTab({ provider, services, staff, elig, onEligChanged, selectedService, setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, presetLessonId, hideMemberCard }) {
+  const instantOn = hasFeature(provider, 'instant_booking');
+  const requestOn = hasFeature(provider, 'booking_request');
+  const lessonsOn = hasFeature(provider, 'class_management') && isShown(provider, 'tab_class');
+  const [lessons, setLessons] = useState([]);
+  const [picked, setPicked] = useState(() => (selectedService ? { kind: 'service', id: selectedService.id } : null));
+  const [how, setHow] = useState(instantOn ? 'instant' : 'request');
+  useEffect(() => {
+    if (!lessonsOn || !provider?.slug) return;
+    fetch(`/api/providers/${provider.slug}/classes`).then(r => (r.ok ? r.json() : { classes: [] })).then(d => {
+      setLessons(d.classes || []);
+      if (presetLessonId && (d.classes || []).length) setPicked({ kind: 'lesson', id: presetLessonId === 'any' ? d.classes[0].id : presetLessonId });
+    }).catch(() => setLessons([]));
+  }, [provider?.slug, lessonsOn]);
+  // 他の場所（アピールのプログラム・通知のリンク）からメニューを選んで来た時
+  useEffect(() => { if (selectedService) setPicked({ kind: 'service', id: selectedService.id }); }, [selectedService?.id]);
+  const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
+  const lessonState = c => (!c.needs_ticket ? 'open' : elig?.classes?.[c.id]?.ok ? 'ok' : 'locked');
+  const hidden = new Set(elig?.hidden_for_member || []);
+  const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked') && !hidden.has(sv.id));
+  const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
+  const pick = (kind, item) => {
+    if (picked?.kind === kind && picked?.id === (item?.id || null)) { setPicked(null); setSelectedService(null); return; }
+    setPicked({ kind, id: item?.id || null });
+    setSelectedService(kind === 'service' ? item : null);
+    setSubmitted(false);
+  };
+  const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
+  const line = '1px solid color-mix(in srgb, var(--pv-text) 14%, transparent)';
+  const card = on => ({ border: on ? '2px solid var(--pv-text)' : line, borderRadius: '14px', background: 'var(--pv-surface)', overflow: 'hidden' });
+  const head = { display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '14px 16px', background: 'transparent', border: 'none', color: 'var(--pv-text)', textAlign: 'left', cursor: 'pointer', font: 'inherit' };
+  const chip = { fontSize: 'calc(11px * var(--pv-fs))', fontWeight: 700, padding: '2px 8px', borderRadius: '99px', border: line };
+  const lockedLinks = (
+    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: 'calc(12.5px * var(--pv-fs))' }}>
+      {!elig?.logged_in
+        ? <a href={loginHref} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>ログインすると、お持ちのチケットで予約できます</a>
+        : <>
+            <a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>
+            <a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>月額プランに入会する</a>
+          </>}
+    </div>
+  );
+  const consultProps = { provider, services, staff, onServiceSelect: setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, embedded: true };
+  const empty = !visibleServices.length && !(lessonsOn && lessons.length);
+
+  return (
+    <div style={{ maxWidth: '620px', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
+      {!hideMemberCard && <MemberCard provider={provider} elig={elig} onChanged={onEligChanged} />}
+      <p style={{ margin: '0 0 4px', fontSize: 'calc(13px * var(--pv-fs))', color: muted }}>予約したいメニュー・レッスンを選ぶと、日時を選べます。</p>
+      {empty && !requestOn && <p style={{ margin: 0, color: muted }}>現在、予約できるメニューがありません。</p>}
+      {visibleServices.map(s => {
+        const st = svcState(s);
+        const on = picked?.kind === 'service' && picked.id === s.id;
+        return (
+          <div key={`s-${s.id}`} style={card(on)}>
+            <button type="button" onClick={() => pick('service', s)} style={head} aria-expanded={on}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 800, fontSize: 'calc(15px * var(--pv-fs))' }}>{s.name}</span>
+                <span style={{ display: 'block', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, marginTop: '2px' }}>
+                  {[s.duration_minutes ? `${s.duration_minutes}分` : (/^\d+$/.test(String(s.duration || '')) ? `${s.duration}分` : s.duration), st === 'open' && Number(s.price) > 0 ? `¥${Number(s.price).toLocaleString()}` : null].filter(Boolean).join('・')}
+                </span>
+              </span>
+              {st !== 'open' && <span style={chip}>{st === 'ok' ? `チケット${s.ticket_cost || 1}枚` : 'チケット専用'}</span>}
+              <span aria-hidden="true" style={{ fontSize: '18px' }}>{on ? '−' : '＋'}</span>
+            </button>
+            {on && (
+              <div style={{ padding: '0 16px 16px', display: 'grid', gap: '12px' }}>
+                {s.description && <p style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{s.description}</p>}
+                {st === 'locked' ? (
+                  <div style={{ display: 'grid', gap: '6px' }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 'calc(13px * var(--pv-fs))' }}>{s.scope_label || '対象のお客様'}だけが予約できます</p>
+                    {lockedLinks}
+                  </div>
+                ) : (
+                  <>
+                    {instantOn && requestOn && (
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {[['instant', '空いている時間から予約'], ['request', '希望日時を相談（リクエスト）']].map(([k, label]) => (
+                          <button key={k} type="button" onClick={() => setHow(k)} style={{ padding: '8px 12px', borderRadius: '99px', border: how === k ? '2px solid var(--pv-text)' : line, background: how === k ? 'var(--pv-text)' : 'transparent', color: how === k ? 'var(--pv-bg)' : 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>{label}</button>
+                        ))}
+                      </div>
+                    )}
+                    <ConsultTab {...consultProps} selectedService={s} mode={instantOn && (how === 'instant' || !requestOn) ? 'instant' : requestOn ? 'request' : 'closed'} />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {lessonsOn && lessons.map(c => {
+        const st = lessonState(c);
+        const on = picked?.kind === 'lesson' && picked.id === c.id;
+        return (
+          <div key={`l-${c.id}`} style={card(on)}>
+            <button type="button" onClick={() => pick('lesson', c)} style={head} aria-expanded={on}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 800, fontSize: 'calc(15px * var(--pv-fs))' }}>{c.name}</span>
+                <span style={{ display: 'block', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, marginTop: '2px' }}>
+                  {['グループレッスン', c.capacity ? `定員${c.capacity}名` : null, st === 'open' && c.price != null ? `¥${Number(c.price).toLocaleString()}` : null].filter(Boolean).join('・')}
+                </span>
+              </span>
+              {st !== 'open' && <span style={chip}>{st === 'ok' ? `チケット${c.ticket_cost || 1}枚` : 'チケット専用'}</span>}
+              <span aria-hidden="true" style={{ fontSize: '18px' }}>{on ? '−' : '＋'}</span>
+            </button>
+            {on && (
+              <div style={{ padding: '0 16px 16px', display: 'grid', gap: '12px' }}>
+                {c.description && <p style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{c.description}</p>}
+                <ClassTab provider={provider} classId={c.id} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {requestOn && (
+        <div style={card(picked?.kind === 'consult')}>
+          <button type="button" onClick={() => pick('consult', null)} style={head} aria-expanded={picked?.kind === 'consult'}>
+            <span style={{ flex: 1 }}>
+              <span style={{ display: 'block', fontWeight: 800, fontSize: 'calc(15px * var(--pv-fs))' }}>まず話を聞いてみたい</span>
+              <span style={{ display: 'block', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, marginTop: '2px' }}>メニューが決まっていない方は、希望日時を送って相談できます</span>
+            </span>
+            <span aria-hidden="true" style={{ fontSize: '18px' }}>{picked?.kind === 'consult' ? '−' : '＋'}</span>
+          </button>
+          {picked?.kind === 'consult' && <div style={{ padding: '0 16px 16px' }}><ConsultTab {...consultProps} selectedService={null} mode="request" /></div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 通っている方向けの表示（でお要望 2026-10-22：会員・回数券・月額プランの方は、お店の魅力より予約だけが必要）。
+//    持っているチケット・次の予約（その場でキャンセル）・前回と同じ内容で予約・予約の一覧だけを出す。 ──
+function MemberView({ provider, services, staff, elig, onEligChanged, selectedService, setSelectedService, submitted, setSubmitted, diagnosis, matchData, onShowFull }) {
+  const [resv, setResv] = useState(null);
+  const [msg, setMsg] = useState('');
+  const load = async () => {
+    const t = await freshAccessToken();
+    if (!t) { setResv([]); return; }
+    const me = await fetch('/api/me/profile', { headers: { Authorization: `Bearer ${t}` } }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+    if (!me?.id) { setResv([]); return; }
+    const rows = await fetch(`/api/reservations?userId=${me.id}`, { headers: { Authorization: `Bearer ${t}` } }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+    setResv((rows || []).filter(r => r.provider_id === provider.id));
+  };
+  useEffect(() => { load(); }, [provider?.id, elig?.logged_in, submitted]);
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+  const dateOf = r => r.confirmed_date || r.reserved_date;
+  const upcoming = (resv || []).filter(r => ['pending', 'approved', 'counter_proposed'].includes(r.status) && (dateOf(r) || '') >= today)
+    .sort((a, b) => `${dateOf(a)} ${a.confirmed_time || a.start_time || ''}`.localeCompare(`${dateOf(b)} ${b.confirmed_time || b.start_time || ''}`));
+  const last = (resv || []).filter(r => r.status === 'visited' && r.service_id).sort((a, b) => String(dateOf(b)).localeCompare(String(dateOf(a))))[0];
+  const lastService = last ? (services || []).find(s => s.id === last.service_id) : null;
+  const svcName = id => (services || []).find(s => s.id === id)?.name || '';
+  async function cancel(r) {
+    if (!window.confirm('この予約をキャンセルしますか？（チケットで予約した場合はチケットが戻ります）')) return;
+    const t = await freshAccessToken();
+    const res = await fetch(`/api/reservations/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }, body: JSON.stringify({ status: 'cancelled' }) });
+    const d = await res.json().catch(() => ({}));
+    setMsg(res.ok ? 'キャンセルしました' : (d.error || 'キャンセルできませんでした'));
+    load(); onEligChanged?.();
+  }
+  const box = { border: '1px solid color-mix(in srgb, var(--pv-text) 14%, transparent)', borderRadius: '14px', padding: '14px 16px', background: 'var(--pv-surface)', color: 'var(--pv-text)' };
+  const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
+  return (
+    <div style={{ display: 'grid', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+        <h1 style={{ margin: 0, fontSize: 'calc(20px * var(--pv-hs))' }}>{provider.name}</h1>
+        <button type="button" onClick={onShowFull} style={{ padding: '8px 14px', borderRadius: '99px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>お店の情報を見る</button>
+      </div>
+      <MemberCard provider={provider} elig={elig} onChanged={onEligChanged} />
+      {upcoming.length > 0 && (
+        <div style={box}>
+          <div style={{ fontWeight: 800, fontSize: 'calc(13.5px * var(--pv-fs))', marginBottom: '6px' }}>次のご予約</div>
+          {upcoming.map(r => (
+            <div key={r.id} style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', padding: '6px 0', borderTop: '1px solid color-mix(in srgb, var(--pv-text) 8%, transparent)' }}>
+              <span style={{ fontSize: 'calc(13px * var(--pv-fs))' }}>
+                {dateOf(r)} {String(r.confirmed_time || r.start_time || '').slice(0, 5)}　{svcName(r.service_id) || (r.class_id ? 'グループレッスン' : 'ご予約')}
+                {r.status !== 'approved' && <span style={{ color: muted }}>（お店の確認待ち）</span>}
+              </span>
+              <button type="button" onClick={() => cancel(r)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12px * var(--pv-fs))', cursor: 'pointer' }}>キャンセル</button>
+            </div>
+          ))}
+          {msg && <p style={{ margin: '6px 0 0', fontSize: 'calc(12.5px * var(--pv-fs))', fontWeight: 700 }}>{msg}</p>}
+        </div>
+      )}
+      {lastService && (
+        <button type="button" onClick={() => { setSelectedService(lastService); setSubmitted(false); }} style={{ padding: '14px', borderRadius: '14px', border: 'none', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', fontWeight: 800, fontSize: 'calc(14.5px * var(--pv-fs))', cursor: 'pointer' }}>
+          前回と同じ内容で予約する（{lastService.name}）
+        </button>
+      )}
+      <BookTab provider={provider} services={services} staff={staff} elig={elig} onEligChanged={onEligChanged}
+        selectedService={selectedService} setSelectedService={setSelectedService} submitted={submitted} setSubmitted={setSubmitted}
+        diagnosis={diagnosis} matchData={matchData} menuNameHint="" presetStaffId="" presetLessonId={null} hideMemberCard />
     </div>
   );
 }
@@ -1491,7 +1686,8 @@ function MemberCard({ provider, elig, onChanged }) {
   );
 }
 
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode }) {
+// embedded：予約タブ（BookTab）でメニューを選んだ後に、その1つのメニューの日時選び・送信だけを出す（2026-10-22）
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, embedded }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -1762,7 +1958,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   return (
     <div style={{ maxWidth: '520px' }}>
-      <MemberCard provider={provider} elig={elig} onChanged={() => setEligTick(x => x + 1)} />
+      {!embedded && <MemberCard provider={provider} elig={elig} onChanged={() => setEligTick(x => x + 1)} />}
       {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示。
           文言・画像・任意ボタンは店舗のダッシュボード（友達紹介タブ）で自由に編集できる
           （でお要望2026-09-30：「ここに書く内容も編集できるように、特典も設定できるように。
@@ -1801,8 +1997,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
       )}
 
-      {/* ① 相談の流れ 3ステップ */}
-      <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
+      {/* ① 相談の流れ 3ステップ（予約タブに埋め込む時は出さない） */}
+      {!embedded && <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
         <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {(showInstantPicker ? [
@@ -1823,7 +2019,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             </div>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* ② お試し・無料相談がある場合の強調カード */}
       {provider.trial_available && (
@@ -1864,8 +2060,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
       )}
 
-      {/* プログラム選択 */}
-      {visibleServices.length > 0 && (
+      {/* プログラム選択（予約タブに埋め込む時は、選んだメニューが決まっているので出さない） */}
+      {!embedded && visibleServices.length > 0 && (
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '8px' }}>相談したいプログラム（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2170,7 +2366,12 @@ function ProviderPageContent() {
   // でお要望2026-09-29：直接訪問・ブックマーク・QR等（?tab=指定なし）は「予約」タブを
   // 既定にする（元々通っている店舗の客が最短で予約できるように）。診断/Mirror経由の
   // リンクだけ?tab=appealを付けて従来通りアピールタブに着地させる。
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'consult');
+  const [activeTab, setActiveTab] = useState(() => { const t = searchParams.get('tab'); return !t || OLD_BOOKING_TABS.includes(t) ? 'book' : t; });
+  // 通っている方向けの表示（でお要望 2026-10-22）：会員・月額プラン・チケットをお持ちの方は、予約だけの短い画面で開く。
+  // ?view=member のリンク（店頭QR・LINE）は、会員でなくてもこの表示（ログイン・会員登録の案内つき）で開く
+  const [elig, setElig] = useState(null);
+  const [eligTick, setEligTick] = useState(0);
+  const [showFullPage, setShowFullPage] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [stories, setStories] = useState([]);
@@ -2272,7 +2473,7 @@ function ProviderPageContent() {
         const validIds = tabsFor(prov).map(t => t.id);
         setActiveTab(current => {
           if (validIds.includes(current)) return current;
-          if (current === 'consult' || current === 'instant') return primaryBookingTabId(prov);
+          if (OLD_BOOKING_TABS.includes(current)) return 'book';
           return validIds[0] || 'basic';
         });
       }
@@ -2324,6 +2525,12 @@ function ProviderPageContent() {
       .catch(() => {});
   }, [provider?.id]);
 
+  useEffect(() => {
+    if (!provider?.slug) return;
+    freshAccessToken().then(t => fetch(`/api/providers/${provider.slug}/my-eligibility`, { headers: t ? { Authorization: `Bearer ${t}` } : {} }))
+      .then(r => (r.ok ? r.json() : null)).then(setElig).catch(() => setElig(null));
+  }, [provider?.slug, eligTick]);
+
   // プログラムカードから相談タブへ
   const handleConsultFromProgram = useCallback((service) => {
     setSelectedService(service);
@@ -2356,6 +2563,16 @@ function ProviderPageContent() {
       .pv-theme :is(h2, h3):not(.pv-hero *) { color: var(--pv-heading) !important; }
     `}</style>
     <div style={{ maxWidth: '780px', margin: '0 auto', padding: '32px 20px 80px' }}>
+      {(searchParams.get('view') === 'member' || elig?.member || (elig?.tickets || []).length > 0) && !showFullPage ? (
+        <MemberView
+          provider={provider} services={services} staff={staff} elig={elig}
+          onEligChanged={() => setEligTick(x => x + 1)}
+          selectedService={selectedService} setSelectedService={setSelectedService}
+          submitted={submitted} setSubmitted={setSubmitted}
+          diagnosis={diagnosis} matchData={matchData}
+          onShowFull={() => { setShowFullPage(true); window.scrollTo({ top: 0 }); }}
+        />
+      ) : (<>
       {/* ヒーロー */}
       <div className={provider.cover_image_url ? 'pv-hero' : 'pv-hero fm-contour'} style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', marginBottom: '28px', minHeight: '320px', background: provider.cover_image_url ? `url(${provider.cover_image_url}) center/cover no-repeat` : 'color-mix(in srgb, var(--pv-accent) 24%, #0d1117)' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.75) 100%)' }} />
@@ -2411,7 +2628,7 @@ function ProviderPageContent() {
       <QuickFactsStrip provider={provider} />
 
       {/* タブ */}
-      <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult' && tab !== 'instant') setSelectedService(null); }} />
+      <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'book') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
       {activeTab === 'basic' && <BasicInfoTab provider={provider} />}
@@ -2430,40 +2647,20 @@ function ProviderPageContent() {
           onGoToConsult={() => { setActiveTab(primaryBookingTabId(provider)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         />
       )}
-      {activeTab === 'instant' && (
-        <ConsultTab
-          provider={provider}
-          services={services}
-          staff={staff}
-          selectedService={selectedService}
-          onServiceSelect={setSelectedService}
-          submitted={submitted}
-          setSubmitted={setSubmitted}
-          diagnosis={diagnosis}
-          matchData={matchData}
+      {activeTab === 'book' && (
+        <BookTab
+          provider={provider} services={services} staff={staff} elig={elig}
+          onEligChanged={() => setEligTick(x => x + 1)}
+          selectedService={selectedService} setSelectedService={setSelectedService}
+          submitted={submitted} setSubmitted={setSubmitted}
+          diagnosis={diagnosis} matchData={matchData}
           menuNameHint={searchParams.get('menu_name') || ''}
           presetStaffId={searchParams.get('staff_id') || ''}
-          mode="instant"
+          presetLessonId={searchParams.get('tab') === 'class' ? (searchParams.get('class_id') || 'any') : null}
         />
       )}
-      {activeTab === 'consult' && (
-        <ConsultTab
-          provider={provider}
-          services={services}
-          staff={staff}
-          selectedService={selectedService}
-          onServiceSelect={setSelectedService}
-          submitted={submitted}
-          setSubmitted={setSubmitted}
-          diagnosis={diagnosis}
-          matchData={matchData}
-          menuNameHint={searchParams.get('menu_name') || ''}
-          presetStaffId={searchParams.get('staff_id') || ''}
-          mode={hasFeature(provider, 'booking_request') ? 'request' : 'closed'}
-        />
-      )}
-      {activeTab === 'class' && <ClassTab provider={provider} />}
       {activeTab === 'packages' && <PackagesTab provider={provider} />}
+      </>)}
     </div>
     </div>
   );

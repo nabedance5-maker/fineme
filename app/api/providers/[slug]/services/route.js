@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from('provider_services')
-    .select('id,name,description,price,duration,is_featured,sort_order,image_url,suitable_path_types,transformation_promise,target_axis,before_text,after_text,before_image_url,after_image_url,benefit_list,ticket_ids,ticket_cost,hide_for_members,hide_when_locked')
+    .select('id,name,description,price,duration,duration_minutes,is_featured,sort_order,image_url,suitable_path_types,transformation_promise,target_axis,before_text,after_text,before_image_url,after_image_url,benefit_list,ticket_ids,ticket_cost,hide_for_members,hide_when_locked')
     .eq('provider_id', provider.id)
     .order('sort_order')
     .order('created_at');
