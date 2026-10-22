@@ -3,6 +3,7 @@
 // 店舗ページに無かった。この一覧をもとに店舗ページの「クラス」タブで予約を受け付ける）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withScopeLabels } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -20,7 +21,7 @@ export async function GET(request, { params }) {
 
   const { data: classes } = await supabase
     .from('provider_classes')
-    .select('id, name, description, capacity, price, instructor_staff_id, place')
+    .select('id, name, description, capacity, price, instructor_staff_id, place, ticket_ids, ticket_cost')
     .eq('provider_id', provider.id)
     .eq('active', true)
     .order('sort_order');
@@ -66,8 +67,10 @@ export async function GET(request, { params }) {
   }));
   const rooms = [...new Set(flat.map(x => x.place).filter(Boolean))].map(n => ({ id: n, name: n }));
 
+  // チケットが要るレッスンには「ストレッチチケット（1回1枚）をお持ちの方」の説明を付ける（でお要望 2026-10-22）
+  const labeled = await withScopeLabels(supabase, provider.id, classes);
   return Response.json({
-    classes: classes.map(c => ({ id: c.id, name: c.name, description: c.description, capacity: c.capacity, price: c.price ?? null })),
+    classes: labeled.map(c => ({ id: c.id, name: c.name, description: c.description, capacity: c.capacity, price: c.price ?? null, ticket_cost: c.ticket_cost || 1, needs_ticket: (c.ticket_ids || []).length > 0, scope_label: c.scope_label || '' })),
     rooms,
     sessions: flat,
   });

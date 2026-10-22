@@ -19,6 +19,7 @@ async function __PATCH(request, { params }) {
   const { data, error } = await supabase.from('provider_tickets').update(update).eq('id', id).eq('provider_id', a.provider.id).select().single();
   if (error || !data) return Response.json({ error: 'チケットが見つかりません' }, { status: 404 });
   if (Array.isArray(b.menu_ids)) await setTicketMenus(a.provider.id, id, b.menu_ids, b.costs || {});
+  if (Array.isArray(b.lesson_ids)) await setTicketMenus(a.provider.id, id, b.lesson_ids, b.lesson_costs || {}, 'provider_classes');
   return Response.json(data);
 }
 
@@ -30,6 +31,7 @@ async function __DELETE(request, { params }) {
   const { count } = await supabase.from('customer_packages').select('id', { count: 'exact', head: true }).eq('ticket_id', id).eq('provider_id', a.provider.id);
   if (count) return Response.json({ error: 'このチケットを持っているお客様がいるため削除できません。「使わない」にしてください' }, { status: 409 });
   await setTicketMenus(a.provider.id, id, []);
+  await setTicketMenus(a.provider.id, id, [], {}, 'provider_classes');
   await supabase.from('provider_tickets').delete().eq('id', id).eq('provider_id', a.provider.id);
   return Response.json({ ok: true });
 }

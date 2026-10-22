@@ -1116,6 +1116,14 @@ function ClassTab({ provider }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [pickedId, setPickedId] = useState(null);
+  // チケットが要るレッスン（でお要望 2026-10-22）：ログイン中のお客様が持っているチケットで予約する
+  const [elig, setElig] = useState(null);
+  const [ticketId, setTicketId] = useState('');
+  useEffect(() => {
+    if (!provider?.slug) return;
+    freshAccessToken().then(t => fetch(`/api/providers/${provider.slug}/my-eligibility`, { headers: t ? { Authorization: `Bearer ${t}` } : {} }))
+      .then(r => (r.ok ? r.json() : null)).then(setElig).catch(() => setElig(null));
+  }, [provider?.slug, userId, doneSlotIds.length]);
 
   useEffect(() => {
     if (!provider?.slug) return;
@@ -1145,7 +1153,7 @@ function ClassTab({ provider }) {
     } catch {}
   }, []);
 
-  async function bookSession(slotId, className) {
+  async function bookSession(slotId, className, packageId) {
     setError('');
     if (!form.name.trim()) { setError('お名前を入力してください'); return; }
     if (!form.email.trim() && !form.phone.trim()) { setError('メールアドレスまたは電話番号のどちらかは必ず入力してください'); return; }
@@ -1164,6 +1172,7 @@ function ClassTab({ provider }) {
           message: `【グループレッスン予約】${className}`,
           booking_mode: 'instant',
           slot_id: slotId,
+          package_id: packageId || null,
         }),
       });
       if (res.ok) {
@@ -1198,6 +1207,11 @@ function ClassTab({ provider }) {
   const COLORS = ['#1a1410', '#2f4f8f', '#7c3aed', '#b45309', '#047857', '#be185d', '#0e7490'];
   const colorOf = id => COLORS[Math.max(0, (classes.classes || []).findIndex(c => c.id === id)) % COLORS.length];
   const picked = sessions.find(x => x.id === pickedId) || null;
+  const pickedClass = picked ? (classes.classes || []).find(c => c.id === picked.class_id) : null;
+  const pickedRule = pickedClass?.needs_ticket ? (elig?.classes?.[pickedClass.id] || { ok: false, ticket_ids: [] }) : null;
+  const pickedTickets = pickedRule ? (elig?.tickets || []).filter(t => pickedRule.ticket_ids.includes(t.id)) : [];
+  const chosenTicket = pickedTickets.some(t => t.id === ticketId) ? ticketId : (pickedTickets[0]?.id || '');
+  const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
   const muted = 'color-mix(in srgb, var(--pv-text) 62%, transparent)';
   const line = '1px solid color-mix(in srgb, var(--pv-text) 12%, transparent)';
 
@@ -1256,9 +1270,26 @@ function ClassTab({ provider }) {
           <p style={{ margin: '0 0 2px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: 800 }}>{picked.class_name}</p>
           <p style={{ margin: '0 0 10px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted }}>{fmtDay(picked.date).md}（{fmtDay(picked.date).wd}）{String(picked.start_time).slice(0, 5)}〜{String(picked.end_time || '').slice(0, 5)}{picked.staff?.name ? `・${picked.staff.name}` : ''}・残り{picked.remaining}枠</p>
           {(classes.classes || []).find(c => c.id === picked.class_id)?.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: muted, lineHeight: 1.6 }}>{(classes.classes || []).find(c => c.id === picked.class_id).description}</p>}
+          {pickedClass?.needs_ticket && !doneSlotIds.includes(picked.id) && (
+            <div style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', lineHeight: 1.7 }}>
+              <p style={{ margin: 0, fontWeight: 700 }}>{pickedClass.scope_label}だけが予約できます</p>
+              {!elig?.logged_in ? (
+                <a href={loginHref} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>ログインすると、お持ちのチケットで予約できます</a>
+              ) : !pickedRule?.ok ? (
+                <span>使えるチケットをお持ちではありません。<a href={`/provider/${provider.slug}?tab=packages`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>回数券を見る</a>・<a href={`/provider/${provider.slug}/join`} style={{ color: 'var(--pv-text)', fontWeight: 700 }}>月額プランに入会する</a></span>
+              ) : (
+                <label style={{ display: 'grid', gap: '4px', marginTop: '6px' }}>
+                  <span>使うチケット（1回{pickedClass.ticket_cost}枚）</span>
+                  <select value={chosenTicket} onChange={e => setTicketId(e.target.value)} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}>
+                    {pickedTickets.map(t => <option key={t.id} value={t.id} style={{ color: '#000' }}>{t.name}（{t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
           {doneSlotIds.includes(picked.id) ? (
             <p style={{ margin: 0, fontWeight: 700, color: '#34d399' }}>予約しました。</p>
-          ) : (
+          ) : pickedClass?.needs_ticket && !pickedRule?.ok ? null : (
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input placeholder="お名前 *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: '10px 12px', fontSize: 'calc(13px * var(--pv-fs))', borderRadius: '8px', border: '1px solid color-mix(in srgb, var(--pv-text) 20%, transparent)', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
@@ -1268,7 +1299,7 @@ function ClassTab({ provider }) {
                 </div>
               </div>
               {error && <p style={{ color: '#f87171', fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
-              <button type="button" onClick={() => bookSession(picked.id, picked.class_name)} disabled={bookingSlotId === picked.id}
+              <button type="button" onClick={() => bookSession(picked.id, picked.class_name, pickedClass?.needs_ticket ? chosenTicket : null)} disabled={bookingSlotId === picked.id}
                 style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
                 {bookingSlotId === picked.id ? '予約中…' : 'このレッスンを予約する'}
               </button>

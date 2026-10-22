@@ -680,6 +680,15 @@ const DASHBOARD_CSS = `
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
       /* 予約できる人（2026-10-20） */
       /* メニュー（個別メニュー・グループレッスンを1つの一覧に。2026-10-22） */
+      /* 予約カレンダーのグループレッスン：参加者の追加（2026-10-22） */
+      .cs-att { display: grid; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(26,20,16,0.12); color: #1a1410; font-size: 13px; }
+      .cs-att input, .cs-att select { padding: 8px 10px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; width: 100%; box-sizing: border-box; }
+      .cs-att p { margin: 0; font-size: 12px; }
+      .cs-att .btn { font-size: 12.5px; padding: 7px 14px; width: fit-content; }
+      .cs-att-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(26,20,16,0.06); font-size: 12.5px; }
+      .cs-sel { align-items: center; gap: 8px; padding: 6px 10px; background: rgba(26,20,16,0.05); border-radius: 8px; font-weight: 700; }
+      .cs-sel .btn { margin-left: auto; font-size: 11px; padding: 3px 8px; }
+      #cal-cs-member-results [data-member-pick] { background: #fff; }
       /* 会員（2026-10-22） */
       .sm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
       .sm-grid select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
@@ -2581,7 +2590,7 @@ export default function ProviderDashboardPage() {
             const room = roomName[c.resource_id] || c.place || '';
             return `<div class="mn-row">
               <div class="mn-main">
-                <div class="mn-title"><strong>${esc(c.name)}</strong>${chip('グループレッスン', 'is-lesson')}</div>
+                <div class="mn-title"><strong>${esc(c.name)}</strong>${chip('グループレッスン', 'is-lesson')}${(c.ticket_ids || []).length ? chip(`チケット${c.ticket_cost || 1}枚`, 'is-limited') : ''}</div>
                 <div class="mn-meta">${c.price != null ? `¥${Number(c.price).toLocaleString()}` : '金額未設定'}${c.capacity ? ` · 定員${c.capacity}名` : ''}${who ? ` · 講師 ${esc(who)}` : ''}${room ? ` · ${esc(room)}` : ''} · 在籍${c.enrolledCount || 0}名</div>
               </div>
               <div class="mn-actions">
@@ -5416,6 +5425,27 @@ export default function ProviderDashboardPage() {
 
       // 使う部屋（でお要望 2026-10-21：レッスン中はその部屋に他の予約を入れない）。部屋を登録している店舗だけ出す
       let roomOptionsForClasses = [];
+      // 予約に使うチケット（でお要望 2026-10-22）
+      let ticketOptionsForClasses = [];
+      async function loadTicketOptionsForClasses() {
+        const res = await fetch('/api/provider/tickets', { headers: authH() }).catch(() => null);
+        ticketOptionsForClasses = res?.ok ? await res.json() : [];
+        renderClassTickets(editForm?.dataset.ticketIds ? editForm.dataset.ticketIds.split(',') : []);
+      }
+      function renderClassTickets(selected) {
+        const box = document.getElementById('cls-ticket-list');
+        if (!box) return;
+        const sel = new Set(selected || []);
+        box.innerHTML = ticketOptionsForClasses.length
+          ? ticketOptionsForClasses.filter(t => t.active || sel.has(t.id)).map(t => `<label><input type="checkbox" name="cls_ticket_ids" value="${t.id}" ${sel.has(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('')
+          : '<span style="font-size:12.5px">チケットがまだありません</span>';
+        syncClassTicketCost();
+      }
+      function syncClassTicketCost() {
+        const w = document.getElementById('cls-ticket-cost-wrap');
+        if (w) w.style.display = editForm?.querySelectorAll('[name=cls_ticket_ids]:checked').length ? '' : 'none';
+      }
+      editForm?.addEventListener('change', e => { if (e.target?.name === 'cls_ticket_ids') syncClassTicketCost(); });
       async function loadRoomOptionsForClasses() {
         const res = await fetch('/api/provider/resources', { headers: authH() }).catch(() => null);
         roomOptionsForClasses = (res?.ok ? await res.json() : []).filter(r => r.active !== false); // 予約で使う部屋・設備だけ
@@ -5426,6 +5456,7 @@ export default function ProviderDashboardPage() {
       }
       async function loadStaffOptionsForClasses() {
         loadRoomOptionsForClasses();
+        loadTicketOptionsForClasses();
         const res = await fetch('/api/provider/staff', { headers: authH() });
         if (!res.ok) return;
         staffOptionsForClasses = await res.json();
@@ -5458,6 +5489,9 @@ export default function ProviderDashboardPage() {
         if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
         if (editForm.elements['place']) editForm.elements['place'].value = c.place || '';
         if (editForm.elements['resource_id']) editForm.elements['resource_id'].value = c.resource_id || '';
+        editForm.dataset.ticketIds = (c.ticket_ids || []).join(',');
+        renderClassTickets(c.ticket_ids || []);
+        if (editForm.elements['ticket_cost']) editForm.elements['ticket_cost'].value = c.ticket_cost || 1;
         editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
         if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
         resetNewSessionInputs();
@@ -5570,6 +5604,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('cls-add-btn')?.addEventListener('click', () => {
         editTitle.textContent = 'グループレッスンを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_class_id'].value = '';
+        editForm.dataset.ticketIds = ''; renderClassTickets([]);
         if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
         const hd = document.getElementById('cls-new-session-heading');
         if (hd) hd.textContent = '最初の開催日時（任意・空欄ならグループレッスンだけ作成されます）';
@@ -5591,6 +5626,8 @@ export default function ProviderDashboardPage() {
           instructor_staff_id: fd.get('instructor_staff_id') || null,
           place: fd.get('place') || '',
           ...(editForm.elements['resource_id'] && roomOptionsForClasses.length ? { resource_id: fd.get('resource_id') || null } : {}),
+          ticket_ids: [...editForm.querySelectorAll('[name=cls_ticket_ids]:checked')].map(x => x.value),
+          ticket_cost: Number(editForm.elements['ticket_cost']?.value) || 1,
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
@@ -9460,6 +9497,7 @@ export default function ProviderDashboardPage() {
       // ── チケット（でお要望 2026-10-22） ──
       let ticketRows = [];
       let menuRows = null;
+      let lessonRows = [];
       const tkListEl = document.getElementById('tk-list');
       const tkEditorEl = document.getElementById('tk-editor');
       const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
@@ -9475,7 +9513,7 @@ export default function ProviderDashboardPage() {
           <div class="tk-row${t.active ? '' : ' is-off'}">
             <div class="tk-main">
               <strong>${esc(t.name)}</strong>${t.active ? '' : '<span class="tk-chip">使わない</span>'}
-              <div class="tk-sub">使えるメニュー：${t.menus.length ? t.menus.map(m => `${esc(m.name)}（${m.cost}枚）`).join('・') : '<b>まだ決まっていません</b>'}</div>
+              <div class="tk-sub">使えるメニュー：${[...t.menus, ...(t.lessons || []).map(m => ({ ...m, name: `${m.name}（レッスン）` }))].length ? [...t.menus, ...(t.lessons || []).map(m => ({ ...m, name: `${m.name}（レッスン）` }))].map(m => `${esc(m.name)}・${m.cost}枚`).join('、') : '<b>まだ決まっていません</b>'}</div>
               <div class="tk-sub">付く場面：${[...t.packages.map(p => `回数券「${esc(p.name)}」`), ...t.plans.map(p => `プラン「${esc(p.name)}」`)].join('・') || 'お店から直接付ける時だけ'}</div>
             </div>
             <div class="tk-actions">
@@ -9498,15 +9536,21 @@ export default function ProviderDashboardPage() {
       }
       async function openTicketEditor(t) {
         if (!tkEditorEl) return;
-        if (!menuRows) { const r = await fetch('/api/provider/services', { headers: H() }); menuRows = r.ok ? await r.json() : []; }
+        if (!menuRows) {
+          const [r, rc] = await Promise.all([fetch('/api/provider/services', { headers: H() }), fetch('/api/provider/classes', { headers: H() }).catch(() => null)]);
+          menuRows = r.ok ? await r.json() : [];
+          lessonRows = rc?.ok ? await rc.json() : [];
+        }
         const on = new Map((t?.menus || []).map(m => [m.id, m.cost]));
+        const onL = new Map((t?.lessons || []).map(m => [m.id, m.cost]));
         tkEditorEl.innerHTML = `
           <div class="tk-ed-head"><b>${t ? `「${esc(t.name)}」を編集` : 'チケットを作る'}</b><button type="button" class="btn btn-ghost" data-tk-close>閉じる</button></div>
           <label class="tk-field">チケットの名前<input data-tk-name value="${esc(t?.name || '')}" placeholder="例：ストレッチチケット" maxlength="60"></label>
           <label class="tk-field">説明（任意）<input data-tk-desc value="${esc(t?.description || '')}" maxlength="200"></label>
           <b class="tk-sub2">このチケットで予約できるメニューと、1回の予約で使う枚数</b>
           ${menuRows.length ? `<div class="tk-menus">${menuRows.map(m => `<label class="tk-menu"><input type="checkbox" data-tk-menu value="${m.id}" ${on.has(m.id) ? 'checked' : ''}><span>${esc(m.name)}${m.duration_minutes ? `（${m.duration_minutes}分）` : ''}</span><input type="number" min="1" max="20" data-tk-cost="${m.id}" value="${on.get(m.id) || m.ticket_cost || 1}">枚</label>`).join('')}</div>` : '<p style="font-size:12.5px;margin:0">メニューがまだありません（メニュータブで作れます）。</p>'}
-          <p style="font-size:12px;margin:0">チェックしたメニューは、このチケットを持っている方だけが予約できるようになります。</p>
+          ${lessonRows.length ? `<b class="tk-sub2">このチケットで予約できるグループレッスン</b><div class="tk-menus">${lessonRows.map(m => `<label class="tk-menu"><input type="checkbox" data-tk-lesson value="${m.id}" ${onL.has(m.id) ? 'checked' : ''}><span>${esc(m.name)}</span><input type="number" min="1" max="20" data-tk-lcost="${m.id}" value="${onL.get(m.id) || m.ticket_cost || 1}">枚</label>`).join('')}</div>` : ''}
+          <p style="font-size:12px;margin:0">チェックしたメニュー・レッスンは、このチケットを持っている方だけが予約できるようになります。</p>
           <div class="tk-ed-actions"><button type="button" class="btn" data-tk-save>${t ? '保存する' : '作る'}</button><span data-tk-msg></span></div>`;
         tkEditorEl.style.display = 'grid';
         tkEditorEl.querySelector('[data-tk-close]').onclick = () => { tkEditorEl.style.display = 'none'; tkEditorEl.innerHTML = ''; };
@@ -9515,7 +9559,9 @@ export default function ProviderDashboardPage() {
           if (!name) { showToast('チケットの名前を入れてください'); return; }
           const menu_ids = [...tkEditorEl.querySelectorAll('[data-tk-menu]:checked')].map(x => x.value);
           const costs = Object.fromEntries(menu_ids.map(id => [id, tkEditorEl.querySelector(`[data-tk-cost="${id}"]`).value]));
-          const r = await fetch(t ? `/api/provider/tickets/${t.id}` : '/api/provider/tickets', { method: t ? 'PATCH' : 'POST', headers: H(), body: JSON.stringify({ name, description: tkEditorEl.querySelector('[data-tk-desc]').value, menu_ids, costs }) });
+          const lesson_ids = [...tkEditorEl.querySelectorAll('[data-tk-lesson]:checked')].map(x => x.value);
+          const lesson_costs = Object.fromEntries(lesson_ids.map(id => [id, tkEditorEl.querySelector(`[data-tk-lcost="${id}"]`).value]));
+          const r = await fetch(t ? `/api/provider/tickets/${t.id}` : '/api/provider/tickets', { method: t ? 'PATCH' : 'POST', headers: H(), body: JSON.stringify({ name, description: tkEditorEl.querySelector('[data-tk-desc]').value, menu_ids, costs, ...(lessonRows.length ? { lesson_ids, lesson_costs } : {}) }) });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) { tkEditorEl.querySelector('[data-tk-msg]').textContent = d.error || '保存できませんでした'; return; }
           showToast(t ? '保存しました' : 'チケットを作りました');
@@ -13342,8 +13388,66 @@ export default function ProviderDashboardPage() {
       const csDeleteBtn = document.getElementById('cal-cs-delete');
       const csMsgEl = document.getElementById('cal-cs-msg');
       let csCtx = null;
+      // 参加者と、お店からの予約の追加（でお要望 2026-10-22）
+      const csAttEl = document.getElementById('cal-cs-attendees');
+      const csNameEl = document.getElementById('cal-cs-name');
+      const csTicketField = document.getElementById('cal-cs-ticket-field');
+      const csTicketEl = document.getElementById('cal-cs-ticket');
+      const csTicketNote = document.getElementById('cal-cs-ticket-note');
+      let csUserId = null, csClassRule = null, csSeq = 0;
+      function setCsMember(userId, name) {
+        csUserId = userId || null;
+        document.getElementById('cal-cs-member-selected').style.display = userId ? 'flex' : 'none';
+        document.getElementById('cal-cs-member-search-wrap').style.display = userId ? 'none' : '';
+        document.getElementById('cal-cs-member-name').textContent = name || '';
+        if (userId && csNameEl && !csNameEl.value.trim()) csNameEl.value = name || '';
+        refreshCsTickets();
+      }
+      bindMemberSearch(document.getElementById('cal-cs-member-search'), document.getElementById('cal-cs-member-results'), (id, name) => setCsMember(id, name));
+      document.getElementById('cal-cs-member-clear')?.addEventListener('click', () => setCsMember(null, ''));
+      async function refreshCsTickets() {
+        const seq = ++csSeq;
+        const need = (csClassRule?.ticket_ids || []).length > 0;
+        csTicketField.style.display = need ? '' : 'none';
+        if (!need) return;
+        const cost = csClassRule.ticket_cost || 1;
+        if (!csUserId) { csTicketEl.innerHTML = ''; csTicketNote.textContent = `このレッスンはチケットが${cost}枚必要です。会員を選んでください`; return; }
+        const r = await fetch(`/api/provider/store-members?user_id=${encodeURIComponent(csUserId)}`, { headers: authHeadersCal() }).catch(() => null);
+        if (seq !== csSeq) return;
+        const d = r?.ok ? await r.json() : null;
+        const usable = (d?.tickets || []).filter(t => csClassRule.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
+        csTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}）</option>`).join('');
+        csTicketNote.textContent = !d ? 'この方はお店の会員ではありません' : usable.length ? `1回で${cost}枚使います（来店を記録した時に使ったことになります）` : 'このレッスンに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+      }
+      async function loadCsAttendees() {
+        if (!csCtx || !csAttEl) return;
+        csAttEl.innerHTML = '<p>読み込み中…</p>';
+        const r = await fetch(`/api/provider/classes/${csCtx.class_id}/sessions/${csCtx.slot_id}/attendees`, { headers: authHeadersCal() }).catch(() => null);
+        const rows = r?.ok ? await r.json() : [];
+        csAttEl.innerHTML = rows.length ? rows.map(a => `<div class="cs-att-row"><span>${esc(a.user_name)}</span><span>${a.package_id ? `チケット${a.ticket_cost || 1}枚` : ''}</span></div>`).join('') : '<p>まだ参加者がいません。</p>';
+      }
+      document.getElementById('cal-cs-add')?.addEventListener('click', async () => {
+        if (!csCtx) return;
+        const btn = document.getElementById('cal-cs-add'); btn.disabled = true;
+        const r = await fetch(`/api/provider/classes/${csCtx.class_id}/sessions/${csCtx.slot_id}/attendees`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+          body: JSON.stringify({ user_id: csUserId, user_name: csNameEl.value.trim(), package_id: csTicketField.style.display !== 'none' ? (csTicketEl.value || null) : null }),
+        });
+        btn.disabled = false;
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { if (csMsgEl) { csMsgEl.style.color = '#ef4444'; csMsgEl.textContent = d.error || '追加できませんでした'; } return; }
+        showToast('参加者を追加しました');
+        csNameEl.value = ''; setCsMember(null, '');
+        csCtx.booked = (csCtx.booked || 0) + 1;
+        if (csInfoEl) csInfoEl.textContent = `${csCtx.date} ${csCtx.time ? csCtx.time.slice(0, 5) : ''}〜${csCtx.end_time ? csCtx.end_time.slice(0, 5) : ''}／予約 ${csCtx.booked}/${csCtx.capacity}名${!csCtx.is_open ? '（締切中）' : ''}`;
+        loadCsAttendees(); loadWeek();
+      });
       function openClassSessionModal(r) {
         csCtx = r;
+        csClassRule = (classList || []).find(c => c.id === r.class_id) || null;
+        if (csNameEl) csNameEl.value = '';
+        setCsMember(null, '');
+        loadCsAttendees();
         if (csTitleEl) csTitleEl.textContent = `${r.class_name || ''}`;
         if (csInfoEl) csInfoEl.textContent = `${r.date} ${r.time ? r.time.slice(0, 5) : ''}〜${r.end_time ? r.end_time.slice(0, 5) : ''}／予約 ${r.booked}/${r.capacity}名${!r.is_open ? '（締切中）' : ''}`;
         if (csToggleBtn) csToggleBtn.textContent = r.is_open ? 'この回を締め切る' : 'この回を再開する';
@@ -15704,6 +15808,26 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cal-cs-delete" style={{ fontSize: '12.5px', padding: '7px 14px', color: '#ef4444' }}>削除</button>
             </div>
             <p id="cal-cs-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>
+            {/* 参加者と、お店からの予約の追加（でお要望 2026-10-22：会員と紐づけ、チケットが要るレッスンはその方のチケットで予約） */}
+            <div className="cs-att">
+              <b>参加者</b>
+              <div id="cal-cs-attendees"></div>
+              <b style={{ marginTop: '6px' }}>参加者を追加</b>
+              <div id="cal-cs-member-selected" className="cs-sel" style={{ display: 'none' }}>
+                <span id="cal-cs-member-name"></span>
+                <button type="button" className="btn btn-ghost" id="cal-cs-member-clear">解除</button>
+              </div>
+              <div id="cal-cs-member-search-wrap">
+                <input type="text" id="cal-cs-member-search" placeholder="会員をお名前・電話番号で検索" />
+                <div id="cal-cs-member-results"></div>
+              </div>
+              <input type="text" id="cal-cs-name" placeholder="お名前（会員でない方は入力）" />
+              <div id="cal-cs-ticket-field" style={{ display: 'none' }}>
+                <select id="cal-cs-ticket"></select>
+                <p id="cal-cs-ticket-note"></p>
+              </div>
+              <button type="button" className="btn" id="cal-cs-add">この回に追加する</button>
+            </div>
           </div>
         </div>
 
@@ -16791,6 +16915,13 @@ export default function ProviderDashboardPage() {
                 {/* 部屋・場所（でお要望 2026-10-16）：予約カレンダー・お客様の予約画面で、この名前ごとの列に並ぶ */}
                 <div className="form-field"><label>部屋・場所（任意）</label><input name="place" list="cls-place-options" maxLength={40} placeholder="例：スタジオA・2階ホール" /><datalist id="cls-place-options"></datalist></div>
                 <div className="form-field" id="cls-room-field" style={{ display: 'none' }}><label>使う部屋（任意）</label><select name="resource_id"><option value="">使わない</option></select><small style={{ color: '#1a1410' }}>選ぶと、レッスン中はその部屋に他の予約が入らなくなります</small></div>
+                {/* 予約に使うチケット（でお要望 2026-10-22：開催回の予約もチケットを使う。選ばなければ誰でも予約できる） */}
+                <div className="form-field" id="cls-ticket-field">
+                  <label>予約に使うチケット（任意）</label>
+                  <div id="cls-ticket-list" className="svc-assign-list"></div>
+                  <label id="cls-ticket-cost-wrap" style={{ display: 'none', fontWeight: 400, fontSize: '13px', marginTop: '6px' }}>1回の予約で<input type="number" name="ticket_cost" min="1" max="20" defaultValue="1" style={{ width: '64px', margin: '0 6px' }} />枚使う</label>
+                  <small style={{ color: '#1a1410' }}>選んだチケットを持っている方だけが、この回を予約できます。チケットは「チケット・回数券」タブで作れます。</small>
+                </div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
 
                 {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に

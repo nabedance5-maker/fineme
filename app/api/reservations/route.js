@@ -124,21 +124,31 @@ export async function POST(request) {
   // メニューに決まったチケットを ticket_cost 枚持っているお客様だけが予約でき、使うチケットを必ず決める。
   // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する
   let effectiveServiceId = service_id || null;
-  if (!effectiveServiceId && isInstant && slot_id) {
-    const { data: sl } = await supabase.from('provider_slots').select('service_id').eq('id', slot_id).eq('provider_id', provider_id).maybeSingle();
-    effectiveServiceId = sl?.service_id || null;
-  }
   let ticketCost = 1;
-  if (effectiveServiceId) {
-    const { data: svc } = await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle();
+  // グループレッスンの開催回は、レッスンに決めたチケットで判定する（でお要望 2026-10-22）
+  let lessonRule = null;
+  if (isInstant && slot_id) {
+    const { data: sl } = await supabase.from('provider_slots').select('service_id, class_id').eq('id', slot_id).eq('provider_id', provider_id).maybeSingle();
+    if (!effectiveServiceId) effectiveServiceId = sl?.service_id || null;
+    if (sl?.class_id) {
+      const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost').eq('id', sl.class_id).maybeSingle();
+      lessonRule = cls || null;
+    }
+  }
+  if (effectiveServiceId || lessonRule) {
+    const { data: svcRow } = effectiveServiceId
+      ? await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle()
+      : { data: null };
+    const svc = lessonRule && (lessonRule.ticket_ids || []).length ? lessonRule : svcRow;
+    const what = svc === lessonRule ? 'このレッスン' : 'このメニュー';
     const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
     if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
     if (needsTicket(svc)) {
       const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
       const label = scopeLabel(svc, Object.fromEntries((tk || []).map(x => [x.id, x.name])));
-      if (!authUser) return Response.json({ error: `このメニューは${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
+      if (!authUser) return Response.json({ error: `${what}は${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
       const chk = checkService(svc, ent);
-      if (!chk.ok) return Response.json({ error: `このメニューは${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
+      if (!chk.ok) return Response.json({ error: `${what}は${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
       if (!chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;
       ticketCost = svc.ticket_cost || 1;
     }

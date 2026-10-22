@@ -16,5 +16,8 @@ export async function GET(request, { params }) {
   const { data: svcs } = await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('provider_id', provider.id);
   const services = Object.fromEntries((svcs || []).filter(needsTicket).map(s => { const c = checkService(s, ent); return [s.id, { ok: c.ok, via: c.via, ticket_ids: c.tickets.map(t => t.id) }]; }));
   const hidden = (svcs || []).filter(s => hiddenForMember(s, ent)).map(s => s.id);
-  return Response.json({ logged_in: !!user, tickets: ent.tickets, member: ent.isMember, services, hidden_for_member: hidden });
+  // グループレッスン（でお要望 2026-10-22：開催回の予約もチケットを使う）
+  const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost').eq('provider_id', provider.id);
+  const classes = Object.fromEntries((cls || []).filter(needsTicket).map(c => { const r = checkService(c, ent); return [c.id, { ok: r.ok, ticket_ids: r.tickets.map(t => t.id) }]; }));
+  return Response.json({ logged_in: !!user, tickets: ent.tickets, member: ent.isMember, services, classes, hidden_for_member: hidden });
 }
