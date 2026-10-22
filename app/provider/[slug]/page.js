@@ -1314,7 +1314,9 @@ function ClassTab({ provider, classId }) {
 
 // ── 予約タブ（でお要望 2026-10-22：予約・リクエスト・グループレッスンを1か所に）。
 //    メニューとグループレッスンを並べ、押すとその場で詳細と日時選び（空いている時間／リクエスト／開催日時）が出る。 ──
-function BookTab({ provider, services, staff, elig, onEligChanged, selectedService, setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, presetLessonId, hideMemberCard }) {
+// ticketFilter：マイページのチケットから来た時は、そのチケットで予約できるメニュー・レッスンだけを並べる（でお要望 2026-10-22）
+function BookTab({ provider, services, staff, elig, onEligChanged, selectedService, setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, presetLessonId, hideMemberCard, ticketFilter }) {
+  const [onlyTicket, setOnlyTicket] = useState(ticketFilter || null);
   const instantOn = hasFeature(provider, 'instant_booking');
   const requestOn = hasFeature(provider, 'booking_request');
   const lessonsOn = hasFeature(provider, 'class_management') && isShown(provider, 'tab_class');
@@ -1333,7 +1335,9 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
   const svcState = sv => (sv?.booking_scope !== 'limited' ? 'open' : elig?.services?.[sv.id]?.ok ? 'ok' : 'locked');
   const lessonState = c => (!c.needs_ticket ? 'open' : elig?.classes?.[c.id]?.ok ? 'ok' : 'locked');
   const hidden = new Set(elig?.hidden_for_member || []);
-  const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked') && !hidden.has(sv.id));
+  const visibleServices = (services || []).filter(sv => !(sv.hide_when_locked && svcState(sv) === 'locked') && !hidden.has(sv.id) && (!onlyTicket || (sv.ticket_ids || []).includes(onlyTicket)));
+  const visibleLessons = lessons.filter(c => !onlyTicket || (c.ticket_ids || []).includes(onlyTicket));
+  const ticketName = onlyTicket ? (elig?.tickets || []).find(t => t.ticket_id === onlyTicket)?.name : null;
   const loginHref = `/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`;
   const pick = (kind, item) => {
     if (picked?.kind === kind && picked?.id === (item?.id || null)) { setPicked(null); setSelectedService(null); return; }
@@ -1357,12 +1361,17 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
     </div>
   );
   const consultProps = { provider, services, staff, onServiceSelect: setSelectedService, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, embedded: true };
-  const empty = !visibleServices.length && !(lessonsOn && lessons.length);
+  const empty = !visibleServices.length && !(lessonsOn && visibleLessons.length);
 
   return (
     <div style={{ maxWidth: '620px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '40px' }}>
       {!hideMemberCard && elig?.logged_in && <MemberCard provider={provider} elig={elig} onChanged={onEligChanged} />}
-      <p style={{ margin: '0 0 4px', fontSize: 'calc(13px * var(--pv-fs))', color: muted }}>予約したいメニュー・レッスンを選ぶと、日時を選べます。</p>
+      {onlyTicket ? (
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', margin: '0 0 4px' }}>
+          <p style={{ margin: 0, fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700 }}>{ticketName ? `「${ticketName}」で` : 'お持ちのチケットで'}予約できるメニュー・レッスン</p>
+          <button type="button" onClick={() => setOnlyTicket(null)} style={{ padding: '6px 12px', borderRadius: '99px', border: line, background: 'transparent', color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12px * var(--pv-fs))', cursor: 'pointer' }}>すべてのメニューを見る</button>
+        </div>
+      ) : <p style={{ margin: '0 0 4px', fontSize: 'calc(13px * var(--pv-fs))', color: muted }}>予約したいメニュー・レッスンを選ぶと、日時を選べます。</p>}
       {empty && !requestOn && <p style={{ margin: 0, color: muted }}>現在、予約できるメニューがありません。</p>}
       {visibleServices.map(s => {
         const st = svcState(s);
@@ -1404,7 +1413,7 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
           </div>
         );
       })}
-      {lessonsOn && lessons.map(c => {
+      {lessonsOn && visibleLessons.map(c => {
         const st = lessonState(c);
         const on = picked?.kind === 'lesson' && picked.id === c.id;
         return (
@@ -1428,7 +1437,7 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
           </div>
         );
       })}
-      {requestOn && (
+      {requestOn && !onlyTicket && (
         <div style={card(picked?.kind === 'consult')}>
           <button type="button" onClick={() => pick('consult', null)} style={head} aria-expanded={picked?.kind === 'consult'}>
             <span style={{ flex: 1 }}>
@@ -2612,7 +2621,8 @@ function ProviderPageContent() {
           diagnosis={diagnosis} matchData={matchData}
           menuNameHint={searchParams.get('menu_name') || ''}
           presetStaffId={searchParams.get('staff_id') || ''}
-          presetLessonId={searchParams.get('tab') === 'class' ? (searchParams.get('class_id') || 'any') : null}
+          presetLessonId={searchParams.get('class_id') || (searchParams.get('tab') === 'class' ? 'any' : null)}
+          ticketFilter={searchParams.get('ticket') || null}
         />
       )}
       {activeTab === 'mine' && (

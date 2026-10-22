@@ -59,8 +59,11 @@ export default function MypagePackagesPage() {
                   isSub ? (p.subscription_status === 'cancelled' ? '月額会員：解約済み' : `次回 ${p.next_grant_at ? new Date(p.next_grant_at).toLocaleDateString('ja-JP') : '未定'} に自動付与`) : '',
                   p.expired ? '期限切れ' : usedUp ? '使用済み' : '',
                 ].filter(Boolean).join('｜');
+                // まだ使えるチケットは、押すとそのメニューの予約画面へ（でお要望 2026-10-22）
+                const usable = !p.expired && !usedUp && p.book_href;
+                const Wrap = usable ? 'a' : 'div';
                 return (
-                  <div key={p.id} className={`fx-ticket${p.expired || usedUp ? ' is-done' : ''}`}>
+                  <Wrap key={p.id} {...(usable ? { href: p.book_href, 'aria-label': `${p.package_name}で予約する` } : {})} className={`fx-ticket${p.expired || usedUp ? ' is-done' : ''}${usable ? ' pk-link' : ''}`}>
                     <div className="fx-ticket-main">
                       <span className="fx-ticket-kicker">{kind}<span className="fx-ticket-who">{p.provider_name}</span></span>
                       <span className="fx-ticket-name">{p.package_name}</span>
@@ -71,13 +74,14 @@ export default function MypagePackagesPage() {
                       )}
                       {!isUnlimited && total > 20 && <div className="fx-punches-more">{used}回利用 / 全{total}回</div>}
                       <span className="fx-ticket-sub">{sub}</span>
+                      {usable && <span className="pk-book">このチケットで予約する →</span>}
                     </div>
                     <div className="fx-ticket-stub">
                       {isUnlimited
                         ? <><span>ご利用</span><b className="fx-ticket-word">通い放題</b></>
                         : <><span>残り</span><b>{Math.max(0, p.remaining_sessions ?? 0)}</b><span>回</span></>}
                     </div>
-                  </div>
+                  </Wrap>
                 );
               })}
             </div>
@@ -86,6 +90,11 @@ export default function MypagePackagesPage() {
       </div>
 
       <style>{`
+        .pk-link { text-decoration: none; color: #1a1410; cursor: pointer; transition: transform .12s; }
+        .pk-link:visited, .pk-link:hover { color: #1a1410; }
+        .pk-link:hover { transform: translateY(-1px); }
+        .pk-link:focus-visible { outline: 2px solid #c8a45a; outline-offset: 3px; }
+        .pk-book { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 800; }
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
         .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }

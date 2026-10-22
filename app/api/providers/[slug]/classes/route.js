@@ -70,7 +70,7 @@ export async function GET(request, { params }) {
   // チケットが要るレッスンには「ストレッチチケット（1回1枚）をお持ちの方」の説明を付ける（でお要望 2026-10-22）
   const labeled = await withScopeLabels(supabase, provider.id, classes);
   return Response.json({
-    classes: labeled.map(c => ({ id: c.id, name: c.name, description: c.description, capacity: c.capacity, price: c.price ?? null, ticket_cost: c.ticket_cost || 1, needs_ticket: (c.ticket_ids || []).length > 0, scope_label: c.scope_label || '' })),
+    classes: labeled.map(c => ({ id: c.id, name: c.name, description: c.description, capacity: c.capacity, price: c.price ?? null, ticket_cost: c.ticket_cost || 1, needs_ticket: (c.ticket_ids || []).length > 0, ticket_ids: c.ticket_ids || [], scope_label: c.scope_label || '' })),
     rooms,
     sessions: flat,
   });
