@@ -146,7 +146,7 @@ export async function POST(request) {
         const ent = await customerEntitlements(supabase, provider_id, authUser.id);
         const ids = ent.planIds.filter(id => !(svc.eligible_plan_ids || []).length || svc.eligible_plan_ids.includes(id));
         const { data: plansRows } = await supabase.from('provider_membership_plans').select('id, name, monthly_booking_limit').in('id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
-        const monthOf = /^\d{4}-\d{2}/.test(instantDate || '') ? instantDate : null;
+        const monthOf = [instantDate, preferred_date].find(d => /^\d{4}-\d{2}/.test(d || '')) || null;
         let usable = null;
         for (const pl of plansRows || []) {
           const left = await planBookingsLeft(supabase, pl, authUser.id, provider_id, monthOf);
