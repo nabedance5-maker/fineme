@@ -181,7 +181,83 @@ export function RoiCalculator() {
   );
 }
 
-export function StickyCta({ href, text = '月額¥5,000から｜予約の手数料0円', label = '掲載について相談する' }) {
+const INDUSTRIES = {
+  gym: {
+    tab: 'パーソナルジム',
+    title: '体験から入会、そして卒業したあとまで',
+    lead: '体験に来た人が入会したか、会員の月会費がきちんと払われているか、卒業した人が戻ってくるか。ジムの売上を左右するところを、仕組みで追いかけます。',
+    points: [
+      ['体験→入会を見える化', '体験の来店から入会・回数券の購入までの割合と、まだ入会していないお客様の一覧が出ます。'],
+      ['回数券も月額会員も「チケット」で', '予約した時点でチケットを消化。会員はお店のページの「会員」タブから、持っているチケットでそのまま予約できます。'],
+      ['月会費の取りこぼしを防ぐ', '支払いエラーを自動で検知し、再請求とカード更新のお願いまで。休会・プラン変更・退会の申請もマイページから届きます。'],
+      ['卒業・休会した人に、もう一度', '来店の目安を過ぎたお客様に、予約ボタン付きのメッセージで声かけできます。'],
+      ['トレーナーのシフトと勤怠', '希望の提出から自動作成、労働時間のチェック、タブレットでの打刻と有給の申請まで。'],
+    ],
+    plan: 'おすすめは Plan B（¥7,000/月）',
+  },
+  brow: {
+    tab: '眉毛サロン',
+    title: '4〜6週間後の「次の予約」を、取りこぼさない',
+    lead: '眉は形が崩れるまでの周期がはっきりしている分、声をかける時期を逃さなければ戻ってきてもらえます。その時期と記録を、仕組みに任せます。',
+    points: [
+      ['会計の時に、次の予約と一言を', '会計時に「次回の一言」を残し、その場で次の予約まで。担当が変わっても同じ説明ができます。'],
+      ['前回のデザインを、来店前に確認', '形・使った色・気をつけることをカルテに。来店前の接客メモで、毎回ゼロから聞き直しません。'],
+      ['周期を過ぎたら、予約ボタン付きで声かけ', '来店の目安を過ぎたお客様を一覧にして、LINEやメールでそのまま予約につながる声かけを送れます。'],
+      ['来店後のクチコミのお願いを自動で', '来店の1〜2日後に、クチコミのお願いが自動で届きます。'],
+      ['2回目からは自店で予約', '他の予約サイトから来た初めてのお客様も、2回目以降はお店のページ・自社サイトの予約ウィジェット・LINEから直接予約できます。'],
+    ],
+    plan: 'おすすめは Plan B（¥7,000/月）',
+  },
+  other: {
+    tab: '美容室・その他',
+    title: '一人で営業していても、お客様一人ひとりに目が届く',
+    lead: '美容室・脱毛・外見コンサル・スタイリストなど、予約制で通ってもらう仕事なら同じ仕組みが使えます。',
+    points: [
+      ['予約とお客様の記録を1か所に', 'LINEで完結する予約、来店履歴とメモが残るカルテ、売上の自動集計まで。'],
+      ['リマインドと誕生日メッセージは自動', '前日18時のリマインドと誕生日のお祝いを、全プランで自動で送ります。'],
+      ['自社サイトに予約を置ける', '予約ウィジェットで、今のホームページにそのまま空き状況と予約ボタンを載せられます。'],
+      ['AI専属コンサルが次の一手を', '予約と売上のデータから、いま声をかけるべきお客様を教えてくれます。'],
+    ],
+    plan: '一人で始めるなら Plan A（¥5,000/月）から',
+  },
+};
+
+export function IndustryTabs({ initial }) {
+  const [key, setKey] = useState(initial || 'gym');
+  useEffect(() => {
+    const h = window.location.hash.replace('#', '');
+    if (h === 'gym' || h === 'brow') setKey(h);
+  }, []);
+  const cur = INDUSTRIES[key];
+  return (
+    <div className="pj-ind" data-reveal>
+      <div className="pj-ind-tabs" role="tablist" aria-label="業種">
+        {Object.entries(INDUSTRIES).map(([k, v]) => (
+          <button key={k} type="button" role="tab" aria-selected={k === key} className={`pj-ind-tab ${k === key ? 'on' : ''}`} onClick={() => setKey(k)}>
+            {v.tab}
+          </button>
+        ))}
+      </div>
+      <div className="pj-ind-body" role="tabpanel" key={key}>
+        <div className="pj-ind-intro">
+          <h3>{cur.title}</h3>
+          <p>{cur.lead}</p>
+          <span className="pj-ind-plan">{cur.plan}</span>
+        </div>
+        <ol className="pj-ind-points">
+          {cur.points.map(([h, p], i) => (
+            <li key={h} style={{ '--i': i }}>
+              <span className="pj-ind-num">{i + 1}</span>
+              <div><b>{h}</b><p>{p}</p></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+export function StickyCta({ href, text = '月額¥5,000〜・予約手数料0円', label = '話を聞いてみる' }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const onScroll = () => {
