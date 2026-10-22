@@ -10,8 +10,7 @@ import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
-import { customerEntitlements, checkService, scopeLabel } from '@/lib/booking-eligibility';
-import { planBookingsLeft } from '@/lib/membership-plan';
+import { customerEntitlements, checkService, scopeLabel, needsTicket, hiddenForMember } from '@/lib/booking-eligibility';
 import { checkAndAssign } from '@/lib/availability-engine';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -113,7 +112,6 @@ export async function POST(request) {
   let bookingUserId = authUser?.id || null;
 
   let verifiedPackageId = null;
-  let membershipPlanId = null; // 会員プランで予約した時のプラン（月の予約回数の数え方に使う）
   if (package_id && bookingUserId) {
     const { data: pkg } = await supabase.from('customer_packages').select('id').eq('id', package_id).eq('user_id', bookingUserId).eq('provider_id', provider_id).maybeSingle();
     if (pkg) verifiedPackageId = pkg.id;
@@ -122,41 +120,27 @@ export async function POST(request) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
-  // 回数券・会員プランの方だけが予約できるメニュー（でお要望 2026-10-20）。
-  // 回数券で予約する時は、使う回数券を必ず決める。
-  // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する（枠のメニューは後で予約に引き継がれるため）
+  // チケットが要るメニュー（でお要望 2026-10-22：チケットを消費して予約する）。
+  // メニューに決まったチケットを ticket_cost 枚持っているお客様だけが予約でき、使うチケットを必ず決める。
+  // 即時予約では、メニューを選ばずに枠だけ選んでも、枠に決まっているメニューで判定する
   let effectiveServiceId = service_id || null;
   if (!effectiveServiceId && isInstant && slot_id) {
     const { data: sl } = await supabase.from('provider_slots').select('service_id').eq('id', slot_id).eq('provider_id', provider_id).maybeSingle();
     effectiveServiceId = sl?.service_id || null;
   }
+  let ticketCost = 1;
   if (effectiveServiceId) {
-    const { data: svc } = await supabase.from('provider_services').select('id, booking_scope, allow_ticket, eligible_package_ids, allow_membership, eligible_plan_ids').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle();
-    if (svc?.booking_scope === 'limited') {
-      const [{ data: pk }, { data: pl }] = await Promise.all([
-        supabase.from('service_packages').select('id, name').in('id', svc.eligible_package_ids?.length ? svc.eligible_package_ids : ['00000000-0000-0000-0000-000000000000']),
-        supabase.from('provider_membership_plans').select('id, name').in('id', svc.eligible_plan_ids?.length ? svc.eligible_plan_ids : ['00000000-0000-0000-0000-000000000000']),
-      ]);
-      const label = scopeLabel(svc, Object.fromEntries((pk || []).map(x => [x.id, x.name])), Object.fromEntries((pl || []).map(x => [x.id, x.name])));
+    const { data: svc } = await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle();
+    const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
+    if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
+    if (needsTicket(svc)) {
+      const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
+      const label = scopeLabel(svc, Object.fromEntries((tk || []).map(x => [x.id, x.name])));
       if (!authUser) return Response.json({ error: `このメニューは${label}だけが予約できます。Finemeにログインしてから予約してください`, code: 'login_required' }, { status: 401 });
-      const chk = checkService(svc, await customerEntitlements(supabase, provider_id, authUser.id));
+      const chk = checkService(svc, ent);
       if (!chk.ok) return Response.json({ error: `このメニューは${label}だけが予約できます`, code: 'not_eligible' }, { status: 403 });
-      if (chk.via === 'membership' && !verifiedPackageId) {
-        // 会員プランの「月に何回まで」（でお要望 2026-10-22）。上限に達したら、回数券があればそちらで予約する
-        const ent = await customerEntitlements(supabase, provider_id, authUser.id);
-        const ids = ent.planIds.filter(id => !(svc.eligible_plan_ids || []).length || svc.eligible_plan_ids.includes(id));
-        const { data: plansRows } = await supabase.from('provider_membership_plans').select('id, name, monthly_booking_limit').in('id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
-        const monthOf = [instantDate, preferred_date].find(d => /^\d{4}-\d{2}/.test(d || '')) || null;
-        let usable = null;
-        for (const pl of plansRows || []) {
-          const left = await planBookingsLeft(supabase, pl, authUser.id, provider_id, monthOf);
-          if (left === null || left > 0) { usable = pl; break; }
-        }
-        if (usable) membershipPlanId = usable.id;
-        else if (chk.tickets.length) verifiedPackageId = chk.tickets[0].id;
-        else return Response.json({ error: `今月の予約回数の上限（${plansRows?.[0]?.name || '会員プラン'}：月${plansRows?.[0]?.monthly_booking_limit}回）に達しています`, code: 'plan_limit' }, { status: 409 });
-      }
-      if (chk.via === 'ticket' && !chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;
+      if (!chk.tickets.some(t => t.id === verifiedPackageId)) verifiedPackageId = chk.tickets[0].id;
+      ticketCost = svc.ticket_cost || 1;
     }
   }
 
@@ -204,7 +188,7 @@ export async function POST(request) {
     staff_id: staff_id || null,
     service_id: service_id || null,
     package_id: verifiedPackageId,
-    membership_plan_id: membershipPlanId,
+    ticket_cost: verifiedPackageId ? ticketCost : 1,
     designation_fee: designationFee,
     booking_mode: isInstant ? 'instant' : 'request',
   };

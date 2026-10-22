@@ -39,7 +39,8 @@ export default function JoinMembershipPage() {
 
   const [form, setForm] = useState({
     last_name: '', first_name: '', birthdate: '', postal_code: '', address: '', phone: '',
-    plan_id: '', enrollment_date: '', locker_id: '', option_ids: [], coupon_code: '',
+    // お店から送られた入会のリンク（?plan=）なら、そのプランを選んだ状態で開く（でお要望 2026-10-22）
+    plan_id: searchParams.get('plan') || '', enrollment_date: '', locker_id: '', option_ids: [], coupon_code: '',
     last_name_kana: '', first_name_kana: '', gender: '', custom_answers: {},
     emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
     agree: false,
@@ -64,7 +65,7 @@ export default function JoinMembershipPage() {
     const a = getAuth();
     setAuth(a);
     if (!slug) return;
-    fetch(`/api/providers/${slug}/membership-info`)
+    fetch(`/api/providers/${slug}/membership-info${searchParams.get('plan') ? `?plan=${encodeURIComponent(searchParams.get('plan'))}` : ''}`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(setInfo)
       .catch(() => setError('この店舗はオンライン入会に対応していません'))
@@ -157,6 +158,7 @@ export default function JoinMembershipPage() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
       body: JSON.stringify({
         provider_id: info.provider_id, plan_id: form.plan_id, enrollment_date: form.enrollment_date, locker_id: form.locker_id || null,
+        via_store_link: !!searchParams.get('plan') && searchParams.get('plan') === form.plan_id,
         option_ids: form.option_ids, coupon_code: coupon ? form.coupon_code.trim() : null,
         last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, gender: form.gender || null, custom_answers: form.custom_answers,
         last_name: form.last_name, first_name: form.first_name, birthdate: form.birthdate || null, postal_code: form.postal_code, address: form.address, phone: form.phone,
@@ -237,11 +239,11 @@ export default function JoinMembershipPage() {
                 </select>
               </div>
             )}
-            {selectedPlan && (selectedPlan.description || selectedPlan.initial_fee > 0 || selectedPlan.monthly_booking_limit || includedOptions.length > 0) && (
+            {selectedPlan && (selectedPlan.description || selectedPlan.initial_fee > 0 || (selectedPlan.ticket_grants || []).length > 0 || includedOptions.length > 0) && (
               <div style={{ ...FIELD, fontSize: '13px', color: '#fff', lineHeight: 1.8 }}>
                 {selectedPlan.description && <p style={{ margin: '0 0 4px' }}>{selectedPlan.description}</p>}
                 {selectedPlan.initial_fee > 0 && <p style={{ margin: 0 }}>入会金：¥{selectedPlan.initial_fee.toLocaleString()}（初回のみ）</p>}
-                {selectedPlan.monthly_booking_limit && <p style={{ margin: 0 }}>ご予約：月{selectedPlan.monthly_booking_limit}回まで</p>}
+                {(selectedPlan.ticket_grants || []).map((g, i) => { const nm = (info.tickets || []).find(t => t.id === g.ticket_id)?.name; return nm ? <p key={i} style={{ margin: 0 }}>{g.timing === 'monthly' ? '毎月' : 'ご入会時'}：{nm}{g.unlimited ? '（使い放題）' : ` ${g.sessions}枚`}</p> : null; })}
                 {includedOptions.map(o => <p key={o.id} style={{ margin: 0 }}>含まれるオプション：{o.name}（月額¥{o.monthly_price.toLocaleString()}）</p>)}
               </div>
             )}

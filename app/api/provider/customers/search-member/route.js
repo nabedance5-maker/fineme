@@ -31,9 +31,20 @@ export async function GET(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const q = (new URL(request.url).searchParams.get('q') || '').trim();
-  if (q.length < 3) return Response.json({ error: '3文字以上で検索してください' }, { status: 400 });
-
+  if (!q) return Response.json([]);
   const esc = q.replace(/[%_]/g, c => '\\' + c);
+
+  // このお店の会員（でお要望 2026-10-22）を先に出す。お店が登録した情報なので1文字から探せる
+  const { data: mem } = await supabase.from('provider_store_members').select('user_id').eq('provider_id', provider.id).eq('status', 'active');
+  const memIds = (mem || []).map(m => m.user_id);
+  let storeHits = [];
+  if (memIds.length) {
+    const { data: pr } = await supabase.from('provider_customer_profiles').select('user_id, last_name, first_name, last_name_kana, first_name_kana, phone')
+      .eq('provider_id', provider.id).in('user_id', memIds)
+      .or(`phone.ilike.%${esc}%,last_name.ilike.%${esc}%,first_name.ilike.%${esc}%,last_name_kana.ilike.%${esc}%,first_name_kana.ilike.%${esc}%`).limit(8);
+    storeHits = (pr || []).map(p => ({ id: p.user_id, name: [p.last_name, p.first_name].filter(Boolean).join(' ') || '(お名前未登録)', maskedPhone: p.phone || '', store_member: true }));
+  }
+  if (q.length < 3) return Response.json(storeHits);
   const { data, error } = await supabase
     .from('profiles')
     .select('id, last_name, first_name, display_name, phone')
@@ -42,10 +53,11 @@ export async function GET(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  const results = (data || []).map(p => ({
+  const seen = new Set(storeHits.map(h => h.id));
+  const results = storeHits.concat((data || []).filter(p => !seen.has(p.id)).map(p => ({
     id: p.id,
     name: [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name || '(お名前未登録)',
     maskedPhone: maskPhone(p.phone),
-  }));
+  }))).slice(0, 10);
   return Response.json(results);
 }

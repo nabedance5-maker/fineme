@@ -2,7 +2,7 @@
 // POST /api/provider/services - サービス追加
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
-import { normalizeScope } from '@/lib/booking-eligibility';
+import { normalizeTicketRule } from '@/lib/booking-eligibility';
 import { normalizeAssignees } from '@/lib/menu-assign';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -39,8 +39,7 @@ async function __POST(request) {
   const { name, description, price, duration, duration_minutes, is_featured, sort_order, image_url, suitable_path_types, transformation_promise, target_axis, before_text, after_text, before_image_url, after_image_url, benefit_list, category, is_trial } = body;
   // 回数券・会員の方専用のメニューは0円もありうるため、価格は空でなければよい
   if (!name || price === undefined || price === null || price === '') return Response.json({ error: 'メニュー名と価格を入れてください' }, { status: 400 });
-  const scope = await normalizeScope(supabase, provider.id, body);
-  if (scope.error) return Response.json({ error: scope.error }, { status: 400 });
+  const scope = await normalizeTicketRule(supabase, provider.id, body); // 使えるチケット・枚数・会員には表示しない（2026-10-22）
   const assign = await normalizeAssignees(supabase, provider.id, { staff_ids: body.staff_ids, resource_ids: body.resource_ids });
 
   const { data, error } = await supabase

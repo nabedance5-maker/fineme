@@ -86,7 +86,8 @@ export async function POST(request) {
     locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider_id).single() : Promise.resolve({ data: null }),
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
-  if (!plan.active || !plan.online_enabled) return Response.json({ error: 'このプランは店頭でのお申し込みのみです' }, { status: 409 });
+  // 店頭だけのプランは、お店から送られた入会のリンク（via_store_link）からだけ申し込める
+  if (!plan.active || (!plan.online_enabled && !body.via_store_link)) return Response.json({ error: 'このプランは店頭でのお申し込みのみです' }, { status: 409 });
 
   // 店舗が決めた入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
   const fields = normalizeFormFields(settings?.form_fields);

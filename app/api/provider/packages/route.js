@@ -23,7 +23,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, price, validity_days, expires_on, active, created_at, package_type, combo_ticket_sessions, recurring_sessions')
+    .select('id, name, total_sessions, price, validity_days, expires_on, active, created_at, package_type, combo_ticket_sessions, recurring_sessions, ticket_id')
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false });
 
@@ -38,8 +38,19 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'customer_packages'); if (locked) return locked; }
 
-  const { name, total_sessions, price, validity_days, expires_on, package_type, combo_ticket_sessions, recurring_sessions } = await request.json().catch(() => ({}));
+  const { name, total_sessions, price, validity_days, expires_on, package_type, combo_ticket_sessions, recurring_sessions, ticket_id } = await request.json().catch(() => ({}));
   if (!name?.trim()) return Response.json({ error: 'nameは必須です' }, { status: 400 });
+  // 回数券＝チケットが付く商品（でお要望 2026-10-22）。付くチケットを選んでいなければ、同じ名前のチケットを作る
+  let ticketId = null;
+  if (ticket_id) {
+    const { data: tk } = await supabase.from('provider_tickets').select('id').eq('id', ticket_id).eq('provider_id', provider.id).maybeSingle();
+    if (!tk) return Response.json({ error: 'チケットが見つかりません' }, { status: 400 });
+    ticketId = tk.id;
+  } else {
+    const { data: tk, error: tkErr } = await supabase.from('provider_tickets').insert({ provider_id: provider.id, name: name.trim() }).select('id').single();
+    if (tkErr) return Response.json({ error: tkErr.message }, { status: 500 });
+    ticketId = tk.id;
+  }
 
   // 複合プラン（hacomono/STORES網羅計画 Phase 2）：通い放題（unlimited）はセッション数の
   // 概念が無いためtotal_sessions不要。fixed_count・comboは従来通り1以上の整数が必須。
@@ -81,6 +92,7 @@ async function __POST(request) {
       package_type: type,
       combo_ticket_sessions: type === 'combo' ? comboSessions : null,
       recurring_sessions: type === 'subscription' ? recurringSessions : null,
+      ticket_id: ticketId,
     })
     .select()
     .single();

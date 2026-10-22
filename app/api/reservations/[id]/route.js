@@ -226,6 +226,7 @@ async function __PATCH(request, context) {
         userId: data.user_id,
         reservationId: id,
         preferredPackageId: data.package_id || null,
+        ticketCost: data.ticket_cost || 1,
       });
     }
 

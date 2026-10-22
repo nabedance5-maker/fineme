@@ -2,7 +2,7 @@
 // DELETE /api/provider/services/[id] - サービス削除
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
-import { normalizeScope } from '@/lib/booking-eligibility';
+import { normalizeTicketRule } from '@/lib/booking-eligibility';
 import { normalizeAssignees } from '@/lib/menu-assign';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -28,8 +28,7 @@ async function __PATCH(request, { params }) {
   if (updates.price !== undefined) updates.price = Number(updates.price) || 0;
   if (updates.axes !== undefined) updates.axes = Array.isArray(updates.axes) ? updates.axes.map(String).slice(0, 20) : [];
   // 予約できる人（でお要望 2026-10-20）
-  const scope = await normalizeScope(supabase, provider.id, body);
-  if (scope.error) return Response.json({ error: scope.error }, { status: 400 });
+  const scope = await normalizeTicketRule(supabase, provider.id, body); // 使えるチケット・枚数・会員には表示しない（2026-10-22）
   Object.assign(updates, scope);
   // 担当できるスタッフ・使う部屋（でお要望 2026-10-21）
   Object.assign(updates, await normalizeAssignees(supabase, provider.id, { ...(Array.isArray(body.staff_ids) ? { staff_ids: body.staff_ids } : {}), ...(Array.isArray(body.resource_ids) ? { resource_ids: body.resource_ids } : {}) }));

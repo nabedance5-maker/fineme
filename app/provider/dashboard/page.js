@@ -680,6 +680,44 @@ const DASHBOARD_CSS = `
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
       /* 予約できる人（2026-10-20） */
       /* メニュー（個別メニュー・グループレッスンを1つの一覧に。2026-10-22） */
+      /* 会員（2026-10-22） */
+      .sm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+      .sm-grid select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .sm-search { padding: 9px 12px; border: 1px solid rgba(26,20,16,0.2); border-radius: 10px; font-size: 13.5px; color: #1a1410; background: #fff; }
+      .sm-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; cursor: pointer; background: #fff; text-align: left; width: 100%; font: inherit; }
+      .sm-row:hover { border-color: #1a1410; }
+      .sm-row .sm-name { font-weight: 800; font-size: 14px; }
+      .sm-row .sm-meta { font-size: 12.5px; }
+      .sm-chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: rgba(26,20,16,0.08); font-weight: 700; margin-left: 6px; }
+      .sm-sec { border-top: 1px solid rgba(26,20,16,0.12); padding-top: 12px; display: grid; gap: 8px; color: #1a1410; }
+      .sm-sec h4 { margin: 0; font-size: 14px; }
+      .sm-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+      .sm-inline input, .sm-inline select { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .sm-inline input[type=number] { width: 72px; }
+      .sm-tk { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(26,20,16,0.06); }
+      .sm-url { font-size: 12px; word-break: break-all; background: rgba(26,20,16,0.05); padding: 8px 10px; border-radius: 8px; }
+      /* チケット（2026-10-22） */
+      .tk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; color: #1a1410; }
+      .tk-head > div { flex: 1 1 320px; }
+      .tk-row { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; }
+      .tk-row.is-off { opacity: .6; }
+      .tk-main { flex: 1 1 280px; min-width: 0; font-size: 14px; }
+      .tk-chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: rgba(26,20,16,0.08); font-weight: 700; margin-left: 6px; }
+      .tk-sub { font-size: 12.5px; margin-top: 3px; line-height: 1.6; }
+      .tk-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .tk-actions .btn { font-size: 12px; padding: 5px 10px; }
+      .tk-del { color: #b91c1c; }
+      .tk-ed { gap: 8px; padding: 16px; border: 2px solid #1a1410; border-radius: 12px; color: #1a1410; background: #fff; }
+      .tk-ed-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+      .tk-ed-head .btn { font-size: 12px; padding: 5px 10px; }
+      .tk-field { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; }
+      .tk-ed input:not([type=checkbox]) { padding: 7px 9px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; font-size: 13px; color: #1a1410; background: #fff; }
+      .tk-sub2 { font-size: 13px; }
+      .tk-menus { display: grid; gap: 6px; }
+      .tk-menu { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+      .tk-menu span { flex: 1; }
+      .tk-menu input[type=number] { width: 60px; }
+      .tk-ed-actions { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
       /* 会員プラン（2026-10-22：プランごとにオプション・割引・回数券・予約を紐づける） */
       .pl-row { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; padding: 12px 14px; border: 1px solid rgba(26,20,16,0.12); border-radius: 10px; color: #1a1410; }
       .pl-main { flex: 1 1 280px; min-width: 0; }
@@ -2503,7 +2541,7 @@ export default function ProviderDashboardPage() {
       let servicesCache = [];
       let menuFilter = 'all';
       let assignLists = null; // { staff: [...予約を受けるスタッフ], rooms: [...部屋] }
-      const MENU_FILTERS = [['all', 'すべて'], ['service', '個別メニュー'], ['lesson', 'グループレッスン'], ['trial', '体験'], ['limited', '回数券・会員専用']];
+      const MENU_FILTERS = [['all', 'すべて'], ['service', '個別メニュー'], ['lesson', 'グループレッスン'], ['trial', '体験'], ['limited', 'チケットが必要']];
       const lessonsOn = () => !!(window.__providerFeatures || {}).class_management && !(window.__providerLocks || {}).class_management;
       async function loadAssignLists() {
         if (assignLists) return assignLists;
@@ -2527,8 +2565,8 @@ export default function ProviderDashboardPage() {
           || (menuFilter === 'service' && r.kind === 'service')
           || (menuFilter === 'lesson' && r.kind === 'lesson')
           || (menuFilter === 'trial' && r.kind === 'service' && r.sv.is_trial)
-          || (menuFilter === 'limited' && r.kind === 'service' && r.sv.booking_scope === 'limited'));
-        const counts = { all: servicesCache.length + lessons.length, service: servicesCache.length, lesson: lessons.length, trial: servicesCache.filter(x => x.is_trial).length, limited: servicesCache.filter(x => x.booking_scope === 'limited').length };
+          || (menuFilter === 'limited' && r.kind === 'service' && (r.sv.ticket_ids || []).length > 0));
+        const counts = { all: servicesCache.length + lessons.length, service: servicesCache.length, lesson: lessons.length, trial: servicesCache.filter(x => x.is_trial).length, limited: servicesCache.filter(x => (x.ticket_ids || []).length > 0).length };
         const filtersEl = document.getElementById('menu-filters');
         if (filtersEl) {
           filtersEl.innerHTML = MENU_FILTERS.filter(([k]) => k !== 'lesson' || lessonsOn()).map(([k, label]) => `<button type="button" role="tab" aria-selected="${menuFilter === k}" class="mn-filter${menuFilter === k ? ' is-on' : ''}" data-mn-filter="${k}">${label}<em>${counts[k]}</em></button>`).join('');
@@ -2559,7 +2597,7 @@ export default function ProviderDashboardPage() {
           const roomTxt = (sv.resource_ids || []).length ? sv.resource_ids.map(id => roomName[id]).filter(Boolean).join('・') : '';
           return `<div class="mn-row">
             <div class="mn-main">
-              <div class="mn-title"><strong>${esc(sv.name)}</strong>${chip('個別')}${sv.is_trial ? chip('体験', 'is-trial') : ''}${sv.booking_scope === 'limited' ? chip(`${[sv.allow_ticket && '回数券の方', sv.allow_membership && '会員の方'].filter(Boolean).join('・')}専用`, 'is-limited') : ''}${sv.is_featured ? chip('看板') : ''}${sv.target_axis ? chip(AXIS_LABELS_D[sv.target_axis] || sv.target_axis) : ''}</div>
+              <div class="mn-title"><strong>${esc(sv.name)}</strong>${chip('個別')}${sv.is_trial ? chip('体験', 'is-trial') : ''}${(sv.ticket_ids || []).length ? chip(`チケット${sv.ticket_cost || 1}枚`, 'is-limited') : ''}${sv.hide_for_members ? chip('会員には非表示') : ''}${sv.is_featured ? chip('看板') : ''}${sv.target_axis ? chip(AXIS_LABELS_D[sv.target_axis] || sv.target_axis) : ''}</div>
               <div class="mn-meta">¥${Number(sv.price).toLocaleString()}${sv.duration_minutes ? ` · ${sv.duration_minutes}分` : (sv.duration ? ' · ' + esc(sv.duration) : ' · 所要時間未設定')}${staffTxt ? ` · 担当 ${esc(staffTxt)}` : ''}${roomTxt ? ` · ${esc(roomTxt)}` : ''}</div>
               ${sv.transformation_promise ? `<div class="mn-promise">「${esc(sv.transformation_promise)}」</div>` : ''}
             </div>
@@ -2674,31 +2712,28 @@ export default function ProviderDashboardPage() {
       }
       editForm?.elements['is_trial']?.addEventListener('change', syncTrialAxes);
 
-      // 予約できる人の設定欄（回数券の種類・会員プランの一覧を出し、保存済みの値を入れる）
-      let scopeLists = null;
+      // 予約に使うチケット（でお要望 2026-10-22）
+      let ticketTypes = null;
       async function fillScope(s) {
-        if (!scopeLists) {
-          const H = { Authorization: `Bearer ${getSupabaseToken()}` };
-          const [a, b] = await Promise.all([fetch('/api/provider/packages', { headers: H }), fetch('/api/provider/membership-plans', { headers: H })]);
-          scopeLists = { pk: a.ok ? await a.json() : [], pl: b.ok ? await b.json() : [] };
+        if (!ticketTypes) {
+          const r = await fetch('/api/provider/tickets', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } }).catch(() => null);
+          ticketTypes = r?.ok ? await r.json() : [];
         }
-        const pkSel = new Set(s?.eligible_package_ids || []), plSel = new Set(s?.eligible_plan_ids || []);
-        document.getElementById('svc-scope-pk').innerHTML = scopeLists.pk.length
-          ? `<span>対象の回数券（選ばなければ、この店のどの回数券でも）</span>${scopeLists.pk.map(x => `<label><input type="checkbox" name="eligible_package_ids" value="${x.id}" ${pkSel.has(x.id) ? 'checked' : ''}>${esc(x.name)}</label>`).join('')}`
-          : '<span>回数券がまだありません（「回数券」タブで作れます）</span>';
-        document.getElementById('svc-scope-pl').innerHTML = scopeLists.pl.length
-          ? `<span>対象の会員プラン（選ばなければ、どのプランでも）</span>${scopeLists.pl.map(x => `<label><input type="checkbox" name="eligible_plan_ids" value="${x.id}" ${plSel.has(x.id) ? 'checked' : ''}>${esc(x.name)}</label>`).join('')}`
-          : '<span>会員プランがまだありません（「入会手続き」タブで作れます）</span>';
-        const lim = s?.booking_scope === 'limited';
-        editForm.querySelector(`[name=booking_scope][value=${lim ? 'limited' : 'public'}]`).checked = true;
-        editForm.elements['allow_ticket'].checked = !!s?.allow_ticket;
-        editForm.elements['allow_membership'].checked = !!s?.allow_membership;
+        const sel = new Set(s?.ticket_ids || []);
+        document.getElementById('svc-ticket-list').innerHTML = ticketTypes.length
+          ? ticketTypes.filter(t => t.active || sel.has(t.id)).map(t => `<label><input type="checkbox" name="ticket_ids" value="${t.id}" ${sel.has(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('')
+          : '<span>チケットがまだありません（「チケット・回数券」タブで作れます）</span>';
+        editForm.elements['ticket_cost'].value = s?.ticket_cost || 1;
         editForm.elements['hide_when_locked'].checked = !!s?.hide_when_locked;
-        document.getElementById('svc-scope-limited').style.display = lim ? '' : 'none';
+        editForm.elements['hide_for_members'].checked = !!s?.hide_for_members;
+        syncTicketFields();
       }
-      editForm?.querySelectorAll('[name=booking_scope]').forEach(r => r.addEventListener('change', () => {
-        document.getElementById('svc-scope-limited').style.display = editForm.querySelector('[name=booking_scope]:checked')?.value === 'limited' ? '' : 'none';
-      }));
+      function syncTicketFields() {
+        const on = editForm.querySelectorAll('[name=ticket_ids]:checked').length > 0;
+        document.getElementById('svc-ticket-cost-wrap').style.display = on ? '' : 'none';
+        document.getElementById('svc-ticket-hide-wrap').style.display = on ? '' : 'none';
+      }
+      editForm?.addEventListener('change', e => { if (e.target?.name === 'ticket_ids') syncTicketFields(); });
       document.getElementById('btn-add-service')?.addEventListener('click', () => {
         editTitle.textContent = '個別メニューを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_service_id'].value = '';
@@ -2720,10 +2755,10 @@ export default function ProviderDashboardPage() {
         const benefitListRaw = fd.get('benefit_list_text') || '';
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
         const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null, is_trial: !!editForm.elements['is_trial']?.checked,
-          booking_scope: editForm.querySelector('[name=booking_scope]:checked')?.value || 'public',
-          allow_ticket: !!editForm.elements['allow_ticket']?.checked, allow_membership: !!editForm.elements['allow_membership']?.checked, hide_when_locked: !!editForm.elements['hide_when_locked']?.checked,
-          eligible_package_ids: [...editForm.querySelectorAll('[name=eligible_package_ids]:checked')].map(el => el.value),
-          eligible_plan_ids: [...editForm.querySelectorAll('[name=eligible_plan_ids]:checked')].map(el => el.value),
+          ticket_ids: [...editForm.querySelectorAll('[name=ticket_ids]:checked')].map(el => el.value),
+          ticket_cost: Number(editForm.elements['ticket_cost']?.value) || 1,
+          hide_when_locked: !!editForm.elements['hide_when_locked']?.checked,
+          hide_for_members: !!editForm.elements['hide_for_members']?.checked,
           axes: editForm.elements['is_trial']?.checked ? [...editForm.querySelectorAll('[name=axes]:checked')].map(el => el.value) : [],
           ...(document.getElementById('svc-assign-staff')?.style.display !== 'none' ? { staff_ids: [...editForm.querySelectorAll('[name=staff_ids]:checked')].map(el => el.value) } : {}),
           ...(document.getElementById('svc-assign-room')?.style.display !== 'none' ? { resource_ids: [...editForm.querySelectorAll('[name=resource_ids]:checked')].map(el => el.value) } : {}) };
@@ -6370,25 +6405,22 @@ export default function ProviderDashboardPage() {
       //    hacomono のプラン（基本設定・予約制限・契約制限・チケット自動付与）を参考に、1プランずつ開いて
       //    料金・予約できるメニューと月の回数・オプション・割引・付与する回数券・申込の受け方をまとめて決める。
       let planRows = [];
-      let planRefs = null; // { options, discounts, packages, services }
+      let planRefs = null; // { options, discounts, tickets }
       async function loadPlanRefs() {
         const get = u => fetch(u, { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
-        const [options, discounts, packages, services] = await Promise.all([get('/api/provider/membership-options'), get('/api/provider/membership-discounts'), get('/api/provider/packages'), get('/api/provider/services')]);
-        planRefs = { options, discounts, packages, services };
+        const [options, discounts, tickets] = await Promise.all([get('/api/provider/membership-options'), get('/api/provider/membership-discounts'), get('/api/provider/tickets')]);
+        planRefs = { options, discounts, tickets };
         return planRefs;
       }
       const nameOf = (list, id) => (list || []).find(x => x.id === id)?.name || '';
       function planSummary(p) {
         const R = planRefs || {};
-        const menus = (R.services || []).filter(s => s.booking_scope === 'limited' && s.allow_membership && (!(s.eligible_plan_ids || []).length || s.eligible_plan_ids.includes(p.id)));
-        const grants = (p.ticket_grants || []).map(g => `${nameOf(R.packages, g.package_id)} ${g.sessions}回（${g.timing === 'monthly' ? '毎月' : '入会時'}）`).filter(x => !x.startsWith(' '));
+        const grants = (p.ticket_grants || []).filter(g => nameOf(R.tickets, g.ticket_id)).map(g => `${nameOf(R.tickets, g.ticket_id)} ${g.unlimited ? '使い放題' : `${g.sessions}枚`}（${g.timing === 'monthly' ? '毎月' : '入会時'}）`);
         const parts = [
           `月会費 ${fmtYen(p.monthly_price)}`,
           p.initial_fee > 0 ? `入会金 ${fmtYen(p.initial_fee)}` : null,
-          p.monthly_booking_limit ? `予約 月${p.monthly_booking_limit}回まで` : '予約 回数の上限なし',
-          menus.length ? `会員専用メニュー ${menus.length}件` : null,
           (p.included_option_ids || []).length ? `必ず付くオプション ${(p.included_option_ids || []).map(id => nameOf(R.options, id)).filter(Boolean).join('・')}` : null,
-          grants.length ? `回数券 ${grants.join('・')}` : null,
+          grants.length ? `チケット ${grants.join('・')}` : 'チケットの付与なし',
           p.online_enabled === false ? '店頭でのみ申込' : null,
         ];
         return parts.filter(Boolean).join(' / ');
@@ -6430,17 +6462,15 @@ export default function ProviderDashboardPage() {
         if (!editorEl) return;
         const R = planRefs || await loadPlanRefs();
         const isNew = !p;
-        p = p || { name: '', monthly_price: '', description: '', initial_fee: 0, monthly_booking_limit: null, included_option_ids: [], selectable_option_ids: null, discount_ids: null, ticket_grants: [], online_enabled: true };
+        p = p || { name: '', monthly_price: '', description: '', initial_fee: 0, included_option_ids: [], selectable_option_ids: null, discount_ids: null, ticket_grants: [], online_enabled: true };
         const optState = o => (p.included_option_ids || []).includes(o.id) ? 'included' : (p.selectable_option_ids == null || p.selectable_option_ids.includes(o.id)) ? 'selectable' : 'none';
-        const limited = (R.services || []).filter(s => s.booking_scope === 'limited');
-        const publicCount = (R.services || []).filter(s => s.booking_scope !== 'limited').length;
-        const menuOn = s => !isNew && s.allow_membership && (!(s.eligible_plan_ids || []).length || s.eligible_plan_ids.includes(p.id));
-        const pkgOpts = sel => (R.packages || []).map(k => `<option value="${k.id}" ${k.id === sel ? 'selected' : ''}>${esc(k.name)}</option>`).join('');
+        const tkOpts = sel => (R.tickets || []).filter(t => t.active || t.id === sel).map(k => `<option value="${k.id}" ${k.id === sel ? 'selected' : ''}>${esc(k.name)}</option>`).join('');
         const grantRow = g => `<div class="pl-grant" data-pl-grant>
-            <select data-g="package_id">${pkgOpts(g.package_id)}</select>
-            <label>回数<input type="number" min="1" max="99" data-g="sessions" value="${g.sessions || 1}"></label>
+            <select data-g="ticket_id">${tkOpts(g.ticket_id)}</select>
+            <label>枚数<input type="number" min="1" max="99" data-g="sessions" value="${g.sessions || 1}" ${g.unlimited ? 'disabled' : ''}></label>
+            <label><input type="checkbox" data-g="unlimited" ${g.unlimited ? 'checked' : ''}>使い放題</label>
             <select data-g="timing"><option value="join" ${g.timing !== 'monthly' ? 'selected' : ''}>入会した時に</option><option value="monthly" ${g.timing === 'monthly' ? 'selected' : ''}>毎月1日に</option></select>
-            <label>有効<input type="number" min="1" max="730" data-g="valid_days" value="${g.valid_days || ''}" placeholder="回数券の設定">日</label>
+            <label>有効<input type="number" min="1" max="730" data-g="valid_days" value="${g.valid_days || ''}" placeholder="${g.timing === 'monthly' ? '31' : '30'}">日</label>
             <button type="button" class="btn btn-ghost" data-pl-grant-del>外す</button>
           </div>`;
         editorEl.innerHTML = `
@@ -6454,13 +6484,6 @@ export default function ProviderDashboardPage() {
             <label class="pl-wide">説明（入会ページに出ます）<input data-f="description" value="${esc(p.description || '')}" placeholder="任意"></label>
             <p class="pl-note">入会金は最初のお支払いに1回だけ足して請求します。初月の日割りは「入会手続きの設定」で決めます。</p>
           </section>
-          <section class="pl-sec"><h4>予約</h4>
-            <label class="pl-inline">このプランで予約できる回数　月<input data-f="monthly_booking_limit" type="number" min="1" max="999" value="${p.monthly_booking_limit || ''}" placeholder="無制限">回まで</label>
-            <p class="pl-note">空欄なら回数の上限はありません。上限に達した後は、回数券をお持ちの方は回数券で予約できます。</p>
-            <b class="pl-sub">このプランの方が予約できる会員専用メニュー</b>
-            ${limited.length ? `<div class="pl-checks">${limited.map(s => `<label><input type="checkbox" data-pl-menu value="${s.id}" ${menuOn(s) ? 'checked' : ''}>${esc(s.name)}</label>`).join('')}</div>` : '<p class="pl-note">会員・回数券の方だけが予約できるメニューはまだありません（メニュータブで「予約できる人」を決めます）。</p>'}
-            ${publicCount ? `<p class="pl-note">誰でも予約できるメニュー（${publicCount}件）は、会員の方ももちろん予約できます。</p>` : ''}
-          </section>
           <section class="pl-sec"><h4>オプション</h4>
             ${(R.options || []).length ? `<div class="pl-opts">${R.options.map(o => `<div class="pl-opt"><span>${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</span><select data-pl-opt="${o.id}">
                 <option value="none" ${optState(o) === 'none' ? 'selected' : ''}>このプランでは付けない</option>
@@ -6471,10 +6494,10 @@ export default function ProviderDashboardPage() {
           <section class="pl-sec"><h4>割引・クーポン</h4>
             ${(R.discounts || []).length ? `<div class="pl-checks">${R.discounts.map(d => `<label><input type="checkbox" data-pl-disc value="${d.id}" ${p.discount_ids == null || p.discount_ids.includes(d.id) ? 'checked' : ''}>${esc(d.name)}${d.code ? `（コード ${esc(d.code)}）` : ''}</label>`).join('')}</div><p class="pl-note">チェックした割引だけ、このプランで使えます。</p>` : '<p class="pl-note">割引・クーポンはまだありません（下の「割引・クーポン」で登録します）。</p>'}
           </section>
-          <section class="pl-sec"><h4>付与する回数券</h4>
-            <p class="pl-note">入会した時や毎月1日に、このプランの方へ回数券を自動で配ります（例：月4回のレッスン券）。</p>
-            <div data-pl-grants>${(p.ticket_grants || []).map(grantRow).join('')}</div>
-            ${(R.packages || []).length ? '<button type="button" class="btn btn-ghost" data-pl-grant-add>＋ 回数券を配る</button>' : '<p class="pl-note">回数券の種類がまだありません（「回数券」タブで作れます）。</p>'}
+          <section class="pl-sec"><h4>付けるチケット</h4>
+            <p class="pl-note">入会した時や毎月1日に、このプランの方へチケットを自動で付けます（例：ストレッチチケットを毎月4枚）。予約はこのチケットを使って行うので、何回予約できるかは付ける枚数で決まります。使い放題にもできます。</p>
+            <div data-pl-grants>${(p.ticket_grants || []).filter(g => g.ticket_id).map(grantRow).join('')}</div>
+            ${(R.tickets || []).length ? '<button type="button" class="btn btn-ghost" data-pl-grant-add>＋ チケットを付ける</button>' : '<p class="pl-note">チケットがまだありません（「チケット・回数券」タブで作れます）。</p>'}
           </section>
           <section class="pl-sec"><h4>申込の受け方</h4>
             <label class="pl-inline"><input type="checkbox" data-f="online_enabled" ${p.online_enabled !== false ? 'checked' : ''}>入会ページからお客様が申し込めるようにする（外すと入会ページに出ません）</label>
@@ -6484,7 +6507,10 @@ export default function ProviderDashboardPage() {
         editorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const q = sel => editorEl.querySelector(sel);
         q('[data-pl-close]').addEventListener('click', () => { editorEl.style.display = 'none'; editorEl.innerHTML = ''; });
-        const bindGrantDel = () => editorEl.querySelectorAll('[data-pl-grant-del]').forEach(b => { b.onclick = () => b.closest('[data-pl-grant]').remove(); });
+        const bindGrantDel = () => {
+          editorEl.querySelectorAll('[data-pl-grant-del]').forEach(b => { b.onclick = () => b.closest('[data-pl-grant]').remove(); });
+          editorEl.querySelectorAll('[data-g="unlimited"]').forEach(c => { c.onchange = () => { c.closest('[data-pl-grant]').querySelector('[data-g="sessions"]').disabled = c.checked; }; });
+        };
         bindGrantDel();
         q('[data-pl-grant-add]')?.addEventListener('click', () => { q('[data-pl-grants]').insertAdjacentHTML('beforeend', grantRow({ sessions: 1, timing: 'monthly' })); bindGrantDel(); });
         q('[data-pl-save]').addEventListener('click', async () => {
@@ -6494,13 +6520,12 @@ export default function ProviderDashboardPage() {
           const opt = [...editorEl.querySelectorAll('[data-pl-opt]')];
           const body = {
             name, monthly_price: price, description: f('description').value.trim(),
-            initial_fee: f('initial_fee').value, monthly_booking_limit: f('monthly_booking_limit').value,
+            initial_fee: f('initial_fee').value,
             online_enabled: f('online_enabled').checked,
             included_option_ids: opt.filter(x => x.value === 'included').map(x => x.dataset.plOpt),
             selectable_option_ids: opt.filter(x => x.value === 'selectable').map(x => x.dataset.plOpt),
             discount_ids: [...editorEl.querySelectorAll('[data-pl-disc]')].filter(x => x.checked).map(x => x.value),
-            ticket_grants: [...editorEl.querySelectorAll('[data-pl-grant]')].map(r => ({ package_id: r.querySelector('[data-g="package_id"]').value, sessions: r.querySelector('[data-g="sessions"]').value, timing: r.querySelector('[data-g="timing"]').value, valid_days: r.querySelector('[data-g="valid_days"]').value })),
-            menu_ids: [...editorEl.querySelectorAll('[data-pl-menu]')].filter(x => x.checked).map(x => x.value),
+            ticket_grants: [...editorEl.querySelectorAll('[data-pl-grant]')].map(r => ({ ticket_id: r.querySelector('[data-g="ticket_id"]').value, sessions: r.querySelector('[data-g="sessions"]').value, unlimited: r.querySelector('[data-g="unlimited"]').checked, timing: r.querySelector('[data-g="timing"]').value, valid_days: r.querySelector('[data-g="valid_days"]').value })),
           };
           if (!(R.discounts || []).length) delete body.discount_ids;
           const btn = q('[data-pl-save]'); btn.disabled = true;
@@ -6508,8 +6533,7 @@ export default function ProviderDashboardPage() {
           btn.disabled = false;
           const d = await res.json().catch(() => ({}));
           if (!res.ok) { q('[data-pl-msg]').textContent = d.error || '保存できませんでした'; return; }
-          if (d.menu_skipped?.length) showToast(`「${d.menu_skipped.join('」「')}」は他に予約できる人がいなくなるため、外していません（メニュー側で変更してください）`);
-          else showToast(isNew ? 'プランを作りました' : '保存しました');
+          showToast(isNew ? 'プランを作りました' : '保存しました');
           editorEl.style.display = 'none'; editorEl.innerHTML = '';
           loadPlans();
         });
@@ -9309,6 +9333,120 @@ export default function ProviderDashboardPage() {
       window.openCustomerModal = openCustomerModal;
     })();
 
+    // ── 会員タブ（でお要望 2026-10-22：お店の会員を管理サイトから登録・チケットを付ける・プランの入会を案内） ──
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const listEl = document.getElementById('sm-list');
+      const detailEl = document.getElementById('sm-detail');
+      const formEl = document.getElementById('sm-form');
+      const STATUS = { active: '', invited: '確認待ち', withdrawn: '退会' };
+      let rows = [];
+      let refs = null;
+      async function loadRefs() {
+        if (refs) return refs;
+        const get = u => fetch(u, { headers: H() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        const [tickets, plans] = await Promise.all([get('/api/provider/tickets'), get('/api/provider/membership-plans')]);
+        refs = { tickets: (tickets || []).filter(t => t.active), plans: (Array.isArray(plans) ? plans : []).filter(p => p.active) };
+        return refs;
+      }
+      async function loadMembers() {
+        if (!listEl) return;
+        const q = document.getElementById('sm-search')?.value.trim() || '';
+        const res = await fetch(`/api/provider/store-members${q ? `?q=${encodeURIComponent(q)}` : ''}`, { headers: H() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        rows = await res.json();
+        listEl.innerHTML = rows.length ? rows.map(m => `
+          <button type="button" class="sm-row" data-sm-open="${m.user_id}">
+            <span><span class="sm-name">${esc(m.name)}</span>${STATUS[m.status] ? `<span class="sm-chip">${STATUS[m.status]}</span>` : ''}${m.registered_by === 'store' ? '<span class="sm-chip">お店で登録</span>' : ''}</span>
+            <span class="sm-meta">${[m.plan, m.phone, m.joined_at ? `${m.joined_at.slice(0, 10)} 登録` : ''].filter(Boolean).map(esc).join(' / ')}</span>
+          </button>`).join('') : `<p style="font-size:13px;margin:0;color:#1a1410">${q ? '見つかりませんでした。' : 'まだ会員がいません。「＋ 会員を登録」か、お客様がお店のページから会員登録すると、ここに並びます。'}</p>`;
+        listEl.querySelectorAll('[data-sm-open]').forEach(b => b.addEventListener('click', () => openMember(b.dataset.smOpen)));
+      }
+      let searchTimer = null;
+      document.getElementById('sm-search')?.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadMembers, 300); });
+      document.getElementById('sm-add-btn')?.addEventListener('click', () => { formEl.style.display = 'grid'; formEl.querySelectorAll('[data-sm]').forEach(i => { i.value = ''; }); document.getElementById('sm-msg').textContent = ''; });
+      document.getElementById('sm-form-close')?.addEventListener('click', () => { formEl.style.display = 'none'; });
+      document.getElementById('sm-noemail')?.addEventListener('change', e => { const em = formEl.querySelector('[data-sm="email"]'); em.disabled = e.target.checked; if (e.target.checked) em.value = ''; });
+      document.getElementById('sm-save')?.addEventListener('click', async () => {
+        const body = Object.fromEntries([...formEl.querySelectorAll('[data-sm]')].map(i => [i.dataset.sm, i.value.trim()]));
+        body.no_email = !!document.getElementById('sm-noemail')?.checked;
+        const btn = document.getElementById('sm-save'); btn.disabled = true;
+        const res = await fetch('/api/provider/store-members', { method: 'POST', headers: H(), body: JSON.stringify(body) });
+        btn.disabled = false;
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { document.getElementById('sm-msg').textContent = d.error || '登録できませんでした'; return; }
+        formEl.style.display = 'none';
+        showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で登録しました。お店のページで会員登録を確認してもらってください' : '会員を登録しました');
+        await loadMembers();
+        openMember(d.user_id);
+      });
+
+      async function openMember(userId) {
+        if (!detailEl) return;
+        detailEl.style.display = 'grid';
+        detailEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const [res, R] = await Promise.all([fetch(`/api/provider/store-members?user_id=${encodeURIComponent(userId)}`, { headers: H() }), loadRefs()]);
+        const m = await res.json().catch(() => null);
+        if (!res.ok || !m) { detailEl.innerHTML = '<p>会員が見つかりません。</p>'; return; }
+        const slug = loadProviderData()?.slug || '';
+        const joinBase = `${location.origin}/provider/${encodeURIComponent(slug)}/join`;
+        detailEl.innerHTML = `
+          <div class="tk-ed-head"><h3 style="margin:0;font-size:16px">${esc(m.name)}${STATUS[m.status] ? `<span class="sm-chip">${STATUS[m.status]}</span>` : ''}</h3><button type="button" class="btn btn-ghost" data-sm-close>閉じる</button></div>
+          <p style="margin:0;font-size:13px;color:#1a1410">${[m.kana, m.phone, m.email && !m.email.endsWith('.invalid') ? m.email : '', m.plan ? `プラン：${m.plan}` : 'プラン契約なし'].filter(Boolean).map(esc).join(' / ')}</p>
+          ${m.status === 'invited' ? '<p style="margin:0;font-size:12.5px;color:#1a1410">すでにFinemeを使っている方です。ご本人がお店のページで「会員登録」を押すと有効になります（チケットはそれまでも付けられます）。</p>' : ''}
+          <div class="sm-sec"><h4>持っているチケット</h4>
+            ${m.tickets.length ? m.tickets.map(t => `<div class="sm-tk"><span>${esc(t.name)}</span><span>${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}</span></div>`).join('') : '<p style="font-size:13px;margin:0">使えるチケットはありません。</p>'}
+          </div>
+          <div class="sm-sec"><h4>チケットを付ける</h4>
+            ${R.tickets.length ? `<div class="sm-inline">
+              <select data-g="ticket">${R.tickets.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
+              <input type="number" min="1" max="200" value="1" data-g="count">枚
+              <label><input type="checkbox" data-g="unlimited">使い放題</label>
+              有効<input type="number" min="1" max="730" placeholder="無期限" data-g="days">日
+              <input data-g="note" placeholder="メモ（例：店頭で10回券を購入）" maxlength="30" style="flex:1;min-width:160px">
+              <button type="button" class="btn" data-g="go">付ける</button>
+            </div><p style="font-size:12px;margin:0">店頭で回数券を現金で買った時や、おわびなどで付ける時に使います。</p>` : '<p style="font-size:13px;margin:0">チケットがまだありません（「チケット・回数券」タブで作れます）。</p>'}
+          </div>
+          <div class="sm-sec"><h4>月額プランの入会を案内する</h4>
+            ${R.plans.length ? `<div class="sm-inline"><select data-p="plan">${R.plans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" data-p="copy">入会のリンクをコピー</button></div>
+              <div class="sm-url" data-p="url"></div>
+              <p style="font-size:12px;margin:0">月会費はカードの自動引き落としです。このリンクをLINEやメールでお送りください。お客様が会員登録したメールアドレスでFinemeにログインし、カードを登録すると申込が届きます（入会手続きタブで承認すると課金が始まり、プランのチケットが付きます）。店頭だけのプランもこのリンクからは申し込めます。</p>` : '<p style="font-size:13px;margin:0">会員プランがまだありません（入会手続きタブで作れます）。</p>'}
+          </div>
+          <div class="sm-sec"><div class="sm-inline">${m.status === 'withdrawn' ? '<button type="button" class="btn btn-ghost" data-sm-status="active">会員に戻す</button>' : '<button type="button" class="btn btn-ghost" data-sm-status="withdrawn" style="color:#b91c1c">退会にする</button>'}</div></div>`;
+        detailEl.querySelector('[data-sm-close]').onclick = () => { detailEl.style.display = 'none'; };
+        const g = k => detailEl.querySelector(`[data-g="${k}"]`);
+        if (g('unlimited')) g('unlimited').onchange = () => { g('count').disabled = g('unlimited').checked; };
+        if (g('go')) g('go').onclick = async () => {
+          g('go').disabled = true;
+          const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: H(), body: JSON.stringify({ user_id: userId, ticket_id: g('ticket').value, count: g('count').value, unlimited: g('unlimited').checked, valid_days: g('days').value, note: g('note').value }) });
+          const d = await r.json().catch(() => ({}));
+          g('go').disabled = false;
+          if (!r.ok) { showToast(d.error || '付けられませんでした'); return; }
+          showToast('チケットを付けました');
+          openMember(userId);
+        };
+        const pSel = detailEl.querySelector('[data-p="plan"]'); const pUrl = detailEl.querySelector('[data-p="url"]');
+        const syncUrl = () => { if (pSel && pUrl) pUrl.textContent = `${joinBase}?plan=${pSel.value}`; };
+        syncUrl(); pSel?.addEventListener('change', syncUrl);
+        detailEl.querySelector('[data-p="copy"]')?.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(pUrl.textContent); showToast('入会のリンクをコピーしました'); } catch { showToast('コピーできませんでした。リンクを長押しして選んでください'); }
+        });
+        detailEl.querySelectorAll('[data-sm-status]').forEach(b => b.addEventListener('click', async () => {
+          if (b.dataset.smStatus === 'withdrawn' && !confirm('この方を退会にしますか？（持っているチケット・契約中のプランはそのままです）')) return;
+          const memberRow = rows.find(x => x.user_id === userId) || m;
+          const r = await fetch(`/api/provider/store-members/${memberRow.id}`, { method: 'PATCH', headers: H(), body: JSON.stringify({ status: b.dataset.smStatus }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '変更できませんでした'); return; }
+          showToast('変更しました'); loadMembers(); openMember(userId);
+        }));
+        detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      document.querySelectorAll('[data-tab="store-members"]').forEach(b => b.addEventListener('click', () => { refs = null; loadMembers(); }));
+      if (new URLSearchParams(location.search).get('tab') === 'store-members') loadMembers();
+    })();
+
     // ── 回数券・パッケージタブ ────────────────────────────────────
     (() => {
       const token = getSupabaseToken();
@@ -9318,6 +9456,75 @@ export default function ProviderDashboardPage() {
       const userSel = document.getElementById('pkg-assign-user');
       const pkgSel = document.getElementById('pkg-assign-package');
       let defs = [];
+
+      // ── チケット（でお要望 2026-10-22） ──
+      let ticketRows = [];
+      let menuRows = null;
+      const tkListEl = document.getElementById('tk-list');
+      const tkEditorEl = document.getElementById('tk-editor');
+      const H = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      async function loadTickets() {
+        const res = await fetch('/api/provider/tickets', { headers: H() });
+        if (!res.ok) { if (tkListEl) tkListEl.innerHTML = authErrorHtml(res); return; }
+        ticketRows = await res.json();
+        const sel = document.getElementById('pkg-ticket');
+        if (sel) { const cur = sel.value; sel.innerHTML = '<option value="">新しく同じ名前で作る</option>' + ticketRows.filter(t => t.active).map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join(''); sel.value = cur; }
+        renderDefs();
+        if (!tkListEl) return;
+        tkListEl.innerHTML = ticketRows.length ? ticketRows.map(t => `
+          <div class="tk-row${t.active ? '' : ' is-off'}">
+            <div class="tk-main">
+              <strong>${esc(t.name)}</strong>${t.active ? '' : '<span class="tk-chip">使わない</span>'}
+              <div class="tk-sub">使えるメニュー：${t.menus.length ? t.menus.map(m => `${esc(m.name)}（${m.cost}枚）`).join('・') : '<b>まだ決まっていません</b>'}</div>
+              <div class="tk-sub">付く場面：${[...t.packages.map(p => `回数券「${esc(p.name)}」`), ...t.plans.map(p => `プラン「${esc(p.name)}」`)].join('・') || 'お店から直接付ける時だけ'}</div>
+            </div>
+            <div class="tk-actions">
+              <button type="button" class="btn" data-tk-edit="${t.id}">編集</button>
+              <button type="button" class="btn btn-ghost" data-tk-toggle="${t.id}" data-active="${t.active}">${t.active ? '使わない' : '使う'}</button>
+              <button type="button" class="btn btn-ghost tk-del" data-tk-del="${t.id}">削除</button>
+            </div>
+          </div>`).join('') : '<p style="font-size:13px;margin:0;color:#1a1410">まだチケットがありません。「＋ チケットを作る」から作ってください。</p>';
+        tkListEl.querySelectorAll('[data-tk-edit]').forEach(b => b.addEventListener('click', () => openTicketEditor(ticketRows.find(x => x.id === b.dataset.tkEdit))));
+        tkListEl.querySelectorAll('[data-tk-toggle]').forEach(b => b.addEventListener('click', async () => {
+          const r = await fetch(`/api/provider/tickets/${b.dataset.tkToggle}`, { method: 'PATCH', headers: H(), body: JSON.stringify({ active: b.dataset.active !== 'true' }) });
+          if (r.ok) loadTickets(); else showToast('変更できませんでした');
+        }));
+        tkListEl.querySelectorAll('[data-tk-del]').forEach(b => b.addEventListener('click', async () => {
+          if (!confirm('このチケットを削除しますか？（使えるメニューの設定からも外れます）')) return;
+          const r = await fetch(`/api/provider/tickets/${b.dataset.tkDel}`, { method: 'DELETE', headers: H() });
+          const d = await r.json().catch(() => ({}));
+          if (r.ok) loadTickets(); else showToast(d.error || '削除できませんでした');
+        }));
+      }
+      async function openTicketEditor(t) {
+        if (!tkEditorEl) return;
+        if (!menuRows) { const r = await fetch('/api/provider/services', { headers: H() }); menuRows = r.ok ? await r.json() : []; }
+        const on = new Map((t?.menus || []).map(m => [m.id, m.cost]));
+        tkEditorEl.innerHTML = `
+          <div class="tk-ed-head"><b>${t ? `「${esc(t.name)}」を編集` : 'チケットを作る'}</b><button type="button" class="btn btn-ghost" data-tk-close>閉じる</button></div>
+          <label class="tk-field">チケットの名前<input data-tk-name value="${esc(t?.name || '')}" placeholder="例：ストレッチチケット" maxlength="60"></label>
+          <label class="tk-field">説明（任意）<input data-tk-desc value="${esc(t?.description || '')}" maxlength="200"></label>
+          <b class="tk-sub2">このチケットで予約できるメニューと、1回の予約で使う枚数</b>
+          ${menuRows.length ? `<div class="tk-menus">${menuRows.map(m => `<label class="tk-menu"><input type="checkbox" data-tk-menu value="${m.id}" ${on.has(m.id) ? 'checked' : ''}><span>${esc(m.name)}${m.duration_minutes ? `（${m.duration_minutes}分）` : ''}</span><input type="number" min="1" max="20" data-tk-cost="${m.id}" value="${on.get(m.id) || m.ticket_cost || 1}">枚</label>`).join('')}</div>` : '<p style="font-size:12.5px;margin:0">メニューがまだありません（メニュータブで作れます）。</p>'}
+          <p style="font-size:12px;margin:0">チェックしたメニューは、このチケットを持っている方だけが予約できるようになります。</p>
+          <div class="tk-ed-actions"><button type="button" class="btn" data-tk-save>${t ? '保存する' : '作る'}</button><span data-tk-msg></span></div>`;
+        tkEditorEl.style.display = 'grid';
+        tkEditorEl.querySelector('[data-tk-close]').onclick = () => { tkEditorEl.style.display = 'none'; tkEditorEl.innerHTML = ''; };
+        tkEditorEl.querySelector('[data-tk-save]').onclick = async () => {
+          const name = tkEditorEl.querySelector('[data-tk-name]').value.trim();
+          if (!name) { showToast('チケットの名前を入れてください'); return; }
+          const menu_ids = [...tkEditorEl.querySelectorAll('[data-tk-menu]:checked')].map(x => x.value);
+          const costs = Object.fromEntries(menu_ids.map(id => [id, tkEditorEl.querySelector(`[data-tk-cost="${id}"]`).value]));
+          const r = await fetch(t ? `/api/provider/tickets/${t.id}` : '/api/provider/tickets', { method: t ? 'PATCH' : 'POST', headers: H(), body: JSON.stringify({ name, description: tkEditorEl.querySelector('[data-tk-desc]').value, menu_ids, costs }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { tkEditorEl.querySelector('[data-tk-msg]').textContent = d.error || '保存できませんでした'; return; }
+          showToast(t ? '保存しました' : 'チケットを作りました');
+          tkEditorEl.style.display = 'none'; tkEditorEl.innerHTML = ''; menuRows = null;
+          loadTickets();
+        };
+        tkEditorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      document.getElementById('tk-add-btn')?.addEventListener('click', () => openTicketEditor(null));
 
       async function loadDefs() {
         const res = await fetch('/api/provider/packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
@@ -9329,12 +9536,13 @@ export default function ProviderDashboardPage() {
 
       function renderDefs() {
         if (!defListEl) return;
-        if (!defs.length) { defListEl.innerHTML = '<p class="muted" style="font-size:13px">まだパッケージがありません。上のフォームから作成してください。</p>'; return; }
+        if (!defs.length) { defListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ回数券がありません。上のフォームから作成してください。</p>'; return; }
         defListEl.innerHTML = defs.map(d => {
-          const typeLabel = d.package_type === 'unlimited' ? '通い放題'
-            : d.package_type === 'combo' ? `通い放題＋チケット${d.combo_ticket_sessions ? d.combo_ticket_sessions + '回' : ''}`
-            : d.package_type === 'subscription' ? `月額会員（初回${d.total_sessions}回＋毎月${d.recurring_sessions}回自動付与）`
-            : `${d.total_sessions}回`;
+          const tkName = (ticketRows.find(t => t.id === d.ticket_id) || {}).name;
+          const typeLabel = `${tkName ? `「${tkName}」` : 'チケット'}${d.package_type === 'unlimited' ? 'が期間中使い放題'
+            : d.package_type === 'combo' ? `（通い放題＋${d.combo_ticket_sessions || ''}枚）`
+            : d.package_type === 'subscription' ? `（初回${d.total_sessions}枚＋毎月${d.recurring_sessions}枚）`
+            : ` ${d.total_sessions}枚`}`;
           return `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
             <div style="flex:1;min-width:0">
@@ -9456,20 +9664,9 @@ export default function ProviderDashboardPage() {
 
       const typeSel = document.getElementById('pkg-type');
       const sessionsField = document.getElementById('pkg-sessions-field');
-      const sessionsLabel = document.getElementById('pkg-sessions-label');
-      const comboSessionsField = document.getElementById('pkg-combo-sessions-field');
-      const recurringSessionsField = document.getElementById('pkg-recurring-sessions-field');
+      // 回数券＝チケットが付く商品（2026-10-22）。「期間中は使い放題」は枚数を聞かない
       function syncTypeFields() {
-        const t = typeSel?.value || 'fixed_count';
-        // comboは「回数」ではなく「付帯チケット回数」だけが実際に発行されるチケット数
-        // （でお指摘2026-09-16。両方出すと「回数と付帯チケット回数の違いは？」となり、
-        // かつ従来は「回数」の値がそのまま使われ「付帯チケット回数」は無視される
-        // バグがあった。comboでは「回数」欄自体を隠し、付帯チケット回数のみ入力させる）。
-        if (sessionsField) sessionsField.style.display = (t === 'unlimited' || t === 'combo') ? 'none' : '';
-        if (sessionsLabel) sessionsLabel.textContent = t === 'subscription' ? '初回付与回数' : '回数';
-        if (comboSessionsField) comboSessionsField.style.display = t === 'combo' ? '' : 'none';
-        // 月額会員（でお要望2026-09-14：「月額契約で毎月チケットが自動付与される」仕組み）
-        if (recurringSessionsField) recurringSessionsField.style.display = t === 'subscription' ? '' : 'none';
+        if (sessionsField) sessionsField.style.display = typeSel?.value === 'unlimited' ? 'none' : '';
       }
       if (typeSel) { typeSel.addEventListener('change', syncTypeFields); syncTypeFields(); }
 
@@ -9494,16 +9691,12 @@ export default function ProviderDashboardPage() {
           const name = document.getElementById('pkg-name')?.value.trim();
           const package_type = typeSel?.value || 'fixed_count';
           const sessions = document.getElementById('pkg-sessions')?.value;
-          const comboSessions = document.getElementById('pkg-combo-sessions')?.value;
-          const recurringSessions = document.getElementById('pkg-recurring-sessions')?.value;
           const price = document.getElementById('pkg-price')?.value;
           const validityMode = validityModeSel?.value || 'none';
           const validity = validityMode === 'days' ? document.getElementById('pkg-validity')?.value : null;
           const expiresOn = validityMode === 'date' ? document.getElementById('pkg-expires-on')?.value : null;
-          if (!name) { showToast('パッケージ名を入力してください'); return; }
-          if ((package_type === 'fixed_count' || package_type === 'subscription') && !sessions) { showToast('回数を入力してください'); return; }
-          if (package_type === 'combo' && !comboSessions) { showToast('付帯チケット回数を入力してください'); return; }
-          if (package_type === 'subscription' && !recurringSessions) { showToast('毎月の付与回数を入力してください'); return; }
+          if (!name) { showToast('回数券の名前を入力してください'); return; }
+          if (package_type === 'fixed_count' && !sessions) { showToast('枚数を入力してください'); return; }
           if (validityMode === 'date' && !expiresOn) { showToast('有効期限の日付を選んでください'); return; }
           createBtn.disabled = true;
           const res = await fetch('/api/provider/packages', {
@@ -9511,8 +9704,7 @@ export default function ProviderDashboardPage() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({
               name, package_type, total_sessions: sessions || null,
-              combo_ticket_sessions: package_type === 'combo' ? comboSessions : null,
-              recurring_sessions: package_type === 'subscription' ? recurringSessions : null,
+              ticket_id: document.getElementById('pkg-ticket')?.value || null,
               price: price || null, validity_days: validity || null, expires_on: expiresOn || null,
             }),
           });
@@ -9520,16 +9712,14 @@ export default function ProviderDashboardPage() {
           if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
           document.getElementById('pkg-name').value = '';
           document.getElementById('pkg-sessions').value = '';
-          document.getElementById('pkg-combo-sessions').value = '';
-          document.getElementById('pkg-recurring-sessions').value = '';
           document.getElementById('pkg-price').value = '';
           document.getElementById('pkg-validity').value = '';
           document.getElementById('pkg-expires-on').value = '';
           if (validityModeSel) validityModeSel.value = 'none';
           if (validityDaysFieldEl) validityDaysFieldEl.style.display = 'none';
           if (validityDateFieldEl) validityDateFieldEl.style.display = 'none';
-          showToast('パッケージを作成しました');
-          loadDefs();
+          showToast('回数券を作成しました');
+          loadDefs(); loadTickets();
         });
       }
 
@@ -9554,7 +9744,7 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadAll() {
-        await Promise.all([loadDefs(), loadUsersForSelect(), loadCustomerPackages()]);
+        await Promise.all([loadTickets(), loadDefs(), loadUsersForSelect(), loadCustomerPackages()]);
       }
       document.querySelectorAll('[data-tab="packages"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'packages') loadAll();
@@ -13028,7 +13218,41 @@ export default function ProviderDashboardPage() {
         if (manualMemberSelectedEl) manualMemberSelectedEl.style.display = userId ? 'flex' : 'none';
         if (manualMemberSearchWrap) manualMemberSearchWrap.style.display = userId ? 'none' : '';
         if (manualMemberSelectedNameEl) manualMemberSelectedNameEl.textContent = name || '';
+        if (userId && manualNameEl && !manualNameEl.value.trim()) manualNameEl.value = name || '';
+        refreshManualTickets();
       }
+      // メニューとチケット（でお要望 2026-10-22）
+      const manualServiceEl = document.getElementById('cal-manual-service');
+      const manualTicketField = document.getElementById('cal-manual-ticket-field');
+      const manualTicketEl = document.getElementById('cal-manual-ticket');
+      const manualTicketNote = document.getElementById('cal-manual-ticket-note');
+      let manualServices = null;
+      async function loadManualServices() {
+        if (manualServices) return manualServices;
+        const r = await fetch('/api/provider/services', { headers: authHeadersCal() }).catch(() => null);
+        manualServices = r?.ok ? await r.json() : [];
+        if (manualServiceEl) manualServiceEl.innerHTML = '<option value="">選ばない</option>' + manualServices.map(x => `<option value="${x.id}">${esc(x.name)}${(x.ticket_ids || []).length ? `（チケット${x.ticket_cost || 1}枚）` : ''}</option>`).join('');
+        return manualServices;
+      }
+      let manualTicketSeq = 0;
+      async function refreshManualTickets() {
+        const seq = ++manualTicketSeq;
+        const svc = (manualServices || []).find(x => x.id === manualServiceEl?.value);
+        const need = !!svc && (svc.ticket_ids || []).length > 0;
+        if (manualTicketField) manualTicketField.style.display = need ? '' : 'none';
+        if (!need) return;
+        const cost = svc.ticket_cost || 1;
+        if (!manualCtx?.userId) { manualTicketEl.innerHTML = ''; manualTicketNote.textContent = `このメニューはチケットが${cost}枚必要です。上で会員を選んでください`; return; }
+        manualTicketNote.textContent = '読み込み中…';
+        const r = await fetch(`/api/provider/store-members?user_id=${encodeURIComponent(manualCtx.userId)}`, { headers: authHeadersCal() }).catch(() => null);
+        if (seq !== manualTicketSeq) return;
+        const d = r?.ok ? await r.json() : null;
+        const usable = (d?.tickets || []).filter(t => svc.ticket_ids.includes(t.ticket_id) && (t.unlimited || t.remaining >= cost));
+        manualTicketEl.innerHTML = usable.map(t => `<option value="${t.id}">${esc(t.name)}（${t.unlimited ? '使い放題' : `残り${t.remaining}枚`}${t.expires_at ? `・${t.expires_at.slice(0, 10)}まで` : ''}）</option>`).join('');
+        manualTicketNote.textContent = !d ? 'この方はお店の会員ではありません（会員の画面で登録すると、チケットを付けられます）'
+          : usable.length ? `1回で${cost}枚使います（来店を記録した時に使ったことになります）` : 'このメニューに使えるチケットをお持ちではありません（会員の画面で付けられます）';
+      }
+      manualServiceEl?.addEventListener('change', refreshManualTickets);
       bindMemberSearch(
         document.getElementById('cal-manual-member-search'),
         document.getElementById('cal-manual-member-results'),
@@ -13052,6 +13276,7 @@ export default function ProviderDashboardPage() {
         }
         if (manualMsgEl) manualMsgEl.textContent = '';
         setManualSelectedMember(null, '');
+        loadManualServices().then(() => { if (manualServiceEl) manualServiceEl.value = ''; refreshManualTickets(); });
         // 合体ビューではスタッフ列・部屋列どちらをタップしたかでcolGroupKeyが変わるため、
         // タップした列自身のgroupKeyでどちらのプルダウンを事前選択するか決める。
         if (manualStaffEl) {
@@ -13202,6 +13427,8 @@ export default function ProviderDashboardPage() {
           resource_id: resourceFeatureOn ? (manualResourceEl?.value || null) : null,
           note: manualNoteEl?.value.trim() || '',
           user_id: manualCtx.userId || null,
+          service_id: manualServiceEl?.value || null,
+          package_id: manualTicketField?.style.display !== 'none' ? (manualTicketEl?.value || null) : null,
         };
         const res = await fetch('/api/provider/reservations/manual', {
           method: 'POST',
@@ -15028,6 +15255,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
+                  <button className="tab-btn" data-tab="store-members">会員</button>
                   <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
                   <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
                   <button className="tab-btn" data-tab="surveys">アンケート</button>
@@ -15039,7 +15267,7 @@ export default function ProviderDashboardPage() {
                       （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。
                       ロッカーも同じ理由（顧客ごとの契約管理台帳）で顧客管理に置く
                       （でお指摘2026-09-14）。 */}
-                  <button className="tab-btn" data-tab="packages" data-feature="customer_packages">回数券<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="packages" data-feature="customer_packages">チケット・回数券<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="memberships" data-feature="membership_enrollment">入会手続き<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
@@ -15397,15 +15625,25 @@ export default function ProviderDashboardPage() {
                   来店履歴が引き継がれる（でお要望2026-09-14：「Finemeの会員情報と後からでも
                   その時でも紐づけられるように」）。任意項目のため未紐付けのままでも作成できる。 */}
               <div className="form-field">
-                <label>Fineme会員と紐付ける（任意）</label>
+                <label>会員と紐付ける（チケットを使う予約は必須）</label>
                 <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
                   <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
                   <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
                 </div>
                 <div id="cal-manual-member-search-wrap">
-                  <input type="text" id="cal-manual-member-search" placeholder="お名前または電話番号で検索（3文字以上）" />
+                  <input type="text" id="cal-manual-member-search" placeholder="お店の会員はお名前・電話番号で検索（Finemeの会員全体は3文字以上）" />
                   <div id="cal-manual-member-results" style={{ marginTop: '4px' }}></div>
                 </div>
+              </div>
+              {/* メニューと使うチケット（でお要望 2026-10-22：チケットが要るメニューは、会員が持っているチケットで予約する） */}
+              <div className="form-field">
+                <label>メニュー（任意）</label>
+                <select id="cal-manual-service"><option value="">選ばない</option></select>
+              </div>
+              <div className="form-field" id="cal-manual-ticket-field" style={{ display: 'none' }}>
+                <label>使うチケット</label>
+                <select id="cal-manual-ticket"></select>
+                <p id="cal-manual-ticket-note" style={{ fontSize: '12px', margin: '4px 0 0', color: '#1a1410' }}></p>
               </div>
             </div>
 
@@ -16389,19 +16627,14 @@ export default function ProviderDashboardPage() {
                   {PROVIDER_AXES.map(a => (<label key={a.key}><input type="checkbox" name="axes" value={a.key} />{a.label}</label>))}
                 </div>
               </div>
-              {/* 予約できる人（でお要望 2026-10-20：誰でも予約できるメニューと、回数券・会員の方専用のメニューを分ける） */}
+              {/* 予約に使うチケット（でお要望 2026-10-22：チケットを消費して予約する。チケットを選ばなければ誰でも予約できる） */}
               <div className="svc-scope">
-                <b>予約できる人</b>
-                <label><input type="radio" name="booking_scope" value="public" defaultChecked />誰でも予約できる</label>
-                <label><input type="radio" name="booking_scope" value="limited" />回数券・会員プランの方だけ予約できる</label>
-                <div id="svc-scope-limited" className="svc-scope-sub" style={{ display: 'none' }}>
-                  <label><input type="checkbox" name="allow_ticket" />回数券をお持ちの方</label>
-                  <div id="svc-scope-pk" className="svc-scope-list"></div>
-                  <label><input type="checkbox" name="allow_membership" />会員プランに入会中の方</label>
-                  <div id="svc-scope-pl" className="svc-scope-list"></div>
-                  <label><input type="checkbox" name="hide_when_locked" />予約できないお客様には、このメニューを表示しない</label>
-                  <span>予約ページでは「回数券をお持ちの方専用」のように表示され、Finemeにログインして条件に合うお客様だけが選べます。回数券で予約すると、その回数券が予約に結び付き、来店確認の時に消化されます。休会中の会員は予約できません。</span>
-                </div>
+                <b>予約に使うチケット</b>
+                <span style={{ fontSize: '12px' }}>選んだチケットを持っている方だけが予約でき、1回の予約で決めた枚数を使います。選ばなければ誰でも予約できます。チケットは「チケット・回数券」タブで作れます。</span>
+                <div id="svc-ticket-list" className="svc-scope-list" style={{ paddingLeft: 0 }}></div>
+                <label id="svc-ticket-cost-wrap" style={{ display: 'none' }}>1回の予約で<input type="number" name="ticket_cost" min="1" max="20" defaultValue="1" style={{ width: '64px' }} />枚使う</label>
+                <label id="svc-ticket-hide-wrap" style={{ display: 'none' }}><input type="checkbox" name="hide_when_locked" />チケットを持っていないお客様には、このメニューを表示しない</label>
+                <label><input type="checkbox" name="hide_for_members" />会員には表示しない（体験メニューなど、初めての方だけに見せる）</label>
               </div>
               <h4 className="mn-sub">お店のページ・おすすめでの見せ方</h4>
               {/* サービスカテゴリ（L14） */}
@@ -17111,9 +17344,54 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* 回数券・パッケージ：店舗が記録して発行、またはお客様がオンライン購入（Stripe Connect）。店舗・顧客双方が残り回数を確認できる */}
+        {/* 会員（でお要望 2026-10-22：お店の会員登録を管理サイトからも。会員登録とプラン契約・チケットは別） */}
+        <div className="tab-pane" id="tab-store-members">
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <div className="tk-head">
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>会員</h2>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>お店の会員の一覧です。お客様はお店のページから会員登録でき、ここからも登録できます。会員になると、チケットを付けたり、月額プランの入会のご案内を送ったり、予約カレンダーで予約に紐づけたりできます。</p>
+              </div>
+              <button type="button" className="btn" id="sm-add-btn">＋ 会員を登録</button>
+            </div>
+            <div id="sm-form" className="tk-ed" style={{ display: 'none' }}>
+              <div className="tk-ed-head"><b>会員を登録</b><button type="button" className="btn btn-ghost" id="sm-form-close">閉じる</button></div>
+              <div className="sm-grid">
+                <label className="tk-field">姓 *<input data-sm="last_name" maxLength={30} /></label>
+                <label className="tk-field">名 *<input data-sm="first_name" maxLength={30} /></label>
+                <label className="tk-field">セイ<input data-sm="last_name_kana" maxLength={30} /></label>
+                <label className="tk-field">メイ<input data-sm="first_name_kana" maxLength={30} /></label>
+                <label className="tk-field">電話番号<input data-sm="phone" maxLength={20} inputMode="tel" /></label>
+                <label className="tk-field">生年月日<input data-sm="birthday" type="date" /></label>
+                <label className="tk-field">性別<select data-sm="gender"><option value="">選ばない</option><option value="female">女性</option><option value="male">男性</option><option value="other">その他</option></select></label>
+                <label className="tk-field">メールアドレス *<input data-sm="email" type="email" maxLength={120} /></label>
+              </div>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '13px' }}><input type="checkbox" id="sm-noemail" />メールアドレスをお持ちでない（店頭だけでご利用・カードの月額プランには入れません）</label>
+              <p style={{ fontSize: '12px', margin: 0 }}>メールアドレスでFinemeのアカウントを用意します。すでにFinemeを使っている方のアドレスの場合は、ご本人がお店のページで会員登録を確認するまで「確認待ち」になります。</p>
+              <div className="tk-ed-actions"><button type="button" className="btn" id="sm-save">登録する</button><span id="sm-msg"></span></div>
+            </div>
+            <input type="search" id="sm-search" placeholder="お名前・フリガナ・電話番号・メールで探す" className="sm-search" />
+            <div id="sm-list" className="stack" style={{ gap: '8px' }}><p className="muted">読み込み中…</p></div>
+          </div>
+          <div id="sm-detail" className="card stack" style={{ padding: '24px', gap: '12px', display: 'none' }}></div>
+        </div>
+
         <div className="tab-pane" id="tab-packages">
+          {/* チケット（でお要望 2026-10-22：「ストレッチ」などのメニューに対してチケットを消費して予約する） */}
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px' }}>パッケージを作る</h2>
+            <div className="tk-head">
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>チケット</h2>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約の時に使うチケットです（例：ストレッチチケット）。チケットごとに使えるメニューを決めると、そのメニューはチケットを持っている方だけが予約でき、予約1回でメニューに決めた枚数を使います。チケットは、下の回数券を買った時・月額プランで毎月・お店から直接、のどれでもお客様に付きます。</p>
+              </div>
+              <button type="button" className="btn" id="tk-add-btn">＋ チケットを作る</button>
+            </div>
+            <div id="tk-editor" className="tk-ed" style={{ display: 'none' }}></div>
+            <div id="tk-list" className="stack" style={{ gap: '8px' }}><p className="muted">読み込み中…</p></div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>回数券を作る</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
               ここでは「何回分・いくらで売ったか」を記録し、店舗と購入した顧客の両方がFinemeで残り回数を確認できるようにします。お店で直接代金を受け取った場合はこの画面で記録し、お客様がFineme上で購入する場合は、Stripe連携（Fineme利用契約タブ）の設定が必要です。
             </p>
@@ -17122,26 +17400,20 @@ export default function ProviderDashboardPage() {
                 <label>パッケージ名</label>
                 <input id="pkg-name" type="text" placeholder="例：パーソナルトレーニング10回券" />
               </div>
+              <div className="form-field" style={{ minWidth: '170px' }}>
+                <label>付くチケット</label>
+                <select id="pkg-ticket"><option value="">新しく同じ名前で作る</option></select>
+              </div>
               <div className="form-field" style={{ minWidth: '140px' }}>
                 <label>タイプ</label>
                 <select id="pkg-type">
-                  <option value="fixed_count">回数券</option>
-                  <option value="unlimited">通い放題</option>
-                  <option value="combo">通い放題＋チケット（複合）</option>
-                  <option value="subscription">月額会員（毎月自動でチケット付与）</option>
+                  <option value="fixed_count">チケット◯枚</option>
+                  <option value="unlimited">期間中は使い放題</option>
                 </select>
               </div>
               <div className="form-field" id="pkg-sessions-field" style={{ minWidth: '100px' }}>
-                <label id="pkg-sessions-label">回数</label>
+                <label id="pkg-sessions-label">枚数</label>
                 <input id="pkg-sessions" type="number" min="1" placeholder="10" />
-              </div>
-              <div className="form-field" id="pkg-combo-sessions-field" style={{ minWidth: '140px', display: 'none' }}>
-                <label>付帯チケット回数</label>
-                <input id="pkg-combo-sessions" type="number" min="1" placeholder="4" />
-              </div>
-              <div className="form-field" id="pkg-recurring-sessions-field" style={{ minWidth: '140px', display: 'none' }}>
-                <label>毎月の付与回数</label>
-                <input id="pkg-recurring-sessions" type="number" min="1" placeholder="8" />
               </div>
               <div className="form-field" style={{ minWidth: '120px' }}>
                 <label>参考価格（任意）</label>
@@ -17165,9 +17437,6 @@ export default function ProviderDashboardPage() {
               </div>
               <button className="btn" id="pkg-create-btn" type="button">作成する</button>
             </div>
-            <p className="muted" style={{ fontSize: '12px', margin: '-4px 0 8px' }}>
-              「通い放題＋チケット」は今野くんの実地メモ通り、通い放題契約に付帯チケット分の回数を1契約で持たせられます（hacomono同等・STORESは2契約が必要）。
-            </p>
             <div id="pkg-def-list"></div>
           </div>
 
@@ -17612,7 +17881,7 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 300px' }}>
                 <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>会員プラン</h3>
-                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>プランごとに、料金・入会金、予約できるメニューと月の回数、オプション、使える割引、配る回数券、入会ページから申し込めるかを決めます。</p>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>プランごとに、料金・入会金、オプション、使える割引、毎月付けるチケット、入会ページから申し込めるかを決めます。予約はチケットを使って行います。</p>
               </div>
               <button type="button" className="btn" id="mbr-plan-add-btn">＋ プランを追加</button>
             </div>

@@ -24,12 +24,19 @@ export async function GET(request, { params }) {
 
   const [{ data: plans }, { data: settings }, { data: lockers }, { data: options }, { count: couponCount }] = await Promise.all([
     // 入会ページから申し込めるプランだけ（店頭だけのプランは出さない。でお要望 2026-10-22）
-    supabase.from('provider_membership_plans').select('id, name, monthly_price, description, initial_fee, included_option_ids, selectable_option_ids, monthly_booking_limit').eq('provider_id', provider.id).eq('active', true).eq('online_enabled', true).order('sort_order'),
+    supabase.from('provider_membership_plans').select('id, name, monthly_price, description, initial_fee, included_option_ids, selectable_option_ids, ticket_grants, online_enabled').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text, form_fields, custom_fields').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_lockers').select('id, name, monthly_fee').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_options').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_discounts').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('active', true).not('code', 'is', null),
   ]);
+
+  // プランで付くチケットの名前（入会ページで「毎月：ストレッチチケット4枚」と見せる）
+  const { data: ticketRows } = await supabase.from('provider_tickets').select('id, name').eq('provider_id', provider.id);
+
+  // 入会ページから申し込めるプランだけ出す。お店から送られたリンク（?plan=）のプランは、店頭だけのプランでも出す
+  const linkedPlan = new URL(request.url).searchParams.get('plan');
+  const visiblePlans = (plans || []).filter(p => p.online_enabled !== false || p.id === linkedPlan);
 
   // 空きロッカーのみ提示（契約中のロッカーは選ばせない）
   let availableLockers = lockers || [];
@@ -42,12 +49,13 @@ export async function GET(request, { params }) {
   return Response.json({
     provider_id: provider.id,
     provider_name: provider.name,
-    plans: plans || [],
+    plans: visiblePlans,
     prorate_first_month: settings?.prorate_first_month ?? true,
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
     lockers: availableLockers,
     options: options || [],
+    tickets: ticketRows || [],
     has_coupons: (couponCount || 0) > 0,
     form_fields: normalizeFormFields(settings?.form_fields),
     custom_fields: settings?.custom_fields || [],

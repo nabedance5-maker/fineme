@@ -54,6 +54,8 @@ export async function POST(request) {
         package_type: pkg.package_type || 'fixed_count',
         expires_at,
         stripe_checkout_session_id: session_id,
+        ticket_id: pkg.ticket_id || null, // 回数券＝チケットが付く商品（2026-10-22）
+        source: 'package',
       })
       .select()
       .single();

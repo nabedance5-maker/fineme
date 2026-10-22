@@ -87,7 +87,7 @@ async function __POST(request) {
 
   const { data: pkg, error: pkgError } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, validity_days, expires_on, package_type, recurring_sessions')
+    .select('id, name, total_sessions, validity_days, expires_on, package_type, recurring_sessions, ticket_id')
     .eq('id', package_id)
     .eq('provider_id', provider.id)
     .single();
@@ -123,6 +123,8 @@ async function __POST(request) {
       expires_at: expiresAt ? expiresAt.toISOString() : null,
       subscription_status: isSubscription ? 'active' : null,
       next_grant_at: nextGrantAt,
+      ticket_id: pkg.ticket_id || null, // 回数券＝チケットが付く商品（2026-10-22）
+      source: 'package',
     })
     .select()
     .single();

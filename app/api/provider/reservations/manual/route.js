@@ -10,6 +10,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { customerEntitlements, checkService, needsTicket } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -27,7 +28,7 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { date, time, user_name, user_contact, staff_id, resource_id, note, user_id } = body;
+  const { date, time, user_name, user_contact, staff_id, resource_id, note, user_id, service_id, package_id } = body;
 
   if (!date || !time || !user_name) {
     return Response.json({ error: '日時とお客様名は必須です' }, { status: 400 });
@@ -50,6 +51,20 @@ async function __POST(request) {
     }
   }
 
+  // メニューとチケット（でお要望 2026-10-22）。チケットが要るメニューは、会員を選び、その方が持っているチケットで予約する
+  let svc = null, ticketPkg = null;
+  if (service_id) {
+    const { data } = await supabase.from('provider_services').select('id, name, ticket_ids, ticket_cost').eq('id', service_id).eq('provider_id', provider.id).maybeSingle();
+    if (!data) return Response.json({ error: 'メニューが見つかりません' }, { status: 400 });
+    svc = data;
+  }
+  if (svc && needsTicket(svc)) {
+    if (!user_id) return Response.json({ error: 'このメニューはチケットが必要です。会員を選んでください' }, { status: 400 });
+    const chk = checkService(svc, await customerEntitlements(supabase, provider.id, user_id));
+    if (!chk.ok) return Response.json({ error: `この会員は「${svc.name}」に使えるチケットを${svc.ticket_cost || 1}枚お持ちではありません`, code: 'no_ticket' }, { status: 409 });
+    ticketPkg = chk.tickets.find(t => t.id === package_id) || chk.tickets[0];
+  }
+
   const insertPayload = {
     provider_id: provider.id,
     user_id: user_id || null, // 検索で見つけたFineme会員と紐付ける場合のみ設定
@@ -65,6 +80,9 @@ async function __POST(request) {
     start_time: time,
     confirmed_date: date,
     confirmed_time: time,
+    service_id: svc?.id || null,
+    package_id: ticketPkg?.id || null,
+    ticket_cost: ticketPkg ? (svc.ticket_cost || 1) : 1,
   };
 
   const { data, error } = await supabase
