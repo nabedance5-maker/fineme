@@ -4119,7 +4119,7 @@ export default function ProviderDashboardPage() {
         const periods = await res.json();
         shiftPeriods = periods;
         if (!periods.length) {
-          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだシフトがありません。上の「＋ 新しいシフトを作る」から、作りたい期間を選んで始めてください。</p>';
+          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだシフトがありません。「＋ 新しいシフトを作る」から、作りたい期間を選んで始めてください。</p>';
           currentPeriodId = null;
           setDetailBody(false);
           return;
@@ -15957,14 +15957,7 @@ export default function ProviderDashboardPage() {
               時間帯パターン・優先度）の順に並べ替え、初期設定系は折りたたみにした。 */}
           {/* でお指摘（2026-10-16）：最初に期間を作らせるのは不要な手間で分かりづらい。希望はお店の提出ルールに
               沿っていつでも出してもらい（上の「希望の提出」）、シフトを作る時に作りたい期間を選ぶだけにした。 */}
-          <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', marginBottom: '12px' }}>読み込み中…</div>
-          <div className="card" style={{ padding: '18px 24px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', border: '1px solid rgba(201,168,76,.45)', background: 'rgba(201,168,76,.06)' }}>
-            <div style={{ flex: 1, minWidth: '240px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 800 }}>シフトを作る</div>
-              <div className="muted" style={{ fontSize: '12.5px', lineHeight: 1.7, marginTop: '2px' }}>作りたい期間を選ぶ → 自動で作る → 確認して確定する。スタッフの希望は上の提出ルールで集まっています。</div>
-            </div>
-            <button type="button" className="btn" id="shift-wizard-btn" style={{ fontSize: '14px', padding: '10px 18px' }}>＋ 新しいシフトを作る</button>
-          </div>
+          <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', marginBottom: '16px' }}>読み込み中…</div>
 
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
@@ -15989,7 +15982,11 @@ export default function ProviderDashboardPage() {
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px' }} id="shift-detail-section">
-            <h3 style={{ margin: 0, fontSize: '15px' }}>作成中・作成済みのシフト</h3>
+            {/* でお指摘（2026-10-22）：独立した「シフトを作る」カードは不要。作成ボタンはこの一覧の見出しに置く */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>作成中・作成済みのシフト</h3>
+              <button type="button" className="btn" id="shift-wizard-btn" style={{ fontSize: '13px', padding: '8px 14px' }}>＋ 新しいシフトを作る</button>
+            </div>
             <div id="shift-period-list">読み込み中…</div>
             <div id="shift-detail-body" className="stack" style={{ gap: '16px', display: 'none' }}>
             {/* この期間でいまどこまで進んでいるか（希望を集める → 自動作成 → 確定） */}
