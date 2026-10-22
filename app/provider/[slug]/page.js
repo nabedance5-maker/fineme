@@ -1681,7 +1681,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {(showInstantPicker ? [
-            { n: '1', label: '空き枠を選ぶ', desc: '表から空いている日時をタップします' },
+            { n: '1', label: '空いている時間を選ぶ', desc: '表から空いている日時をタップします' },
             { n: '2', label: 'その場で予約確定', desc: '店舗の承認を待たず、選んだ時点で予約が確定します' },
             { n: '3', label: '当日 → 変容の旅スタート', desc: '準備ができたら当日を迎えましょう。まず話を聞くだけでも大丈夫です' },
           ] : [
@@ -1937,7 +1937,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                 </thead>
                 <tbody>
                   {gridTimes.length === 0 ? (
-                    <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>この条件の空き枠がありません</td></tr>
+                    <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>この条件で予約できる時間がありません</td></tr>
                   ) : gridTimes.map(t => (
                     <tr key={t}>
                       <td style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>

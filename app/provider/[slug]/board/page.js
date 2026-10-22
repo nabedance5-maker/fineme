@@ -138,7 +138,7 @@ export default function BookingBoardPage() {
           )}
 
           {!times.length ? (
-            <p style={{ textAlign: 'center', color: '#999', fontSize: '15px', padding: '40px 0' }}>ご予約いただける空き枠がありません。</p>
+            <p style={{ textAlign: 'center', color: '#999', fontSize: '15px', padding: '40px 0' }}>ご予約いただける時間がありません。</p>
           ) : (
             <div style={{ overflowX: 'auto', border: '1.5px solid #e5e7eb', borderRadius: '14px', background: '#fff' }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', background: '#fff' }}>

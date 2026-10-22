@@ -96,7 +96,7 @@ export async function POST(request) {
   const { date: instantDate, start_time: instantStart } = body;
   const engineInstant = isInstant && !slot_id && /^\d{4}-\d{2}-\d{2}$/.test(instantDate || '') && /^\d{1,2}:\d{2}/.test(instantStart || '');
   if (isInstant && !slot_id && !engineInstant) {
-    return Response.json({ error: '空き枠を選んでください' }, { status: 400 });
+    return Response.json({ error: '予約する時間を選んでください' }, { status: 400 });
   }
 
   // 予約時に選んだ使用チケット（でお要望2026-09-27）。本人（user_id）が実際に持っている
@@ -205,9 +205,9 @@ export async function POST(request) {
     });
     if (chk.autoAssigned) insertPayload.designation_fee = 0;
   } else if (isInstant) {
-    // 枠の空き再検証（アプリ側の再カウント方式。Financeの想定同時予約数は少ないため
-    // DBレベルの排他制御までは今回不要と判断——決定済みの設計判断、要再確認せず進める）。
-    const { data: slotRow } = await supabase.from('provider_slots').select('*').eq('id', slot_id).eq('provider_id', provider_id).single();
+    // グループレッスンの開催回の空き再検証（アプリ側の再カウント方式。想定同時予約数は少ないため
+    // DBレベルの排他制御までは不要と判断）。2026-10-21 以降、slot_id で予約できるのは開催回だけ。
+    const { data: slotRow } = await supabase.from('provider_slots').select('*').eq('id', slot_id).eq('provider_id', provider_id).not('class_id', 'is', null).maybeSingle();
     if (!slotRow || !slotRow.is_open) {
       return Response.json({ error: 'この枠は既に締め切られています' }, { status: 409 });
     }
@@ -222,10 +222,7 @@ export async function POST(request) {
     if (closedRow) {
       return Response.json({ error: 'この日は臨時休業のため予約できません' }, { status: 409 });
     }
-    // 定休日（でお確認2026-09-28：「指名なしとか、トレーニングの枠って営業しない日なら
-    // 確実に入らないのかな?」）。枠は自動生成時に定休日を除外しているが、手動で1件だけ
-    // 追加した枠（POST /api/provider/slots）は生成ロジックを通らないため、公開一覧
-    // （/api/providers/[slug]/availability）に加えてここでも最終確認する。
+    // 定休日（でお確認2026-09-28）の最終確認。
     if (isClosedWeekday(providerFeatureRow.business_hours, slotRow.date)) {
       return Response.json({ error: 'この日は定休日のため予約できません' }, { status: 409 });
     }
@@ -290,7 +287,7 @@ export async function POST(request) {
   }
   await logCustomerActivity({
     providerId: provider_id, userId: bookingUserId, name: user_name,
-    label: isInstant ? 'お客様が空き枠で予約を確定' : 'お客様が予約をリクエスト',
+    label: isInstant ? 'お客様が即時予約で予約を確定' : 'お客様が予約をリクエスト',
     targetId: data.id,
     detail: { reserved_date: data.reserved_date, start_time: data.start_time, package_name: usedPackageName },
   });

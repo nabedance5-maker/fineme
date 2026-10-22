@@ -151,33 +151,8 @@ export async function GET(request) {
       duration_minutes: r.slot_id ? (slotDurationMap[r.slot_id] || null) : (r.service_id ? (serviceDurationMap[r.service_id] || null) : null),
     }))
     .concat(classSessionItems)
-    .concat(await openSlotItems(request, provider, from, to))
     .filter(r => r.date >= from && r.date <= to)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
 
   return Response.json(result);
-}
-
-// 予約カレンダーに出す空き枠（でお要望 2026-10-21：「空き枠の設定が分かりづらい。全部予約カレンダーで編集・設定できたら楽」）。
-// ?slots=1 の時だけ返す（予約だけを前提にしている他の画面の集計に混ざらないように）。即時予約を使っている店舗のみ。
-async function openSlotItems(request, provider, from, to) {
-  if (new URL(request.url).searchParams.get('slots') !== '1') return [];
-  if (!hasFeature(provider, 'instant_booking')) return [];
-  const { data: slots } = await supabase.from('provider_slots')
-    .select('id, date, start_time, end_time, capacity, is_open, staff_id, resource_id, service_id')
-    .eq('provider_id', provider.id).is('class_id', null).gte('date', from).lte('date', to).limit(3000);
-  if (!slots?.length) return [];
-  const { data: booked } = await supabase.from('reservations').select('slot_id').in('slot_id', slots.map(x => x.id)).in('status', OCCUPYING_STATUSES);
-  const cnt = {};
-  (booked || []).forEach(b => { cnt[b.slot_id] = (cnt[b.slot_id] || 0) + 1; });
-  return slots.map(x => {
-    const [sh, sm] = (x.start_time || '0:0').split(':').map(Number);
-    const [eh, em] = (x.end_time || '0:0').split(':').map(Number);
-    return {
-      id: `slot:${x.id}`, _isOpenSlot: true, slot_id: x.id, date: x.date, time: x.start_time, end_time: x.end_time,
-      staff_id: x.staff_id || null, resource_id: x.resource_id || null, service_id: x.service_id || null,
-      capacity: x.capacity, booked: cnt[x.id] || 0, remaining: Math.max(0, x.capacity - (cnt[x.id] || 0)), is_open: x.is_open,
-      duration_minutes: (eh * 60 + em) - (sh * 60 + sm),
-    };
-  });
 }
