@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { axisScoresFromReportContent, computeMatch } from '@/lib/mirror-match';
+import { trialMenus } from '@/lib/trial-menus';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -43,7 +44,7 @@ export async function POST(request) {
 
   const providerIds = providers.map(p => p.id);
   const [{ data: menuRows }, { data: caseRows }] = await Promise.all([
-    supabase.from('provider_experience_menus').select('*').in('provider_id', providerIds).eq('is_active', true),
+    trialMenus(supabase, providerIds).then(data => ({ data })),
     supabase.from('provider_cases').select('provider_id, axis, before_score, after_score').in('provider_id', providerIds).eq('approved_by_user', true),
   ]);
 

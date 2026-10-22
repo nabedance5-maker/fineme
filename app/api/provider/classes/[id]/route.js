@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeAssignees } from '@/lib/menu-assign';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -31,6 +32,7 @@ async function __PATCH(request, { params }) {
   if ('active' in body) update.active = !!body.active;
   if ('instructor_staff_id' in body) update.instructor_staff_id = body.instructor_staff_id || null;
   if ('place' in body) update.place = String(body.place || '').trim().slice(0, 40) || null;
+  if ('resource_id' in body) Object.assign(update, await normalizeAssignees(supabase, provider.id, { resource_id: body.resource_id || null }));
   if ('price' in body) update.price = Number.isFinite(Number(body.price)) && body.price !== '' ? Number(body.price) : null;
 
   const { data, error } = await supabase.from('provider_classes').update(update).eq('id', id).eq('provider_id', provider.id).select().single();

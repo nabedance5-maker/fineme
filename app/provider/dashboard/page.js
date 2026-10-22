@@ -677,6 +677,33 @@ const DASHBOARD_CSS = `
       .wg-preview { padding: 14px; background: #ece8df; border-radius: 12px; }
       .wg-btn-preview { display: inline-block; background: #111; color: #fff; font-weight: 800; font-size: 15px; padding: 12px 24px; border-radius: 10px; text-decoration: none; }
       /* 予約できる人（2026-10-20） */
+      /* メニュー（個別メニュー・グループレッスンを1つの一覧に。2026-10-22） */
+      .mn-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; color: #1a1410; }
+      .mn-head > div:first-child { flex: 1 1 320px; }
+      .mn-add { display: flex; gap: 6px; flex-wrap: wrap; }
+      .mn-add .btn { font-size: 13px; padding: 7px 14px; }
+      .mn-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+      .mn-filter { display: inline-flex; gap: 6px; align-items: center; padding: 6px 12px; border-radius: 99px; border: 1px solid rgba(26,20,16,0.18); background: #fff; color: #1a1410; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+      .mn-filter em { font-style: normal; font-variant-numeric: tabular-nums; font-size: 11.5px; }
+      .mn-filter.is-on { background: #1a1410; border-color: #1a1410; color: #fff; }
+      .mn-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(26,20,16,0.08); color: #1a1410; flex-wrap: wrap; }
+      .mn-main { flex: 1 1 260px; min-width: 0; }
+      .mn-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; font-size: 14px; }
+      .mn-meta { font-size: 12.5px; }
+      .mn-promise { font-size: 12px; margin-top: 3px; font-style: italic; }
+      .mn-chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: rgba(26,20,16,0.07); color: #1a1410; font-weight: 700; }
+      .mn-chip.is-lesson { background: #2f4f8f; color: #fff; }
+      .mn-chip.is-trial { background: #1a1410; color: #fff; }
+      .mn-chip.is-limited { background: #e9d5ff; color: #1a1410; }
+      .mn-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .mn-actions .btn { font-size: 12px; padding: 4px 10px; }
+      .mn-actions .mn-del { color: #b91c1c; }
+      .mn-off { padding: 18px 22px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; color: #1a1410; }
+      .mn-sub { margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid rgba(26,20,16,0.12); font-size: 14px; color: #1a1410; }
+      .svc-assign { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; color: #1a1410; font-size: 13px; }
+      .svc-assign > span { font-size: 12px; }
+      .svc-assign-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+      .svc-assign-list label { display: inline-flex; gap: 5px; align-items: center; font-size: 13px; font-weight: 400; margin: 0; }
       .svc-scope { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 14px; border: 1px solid rgba(26,20,16,0.15); border-radius: 10px; color: #1a1410; font-size: 13px; }
       .svc-scope label { display: flex; gap: 8px; align-items: center; font-weight: 400; margin: 0; font-size: 13px; }
       .svc-scope-sub { display: grid; gap: 6px; padding: 8px 0 0 22px; }
@@ -835,6 +862,15 @@ export default function ProviderDashboardPage() {
       });
     });
 
+    // 画面内の「〇〇を開く」ボタン（data-goto-tab）は、サイドメニューのタブボタンを押したのと同じ経路で切り替える
+    document.addEventListener('click', e => {
+      const go = e.target?.closest?.('[data-goto-tab]');
+      if (!go) return;
+      document.querySelector(`.tab-btn[data-tab="${go.dataset.gotoTab}"]`)?.click();
+      if (go.dataset.gotoLessons !== undefined) setTimeout(() => document.getElementById('menu-lessons')?.scrollIntoView({ behavior: 'smooth' }), 400);
+      else window.scrollTo({ top: 0 });
+    });
+
     // ── モバイル用サイドバードロワー開閉 ──────────────────────────
     function closeMobileNav() {
       document.getElementById('pd-sidebar')?.classList.remove('pd-open');
@@ -892,7 +928,9 @@ export default function ProviderDashboardPage() {
     // 起動時タブではないため許容する）。
     const SPINNER_TRACKED_TABS = ['calendar', 'today', 'requests', 'customers', 'sales'];
 
-    const tabParam = new URLSearchParams(location.search).get('tab');
+    // 2026-10-22：グループレッスンはメニュータブに統合（旧 ?tab=classes のリンクはメニュータブへ）
+    const TAB_ALIASES = { classes: 'service' };
+    const tabParam = (t => TAB_ALIASES[t] || t)(new URLSearchParams(location.search).get('tab'));
     const DASHBOARD_VISITED_KEY = 'fineme:provider:dashboard-visited';
     let needsLandingTabApply = false;
     if (tabParam) {
@@ -2407,70 +2445,151 @@ export default function ProviderDashboardPage() {
 
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-      async function loadServices() {
+      // ── メニュー一覧（でお要望 2026-10-21：個別メニュー・グループレッスン・体験・回数券/会員専用を1つの一覧に並べ、種類で絞り込む） ──
+      const AXIS_LABELS_D = Object.fromEntries(PROVIDER_AXES.map(a => [a.key, a.label]));
+      let servicesCache = [];
+      let menuFilter = 'all';
+      let assignLists = null; // { staff: [...予約を受けるスタッフ], rooms: [...部屋] }
+      const MENU_FILTERS = [['all', 'すべて'], ['service', '個別メニュー'], ['lesson', 'グループレッスン'], ['trial', '体験'], ['limited', '回数券・会員専用']];
+      const lessonsOn = () => !!(window.__providerFeatures || {}).class_management && !(window.__providerLocks || {}).class_management;
+      async function loadAssignLists() {
+        if (assignLists) return assignLists;
+        const H = { Authorization: `Bearer ${getSupabaseToken()}` };
+        const [a, b] = await Promise.all([fetch('/api/provider/staff', { headers: H }).catch(() => null), fetch('/api/provider/resources', { headers: H }).catch(() => null)]);
+        const staff = a?.ok ? await a.json() : [];
+        const rooms = b?.ok ? await b.json() : [];
+        assignLists = { staff: staff.filter(x => x.bookable !== false), allStaff: staff, rooms };
+        return assignLists;
+      }
+      const chip = (text, cls = '') => `<span class="mn-chip ${cls}">${esc(text)}</span>`;
+      function renderMenuList() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        const items = await res.json();
-        renderPageScore(provider, items);
-        if (!items.length) { listEl.innerHTML = '<p class="muted">まだサービスがありません。「＋ 追加」から登録してください。</p>'; return; }
-        listEl.innerHTML = '';
-        items.forEach(s => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:10px';
-          const AXIS_LABELS_D = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', hairremoval:'脱毛', teeth:'歯', nail:'爪' };
-          row.innerHTML = `
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-                <span style="font-weight:700;font-size:14px">${esc(s.name)}</span>
-                ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#1a1410;padding:1px 6px;border-radius:99px">看板</span>' : ''}
-                ${s.is_trial ? '<span style="font-size:11px;background:#1a1410;color:#fff;padding:1px 7px;border-radius:99px">体験</span>' : ''}
-                ${s.booking_scope === 'limited' ? `<span style="font-size:11px;background:#e9d5ff;color:#1a1410;padding:1px 7px;border-radius:99px">${[s.allow_ticket && '回数券の方', s.allow_membership && '会員の方'].filter(Boolean).join('・')}専用</span>` : ''}
-                ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
+        const lessons = lessonsOn() ? (window.__pdClasses?.cache || []) : [];
+        const staffName = Object.fromEntries((assignLists?.allStaff || []).map(x => [x.id, x.name]));
+        const roomName = Object.fromEntries((assignLists?.rooms || []).map(x => [x.id, x.name]));
+        const rows = [
+          ...servicesCache.map(sv => ({ kind: 'service', sv })),
+          ...lessons.map(c => ({ kind: 'lesson', c })),
+        ].filter(r => menuFilter === 'all'
+          || (menuFilter === 'service' && r.kind === 'service')
+          || (menuFilter === 'lesson' && r.kind === 'lesson')
+          || (menuFilter === 'trial' && r.kind === 'service' && r.sv.is_trial)
+          || (menuFilter === 'limited' && r.kind === 'service' && r.sv.booking_scope === 'limited'));
+        const counts = { all: servicesCache.length + lessons.length, service: servicesCache.length, lesson: lessons.length, trial: servicesCache.filter(x => x.is_trial).length, limited: servicesCache.filter(x => x.booking_scope === 'limited').length };
+        const filtersEl = document.getElementById('menu-filters');
+        if (filtersEl) {
+          filtersEl.innerHTML = MENU_FILTERS.filter(([k]) => k !== 'lesson' || lessonsOn()).map(([k, label]) => `<button type="button" role="tab" aria-selected="${menuFilter === k}" class="mn-filter${menuFilter === k ? ' is-on' : ''}" data-mn-filter="${k}">${label}<em>${counts[k]}</em></button>`).join('');
+          filtersEl.querySelectorAll('[data-mn-filter]').forEach(b => b.addEventListener('click', () => { menuFilter = b.dataset.mnFilter; renderMenuList(); }));
+        }
+        if (!counts.all) { listEl.innerHTML = '<p style="font-size:13px;color:#1a1410;margin:0">まだメニューがありません。「＋ 個別メニュー」か「＋ グループレッスン」から登録してください。</p>'; return; }
+        if (!rows.length) { listEl.innerHTML = '<p style="font-size:13px;color:#1a1410;margin:0">この種類のメニューはまだありません。</p>'; return; }
+        listEl.innerHTML = rows.map(r => {
+          if (r.kind === 'lesson') {
+            const c = r.c;
+            const who = staffName[c.instructor_staff_id] || '';
+            const room = roomName[c.resource_id] || c.place || '';
+            return `<div class="mn-row">
+              <div class="mn-main">
+                <div class="mn-title"><strong>${esc(c.name)}</strong>${chip('グループレッスン', 'is-lesson')}</div>
+                <div class="mn-meta">${c.price != null ? `¥${Number(c.price).toLocaleString()}` : '金額未設定'}${c.capacity ? ` · 定員${c.capacity}名` : ''}${who ? ` · 講師 ${esc(who)}` : ''}${room ? ` · ${esc(room)}` : ''} · 在籍${c.enrolledCount || 0}名</div>
               </div>
-              <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration_minutes ? ' · ' + s.duration_minutes + '分' : (s.duration ? ' · ' + esc(s.duration) : '')}</div>
-              ${s.transformation_promise ? `<div style="font-size:12px;color:#374151;margin-top:3px;font-style:italic">「${esc(s.transformation_promise)}」</div>` : ''}
-            </div>
-            <div style="display:flex;gap:6px;flex-shrink:0">
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-edit="${s.id}">編集</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-del="${s.id}">削除</button>
+              <div class="mn-actions">
+                <button class="btn btn-ghost" data-ls-edit="${c.id}">編集・開催日時</button>
+                <button class="btn btn-ghost" data-ls-sessions="${c.id}">参加者</button>
+                <button class="btn btn-ghost" data-ls-roster="${c.id}">名簿・進級</button>
+                <button class="btn btn-ghost mn-del" data-ls-del="${c.id}">削除</button>
+              </div>
             </div>`;
-          listEl.appendChild(row);
-        });
-        listEl.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
-          const s = items.find(x => x.id === btn.dataset.edit); if (!s) return;
-          editTitle.textContent = 'サービスを編集'; editCard.style.display = 'block';
-          editForm.elements['name'].value = s.name || ''; editForm.elements['price'].value = s.price || '';
-          editForm.elements['duration_minutes'].value = s.duration_minutes || '';
-          editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
-          if (editForm.elements['is_trial']) editForm.elements['is_trial'].checked = !!s.is_trial;
-          fillScope(s);
-          editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
-          // 新フィールド
-          if (editForm.elements['target_axis']) editForm.elements['target_axis'].value = s.target_axis || '';
-          if (editForm.elements['category']) editForm.elements['category'].value = s.category || '';
-          if (editForm.elements['transformation_promise']) editForm.elements['transformation_promise'].value = s.transformation_promise || '';
-          if (editForm.elements['before_text']) editForm.elements['before_text'].value = s.before_text || '';
-          if (editForm.elements['after_text']) editForm.elements['after_text'].value = s.after_text || '';
-          if (editForm.elements['benefit_list_text']) editForm.elements['benefit_list_text'].value = (s.benefit_list || []).join('\n');
-          const sImgPreview = document.getElementById('service-img-preview');
-          const sImgPreviewWrap = document.getElementById('service-img-preview-wrap');
-          const sImgUrl = document.getElementById('service-image-url');
-          if (s.image_url) { if (sImgPreview) sImgPreview.src = s.image_url; if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'block'; if (sImgUrl) sImgUrl.value = s.image_url; }
-          else { if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'none'; if (sImgUrl) sImgUrl.value = ''; }
-          const sBIp = document.getElementById('service-before-img-preview'), sBIw = document.getElementById('service-before-img-wrap'), sBIu = document.getElementById('service-before-image-url');
-          if (s.before_image_url) { if (sBIp) sBIp.src = s.before_image_url; if (sBIw) sBIw.style.display = 'block'; if (sBIu) sBIu.value = s.before_image_url; }
-          else { if (sBIw) sBIw.style.display = 'none'; if (sBIu) sBIu.value = ''; }
-          const sAIp = document.getElementById('service-after-img-preview'), sAIw = document.getElementById('service-after-img-wrap'), sAIu = document.getElementById('service-after-image-url');
-          if (s.after_image_url) { if (sAIp) sAIp.src = s.after_image_url; if (sAIw) sAIw.style.display = 'block'; if (sAIu) sAIu.value = s.after_image_url; }
-          else { if (sAIw) sAIw.style.display = 'none'; if (sAIu) sAIu.value = ''; }
-          editCard.scrollIntoView({ behavior: 'smooth' });
-        }));
+          }
+          const sv = r.sv;
+          const staffTxt = (sv.staff_ids || []).length ? sv.staff_ids.map(id => staffName[id]).filter(Boolean).join('・') : '';
+          const roomTxt = (sv.resource_ids || []).length ? sv.resource_ids.map(id => roomName[id]).filter(Boolean).join('・') : '';
+          return `<div class="mn-row">
+            <div class="mn-main">
+              <div class="mn-title"><strong>${esc(sv.name)}</strong>${chip('個別')}${sv.is_trial ? chip('体験', 'is-trial') : ''}${sv.booking_scope === 'limited' ? chip(`${[sv.allow_ticket && '回数券の方', sv.allow_membership && '会員の方'].filter(Boolean).join('・')}専用`, 'is-limited') : ''}${sv.is_featured ? chip('看板') : ''}${sv.target_axis ? chip(AXIS_LABELS_D[sv.target_axis] || sv.target_axis) : ''}</div>
+              <div class="mn-meta">¥${Number(sv.price).toLocaleString()}${sv.duration_minutes ? ` · ${sv.duration_minutes}分` : (sv.duration ? ' · ' + esc(sv.duration) : ' · 所要時間未設定')}${staffTxt ? ` · 担当 ${esc(staffTxt)}` : ''}${roomTxt ? ` · ${esc(roomTxt)}` : ''}</div>
+              ${sv.transformation_promise ? `<div class="mn-promise">「${esc(sv.transformation_promise)}」</div>` : ''}
+            </div>
+            <div class="mn-actions">
+              <button class="btn btn-ghost" data-edit="${sv.id}">編集</button>
+              <button class="btn btn-ghost mn-del" data-del="${sv.id}">削除</button>
+            </div>
+          </div>`;
+        }).join('');
+        listEl.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => openServiceEdit(btn.dataset.edit)));
         listEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('このサービスを削除しますか？')) return;
+          if (!confirm('このメニューを削除しますか？')) return;
           await fetch(`/api/provider/services/${btn.dataset.del}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           loadServices();
         }));
+        listEl.querySelectorAll('[data-ls-edit]').forEach(b => b.addEventListener('click', () => window.__pdClasses?.edit(b.dataset.lsEdit)));
+        listEl.querySelectorAll('[data-ls-sessions]').forEach(b => b.addEventListener('click', () => window.__pdClasses?.sessions(b.dataset.lsSessions)));
+        listEl.querySelectorAll('[data-ls-roster]').forEach(b => b.addEventListener('click', () => window.__pdClasses?.roster(b.dataset.lsRoster)));
+        listEl.querySelectorAll('[data-ls-del]').forEach(b => b.addEventListener('click', () => window.__pdClasses?.del(b.dataset.lsDel)));
+      }
+      window.__pdRenderMenuList = renderMenuList;
+
+      // グループレッスンを使っていない店舗には、作成画面の代わりに「ONにする」案内を出す
+      function syncLessonsSection() {
+        const on = lessonsOn();
+        const off = document.getElementById('menu-lessons-off'); const body = document.getElementById('menu-lessons-body');
+        if (off) off.style.display = on ? 'none' : 'flex';
+        if (body) body.style.display = on ? '' : 'none';
+      }
+      document.getElementById('menu-lessons-enable')?.addEventListener('click', async e => {
+        const btn = e.currentTarget; btn.disabled = true; btn.textContent = '設定中…';
+        const res = await fetch('/api/provider/features', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ class_management: true }) }).catch(() => null);
+        if (!res?.ok) { btn.disabled = false; btn.textContent = 'ONにする'; showToast('保存に失敗しました'); return; }
+        location.href = location.pathname + '?tab=service&lesson=new';
+      });
+      document.getElementById('btn-add-lesson')?.addEventListener('click', () => {
+        if (!lessonsOn()) { const off = document.getElementById('menu-lessons-off'); off?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        document.getElementById('cls-add-btn')?.click();
+      });
+
+      async function loadServices() {
+        if (!listEl) return;
+        // 機能のON/OFFを読み終える前に開いた時のため、少しだけ待つ
+        for (let i = 0; i < 12 && !window.__providerFeatures; i++) await new Promise(r => setTimeout(r, 250));
+        syncLessonsSection();
+        const [res] = await Promise.all([fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }), loadAssignLists()]);
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        servicesCache = await res.json();
+        renderPageScore(provider, servicesCache);
+        renderMenuList();
+      }
+
+      function openServiceEdit(id) {
+        const s = servicesCache.find(x => x.id === id); if (!s) return;
+        editTitle.textContent = '個別メニューを編集'; editCard.style.display = 'block';
+        editForm.elements['name'].value = s.name || ''; editForm.elements['price'].value = s.price || '';
+        editForm.elements['duration_minutes'].value = s.duration_minutes || '';
+        editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
+        if (editForm.elements['is_trial']) editForm.elements['is_trial'].checked = !!s.is_trial;
+        fillScope(s);
+        fillAssign(s);
+        editForm.querySelectorAll('[name=axes]').forEach(cb => { cb.checked = (s.axes || []).includes(cb.value); });
+        syncTrialAxes();
+        editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
+        // 新フィールド
+        if (editForm.elements['target_axis']) editForm.elements['target_axis'].value = s.target_axis || '';
+        if (editForm.elements['category']) editForm.elements['category'].value = s.category || '';
+        if (editForm.elements['transformation_promise']) editForm.elements['transformation_promise'].value = s.transformation_promise || '';
+        if (editForm.elements['before_text']) editForm.elements['before_text'].value = s.before_text || '';
+        if (editForm.elements['after_text']) editForm.elements['after_text'].value = s.after_text || '';
+        if (editForm.elements['benefit_list_text']) editForm.elements['benefit_list_text'].value = (s.benefit_list || []).join('\n');
+        const sImgPreview = document.getElementById('service-img-preview');
+        const sImgPreviewWrap = document.getElementById('service-img-preview-wrap');
+        const sImgUrl = document.getElementById('service-image-url');
+        if (s.image_url) { if (sImgPreview) sImgPreview.src = s.image_url; if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'block'; if (sImgUrl) sImgUrl.value = s.image_url; }
+        else { if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'none'; if (sImgUrl) sImgUrl.value = ''; }
+        const sBIp = document.getElementById('service-before-img-preview'), sBIw = document.getElementById('service-before-img-wrap'), sBIu = document.getElementById('service-before-image-url');
+        if (s.before_image_url) { if (sBIp) sBIp.src = s.before_image_url; if (sBIw) sBIw.style.display = 'block'; if (sBIu) sBIu.value = s.before_image_url; }
+        else { if (sBIw) sBIw.style.display = 'none'; if (sBIu) sBIu.value = ''; }
+        const sAIp = document.getElementById('service-after-img-preview'), sAIw = document.getElementById('service-after-img-wrap'), sAIu = document.getElementById('service-after-image-url');
+        if (s.after_image_url) { if (sAIp) sAIp.src = s.after_image_url; if (sAIw) sAIw.style.display = 'block'; if (sAIu) sAIu.value = s.after_image_url; }
+        else { if (sAIw) sAIw.style.display = 'none'; if (sAIu) sAIu.value = ''; }
+        editCard.scrollIntoView({ behavior: 'smooth' });
       }
 
       function resetServiceImgPreview() {
@@ -2484,6 +2603,24 @@ export default function ProviderDashboardPage() {
         const au = document.getElementById('service-after-image-url'); if (au) au.value = '';
         const am = document.getElementById('service-after-img-msg'); if (am) { am.style.display = 'none'; am.textContent = ''; }
       }
+      // 担当できるスタッフ・使う部屋の欄（スタッフ・部屋を登録している店舗だけ出す）
+      async function fillAssign(sv) {
+        const L = await loadAssignLists();
+        const fill = (key, list, wrapId) => {
+          const wrap = document.getElementById(wrapId); if (!wrap) return;
+          wrap.style.display = list.length ? '' : 'none';
+          const sel = new Set(sv?.[key] || []);
+          wrap.querySelector('.svc-assign-list').innerHTML = list.map(x => `<label><input type="checkbox" name="${key}" value="${x.id}" ${sel.has(x.id) ? 'checked' : ''}>${esc(x.name)}</label>`).join('');
+        };
+        fill('staff_ids', L.staff, 'svc-assign-staff');
+        fill('resource_ids', L.rooms, 'svc-assign-room');
+      }
+      function syncTrialAxes() {
+        const box = document.getElementById('svc-trial-axes');
+        if (box) box.style.display = editForm?.elements['is_trial']?.checked ? '' : 'none';
+      }
+      editForm?.elements['is_trial']?.addEventListener('change', syncTrialAxes);
+
       // 予約できる人の設定欄（回数券の種類・会員プランの一覧を出し、保存済みの値を入れる）
       let scopeLists = null;
       async function fillScope(s) {
@@ -2510,9 +2647,11 @@ export default function ProviderDashboardPage() {
         document.getElementById('svc-scope-limited').style.display = editForm.querySelector('[name=booking_scope]:checked')?.value === 'limited' ? '' : 'none';
       }));
       document.getElementById('btn-add-service')?.addEventListener('click', () => {
-        editTitle.textContent = 'サービスを追加'; editCard.style.display = 'block';
+        editTitle.textContent = '個別メニューを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_service_id'].value = '';
         fillScope(null);
+        fillAssign(null);
+        syncTrialAxes();
         resetServiceImgPreview();
         editCard.scrollIntoView({ behavior: 'smooth' });
       });
@@ -2531,7 +2670,10 @@ export default function ProviderDashboardPage() {
           booking_scope: editForm.querySelector('[name=booking_scope]:checked')?.value || 'public',
           allow_ticket: !!editForm.elements['allow_ticket']?.checked, allow_membership: !!editForm.elements['allow_membership']?.checked, hide_when_locked: !!editForm.elements['hide_when_locked']?.checked,
           eligible_package_ids: [...editForm.querySelectorAll('[name=eligible_package_ids]:checked')].map(el => el.value),
-          eligible_plan_ids: [...editForm.querySelectorAll('[name=eligible_plan_ids]:checked')].map(el => el.value) };
+          eligible_plan_ids: [...editForm.querySelectorAll('[name=eligible_plan_ids]:checked')].map(el => el.value),
+          axes: editForm.elements['is_trial']?.checked ? [...editForm.querySelectorAll('[name=axes]:checked')].map(el => el.value) : [],
+          ...(document.getElementById('svc-assign-staff')?.style.display !== 'none' ? { staff_ids: [...editForm.querySelectorAll('[name=staff_ids]:checked')].map(el => el.value) } : {}),
+          ...(document.getElementById('svc-assign-room')?.style.display !== 'none' ? { resource_ids: [...editForm.querySelectorAll('[name=resource_ids]:checked')].map(el => el.value) } : {}) };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -2539,7 +2681,14 @@ export default function ProviderDashboardPage() {
       });
 
       document.querySelectorAll('[data-tab="service"]').forEach(btn => btn.addEventListener('click', loadServices, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'service') loadServices();
+      if (['service', 'classes'].includes(new URLSearchParams(location.search).get('tab'))) {
+        loadServices().then(() => {
+          // グループレッスンをONにした直後・旧グループレッスンタブへの案内は、レッスンの欄まで送る
+          const q = new URLSearchParams(location.search);
+          if (q.get('lesson') === 'new') setTimeout(() => document.getElementById('cls-add-btn')?.click(), 600);
+          else if (q.get('tab') === 'classes') setTimeout(() => document.getElementById('menu-lessons')?.scrollIntoView({ behavior: 'smooth' }), 600);
+        });
+      }
     })();
 
     // ── スタッフ管理 ─────────────────────────────────────────────
@@ -4900,7 +5049,7 @@ export default function ProviderDashboardPage() {
       const BUILTIN_EDIT_LINK = {
         builtin_staff: { tab: 'staff', label: 'スタッフタブで編集する' },
         builtin_stories: { tab: 'stories', label: '体験談タブで編集する' },
-        builtin_program: { tab: 'service', label: 'サービス設定タブで編集する' },
+        builtin_program: { tab: 'service', label: 'メニュータブで編集する' },
       };
 
       function fieldsHtml(type, c) {
@@ -5118,7 +5267,6 @@ export default function ProviderDashboardPage() {
       if (!token) return;
       const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-      const listEl = document.getElementById('cls-list');
       const editCard = document.getElementById('cls-edit-card');
       const editForm = document.getElementById('cls-edit-form');
       const editTitle = document.getElementById('cls-edit-title');
@@ -5135,7 +5283,18 @@ export default function ProviderDashboardPage() {
       let selectedClass = null;
       let staffOptionsForClasses = [];
 
+      // 使う部屋（でお要望 2026-10-21：レッスン中はその部屋に他の予約を入れない）。部屋を登録している店舗だけ出す
+      let roomOptionsForClasses = [];
+      async function loadRoomOptionsForClasses() {
+        const res = await fetch('/api/provider/resources', { headers: authH() }).catch(() => null);
+        roomOptionsForClasses = res?.ok ? await res.json() : [];
+        const sel = editForm?.elements['resource_id'];
+        const wrap = document.getElementById('cls-room-field');
+        if (wrap) wrap.style.display = roomOptionsForClasses.length ? '' : 'none';
+        if (sel) { const cur = sel.value; sel.innerHTML = '<option value="">使わない</option>' + roomOptionsForClasses.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join(''); sel.value = cur; }
+      }
       async function loadStaffOptionsForClasses() {
+        loadRoomOptionsForClasses();
         const res = await fetch('/api/provider/staff', { headers: authH() });
         if (!res.ok) return;
         staffOptionsForClasses = await res.json();
@@ -5146,55 +5305,43 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadClasses() {
-        if (!listEl) return;
         const res = await fetch('/api/provider/classes', { headers: authH() });
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        if (!res.ok) { classesCache = []; window.__pdRenderMenuList?.(); return; }
         classesCache = await res.json();
         // 部屋・場所の候補：これまでに使った場所の名前
         const placeOpts = document.getElementById('cls-place-options');
         if (placeOpts) placeOpts.innerHTML = [...new Set(classesCache.map(c => c.place).filter(Boolean))].map(x => `<option value="${esc(x)}"></option>`).join('');
-        if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだグループレッスンがありません。「＋ グループレッスンを追加」から作成してください。</p>'; return; }
-        listEl.innerHTML = classesCache.map(c => `
-          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--color-bg);border-radius:10px" data-cls-row="${c.id}">
-            <div style="min-width:0">
-              <strong style="font-size:14px">${esc(c.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名／残り${c.remaining}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}${c.price != null ? `／¥${Number(c.price).toLocaleString()}` : ''}</span>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-cls-sessions="${c.id}">予約枠を管理</button>
-              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
-              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-edit="${c.id}">編集</button>
-              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-cls-del="${c.id}">削除</button>
-            </div>
-          </div>
-        `).join('');
-        listEl.querySelectorAll('[data-cls-edit]').forEach(btn => btn.addEventListener('click', () => {
-          const c = classesCache.find(x => x.id === btn.dataset.clsEdit); if (!c) return;
-          editTitle.textContent = 'グループレッスンを編集'; editCard.style.display = 'block';
-          editForm.elements['_class_id'].value = c.id;
-          editForm.elements['name'].value = c.name || '';
-          editForm.elements['description'].value = c.description || '';
-          editForm.elements['capacity'].value = c.capacity || '';
-          editForm.elements['price'].value = c.price ?? '';
-          if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
-          if (editForm.elements['place']) editForm.elements['place'].value = c.place || '';
-          editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
-          if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
-          resetNewSessionInputs();
-          const hd = document.getElementById('cls-new-session-heading');
-          if (hd) hd.textContent = '開催日時を追加（任意・1回だけ／毎週／毎月）';
-          loadEditSessions(c);
-          editCard.scrollIntoView({ behavior: 'smooth' });
-        }));
-        listEl.querySelectorAll('[data-cls-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('このグループレッスンを削除しますか？在籍者・進級履歴・開催日時も全て削除されます。')) return;
-          await fetch(`/api/provider/classes/${btn.dataset.clsDel}`, { method: 'DELETE', headers: authH() });
-          loadClasses();
-        }));
-        listEl.querySelectorAll('[data-cls-roster]').forEach(btn => btn.addEventListener('click', () => openRoster(btn.dataset.clsRoster)));
-        listEl.querySelectorAll('[data-cls-sessions]').forEach(btn => btn.addEventListener('click', () => openSessions(btn.dataset.clsSessions)));
+        window.__pdRenderMenuList?.();
         loadBoard();
       }
+
+      // メニュータブの一覧（個別メニューと同じ一覧に並ぶ）から呼ばれる操作（でお要望 2026-10-21：メニューを1か所で決める）
+      function openClassEdit(id) {
+        const c = classesCache.find(x => x.id === id); if (!c) return;
+        editTitle.textContent = 'グループレッスンを編集'; editCard.style.display = 'block';
+        editForm.elements['_class_id'].value = c.id;
+        editForm.elements['name'].value = c.name || '';
+        editForm.elements['description'].value = c.description || '';
+        editForm.elements['capacity'].value = c.capacity || '';
+        editForm.elements['price'].value = c.price ?? '';
+        if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
+        if (editForm.elements['place']) editForm.elements['place'].value = c.place || '';
+        if (editForm.elements['resource_id']) editForm.elements['resource_id'].value = c.resource_id || '';
+        editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
+        if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
+        resetNewSessionInputs();
+        const hd = document.getElementById('cls-new-session-heading');
+        if (hd) hd.textContent = '開催日時を追加（任意・1回だけ／毎週／毎月）';
+        loadEditSessions(c);
+        editCard.scrollIntoView({ behavior: 'smooth' });
+      }
+      async function deleteClass(id) {
+        if (!confirm('このグループレッスンを削除しますか？在籍者・進級履歴・開催日時も全て削除されます。')) return;
+        await fetch(`/api/provider/classes/${id}`, { method: 'DELETE', headers: authH() });
+        loadClasses();
+      }
+      window.__pdClasses = { get cache() { return classesCache; }, edit: openClassEdit, roster: id => openRoster(id), sessions: id => openSessions(id), del: deleteClass };
+
 
       // ── 開催日時の表（でお要望 2026-10-21：一覧の下に、予約カレンダーのグループレッスンと同じカードで並べる）。
       //    列＝部屋・場所、カード＝時刻・講師・レッスン名・残り枠。カードを押すとそのレッスンの編集（開催日時の一覧つき）、
@@ -5259,12 +5406,12 @@ export default function ProviderDashboardPage() {
           </div></div>
           ${!sessions.length ? '<p style="font-size:12.5px;margin:8px 0 0;color:#1a1410">この日の開催はありません。マスの「＋」から追加できます。</p>' : ''}`;
         boardEl.querySelectorAll('[data-bd-day]').forEach(b => b.addEventListener('click', () => { boardDate = b.dataset.bdDay; renderBoard(); }));
-        boardEl.querySelectorAll('[data-bd-open]').forEach(el => el.addEventListener('click', e => { e.stopPropagation(); listEl.querySelector(`[data-cls-edit="${el.dataset.bdOpen}"]`)?.click(); }));
+        boardEl.querySelectorAll('[data-bd-open]').forEach(el => el.addEventListener('click', e => { e.stopPropagation(); openClassEdit(el.dataset.bdOpen); }));
         boardEl.querySelectorAll('[data-bd-add]').forEach(cell => cell.addEventListener('click', e => {
           if (e.target.closest('[data-bd-open]')) return;
           // その場所に設定しているレッスンの編集を開き、追加欄に日時を入れておく（無ければ新しく作る画面）
           const c = classesCache.find(k => k.place === cell.dataset.bdAdd) || (classesCache.length === 1 ? classesCache[0] : null);
-          if (c) listEl.querySelector(`[data-cls-edit="${c.id}"]`)?.click();
+          if (c) openClassEdit(c.id);
           else { document.getElementById('cls-add-btn')?.click(); if (editForm.elements['place'] && cell.dataset.bdAdd !== '場所未設定') editForm.elements['place'].value = cell.dataset.bdAdd; }
           const dEl = document.getElementById('cls-new-session-date'); const sEl = document.getElementById('cls-new-session-start'); const eEl = document.getElementById('cls-new-session-end');
           if (dEl) dEl.value = boardDate;
@@ -5312,6 +5459,7 @@ export default function ProviderDashboardPage() {
           price: fd.get('price'),
           instructor_staff_id: fd.get('instructor_staff_id') || null,
           place: fd.get('place') || '',
+          ...(editForm.elements['resource_id'] && roomOptionsForClasses.length ? { resource_id: fd.get('resource_id') || null } : {}),
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
@@ -5600,10 +5748,9 @@ export default function ProviderDashboardPage() {
       // （でお報告2026-09-16：「カレンダーの読み込みが遅い」。全タブ共通のuseEffect内で
       // 無条件に動くIIFEが増えるたびに、カレンダーを開くだけでも無関係な通信が
       // 積み重なっていた。タブを開くまで発火しないように変更）。
-      document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', () => { loadStaffOptionsForClasses(); loadClasses(); }, { once: false }));
-      // 予約カレンダーのグループレッスン画面からも同じクラス管理を使う（でお要望 2026-10-16）
-      window.__pdLoadClasses = () => { loadStaffOptionsForClasses(); loadClasses(); };
-      if (new URLSearchParams(location.search).get('tab') === 'classes') { loadStaffOptionsForClasses(); loadClasses(); }
+      // 2026-10-22：グループレッスンはメニュータブの中で作る・編集する（メニューを1か所で決める）
+      document.querySelectorAll('[data-tab="service"]').forEach(btn => btn.addEventListener('click', () => { loadStaffOptionsForClasses(); loadClasses(); }, { once: false }));
+      if (['service', 'classes'].includes(new URLSearchParams(location.search).get('tab'))) { loadStaffOptionsForClasses(); loadClasses(); }
     })();
 
     // ── ロッカー月極管理（でお要望2026-09-14） ─────
@@ -7039,13 +7186,11 @@ export default function ProviderDashboardPage() {
       // 数値／日付／チェックボックスを追加。
       const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', multiselect: '複数選択', stars: '5段階評価', rating10: '10段階評価', number: '数値', date: '日付', time: '時刻', url: 'リンク', checkbox: 'チェック' };
 
-      // サービス設定タブで登録済みの自店メニュー一覧を、来店記録の「利用メニュー」選択肢として流用する。
-      // 予約データ(reservations)とメニュー(provider_experience_menus)がID単位で綺麗に紐づいていないため
-      // 自動検出はできず、記録追加時に店舗側が選ぶ方式にした（でお相談・2026-09合意）。
+      // メニュータブで登録済みの自店メニュー一覧を、来店記録の「利用メニュー」選択肢として流用する。
+      // 記録追加時に店舗側が選ぶ方式（でお相談・2026-09合意）。名前で保存する。
       async function loadMenus() {
-        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
-        const all = res.ok ? await res.json() : [];
-        providerMenus = all.filter(m => m.is_active !== false);
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
+        providerMenus = res.ok ? await res.json() : [];
       }
 
       // ── カルテ項目（カスタムフィールド）の管理 ──
@@ -9931,89 +10076,30 @@ export default function ProviderDashboardPage() {
       function escLp(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const AXIS_LABEL_LP = Object.fromEntries(PROVIDER_AXES.map(a => [a.key, a.label]));
 
-      // ── メニュー ──
-      const menuForm = document.getElementById('menu-form');
+      // ── 体験メニュー ──
+      // 2026-10-22：LP専用の体験メニュー入力を廃止し、メニュータブの「体験」に統合（メニューの決め事を1か所にまとめる）。
+      // ここでは、LPに出る体験メニューの確認だけをする。
       const menuList = document.getElementById('menu-list');
-      const menuMsg = document.getElementById('menu-msg');
-      const menuFromService = document.getElementById('menu-from-service');
-
-      async function loadServiceOptions() {
-        if (!menuFromService) return;
-        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
-        const items = res.ok ? await res.json() : [];
-        menuFromService.innerHTML = '<option value="">－ 選択するとメニュー名・価格を自動入力 －</option>'
-          + items.map(s => `<option value="${s.id}">${escLp(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`).join('');
-        menuFromService.onchange = () => {
-          const s = items.find(x => String(x.id) === menuFromService.value);
-          if (!s) return;
-          document.getElementById('menu-name').value = s.name || '';
-          document.getElementById('menu-price').value = s.price || '';
-          document.getElementById('menu-duration').value = s.duration_minutes || '';
-          const imgInput = document.getElementById('menu-image-url');
-          const imgPreview = document.getElementById('menu-image-preview');
-          if (imgInput) imgInput.value = s.image_url || '';
-          if (imgPreview) {
-            if (s.image_url) { imgPreview.src = s.image_url; imgPreview.style.display = 'inline-block'; }
-            else { imgPreview.style.display = 'none'; }
-          }
-        };
-      }
-
       async function loadMenus() {
         if (!menuList) return;
         menuList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
-        const items = res.ok ? await res.json() : [];
-        if (!items.length) { menuList.innerHTML = '<p class="muted" style="font-size:13px;">まだメニューがありません。</p>'; return; }
-        menuList.innerHTML = items.map(m => `
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
+        const items = (res.ok ? await res.json() : []).filter(m => m.is_trial);
+        if (!items.length) { menuList.innerHTML = '<p style="font-size:13px;color:#1a1410;margin:0">まだ体験メニューがありません。メニュータブで、メニューの「体験メニュー」にチェックを入れると、ここに表示されます。</p>'; return; }
+        menuList.innerHTML = items.map(m => {
+          const axes = [...new Set([...(m.axes || []), ...(m.target_axis ? [m.target_axis] : [])])];
+          return `
           <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;display:flex;gap:12px;">
-            ${m.images?.[0] ? `<img src="${m.images[0]}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />` : ''}
+            ${m.image_url ? `<img src="${escLp(m.image_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />` : ''}
             <div style="flex:1;min-width:0;">
               <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <strong style="color:#111827;">${escLp(m.name)}</strong>
-                <span style="font-size:13px;color:#6b7280;">¥${Number(m.price).toLocaleString()}／${m.duration_min}分</span>
+                <strong style="color:#1a1410;">${escLp(m.name)}</strong>
+                <span style="font-size:13px;color:#1a1410;">¥${Number(m.price).toLocaleString()}${m.duration_minutes ? `／${m.duration_minutes}分` : ''}</span>
               </div>
-              <div style="font-size:12px;color:#9ca3af;margin-top:4px;">${(m.axes || []).map(a => AXIS_LABEL_LP[a] || a).join('・') || '軸未設定'}</div>
-              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-top:6px;" data-menu-del="${m.id}">削除</button>
+              <div style="font-size:12px;color:#1a1410;margin-top:4px;">${axes.map(a => AXIS_LABEL_LP[a] || a).join('・') || '対応する悩み：未設定'}</div>
             </div>
-          </div>
-        `).join('');
-        menuList.querySelectorAll('[data-menu-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('このメニューを削除しますか？')) return;
-          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
-          loadMenus();
-        }));
-      }
-
-      if (menuForm) {
-        menuForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const submitBtn = document.getElementById('menu-submit-btn');
-          submitBtn.disabled = true; menuMsg.textContent = '';
-          const axes = Array.from(document.querySelectorAll('#menu-axes input:checked')).map(i => i.value);
-          const imageUrl = document.getElementById('menu-image-url')?.value || '';
-          const res = await fetch('/api/provider/experience-menus', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
-            body: JSON.stringify({
-              name: document.getElementById('menu-name').value,
-              price: document.getElementById('menu-price').value,
-              duration_min: document.getElementById('menu-duration').value,
-              axes,
-              description: document.getElementById('menu-desc').value,
-              images: imageUrl ? [imageUrl] : [],
-            }),
-          });
-          if (res.ok) {
-            menuMsg.style.color = '#059669'; menuMsg.textContent = '✓ 追加しました';
-            menuForm.reset();
-            const imgPreview = document.getElementById('menu-image-preview');
-            if (imgPreview) imgPreview.style.display = 'none';
-            loadMenus();
-          } else {
-            const d = await res.json(); menuMsg.style.color = '#ef4444'; menuMsg.textContent = d.error || '追加に失敗しました';
-          }
-          submitBtn.disabled = false;
-        });
+          </div>`;
+        }).join('');
       }
 
       // ── 施術事例 ──
@@ -10085,7 +10171,7 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function loadLandingTab() { loadMenus(); loadServiceOptions(); loadCaseCustomers(); loadCases(); }
+      function loadLandingTab() { loadMenus(); loadCaseCustomers(); loadCases(); }
       document.querySelectorAll('[data-tab="landing"]').forEach(btn => btn.addEventListener('click', loadLandingTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'landing') loadLandingTab();
     })();
@@ -12364,7 +12450,7 @@ export default function ProviderDashboardPage() {
         gridWrapEl.innerHTML = `
           <div class="lb-toolbar">
             <button type="button" class="btn" data-lb-new style="font-size:12px;padding:6px 12px">＋ 開催回を追加</button>
-            <button type="button" class="btn btn-ghost" data-lb-tools="classes" style="font-size:12px;padding:6px 12px">レッスンの作成・編集</button>
+            <button type="button" class="btn btn-ghost" data-goto-tab="service" data-goto-lessons style="font-size:12px;padding:6px 12px">レッスンの作成・編集（メニュー）</button>
             <button type="button" class="btn btn-ghost" data-lb-tools="events" style="font-size:12px;padding:6px 12px">イベント・出欠</button>
             <label class="lb-main"><input type="checkbox" data-lb-main ${isMain ? 'checked' : ''} />予約カレンダーを開いた時、最初にグループレッスンを表示する</label>
           </div>
@@ -12378,7 +12464,7 @@ export default function ProviderDashboardPage() {
         bindCalOpenHandlers(gridWrapEl);
         gridWrapEl.querySelectorAll('[data-lb-add]').forEach(cell => cell.addEventListener('click', e => {
           if (e.target.closest('[data-cal-open]')) return;
-          if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
+          if (!classList.length) { showToast('先にメニューでグループレッスンを作ってください'); goToMenuLessons(); return; }
           const [h, m] = cell.dataset.lbTime.split(':').map(Number);
           const placeName = cell.dataset.lbAdd;
           const res = resourceList.find(r => r.name === placeName);
@@ -12388,7 +12474,7 @@ export default function ProviderDashboardPage() {
           if (cls && manualClassEl) manualClassEl.value = cls.id;
         }));
         gridWrapEl.querySelector('[data-lb-new]').addEventListener('click', () => {
-          if (!classList.length) { showToast('先に「レッスンの作成・編集」からレッスンを作ってください'); openLessonTools('classes'); return; }
+          if (!classList.length) { showToast('先にメニューでグループレッスンを作ってください'); goToMenuLessons(); return; }
           openManualCreate(selectedDate, 10 * 60, null, 'resource_id', 'class');
         });
         gridWrapEl.querySelectorAll('[data-lb-tools]').forEach(b => b.addEventListener('click', () => openLessonTools(b.dataset.lbTools)));
@@ -12403,7 +12489,12 @@ export default function ProviderDashboardPage() {
         if (lessonToolsOpen) openLessonTools(lessonToolsOpen, true);
       }
 
-      // クラス管理タブ・出欠確認タブの中身を、この画面の下に借りてきて表示する（同じ機能を二重に作らない）
+      // グループレッスンの作成・編集はメニュータブで行う（2026-10-22：メニューを1か所で決める）
+      function goToMenuLessons() {
+        document.querySelector('.tab-btn[data-tab="service"]')?.click();
+        setTimeout(() => document.getElementById('menu-lessons')?.scrollIntoView({ behavior: 'smooth' }), 400);
+      }
+      // 出欠確認タブの中身を、この画面の下に借りてきて表示する（同じ機能を二重に作らない）
       let lessonToolsOpen = null;
       const borrowedPanes = {};
       function returnBorrowed(key) {
@@ -12421,17 +12512,17 @@ export default function ProviderDashboardPage() {
         lessonToolsOpen = key;
         const pane = document.getElementById(`tab-${key}`);
         if (!borrowedPanes[key] && pane) borrowedPanes[key] = { nodes: [...pane.childNodes] };
-        holder.innerHTML = `<div class="lb-tools-head"><b>${key === 'classes' ? 'レッスンの作成・編集' : 'イベント・出欠'}</b><button type="button" class="btn btn-ghost" data-lb-tools-close style="font-size:12px;padding:4px 10px">閉じる</button></div>`;
+        holder.innerHTML = `<div class="lb-tools-head"><b>イベント・出欠</b><button type="button" class="btn btn-ghost" data-lb-tools-close style="font-size:12px;padding:4px 10px">閉じる</button></div>`;
         (borrowedPanes[key]?.nodes || []).forEach(n => holder.appendChild(n));
         holder.querySelector('[data-lb-tools-close]').addEventListener('click', async () => {
           returnBorrowed(key); lessonToolsOpen = null; holder.innerHTML = '';
           await loadResourcesAndFeatures(); await loadWeek();
         });
-        if (key === 'classes') window.__pdLoadClasses?.(); else window.__pdLoadEvents?.();
+        window.__pdLoadEvents?.();
         if (!keep) holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       // 本来のタブを開いた時は、借りている中身を元の場所に戻す
-      ['classes', 'events'].forEach(key => document.querySelectorAll(`[data-tab="${key}"]`).forEach(btn => btn.addEventListener('click', () => {
+      ['events'].forEach(key => document.querySelectorAll(`[data-tab="${key}"]`).forEach(btn => btn.addEventListener('click', () => {
         if (borrowedPanes[key]) { returnBorrowed(key); if (lessonToolsOpen === key) { lessonToolsOpen = null; const h = document.getElementById('lb-tools'); if (h) h.innerHTML = ''; } }
       })));
 
@@ -13358,7 +13449,7 @@ export default function ProviderDashboardPage() {
         builtin_referrals: { title: '紹介実績', gotoTab: 'member-referral', gotoLabel: '友達紹介タブを開く', mountId: 'today-referrals-list' },
         builtin_events: { title: 'イベント出欠', gotoTab: 'events', gotoLabel: '出欠確認タブを開く', mountId: 'today-events-list', featureGate: 'attendance_confirm' },
         builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: '顧客管理タブを開く', mountId: 'today-dormant-list' },
-        builtin_classes: { title: 'グループレッスンの状況', gotoTab: 'classes', gotoLabel: 'グループレッスンのタブを開く', mountId: 'today-classes-list', featureGate: 'class_management' },
+        builtin_classes: { title: 'グループレッスンの状況', gotoTab: 'service', gotoLabel: 'メニュー（グループレッスン）を開く', mountId: 'today-classes-list', featureGate: 'class_management' },
       };
       // 「＋カードを追加」で選べる任意カード一覧（1枚まで・削除可）。常設4カードは含めない。
       const ADDABLE_TODAY_TYPES = [
@@ -14760,9 +14851,8 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="widget">予約ウィジェット</button>
                   <button className="tab-btn" data-tab="page-design">ページデザイン</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
-                  <button className="tab-btn" data-tab="service">サービス設定</button>
+                  <button className="tab-btn" data-tab="service">メニュー</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
-                  <button className="tab-btn" data-tab="classes" data-feature="class_management">グループレッスン<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
@@ -15827,150 +15917,6 @@ export default function ProviderDashboardPage() {
         {/* クラス管理（スクール業態特化、でお要望2026-09-14：hacomono機能比較で判明した
             不足機能。「在籍制・定員制クラスの管理や進級結果の管理」相当）。「機能設定」で
             ONにした店舗のみ表示。既存の予約カレンダーとは独立した名簿・進級記録機能。 */}
-        <div className="tab-pane" id="tab-classes">
-          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスン</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング・ヨガ等、定員のあるグループレッスンの作成・名簿・進級・開催日時・参加者確認をここでまとめて管理します。</p>
-              </div>
-              <button type="button" className="btn" id="cls-add-btn">＋ グループレッスンを追加</button>
-            </div>
-
-            <div id="cls-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
-              <h3 id="cls-edit-title" style={{ margin: '0 0 10px', fontSize: '14px' }}>グループレッスンを追加</h3>
-              <form id="cls-edit-form">
-                <input type="hidden" name="_class_id" />
-                <div className="form-field"><label>レッスン名 *</label><input name="name" required /></div>
-                <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
-                <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
-                <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
-                <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
-                {/* 部屋・場所（でお要望 2026-10-16）：予約カレンダー・お客様の予約画面で、この名前ごとの列に並ぶ */}
-                <div className="form-field"><label>部屋・場所（任意）</label><input name="place" list="cls-place-options" maxLength={40} placeholder="例：スタジオA・2階ホール" /><datalist id="cls-place-options"></datalist></div>
-                <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
-
-                {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
-                    日時を入れてほしい」。クラス作成と同時に最初の開催回もまとめて作れる
-                    ようにする（空欄ならクラスだけ作成、従来通り「予約枠を管理」から後で
-                    追加も可能）。2026-10-21：編集時も表示し、開催日時の一覧（変更・削除）と追加ができる。 */}
-                <div id="cls-new-session-fields" style={{ borderTop: '1px solid rgba(26,20,16,0.1)', marginTop: '12px', paddingTop: '12px' }}>
-                  {/* 編集時は、このクラスの開催日時の一覧（その場で変更・削除）を上に出す（でお要望 2026-10-21） */}
-                  <div id="cls-edit-sessions" className="cls-es" style={{ display: 'none' }}></div>
-                  <p id="cls-new-session-heading" style={{ fontSize: '12px', margin: '0 0 8px', fontWeight: 700, color: '#1a1410' }}>最初の開催日時（任意・空欄ならグループレッスンだけ作成されます）</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
-                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始日</label><input type="date" id="cls-new-session-date" /></div>
-                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="cls-new-session-start" /></div>
-                    <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="cls-new-session-end" /></div>
-                    <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" id="cls-new-session-capacity" min="1" placeholder="上の定員" /></div>
-                    <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
-                      <label>繰り返し</label>
-                      <select id="cls-new-session-recur-type" defaultValue="once">
-                        <option value="once">1回のみ</option>
-                        <option value="weekly">毎週</option>
-                        <option value="monthly">毎月</option>
-                      </select>
-                    </div>
-                    <div id="cls-new-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
-                      <label>曜日（複数可）</label>
-                      <div style={{ display: 'flex', gap: '3px' }}>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="0" />日</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="1" />月</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="2" />火</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="3" />水</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="4" />木</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="5" />金</label>
-                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="6" />土</label>
-                      </div>
-                    </div>
-                    <div id="cls-new-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
-                      <label>この日まで作成</label>
-                      <input type="date" id="cls-new-session-until" />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                  <button type="submit" className="btn">保存する</button>
-                  <button type="button" className="btn btn-ghost" id="cls-cancel-btn">キャンセル</button>
-                </div>
-              </form>
-            </div>
-
-            <div id="cls-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
-          </div>
-
-          {/* 開催日時の表（でお要望 2026-10-21：予約カレンダーのグループレッスンと同じカードで、一覧の下に並べる） */}
-          <div id="cls-board-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontSize: '15px' }}>開催日時の表</h3>
-              <div className="cls-bd-nav">
-                <button type="button" className="btn btn-ghost" id="cls-board-prev" aria-label="前の日">前の日</button>
-                <input type="date" id="cls-board-date" aria-label="日付" />
-                <button type="button" className="btn btn-ghost" id="cls-board-next" aria-label="次の日">次の日</button>
-                <button type="button" className="btn btn-ghost" id="cls-board-today">今日</button>
-              </div>
-            </div>
-            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約カレンダーの「グループレッスン」と同じ表示です。カードを押すとそのレッスンの編集（開催日時の変更・追加）、空いているマスを押すとその日時で開催日時を追加できます。</p>
-            <div id="cls-board"></div>
-          </div>
-
-          {/* 選択中のクラスの名簿・進級管理 */}
-          <div id="cls-roster-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
-            <h3 id="cls-roster-title" style={{ margin: 0, fontSize: '15px' }}></h3>
-            <form id="cls-enroll-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0, flex: '1 1 160px' }}><label>生徒名 *</label><input name="student_name" required /></div>
-              <button type="submit" className="btn">＋ 生徒を追加</button>
-            </form>
-            <div id="cls-roster-list" className="stack" style={{ gap: '8px' }}></div>
-          </div>
-
-          {/* 選択中のクラスの開催回＝予約枠（でお指摘2026-09-16：「予約できる仕組みが
-              まだない。お客様側にはその店舗のページに予約枠が出てこないと無意味」）。
-              既存の即時予約基盤（provider_slots）を再利用し、class_idを付けて作成する。
-              お客様は店舗の公開ページ「クラス」タブから、ここで作った開催回に予約できる。 */}
-          <div id="cls-sessions-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
-            <h3 id="cls-sessions-title" style={{ margin: 0, fontSize: '15px' }}></h3>
-            <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>
-              ここで追加した開催回が、お客様が閲覧する店舗ページの「グループレッスン」タブに予約枠として表示されます。
-            </p>
-            <form id="cls-session-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" name="date" required /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input type="time" name="start_time" required /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input type="time" name="end_time" required /></div>
-              <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="レッスンの定員" /></div>
-              <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
-                <label>繰り返し</label>
-                <select id="cls-session-recur-type" name="recur_type" defaultValue="once">
-                  <option value="once">1回のみ</option>
-                  <option value="weekly">毎週</option>
-                  <option value="monthly">毎月</option>
-                </select>
-              </div>
-              {/* 毎週の場合の曜日指定（でお要望2026-09-16：「何曜日の何時から...毎週やるもの
-                  なども選べるように」）。未選択なら開始日の曜日をそのまま使う。 */}
-              <div id="cls-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
-                <label>曜日（複数可）</label>
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="0" />日</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="1" />月</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="2" />火</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="3" />水</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="4" />木</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="5" />金</label>
-                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="6" />土</label>
-                </div>
-              </div>
-              <div id="cls-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
-                <label>この日まで作成</label>
-                <input type="date" name="until_date" />
-              </div>
-              <button type="submit" className="btn">＋ 開催回を追加</button>
-            </form>
-            <div id="cls-session-list" className="stack" style={{ gap: '8px' }}></div>
-          </div>
-        </div>
-
         {/* 部屋・設備（hacomono/STORES網羅計画 Phase 1）。「機能設定」タブでONにした店舗のみ表示。
             今野くんの実地メモ：スタッフだけブロックして部屋のブロックを忘れダブルブッキングが
             起きていた——スタッフとは独立に部屋/設備を管理し、即時予約の枠でセットにする。 */}
@@ -16182,46 +16128,30 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* タブ⑤：サービス設定 */}
+        {/* タブ⑤：メニュー（個別メニュー・グループレッスン・体験・回数券/会員専用を1か所で決める） */}
         <div className="tab-pane" id="tab-service">
 
-          {/* Finemeユーザー像バナー */}
-          <div className="card" style={{ padding: '20px 22px', marginBottom: '16px', background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe' }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Finemeに来るユーザーはどんな人か？</div>
-            <p style={{ fontSize: '13px', color: '#1e1b4b', fontWeight: '600', margin: '0 0 12px', lineHeight: '1.7' }}>
-              Finemeのユーザーは<strong>「Me Scanを受けた、変わる意志が決まっている人」</strong>です。<br />
-              自分の<strong>コンパス軸（最優先の変容テーマ）</strong>を持ってあなたのページを訪れます。
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '8px', marginBottom: '12px' }}>
-              {[
-                'Me Scanで8軸をスキャン済み',
-                'コンパス軸（最優先テーマ）が決まっている',
-                '「来た道（タイプ）」が明確',
-                '対応軸が一致すれば優先表示',
-              ].map(text => (
-                <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(26,20,16,0.04)', borderRadius: '10px', padding: '10px' }}>
-                  <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{text}</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ fontSize: '12px', color: '#4f46e5', margin: '0', fontWeight: '700' }}>
-              → 各プログラムに「対応軸」を設定すると、その軸のコンパスを持つユーザーに優先表示されます
-            </p>
-          </div>
-
-          {/* サービス（メニュー）一覧 */}
+          {/* メニュー一覧（でお要望 2026-10-21：個別メニュー・グループレッスン・体験・回数券/会員専用を別々の場所で決めない。
+              ここ1か所に並べ、種類ごとに絞り込む） */}
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h2 style={{ margin: '0', fontSize: '16px' }}>サービス・メニュー</h2>
-              <button type="button" className="btn" id="btn-add-service" style={{ fontSize: '13px', padding: '7px 14px' }}>＋ 追加</button>
+            <div className="mn-head">
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>メニュー</h2>
+                <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>お客様が予約するものは、ここで全て決めます。個別のメニューもグループレッスンも、体験や回数券・会員の方専用かどうかも、それぞれの編集画面で設定します。</p>
+              </div>
+              <div className="mn-add">
+                <button type="button" className="btn" id="btn-add-service">＋ 個別メニュー</button>
+                <button type="button" className="btn btn-ghost" id="btn-add-lesson">＋ グループレッスン</button>
+              </div>
             </div>
+            <div className="mn-filters" id="menu-filters" role="tablist" aria-label="メニューの種類"></div>
             <div id="services-list"><p className="muted">読み込み中…</p></div>
           </div>
           {/* サービス追加・編集フォーム */}
           <div className="card" id="service-edit-card" style={{ padding: '24px', marginBottom: '16px', display: 'none' }}>
             <h3 style={{ margin: '0 0 14px', fontSize: '15px' }} id="service-edit-title">サービスを追加</h3>
             <form id="service-edit-form">
-              <div className="form-field"><label>サービス名 *</label><input name="name" required placeholder="例: 初回体験コース 60分" /></div>
+              <div className="form-field"><label>メニュー名 *</label><input name="name" required placeholder="例: 初回体験コース 60分" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-field"><label>価格（円）*</label><input name="price" type="number" required placeholder="5000" /></div>
                 <div className="form-field">
@@ -16235,6 +16165,44 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
 
+              {/* 担当できるスタッフ・使う部屋（でお要望 2026-10-21：予約できる時間の計算に使う。選ばなければ全員・どの部屋でも） */}
+              <div className="svc-assign" id="svc-assign-staff" style={{ display: 'none' }}>
+                <b>担当できるスタッフ</b>
+                <span>選ばなければ、予約を受けるスタッフ全員が担当できます</span>
+                <div className="svc-assign-list" data-assign="staff_ids"></div>
+              </div>
+              <div className="svc-assign" id="svc-assign-room" style={{ display: 'none' }}>
+                <b>使う部屋・席</b>
+                <span>選ばなければ、どの部屋でも受けます。複数選ぶと、空いている部屋を使います</span>
+                <div className="svc-assign-list" data-assign="resource_ids"></div>
+              </div>
+              {/* 体験メニュー（でお要望 2026-10-19：体験→入会の追跡の起点。2026-10-22：LP設定の体験メニューもここに統合） */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <input type="checkbox" name="is_trial" id="is_trial" />
+                <label htmlFor="is_trial" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>体験メニュー（初めての方向け。「体験→入会」で入会につながったかを追えます）</label>
+              </div>
+              <div className="svc-assign" id="svc-trial-axes" style={{ display: 'none' }}>
+                <b>体験で応えられる悩み（複数可）</b>
+                <span>診断結果からの専用ページ（LP）・Mirrorのおすすめで、この悩みの方に体験メニューとして表示します</span>
+                <div className="svc-assign-list">
+                  {PROVIDER_AXES.map(a => (<label key={a.key}><input type="checkbox" name="axes" value={a.key} />{a.label}</label>))}
+                </div>
+              </div>
+              {/* 予約できる人（でお要望 2026-10-20：誰でも予約できるメニューと、回数券・会員の方専用のメニューを分ける） */}
+              <div className="svc-scope">
+                <b>予約できる人</b>
+                <label><input type="radio" name="booking_scope" value="public" defaultChecked />誰でも予約できる</label>
+                <label><input type="radio" name="booking_scope" value="limited" />回数券・会員プランの方だけ予約できる</label>
+                <div id="svc-scope-limited" className="svc-scope-sub" style={{ display: 'none' }}>
+                  <label><input type="checkbox" name="allow_ticket" />回数券をお持ちの方</label>
+                  <div id="svc-scope-pk" className="svc-scope-list"></div>
+                  <label><input type="checkbox" name="allow_membership" />会員プランに入会中の方</label>
+                  <div id="svc-scope-pl" className="svc-scope-list"></div>
+                  <label><input type="checkbox" name="hide_when_locked" />予約できないお客様には、このメニューを表示しない</label>
+                  <span>予約ページでは「回数券をお持ちの方専用」のように表示され、Finemeにログインして条件に合うお客様だけが選べます。回数券で予約すると、その回数券が予約に結び付き、来店確認の時に消化されます。休会中の会員は予約できません。</span>
+                </div>
+              </div>
+              <h4 className="mn-sub">お店のページ・おすすめでの見せ方</h4>
               {/* サービスカテゴリ（L14） */}
               <div className="form-field">
                 <label>サービスカテゴリ</label>
@@ -16351,25 +16319,6 @@ export default function ProviderDashboardPage() {
                 <input type="checkbox" name="is_featured" id="is_featured" />
                 <label htmlFor="is_featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>おすすめプログラムとして表示する</label>
               </div>
-              {/* 体験メニュー（でお要望 2026-10-19：体験→入会の追跡の起点） */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <input type="checkbox" name="is_trial" id="is_trial" />
-                <label htmlFor="is_trial" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>体験メニュー（初めての方向け。「体験→入会」で入会につながったかを追えます）</label>
-              </div>
-              {/* 予約できる人（でお要望 2026-10-20：誰でも予約できるメニューと、回数券・会員の方専用のメニューを分ける） */}
-              <div className="svc-scope">
-                <b>予約できる人</b>
-                <label><input type="radio" name="booking_scope" value="public" defaultChecked />誰でも予約できる</label>
-                <label><input type="radio" name="booking_scope" value="limited" />回数券・会員プランの方だけ予約できる</label>
-                <div id="svc-scope-limited" className="svc-scope-sub" style={{ display: 'none' }}>
-                  <label><input type="checkbox" name="allow_ticket" />回数券をお持ちの方</label>
-                  <div id="svc-scope-pk" className="svc-scope-list"></div>
-                  <label><input type="checkbox" name="allow_membership" />会員プランに入会中の方</label>
-                  <div id="svc-scope-pl" className="svc-scope-list"></div>
-                  <label><input type="checkbox" name="hide_when_locked" />予約できないお客様には、このメニューを表示しない</label>
-                  <span>予約ページでは「回数券をお持ちの方専用」のように表示され、Finemeにログインして条件に合うお客様だけが選べます。回数券で予約すると、その回数券が予約に結び付き、来店確認の時に消化されます。休会中の会員は予約できません。</span>
-                </div>
-              </div>
               <input type="hidden" name="_service_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit" className="btn" id="service-save-btn">保存</button>
@@ -16377,6 +16326,184 @@ export default function ProviderDashboardPage() {
               </div>
             </form>
           </div>
+          {/* グループレッスン（旧「グループレッスン」タブの中身。2026-10-22 メニュータブへ移動） */}
+          <div id="menu-lessons" style={{ marginBottom: '16px' }}>
+            <div id="menu-lessons-off" className="card mn-off" style={{ display: 'none' }}>
+              <div>
+                <strong style={{ fontSize: '14px' }}>グループレッスンを使う</strong>
+                <p style={{ fontSize: '12.5px', margin: '4px 0 0', color: '#1a1410' }}>ヨガ・ダンス・スイミングなど、定員のあるレッスンを開催日時ごとに予約してもらえます。</p>
+              </div>
+              <button type="button" className="btn" id="menu-lessons-enable">ONにする</button>
+            </div>
+            <div id="menu-lessons-body">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスンの作成・開催日時</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング・ヨガ等、定員のあるグループレッスンの作成・名簿・進級・開催日時・参加者確認をここでまとめて管理します。</p>
+              </div>
+              <button type="button" className="btn" id="cls-add-btn">＋ グループレッスンを追加</button>
+            </div>
+
+            <div id="cls-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
+              <h3 id="cls-edit-title" style={{ margin: '0 0 10px', fontSize: '14px' }}>グループレッスンを追加</h3>
+              <form id="cls-edit-form">
+                <input type="hidden" name="_class_id" />
+                <div className="form-field"><label>レッスン名 *</label><input name="name" required /></div>
+                <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
+                <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
+                <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
+                <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
+                {/* 部屋・場所（でお要望 2026-10-16）：予約カレンダー・お客様の予約画面で、この名前ごとの列に並ぶ */}
+                <div className="form-field"><label>部屋・場所（任意）</label><input name="place" list="cls-place-options" maxLength={40} placeholder="例：スタジオA・2階ホール" /><datalist id="cls-place-options"></datalist></div>
+                <div className="form-field" id="cls-room-field" style={{ display: 'none' }}><label>使う部屋（任意）</label><select name="resource_id"><option value="">使わない</option></select><small style={{ color: '#1a1410' }}>選ぶと、レッスン中はその部屋に他の予約が入らなくなります</small></div>
+                <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
+
+                {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
+                    日時を入れてほしい」。クラス作成と同時に最初の開催回もまとめて作れる
+                    ようにする（空欄ならクラスだけ作成、従来通り「予約枠を管理」から後で
+                    追加も可能）。2026-10-21：編集時も表示し、開催日時の一覧（変更・削除）と追加ができる。 */}
+                <div id="cls-new-session-fields" style={{ borderTop: '1px solid rgba(26,20,16,0.1)', marginTop: '12px', paddingTop: '12px' }}>
+                  {/* 編集時は、このクラスの開催日時の一覧（その場で変更・削除）を上に出す（でお要望 2026-10-21） */}
+                  <div id="cls-edit-sessions" className="cls-es" style={{ display: 'none' }}></div>
+                  <p id="cls-new-session-heading" style={{ fontSize: '12px', margin: '0 0 8px', fontWeight: 700, color: '#1a1410' }}>最初の開催日時（任意・空欄ならグループレッスンだけ作成されます）</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始日</label><input type="date" id="cls-new-session-date" /></div>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="cls-new-session-start" /></div>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="cls-new-session-end" /></div>
+                    <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" id="cls-new-session-capacity" min="1" placeholder="上の定員" /></div>
+                    <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
+                      <label>繰り返し</label>
+                      <select id="cls-new-session-recur-type" defaultValue="once">
+                        <option value="once">1回のみ</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                      </select>
+                    </div>
+                    <div id="cls-new-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                      <label>曜日（複数可）</label>
+                      <div style={{ display: 'flex', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="0" />日</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="1" />月</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="2" />火</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="3" />水</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="4" />木</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="5" />金</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="6" />土</label>
+                      </div>
+                    </div>
+                    <div id="cls-new-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                      <label>この日まで作成</label>
+                      <input type="date" id="cls-new-session-until" />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button type="submit" className="btn">保存する</button>
+                  <button type="button" className="btn btn-ghost" id="cls-cancel-btn">キャンセル</button>
+                </div>
+              </form>
+            </div>
+
+          </div>
+
+          {/* 開催日時の表（でお要望 2026-10-21：予約カレンダーのグループレッスンと同じカードで、一覧の下に並べる） */}
+          <div id="cls-board-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>開催日時の表</h3>
+              <div className="cls-bd-nav">
+                <button type="button" className="btn btn-ghost" id="cls-board-prev" aria-label="前の日">前の日</button>
+                <input type="date" id="cls-board-date" aria-label="日付" />
+                <button type="button" className="btn btn-ghost" id="cls-board-next" aria-label="次の日">次の日</button>
+                <button type="button" className="btn btn-ghost" id="cls-board-today">今日</button>
+              </div>
+            </div>
+            <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>予約カレンダーの「グループレッスン」と同じ表示です。カードを押すとそのレッスンの編集（開催日時の変更・追加）、空いているマスを押すとその日時で開催日時を追加できます。</p>
+            <div id="cls-board"></div>
+          </div>
+
+          {/* 選択中のクラスの名簿・進級管理 */}
+          <div id="cls-roster-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <h3 id="cls-roster-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+            <form id="cls-enroll-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0, flex: '1 1 160px' }}><label>生徒名 *</label><input name="student_name" required /></div>
+              <button type="submit" className="btn">＋ 生徒を追加</button>
+            </form>
+            <div id="cls-roster-list" className="stack" style={{ gap: '8px' }}></div>
+          </div>
+
+          {/* 選択中のクラスの開催回＝予約枠（でお指摘2026-09-16：「予約できる仕組みが
+              まだない。お客様側にはその店舗のページに予約枠が出てこないと無意味」）。
+              既存の即時予約基盤（provider_slots）を再利用し、class_idを付けて作成する。
+              お客様は店舗の公開ページ「クラス」タブから、ここで作った開催回に予約できる。 */}
+          <div id="cls-sessions-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <h3 id="cls-sessions-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>
+              ここで追加した開催回が、お客様が閲覧する店舗ページの「グループレッスン」タブに予約枠として表示されます。
+            </p>
+            <form id="cls-session-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" name="date" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input type="time" name="start_time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input type="time" name="end_time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="レッスンの定員" /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
+                <label>繰り返し</label>
+                <select id="cls-session-recur-type" name="recur_type" defaultValue="once">
+                  <option value="once">1回のみ</option>
+                  <option value="weekly">毎週</option>
+                  <option value="monthly">毎月</option>
+                </select>
+              </div>
+              {/* 毎週の場合の曜日指定（でお要望2026-09-16：「何曜日の何時から...毎週やるもの
+                  なども選べるように」）。未選択なら開始日の曜日をそのまま使う。 */}
+              <div id="cls-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                <label>曜日（複数可）</label>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="0" />日</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="1" />月</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="2" />火</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="3" />水</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="4" />木</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="5" />金</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="6" />土</label>
+                </div>
+              </div>
+              <div id="cls-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                <label>この日まで作成</label>
+                <input type="date" name="until_date" />
+              </div>
+              <button type="submit" className="btn">＋ 開催回を追加</button>
+            </form>
+            <div id="cls-session-list" className="stack" style={{ gap: '8px' }}></div>
+          </div>
+            </div>
+          </div>
+
+          {/* Finemeユーザー像バナー */}
+          <div className="card" style={{ padding: '20px 22px', marginBottom: '16px', background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Finemeに来るユーザーはどんな人か？</div>
+            <p style={{ fontSize: '13px', color: '#1e1b4b', fontWeight: '600', margin: '0 0 12px', lineHeight: '1.7' }}>
+              Finemeのユーザーは<strong>「Me Scanを受けた、変わる意志が決まっている人」</strong>です。<br />
+              自分の<strong>コンパス軸（最優先の変容テーマ）</strong>を持ってあなたのページを訪れます。
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '8px', marginBottom: '12px' }}>
+              {[
+                'Me Scanで8軸をスキャン済み',
+                'コンパス軸（最優先テーマ）が決まっている',
+                '「来た道（タイプ）」が明確',
+                '対応軸が一致すれば優先表示',
+              ].map(text => (
+                <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(26,20,16,0.04)', borderRadius: '10px', padding: '10px' }}>
+                  <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{text}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '12px', color: '#4f46e5', margin: '0', fontWeight: '700' }}>
+              → 各プログラムに「対応軸」を設定すると、その軸のコンパスを持つユーザーに優先表示されます
+            </p>
+          </div>
+
           <div className="card" style={{ padding: '24px' }}>
             <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Navi マッチング設定</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Naviに基づいて「あなたとの一致度」が自動計算されます。カバーする8軸は登録カテゴリから自動検出されます。</p>
@@ -17496,46 +17623,10 @@ export default function ProviderDashboardPage() {
                 見本を見る（自分のLPを確認） ↗
               </a>
             </div>
-            <form id="menu-form" className="stack" style={{ gap: '10px' }}>
-              <div className="form-field">
-                <label>サービス設定から選ぶ（任意）</label>
-                <select id="menu-from-service">
-                  <option value="">－ 選択するとメニュー名・価格・写真を自動入力 －</option>
-                </select>
-                <input type="hidden" id="menu-image-url" />
-                <img id="menu-image-preview" alt="" style={{ display: 'none', width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <div className="form-field" style={{ flex: '1 1 200px' }}>
-                  <label>メニュー名</label>
-                  <input id="menu-name" type="text" placeholder="例：眉デザイン×スキンケア体験" required />
-                </div>
-                <div className="form-field" style={{ minWidth: '110px' }}>
-                  <label>価格（円）</label>
-                  <input id="menu-price" type="number" min="0" required />
-                </div>
-                <div className="form-field" style={{ minWidth: '110px' }}>
-                  <label>所要時間（分）</label>
-                  <input id="menu-duration" type="number" min="0" required />
-                </div>
-              </div>
-              <div className="form-field">
-                <label>対応軸（複数選択可）</label>
-                <div className="checkbox-group" id="menu-axes">
-                  {PROVIDER_AXES.map(a => (
-                    <label className="checkbox-item" key={a.key}>
-                      <input type="checkbox" value={a.key} /> {a.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="form-field">
-                <label>説明</label>
-                <textarea id="menu-desc" placeholder="メニューの内容・特徴など"></textarea>
-              </div>
-              <button type="submit" className="btn" id="menu-submit-btn">メニューを追加する</button>
-              <p id="menu-msg" className="muted" style={{ fontSize: '13px' }}></p>
-            </form>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <p style={{ fontSize: '13px', margin: 0, color: '#1a1410', flex: '1 1 260px' }}>体験メニューは、メニュータブでメニューごとに「体験メニュー」にチェックを入れ、対応する悩みを選んで決めます。</p>
+              <button type="button" className="btn btn-ghost" data-goto-tab="service" style={{ fontSize: '12.5px' }}>メニューを開く</button>
+            </div>
             <div id="menu-list" style={{ marginTop: '8px' }}></div>
           </div>
 

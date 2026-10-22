@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
+import { trialMenus } from '@/lib/trial-menus';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -113,7 +114,7 @@ export async function GET(request, { params }) {
   if (!provider) return Response.json({ error: 'not-found' }, { status: 404 });
 
   const [{ data: menus }, { data: cases }, { data: staff }, { data: lineChannel }, { data: stories }] = await Promise.all([
-    supabase.from('provider_experience_menus').select('*').eq('provider_id', provider.id).eq('is_active', true).order('sort_order', { ascending: true }),
+    trialMenus(supabase, provider.id).then(data => ({ data })),
     supabase.from('provider_cases').select('id, user_type, axis, before_score, after_score, image_url, published_at').eq('provider_id', provider.id).eq('approved_by_user', true).order('published_at', { ascending: false }),
     supabase.from('provider_staff').select('id, name, role, bio, photo_url, is_featured').eq('provider_id', provider.id).eq('is_public', true),
     supabase.from('provider_line_channels').select('liff_id, verified_at').eq('provider_id', provider.id).single(),

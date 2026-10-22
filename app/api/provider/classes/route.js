@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { normalizeAssignees } from '@/lib/menu-assign';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -67,6 +68,8 @@ async function __POST(request) {
 
   const body = await request.json().catch(() => ({}));
   const { name, description, capacity, level_labels, instructor_staff_id, price, place } = body;
+  // 使う部屋（でお要望 2026-10-21：レッスン中はその部屋に他の予約を入れない）
+  const assign = await normalizeAssignees(supabase, provider.id, { resource_id: body.resource_id || null });
   if (!name?.trim()) return Response.json({ error: 'クラス名は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -79,6 +82,7 @@ async function __POST(request) {
       level_labels: Array.isArray(level_labels) ? level_labels : [],
       instructor_staff_id: instructor_staff_id || null,
       place: String(place || '').trim().slice(0, 40) || null,
+      resource_id: assign.resource_id,
       price: Number.isFinite(Number(price)) && price !== '' ? Number(price) : null,
     })
     .select()

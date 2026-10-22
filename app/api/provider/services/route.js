@@ -3,6 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { normalizeScope } from '@/lib/booking-eligibility';
+import { normalizeAssignees } from '@/lib/menu-assign';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -40,10 +41,11 @@ async function __POST(request) {
   if (!name || price === undefined || price === null || price === '') return Response.json({ error: 'メニュー名と価格を入れてください' }, { status: 400 });
   const scope = await normalizeScope(supabase, provider.id, body);
   if (scope.error) return Response.json({ error: scope.error }, { status: 400 });
+  const assign = await normalizeAssignees(supabase, provider.id, { staff_ids: body.staff_ids, resource_ids: body.resource_ids });
 
   const { data, error } = await supabase
     .from('provider_services')
-    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, duration_minutes: duration_minutes ? Number(duration_minutes) : null, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null, suitable_path_types: suitable_path_types || null, transformation_promise: transformation_promise || null, target_axis: target_axis || null, before_text: before_text || null, after_text: after_text || null, before_image_url: before_image_url || null, after_image_url: after_image_url || null, benefit_list: benefit_list || null, category: category || null, is_trial: !!is_trial, ...scope })
+    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, duration_minutes: duration_minutes ? Number(duration_minutes) : null, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null, suitable_path_types: suitable_path_types || null, transformation_promise: transformation_promise || null, target_axis: target_axis || null, before_text: before_text || null, after_text: after_text || null, before_image_url: before_image_url || null, after_image_url: after_image_url || null, benefit_list: benefit_list || null, category: category || null, is_trial: !!is_trial, axes: Array.isArray(body.axes) ? body.axes.map(String).slice(0, 20) : [], ...scope, staff_ids: assign.staff_ids || [], resource_ids: assign.resource_ids || [] })
     .select().single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
