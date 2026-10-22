@@ -8790,7 +8790,7 @@ export default function ProviderDashboardPage() {
             const d = await r.json().catch(() => ({}));
             e.target.disabled = false;
             if (!r.ok) { showToast(d.error || '会員にできませんでした'); return; }
-            showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で会員にしました' : '会員にしました。チケットを付けられます');
+            showToast('会員にしました。チケットを付けられます');
             openCustomerModal(d.user_id, 'member');
             loadAll();
           });
@@ -9444,7 +9444,7 @@ export default function ProviderDashboardPage() {
           const d = await r.json().catch(() => ({}));
           if (!r.ok) { showToast('エラー: ' + (d.error || '不明')); return; }
           [manualNameInput, manualMemoInput, manualPhoneInput, emailEl].forEach(el => { if (el) el.value = ''; });
-          showToast(d.existed ? 'すでにFinemeを使っている方なので「確認待ち」で登録しました。お店のページで会員登録を確認してもらってください' : '会員として登録しました');
+          showToast('会員として登録しました');
           loadAll();
           return;
         }
@@ -18443,7 +18443,7 @@ export default function ProviderDashboardPage() {
           {/* 通っている方向けの予約リンク（でお要望 2026-10-22） */}
           <div className="card stack" style={{ padding: '24px', gap: '10px', marginTop: '16px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>通っている方向けの予約リンク</h2>
-            <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>会員・回数券・月額プランの方向けに、お店の紹介を省いて「持っているチケット・次の予約・予約」だけを出すページを開くリンクです。店頭のQR、お店のLINEのリッチメニュー、予約確認のメッセージに載せてください。会員・チケットをお持ちの方は、普通のリンクから来てもこの表示で開きます。</p>
+            <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>会員・回数券・月額プランの方向けに、お店のページを「会員」タブ（持っているチケット・次の予約とキャンセル・前回と同じ内容で予約）で開くリンクです。店頭のQR、お店のLINEのリッチメニュー、予約確認のメッセージに載せてください。会員・チケットをお持ちの方には、普通にお店のページを開いた時も「会員」タブが出ます。</p>
             <div className="sm-inline"><code id="wg-member-url" className="sm-url" style={{ flex: '1 1 260px' }}></code><button type="button" className="btn btn-ghost" id="wg-member-copy">コピー</button></div>
             <img id="wg-member-qr" alt="通っている方向けの予約リンクのQRコード" style={{ width: '160px', height: '160px', display: 'none' }} />
           </div>

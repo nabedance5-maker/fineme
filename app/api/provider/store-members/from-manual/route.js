@@ -19,7 +19,7 @@ async function __POST(request) {
   try {
     const r = await ensureManualLinked(pid, b.manual_id, email);
     if (r.error) return Response.json({ error: r.error }, { status: 404 });
-    return Response.json({ user_id: r.userId, status: r.existed ? 'invited' : 'active', existed: r.existed }, { status: 201 });
+    return Response.json({ user_id: r.userId, status: 'active', existed: r.existed }, { status: 201 });
   } catch (e) {
     console.error('[store-members/from-manual]', e);
     return Response.json({ error: '会員を作れませんでした' }, { status: 500 });

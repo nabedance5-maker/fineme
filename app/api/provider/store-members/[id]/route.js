@@ -14,8 +14,6 @@ async function __PATCH(request, { params }) {
   if (!['active', 'withdrawn'].includes(b.status)) return Response.json({ error: '変更の内容が正しくありません' }, { status: 400 });
   const { data: cur } = await supabase.from('provider_store_members').select('status').eq('id', id).eq('provider_id', a.provider.id).maybeSingle();
   if (!cur) return Response.json({ error: '会員が見つかりません' }, { status: 404 });
-  // 確認待ち（既にFinemeを使っている方）は、ご本人の確認なしに有効にしない
-  if (b.status === 'active' && cur.status === 'invited') return Response.json({ error: 'ご本人がお店のページで会員登録を確認すると有効になります' }, { status: 409 });
   const { data, error } = await supabase.from('provider_store_members').update({ status: b.status, withdrawn_at: b.status === 'withdrawn' ? new Date().toISOString() : null }).eq('id', id).eq('provider_id', a.provider.id).select().single();
   if (error) return Response.json({ error: '変更できませんでした' }, { status: 500 });
   return Response.json(data);

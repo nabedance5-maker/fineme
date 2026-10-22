@@ -1,7 +1,7 @@
 // GET  /api/provider/store-members → お店の会員の一覧（?user_id= で1人分の持っているチケット。顧客管理・予約カレンダーから使う）
 // POST /api/provider/store-members → 管理画面から会員を登録する（でお要望 2026-10-22）
-//   メールアドレスのFinemeアカウントが無ければ作る。既にFinemeを使っている方のアドレスなら、
-//   ご本人がお店のページで「会員登録」を確認するまでは「確認待ち」（他のお客様の情報に勝手に紐づけないため）。
+//   メールアドレスのFinemeアカウントが無ければ作る。既にFinemeを使っている方のアドレスなら、そのアカウントに紐づける。
+//   （お客様が自分で会員登録する仕組みは2026-10-22に廃止。会員登録はお店だけが行う）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
@@ -70,7 +70,7 @@ async function __POST(request) {
   const userId = found.user.id;
   const { data: exists } = await supabase.from('provider_store_members').select('id, status').eq('provider_id', pid).eq('user_id', userId).maybeSingle();
   if (exists && exists.status !== 'withdrawn') return Response.json({ error: 'このメールアドレスの方は既に会員です' }, { status: 409 });
-  const status = found.existed ? 'invited' : 'active';
+  const status = 'active';
   const row = { provider_id: pid, user_id: userId, status, registered_by: 'store', joined_at: new Date().toISOString(), withdrawn_at: null };
   const { data, error } = exists
     ? await supabase.from('provider_store_members').update(row).eq('id', exists.id).select().single()
