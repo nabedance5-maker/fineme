@@ -2,337 +2,311 @@
 import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { customerAccessToken } from '@/lib/browser-auth';
 import MypageSideNav from './_components/MypageSideNav';
-
-const supabaseAnon = createClient(
-  'https://qsfpzlvucqzmjldshwwd.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
-);
+import { mypageMenu } from './_components/menu';
+import { STATUS, RES_CSS, splitReservations, fmtDay, fmtUntil, hhmm } from './_components/reservation-format';
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
 const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 const PATH_LABELS = { virgin:'初挑戦タイプ', quit:'リスタートタイプ', blind:'客観化タイプ', lapsed:'再開タイプ' };
-const PATH_DESC   = { virgin:'このカテゴリは初めてです', quit:'続けられる仕組みから始めます', blind:'客観的な視点を取り入れます', lapsed:'ハードルを下げて再スタートします' };
 const AXIS_TO_CATEGORY = { body:'gym', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', skin:'esthetic', teeth:'whitening', nail:'nail' };
 const TIER_LABEL = { 1:'基盤', 2:'深化', 3:'補完', 4:'仕上げ' };
+// ゴール文（New Me Map の getOverallGoal と同じ言葉。診断データにはコードで入っている）
+const VISION_MAP = {
+  love_active: '恋愛で、躊躇せず動けるようになっている',
+  no_give_up: '外見を理由に何かを諦めることが減っている',
+  like_self: '自分のことを、もう少し好きになっている',
+  natural_confident: '自信が「自然な状態」になっている',
+};
+const CHANGE_MAP = {
+  others_perception: '他の人からの見られ方・評価が変わる',
+  self_confidence: '自分の気持ち・自己肯定感が変わる',
+  action_ease: '行動のしやすさ・動けるようになること',
+  life_options: '外見を理由に諦めることが減ること',
+};
 
+// マイページのホーム（2026-10-22 UI刷新）。
+// 以前は「変容ダッシュボード」として診断の情報が先頭を占め、予約は件数だけ、色も青・紫が混ざって読みにくかった。
+// 上から「やること（日時の提案への返事）→次の予約→使えるチケット→あなたの変化→メニュー」の順に、1画面で今の状況が分かるようにした。
 export default function MypagePage() {
-  const { track } = useTrack();
+  const { track, trackId } = useTrack();
   const [loading, setLoading] = useState(true);
-  const [resvSummary, setResvSummary] = useState(null);
-  const [nextVisit, setNextVisit] = useState(null);
+  const [reservations, setReservations] = useState(null);
+  const [packages, setPackages] = useState(null);
   const [diagnosis, setDiagnosis] = useState(null);
+  const [name, setName] = useState('');
 
   useEffect(() => {
-    const sbKey = Object.keys(localStorage).find(
-      k => k.startsWith('sb-') && k.endsWith('-auth-token')
-    );
-    if (sbKey) {
-      try {
-        const obj = JSON.parse(localStorage.getItem(sbKey));
-        if (obj?.user?.id) {
-          setLoading(false);
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    let ok = false;
+    try { ok = !!JSON.parse(localStorage.getItem(sbKey))?.user?.id; } catch {}
+    if (!ok) { window.location.href = '/login'; return; }
+    setLoading(false);
+    try {
+      const raw = localStorage.getItem(track.storageKey);
+      if (raw) setDiagnosis(JSON.parse(raw));
+    } catch {}
 
-          try {
-            const raw = localStorage.getItem('fineme:diagnosis:latest');
-            if (raw) setDiagnosis(JSON.parse(raw));
-          } catch {}
-
-          const email = obj.user.email;
-          if (email) {
-            supabaseAnon.auth.getSession().then(({ data }) => {
-              const userEmail = data?.session?.user?.email || email;
-              const token = data?.session?.access_token;
-              const headers = token ? { Authorization: `Bearer ${token}` } : {};
-              fetch('/api/reservations/by-contact?contact=' + encodeURIComponent(userEmail), { headers })
-                .then(r => r.ok ? r.json() : [])
-                .then(items => {
-                  if (!Array.isArray(items) || !items.length) { setResvSummary({ empty: true }); return; }
-                  const pending  = items.filter(r => r.status === 'pending').length;
-                  const counter  = items.filter(r => r.status === 'counter_proposed').length;
-                  const approved = items.filter(r => r.status === 'approved').length;
-                  setResvSummary({ total: items.length, pending, counter, approved });
-                  const now = new Date();
-                  const upcoming = items
-                    .filter(r => r.status === 'approved' && r.reserved_date && new Date(r.reserved_date) >= now)
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
-                  if (upcoming.length > 0) setNextVisit(upcoming[0]);
-                })
-                .catch(() => setResvSummary({ error: true }));
-            });
-          }
-          return;
-        }
-      } catch {}
-    }
-    window.location.href = '/login';
-  }, []);
-
-  function handleSignOut() {
-    supabaseAnon.auth.signOut().then(() => { window.location.href = '/login'; });
-  }
+    customerAccessToken().then(token => {
+      if (!token) { setReservations([]); setPackages([]); return; }
+      const headers = { Authorization: `Bearer ${token}` };
+      // 診断結果はアカウントに保存されたものを正とする（この端末で診断していなくても出す）
+      fetch(`/api/me/diagnosis?track=${trackId}`, { headers }).then(r => (r.ok ? r.json() : null)).then(d => {
+        const female = d?.gender === 'female';
+        if (d && female === (trackId === 'belle')) setDiagnosis(prev => (!prev || new Date(d.at || 0) >= new Date(prev.at || 0) ? d : prev));
+      }).catch(() => {});
+      fetch('/api/me/reservations', { headers }).then(r => (r.ok ? r.json() : [])).then(setReservations).catch(() => setReservations([]));
+      fetch('/api/me/packages', { headers }).then(r => (r.ok ? r.json() : [])).then(setPackages).catch(() => setPackages([]));
+      fetch('/api/me/profile', { headers }).then(r => (r.ok ? r.json() : null)).then(p => {
+        const n = p?.display_name || [p?.last_name, p?.first_name].filter(Boolean).join(' ');
+        if (n) setName(n);
+      }).catch(() => {});
+    });
+  }, [trackId]);
 
   if (loading) return <div style={{ textAlign: 'center', padding: '60px' }}>読み込み中...</div>;
 
+  const { upcoming } = splitReservations(reservations || []);
+  const proposals = upcoming.filter(r => r.status === 'counter_proposed');
+  const next = upcoming.find(r => r.status !== 'counter_proposed');
+  const moreCount = upcoming.length - (next ? 1 : 0) - proposals.length;
+  const usable = (packages || []).filter(p => !p.expired && (p.remaining_sessions === null || p.remaining_sessions > 0));
+
   // transform_vectors はobject形式 {body:{...}, eyebrow:{...}} で保存されるため配列に変換
   const tvRaw = diagnosis?.transform_vectors || {};
-  const vectors = Array.isArray(tvRaw)
-    ? tvRaw
-    : Object.entries(tvRaw).map(([id, v]) => ({ id, ...v }));
+  const vectors = Array.isArray(tvRaw) ? tvRaw : Object.entries(tvRaw).map(([id, v]) => ({ id, ...v }));
   const compass = diagnosis?.compass_first || null;
   const compassVec = vectors.find(v => v.id === compass);
-
   // ギャップあり軸をティア→ギャップ降順でソート
-  const gapAxes = vectors
-    .filter(v => v.gap > 0)
-    .sort((a, b) => {
-      if (a.tier !== b.tier) return a.tier - b.tier;
-      return b.gap - a.gap;
-    });
-  const totalGap = gapAxes.reduce((s, v) => s + v.gap, 0);
-  const scanDate = diagnosis?.at
-    ? new Date(diagnosis.at).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
-    : null;
-
-  // ナビプレビュー: 上位3軸
-  const naviPreviewAxes = gapAxes.slice(0, 3);
+  const gapAxes = vectors.filter(v => v.gap > 0).sort((a, b) => (a.tier !== b.tier ? a.tier - b.tier : b.gap - a.gap));
+  const scanDate = diagnosis?.at ? new Date(diagnosis.at).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' }) : null;
+  const goal = VISION_MAP[diagnosis?.goal_vision] || CHANGE_MAP[diagnosis?.goal_change] || '';
 
   return (
     <main className="section">
       <div className="container mypage-layout">
         <MypageSideNav />
 
-        <section className="stack mypage-content">
-          <h1 className="section-title" style={{ marginBottom: '4px' }}>変容ダッシュボード</h1>
-          {scanDate && <p className="muted" style={{ fontSize: '13px', margin: '0 0 20px' }}>最終スキャン: {scanDate}</p>}
+        <section className="mypage-content mh">
+          <header className="mh-head">
+            <h1 className="section-title">マイページ</h1>
+            {name && <p className="mh-hello">{name}さん</p>}
+          </header>
 
-          {/* ── New Me Navi カード ── */}
-          {diagnosis ? (
-            <div className="map-card">
-              <div className="map-card-top">
-                <div>
-                  <p className="map-eyebrow">New Me Navi</p>
-                  <p className="map-scan-date">スキャン済み {scanDate && `· ${scanDate}`}</p>
+          {/* 返事が必要なもの */}
+          {proposals.map(r => (
+            <Link key={r.id} href="/my-reservations" className="mh-alert">
+              <span className="mh-alert-body">
+                <strong>{r.provider_name || 'お店'}から日時の提案が届いています</strong>
+                <span>{fmtDay(r.counter_date)} {hhmm(r.counter_time)}　返事をする</span>
+              </span>
+              <span aria-hidden="true" className="mh-chev">›</span>
+            </Link>
+          ))}
+
+          {/* 次の予約 */}
+          <section className="mh-block" aria-labelledby="mh-next">
+            <div className="mh-block-head">
+              <h2 id="mh-next" className="mh-h2">次のご予約</h2>
+              {reservations?.length > 0 && <Link href="/my-reservations" className="rs-link">予約をすべて見る</Link>}
+            </div>
+            {reservations === null ? (
+              <div className="mh-card mh-skel" aria-busy="true" />
+            ) : next ? (
+              <Link href="/my-reservations" className="mh-card mh-next">
+                <div className="mh-next-when">
+                  <span className="mh-next-day">{fmtDay(next.date)}</span>
+                  {next.time && <span className="mh-next-time">{hhmm(next.time)}</span>}
                 </div>
-                <Link href={track.diagnosisResult} className="map-cta-btn">マップを見る →</Link>
+                <div className="mh-next-meta">
+                  <span className={`rs-chip rs-chip--${STATUS[next.status]?.tone || 'done'}`}>{STATUS[next.status]?.label || next.status}</span>
+                  {fmtUntil(next.date) && <span className="mh-until">{fmtUntil(next.date)}</span>}
+                </div>
+                <p className="mh-next-store">{next.provider_name || 'お店'}</p>
+                {next.menu_name && <p className="mh-next-menu">{next.menu_name}</p>}
+                {moreCount > 0 && <p className="mh-next-more">ほかに{moreCount}件の予約があります</p>}
+              </Link>
+            ) : (
+              <div className="mh-card mh-empty">
+                <p>これからの予約はありません。</p>
+                <Link href={compass && AXIS_TO_CATEGORY[compass] ? `/search?category=${AXIS_TO_CATEGORY[compass]}` : '/search'} className="rs-btn">お店を探す</Link>
               </div>
+            )}
+          </section>
 
-              {/* ゴール表示 */}
-              {diagnosis.goal_change && (
-                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', borderLeft: '3px solid rgba(165,180,252,0.6)' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', margin: '0 0 4px', letterSpacing: '.06em', textTransform: 'uppercase' }}>あなたのゴール</p>
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0, lineHeight: 1.5 }}>
-                    {String(diagnosis.goal_change).length > 60
-                      ? String(diagnosis.goal_change).slice(0, 60) + '…'
-                      : String(diagnosis.goal_change)}
-                  </p>
-                </div>
-              )}
-
-              {/* Fineme Compass — アクション付き */}
-              {compass && (
-                <div className="compass-row">
-                  <span className="compass-icon"></span>
-                  <div className="compass-body">
-                    <p className="compass-label">Fineme Compass — 最初の一手</p>
-                    <p className="compass-axis">
-                      {AXIS_LABELS[compass]}
-                      {compassVec?.path_type && (
-                        <span className="compass-path">{PATH_LABELS[compassVec.path_type]}</span>
-                      )}
-                    </p>
-                    {compassVec?.path_type && (
-                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', margin: '3px 0 0' }}>{PATH_DESC[compassVec.path_type]}</p>
-                    )}
-                  </div>
-                  {AXIS_TO_CATEGORY[compass] && (
-                    <Link
-                      href={`/search?category=${AXIS_TO_CATEGORY[compass]}`}
-                      style={{ flexShrink: 0, fontSize: '12px', fontWeight: 700, padding: '8px 12px', background: 'rgba(99,102,241,0.4)', color: '#e0e7ff', border: '1px solid rgba(99,102,241,0.5)', borderRadius: '10px', textDecoration: 'none', whiteSpace: 'nowrap', lineHeight: 1.3, textAlign: 'center' }}
-                    >
-                      ガイドを<br />探す →
+          {/* 使えるチケット */}
+          {usable.length > 0 && (
+            <section className="mh-block" aria-labelledby="mh-tk">
+              <div className="mh-block-head">
+                <h2 id="mh-tk" className="mh-h2">使える回数券・チケット</h2>
+                <Link href="/mypage/packages" className="rs-link">すべて見る</Link>
+              </div>
+              <ul className="mh-list">
+                {usable.slice(0, 3).map(p => (
+                  <li key={p.id}>
+                    <Link href={p.book_href || '/mypage/packages'} className="mh-row">
+                      <span className="mh-row-main">
+                        <strong>{p.package_name}</strong>
+                        <span>{p.provider_name}{p.expires_at ? `・${new Date(p.expires_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}まで` : ''}</span>
+                      </span>
+                      <span className="mh-row-num">{p.remaining_sessions === null ? '通い放題' : <>残り<b>{p.remaining_sessions}</b>回</>}</span>
+                      <span aria-hidden="true" className="mh-chev">›</span>
                     </Link>
-                  )}
-                </div>
-              )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-              {/* 変容ベクトルサマリー */}
-              {gapAxes.length > 0 && (
-                <div className="gap-summary">
-                  <p className="gap-summary-label">{gapAxes.length}軸にギャップあり — 変容ポテンシャル +{totalGap}</p>
-                  <div className="gap-axes-row">
-                    {gapAxes.slice(0, 5).map(v => (
-                      <div key={v.id} className={`gap-axis-chip${v.id === compass ? ' gap-axis-chip--compass' : ''}`}>
-                        {AXIS_LABELS[v.id]}
-                        <span className="gap-chip-gap">+{v.gap}</span>
-                      </div>
-                    ))}
-                    {gapAxes.length > 5 && <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>+{gapAxes.length - 5}軸</span>}
+          {/* あなたの変化（New Me Navi / Map） */}
+          <section className="mh-block" aria-labelledby="mh-me">
+            <div className="mh-block-head">
+              <h2 id="mh-me" className="mh-h2">New Me Navi</h2>
+              {diagnosis && <Link href="/mypage/navi" className="rs-link">New Me Mapを開く</Link>}
+            </div>
+            {diagnosis ? (
+              <div className="mh-card mh-me">
+                {goal && (
+                  <div className="mh-goal">
+                    <p className="mh-label">あなたのゴール</p>
+                    <p className="mh-goal-text">{goal}</p>
                   </div>
-                </div>
-              )}
-
-              <div className="map-card-footer">
-                <Link href="/mypage/navi" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>New Me Map でロードマップを見る</Link>
-                <Link href={track.diagnosis} className="muted" style={{ fontSize: '12px' }}>再スキャン</Link>
-              </div>
-            </div>
-          ) : (
-            <div className="map-card map-card--empty">
-              <p className="map-eyebrow" style={{ color: '#9ca3af' }}>New Me Navi</p>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '8px 0 6px', color: '#111' }}>まだスキャンが<br />完了していません</h2>
-              <p className="muted" style={{ fontSize: '14px', margin: '0 0 16px', lineHeight: 1.6 }}>Me Scanを受けると、あなたの変容ナビと<br />最初の一手が生成されます。</p>
-              <Link href={track.diagnosis} className="btn" style={{ fontSize: '14px', padding: '10px 20px' }}>Me Scanをはじめる →</Link>
-            </div>
-          )}
-
-          {/* ── New Me Map プレビュー ── */}
-          {naviPreviewAxes.length > 0 && (
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div>
-                  <p style={{ fontSize: '11px', fontWeight: 800, color: '#9ca3af', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '.06em' }}>New Me Map</p>
-                  <p style={{ fontSize: '15px', fontWeight: 800, color: '#111', margin: 0 }}>変容トラック</p>
-                </div>
-                <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textDecoration: 'none' }}>すべて見る →</Link>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {naviPreviewAxes.map((v, i) => {
-                  // 現在地はTierで表現: Tier1=25%, Tier2=50%, Tier3=75%, Tier4=100%
-                  const progress = Math.max(5, ((4 - (v.tier || 4)) / 4) * 100);
-                  const isCompass = v.id === compass;
-                  return (
-                    <div key={v.id} style={{ padding: '14px 16px', background: isCompass ? 'rgba(37,99,235,0.15)' : 'rgba(13,17,23,0.50)', borderRadius: '14px', border: isCompass ? '1.5px solid rgba(59,130,246,0.40)' : '1px solid rgba(232,228,220,0.12)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '18px' }}>{AXIS_ICONS[v.id]}</span>
-                          <div>
-                            <span style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.90)' }}>{AXIS_LABELS[v.id]}</span>
-                            {isCompass && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', background: '#2563eb', color: '#fff', borderRadius: '99px' }}>最優先</span>}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tier {v.tier || 4} / {TIER_LABEL[v.tier] || '仕上げ'}</span>
-                        </div>
-                      </div>
-                      {/* プログレスバー */}
-                      <div style={{ height: '6px', background: 'rgba(232,228,220,0.15)', borderRadius: '99px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${progress}%`, background: isCompass ? '#2563eb' : '#6b7280', borderRadius: '99px', transition: 'width .4s' }} />
-                      </div>
-                      {v.path_type && (
-                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>{PATH_DESC[v.path_type]}</p>
-                      )}
+                )}
+                {compass && (
+                  <div className="mh-compass">
+                    <span className="mh-glyph mh-glyph--gold" aria-hidden="true">{AXIS_ICONS[compass]}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p className="mh-label">最初の一手</p>
+                      <p className="mh-compass-axis">{AXIS_LABELS[compass]}{compassVec?.path_type && <span className="mh-compass-path">{PATH_LABELS[compassVec.path_type]}</span>}</p>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Fineme Mirror CTA ── */}
-          <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '16px' }}>
-              <span style={{ fontSize: '32px', flexShrink: 0 }}></span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, color: '#c8a45a', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>Fineme Mirror — ¥500</p>
-                <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.95)', margin: '0 0 4px' }}>写真1枚で変容余地を可視化する</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: 1.5 }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
-              </div>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d1117', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
-            </div>
-          </a>
-
-          {/* ── 次の来店予定 ── */}
-          {nextVisit && (
-            <div className="card" style={{ padding: '16px', background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(59,130,246,0.35)' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, color: '#1d4ed8', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>次の来店予定</p>
-              <p style={{ fontSize: '18px', fontWeight: 800, color: '#111', margin: '0 0 2px' }}>
-                {new Date(nextVisit.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
-                {nextVisit.time ? `　${nextVisit.time}` : ''}
-              </p>
-              {nextVisit.providerName && <p className="muted" style={{ fontSize: '13px', margin: 0 }}>{nextVisit.providerName}</p>}
-              <Link href="/my-reservations" className="btn btn-ghost" style={{ marginTop: '10px', fontSize: '12px', padding: '6px 12px' }}>予約詳細を見る</Link>
-            </div>
-          )}
-
-          {/* ── 予約状況（コンパクト） ── */}
-          <div className="card" style={{ padding: '14px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h2 style={{ margin: 0, fontSize: '15px' }}>予約状況</h2>
-              <Link href="/my-reservations" className="muted" style={{ fontSize: '12px' }}>履歴を見る →</Link>
-            </div>
-            {resvSummary === null && <p className="muted" style={{ fontSize: '13px', margin: 0 }}>読み込み中…</p>}
-            {resvSummary?.error && <p className="muted" style={{ fontSize: '13px', margin: 0 }}>取得できませんでした</p>}
-            {resvSummary?.empty && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>まだ予約はありません</p>
-                {compass && AXIS_TO_CATEGORY[compass] && (
-                  <Link href={`/search?category=${AXIS_TO_CATEGORY[compass]}`} className="btn" style={{ fontSize: '12px', padding: '6px 14px' }}>
-                    {AXIS_LABELS[compass]}のガイドを探す
-                  </Link>
+                    {AXIS_TO_CATEGORY[compass] && <Link href={`/search?category=${AXIS_TO_CATEGORY[compass]}`} className="rs-btn">お店を探す</Link>}
+                  </div>
                 )}
-                {!compass && (
-                  <Link href="/search" className="btn" style={{ fontSize: '12px', padding: '6px 14px' }}>サービスを探す</Link>
+                {gapAxes.length > 0 && (
+                  <ul className="mh-axes">
+                    {gapAxes.slice(0, 3).map(v => {
+                      // 現在地はTierで表現: Tier1=25%, Tier2=50%, Tier3=75%, Tier4=100%
+                      const progress = Math.max(5, ((4 - (v.tier || 4)) / 4) * 100);
+                      return (
+                        <li key={v.id} className="mh-axis">
+                          <span className="mh-glyph" aria-hidden="true">{AXIS_ICONS[v.id]}</span>
+                          <span className="mh-axis-name">{AXIS_LABELS[v.id]}</span>
+                          <span className="mh-bar" role="img" aria-label={`段階 ${TIER_LABEL[v.tier] || '仕上げ'}`}><span style={{ width: `${progress}%` }} className={v.id === compass ? 'is-gold' : ''} /></span>
+                          <span className="mh-axis-tier">{TIER_LABEL[v.tier] || '仕上げ'}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
+                <div className="mh-me-foot">
+                  <Link href={track.diagnosisResult} className="rs-link">診断結果を見る</Link>
+                  <span className="mh-muted">{scanDate ? `${scanDate}に診断` : ''}　<Link href={track.diagnosis} className="mh-muted-link">もう一度診断する</Link></span>
+                </div>
+              </div>
+            ) : (
+              <div className="mh-card mh-empty">
+                <p>Me Scan（約3分）を受けると、あなたのゴールと最初の一手がここに出ます。</p>
+                <Link href={track.diagnosis} className="rs-btn rs-btn--primary">Me Scanをはじめる</Link>
               </div>
             )}
-            {resvSummary?.total > 0 && (
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>合計 <strong>{resvSummary.total}件</strong></span>
-                {resvSummary.counter > 0 && <span style={{ fontSize: '12px', color: '#6366f1', fontWeight: 700 }}>代替提案 {resvSummary.counter}件 </span>}
-                {resvSummary.pending > 0 && <span style={{ fontSize: '12px', color: '#f59e0b' }}>返答待ち {resvSummary.pending}件</span>}
-                {resvSummary.approved > 0 && <span style={{ fontSize: '12px', color: '#10b981' }}>承認済み {resvSummary.approved}件</span>}
-              </div>
-            )}
-          </div>
+            <a href={track.lpMirror} className="mh-row mh-mirror">
+              <span className="mh-row-main">
+                <strong>Fineme Mirror</strong>
+                <span>写真1枚から、最初に変えるとよい場所をAIが見つけます（¥500）</span>
+              </span>
+              <span aria-hidden="true" className="mh-chev">›</span>
+            </a>
+          </section>
 
-          <div>
-            <button className="btn btn-ghost" style={{ fontSize: '13px' }} onClick={handleSignOut}>ログアウト</button>
-          </div>
+          {/* メニュー（スマホではここがメニューになる。PCは左に同じものがある） */}
+          <nav className="mh-menu" aria-label="マイページのメニュー">
+            {mypageMenu(track).map(g => (
+              <div key={g.label} className="mh-block">
+                <h2 className="mh-h2">{g.label}</h2>
+                <ul className="mh-list">
+                  {g.items.map(it => (
+                    <li key={it.href}><Link href={it.href} className="mh-row mh-row--menu"><span className="mh-row-main"><strong>{it.label}</strong></span><span aria-hidden="true" className="mh-chev">›</span></Link></li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </section>
       </div>
 
-      <style>{`
-        .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; overflow-y: visible; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
+      <style>{RES_CSS + `
+        .mh { display: flex; flex-direction: column; gap: 28px; max-width: 720px; }
+        .mh-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .mh-hello { margin: 0; font-size: 14px; color: rgba(232,228,220,0.72); }
+        .mh-block { display: flex; flex-direction: column; gap: 12px; }
+        .mh-block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        .mh-h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: rgba(232,228,220,0.72); }
+        .mh-card { display: block; padding: 20px; border-radius: 16px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); color: #e8e4dc; text-decoration: none; }
+        a.mh-card { transition: border-color .15s; }
+        a.mh-card:hover { border-color: rgba(200,164,90,0.55); }
+        .mh-card:focus-visible, .mh-row:focus-visible, .mh-alert:focus-visible { outline: 2px solid #c8a45a; outline-offset: 2px; }
+        .mh-skel { min-height: 132px; background: linear-gradient(90deg, #151b24, #1b2230, #151b24); background-size: 200% 100%; animation: mh-sh 1.4s ease-in-out infinite; }
+        @keyframes mh-sh { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+        @media (prefers-reduced-motion: reduce) { .mh-skel { animation: none; } }
+        .mh-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+        .mh-empty p { margin: 0; font-size: 14px; line-height: 1.7; color: rgba(232,228,220,0.8); flex: 1 1 240px; }
 
-        /* New Me Navi card */
-        .map-card { background: linear-gradient(145deg, #0f172a, #1e1b4b); border-radius: 20px; padding: 22px; color: #fff; }
-        .map-card--empty { background: #151b24; border: 1.5px dashed rgba(232,228,220,0.20); }
-        .map-card--empty .map-eyebrow { color: #9ca3af !important; }
-        .map-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
-        .map-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: rgba(255,255,255,.5); margin: 0 0 4px; text-transform: uppercase; }
-        .map-scan-date { font-size: 12px; color: rgba(255,255,255,.6); margin: 0; }
-        .map-cta-btn { font-size: 12px; font-weight: 700; padding: 7px 14px; background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; text-decoration: none; white-space: nowrap; transition: background .15s; flex-shrink: 0; }
-        .map-cta-btn:hover { background: rgba(255,255,255,.22); }
+        .mh-alert { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 14px; background: #e8e4dc; color: #0d1117; text-decoration: none; }
+        .mh-alert-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .mh-alert-body strong { font-size: 15px; }
+        .mh-alert-body span { font-size: 13px; }
+        .mh-chev { font-size: 22px; line-height: 1; opacity: .6; flex-shrink: 0; }
 
-        /* Compass row */
-        .compass-row { display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,.08); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
-        .compass-icon { font-size: 24px; flex-shrink: 0; padding-top: 2px; }
-        .compass-body { flex: 1; min-width: 0; }
-        .compass-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.45); letter-spacing: .06em; margin: 0 0 3px; text-transform: uppercase; }
-        .compass-axis { font-size: 16px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .compass-path { font-size: 11px; font-weight: 600; color: #a5b4fc; padding: 2px 8px; background: rgba(165,180,252,.15); border-radius: 99px; }
+        .mh-next { box-shadow: inset 3px 0 0 #c8a45a; }
+        .mh-next-when { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .mh-next-day { font-family: var(--font-serif-ja); font-size: clamp(22px, 5vw, 28px); font-weight: 700; color: #fff; }
+        .mh-next-time { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+        .mh-next-meta { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .mh-until { font-size: 13px; color: rgba(232,228,220,0.72); }
+        .mh-next-store { margin: 14px 0 0; font-size: 16px; font-weight: 700; }
+        .mh-next-menu { margin: 4px 0 0; font-size: 14px; color: rgba(232,228,220,0.75); }
+        .mh-next-more { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.1); font-size: 13px; color: rgba(232,228,220,0.72); }
 
-        /* Gap summary */
-        .gap-summary { margin-bottom: 16px; }
-        .gap-summary-label { font-size: 11px; color: rgba(255,255,255,.5); margin: 0 0 8px; font-weight: 600; }
-        .gap-axes-row { display: flex; gap: 6px; flex-wrap: wrap; }
-        .gap-axis-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,.1); color: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.15); }
-        .gap-axis-chip--compass { background: rgba(99,102,241,.35); border-color: #818cf8; color: #e0e7ff; }
-        .gap-chip-gap { font-size: 10px; font-weight: 800; color: #a5b4fc; margin-left: 2px; }
+        .mh-list { list-style: none; margin: 0; padding: 0; border-radius: 16px; overflow: hidden; border: 1px solid rgba(232,228,220,0.12); background: #151b24; }
+        .mh-list li + li { border-top: 1px solid rgba(232,228,220,0.08); }
+        .mh-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 12px 16px; color: #e8e4dc; text-decoration: none; transition: background .15s; }
+        .mh-row:hover { background: rgba(232,228,220,0.04); }
+        .mh-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .mh-row-main strong { font-size: 15px; font-weight: 700; }
+        .mh-row-main span { font-size: 12.5px; color: rgba(232,228,220,0.65); }
+        .mh-row-num { font-size: 13px; color: rgba(232,228,220,0.8); white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .mh-row-num b { font-size: 20px; color: #fff; margin: 0 2px; }
+        .mh-row--menu { min-height: 52px; }
+        .mh-mirror { border-radius: 16px; border: 1px solid rgba(200,164,90,0.35); background: rgba(200,164,90,0.06); }
 
-        .map-card-footer { display: flex; align-items: center; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
-        .map-card-footer .muted { color: rgba(255,255,255,.4) !important; }
-        .map-card-footer .muted:hover { color: rgba(255,255,255,.7) !important; }
-        .map-card-footer .btn-ghost { border-color: rgba(255,255,255,.25) !important; color: #fff !important; }
-        .map-card-footer .btn-ghost:hover { background: rgba(255,255,255,.1) !important; }
+        .mh-me { display: flex; flex-direction: column; gap: 18px; }
+        .mh-label { margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: rgba(232,228,220,0.62); }
+        .mh-goal-text { margin: 0; font-family: var(--font-serif-ja); font-size: 17px; line-height: 1.6; color: #fff; }
+        .mh-compass { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px; border-radius: 12px; background: rgba(232,228,220,0.04); }
+        .mh-compass-axis { margin: 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .mh-compass-path { white-space: nowrap; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.22); color: rgba(232,228,220,0.85); }
+        .mh-glyph { width: 36px; height: 36px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(232,228,220,0.18); font-family: var(--font-serif-ja); font-size: 16px; font-weight: 700; color: #e8e4dc; }
+        .mh-glyph--gold { background: #c8a45a; border-color: #c8a45a; color: #0d1117; }
+        .mh-axes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+        .mh-axis { display: grid; grid-template-columns: 36px minmax(0, 7.5em) minmax(0, 1fr) 3.5em; align-items: center; gap: 12px; }
+        .mh-axis .mh-glyph { width: 32px; height: 32px; font-size: 14px; }
+        .mh-axis-name { font-size: 14px; font-weight: 600; }
+        .mh-axis-tier { font-size: 12px; color: rgba(232,228,220,0.65); text-align: right; }
+        .mh-bar { height: 6px; border-radius: 99px; background: rgba(232,228,220,0.12); overflow: hidden; }
+        .mh-bar span { display: block; height: 100%; border-radius: 99px; background: rgba(232,228,220,0.55); }
+        .mh-bar span.is-gold { background: #c8a45a; }
+        .mh-me-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid rgba(232,228,220,0.1); }
+        .mh-muted { font-size: 12px; color: rgba(232,228,220,0.62); }
+        .mh-muted-link { color: rgba(232,228,220,0.85); text-decoration: underline; text-underline-offset: 3px; }
+
+        .mh-menu { display: none; flex-direction: column; gap: 24px; }
+        @media (max-width: 760px) {
+          .mh { gap: 24px; }
+          .mh-menu { display: flex; }
+          .mh-card { padding: 18px; }
+          .mh-compass .rs-btn { flex: 1 1 100%; }
+        }
       `}</style>
     </main>
   );

@@ -33,17 +33,19 @@ export default function MypagePackagesPage() {
         <MypageSideNav />
 
         <section className="stack mypage-content">
-          <h1 className="section-title">あなたのパッケージ・回数券</h1>
-          <p className="muted" style={{ fontSize: '13px', marginTop: '-8px' }}>
-            店舗が記録した回数券と、Fineme上でご購入いただいた回数券の残り回数をここで確認できます。
-          </p>
+          <header>
+            <h1 className="section-title">回数券・チケット</h1>
+            <p className="muted" style={{ fontSize: '13px', lineHeight: 1.7, margin: '8px 0 0' }}>
+              お持ちの回数券・チケットの残りです。押すと、そのチケットで予約できるメニューが開きます。
+            </p>
+          </header>
 
           {loading ? (
             <p className="muted">読み込み中...</p>
           ) : error ? (
-            <p style={{ color: '#dc2626' }}>{error}</p>
+            <p style={{ color: '#fff', fontWeight: 700 }}>{error}</p>
           ) : packages.length === 0 ? (
-            <p className="muted">まだ記録がありません。店舗で回数券・パッケージを購入すると、ここに表示されます。</p>
+            <p className="muted" style={{ lineHeight: 1.7 }}>まだありません。お店で回数券を買ったり、月額プランに入ったりすると、ここに出ます。</p>
           ) : (
             <div style={{ '--fx-ticket-hole': '#0d1117' }}>
               {packages.map(p => {
@@ -99,13 +101,6 @@ export default function MypagePackagesPage() {
         .pk-link:hover { transform: translateY(-1px); }
         .pk-link:focus-visible { outline: 2px solid #c8a45a; outline-offset: 3px; }
         .pk-book { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 800; }
-        .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
       `}</style>
     </main>
   );

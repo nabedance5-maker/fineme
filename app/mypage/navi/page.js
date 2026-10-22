@@ -4396,30 +4396,21 @@ export default function NewMeNaviPage() {
   return (
     <>
       <style>{`
-        .navi-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+        .navi-layout { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
         /* グリッド子要素のはみ出し防止用ルールは削除した。子は.navi-sidenavと
            直下divのみで、どちらも既にmin-width:0を持つため冗長だった上、
            直接子孫を選ぶ記号を使うとJSXのstyleタグ内ではSSR時にエンティティへ
            変換されhydrationミスマッチを起こしていた（でお報告2026-08-27の原因。
            styleタグ内では記号そのものを書かないこと） */
-        .navi-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
-        .navi-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .navi-sidenav .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-        .navi-sidenav .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
         @media (max-width: 640px) {
-          .navi-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; overflow-x: hidden; }
-          .navi-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
-          .navi-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
-          .navi-sidenav nav::-webkit-scrollbar { display: none; }
-          .navi-sidenav nav .sidenav-link { margin-top: 0 !important; }
-          .navi-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
+          .navi-layout { padding: 16px 16px 60px; overflow-x: hidden; }
           .navi-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }
 
       `}</style>
       <main style={{overflowX:'hidden', width:'100%'}}>
-        <div className="navi-layout">
-          <MypageSideNav asideClassName="navi-sidenav" />
+        <div className="navi-layout mypage-layout">
+          <MypageSideNav />
           <div style={{minWidth:0, overflow:'hidden'}}>
             <div id="navi-root">
               <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>

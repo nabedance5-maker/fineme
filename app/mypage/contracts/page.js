@@ -64,14 +64,14 @@ export default function MypageContractsPage() {
 
         <section className="stack mypage-content">
           <h1 className="section-title">契約書</h1>
-          <p className="muted" style={{ fontSize: '13px', marginTop: '-8px', lineHeight: 1.7 }}>
+          <p className="muted" style={{ fontSize: '13px', marginTop: '8px', lineHeight: 1.7 }}>
             店舗と交わした契約書を、店舗がここに保管している場合に表示されます。内容を確認したら「内容を確認しました」を押すと、確認した日時が記録されます。
           </p>
 
           {loading ? (
             <p className="muted">読み込み中...</p>
           ) : error ? (
-            <p style={{ color: '#dc2626' }}>{error}</p>
+            <p style={{ color: '#fff', fontWeight: 700 }}>{error}</p>
           ) : docs.length === 0 ? (
             <p className="muted">表示できる契約書はまだありません。</p>
           ) : (

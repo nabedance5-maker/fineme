@@ -286,7 +286,7 @@ export default function MypageProfilePage() {
         <MypageSideNav />
 
         <section className="stack mypage-content">
-          <h1 className="section-title">プロフィール編集</h1>
+          <h1 className="section-title">プロフィール</h1>
           <form id="user-profile-form" className="card" style={{ padding: '24px', maxWidth: '640px' }} onSubmit={handleSubmit}>
             <div className="stack">
               <div>
@@ -617,7 +617,7 @@ export default function MypageProfilePage() {
                     type="checkbox"
                     checked={shareDiagnosis}
                     onChange={e => setShareDiagnosis(e.target.checked)}
-                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                    style={{ width: '18px', height: '18px', accentColor: '#c8a45a', cursor: 'pointer' }}
                   />
                   <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)' }}>診断結果を公開する</span>
                 </label>
@@ -626,7 +626,7 @@ export default function MypageProfilePage() {
                     type="checkbox"
                     checked={shareRoadmap}
                     onChange={e => setShareRoadmap(e.target.checked)}
-                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                    style={{ width: '18px', height: '18px', accentColor: '#c8a45a', cursor: 'pointer' }}
                   />
                   <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)' }}>変容ロードマップを公開する</span>
                 </label>
@@ -647,16 +647,16 @@ export default function MypageProfilePage() {
       </div>
 
       <style>{`
-        .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
+        /* 入力欄の見た目を1つにそろえる（白い欄・暗い欄・枠だけの欄が混ざっていた。2026-10-22） */
+        #user-profile-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        #user-profile-form select { min-height: 44px; padding: 0 12px !important; border: 1px solid rgba(232,228,220,0.22) !important; border-radius: 10px !important; background: #0d1117 !important; color: #e8e4dc !important; font-size: 16px !important; box-sizing: border-box; color-scheme: dark; }
+        #user-profile-form input[readonly] { color: rgba(232,228,220,0.62) !important; border-style: dashed !important; }
+        #user-profile-form input:focus, #user-profile-form select:focus { outline: 2px solid #c8a45a; outline-offset: 1px; }
+        #user-profile-form input::placeholder { color: rgba(232,228,220,0.4); }
+        .profile-label-text { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.75); }
         .profile-label { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 12px; }
         .profile-label input { grid-column: 2; width: 100%; min-width: 0; }
-        .display-name-note { font-size: 11px; color: #9ca3af; margin: 6px 0 0 172px; }
+        .display-name-note { font-size: 12px; line-height: 1.6; color: rgba(232,228,220,0.6); margin: 6px 0 0 172px; }
         @media (max-width: 640px) { .profile-label { grid-template-columns: 1fr; } .profile-label input { grid-column: auto; } .display-name-note { margin-left: 0; } }
       `}</style>
     </main>

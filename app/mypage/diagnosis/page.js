@@ -17,7 +17,7 @@ const CONCERN_NAMES = {
 };
 
 function levelColor(l) {
-  return ['#e5e7eb', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb'][l] || '#e5e7eb';
+  return ['rgba(232,228,220,0.25)', 'rgba(200,164,90,0.45)', 'rgba(200,164,90,0.65)', 'rgba(200,164,90,0.85)', '#c8a45a'][l] || 'rgba(232,228,220,0.25)';
 }
 
 function careLevelsToConcernAreas(careLevels) {
@@ -145,7 +145,7 @@ export default function MypageDiagnosisPage() {
       <div className="container mypage-layout">
         <MypageSideNav />
 
-        <section className="stack">
+        <section className="stack mypage-content">
           <h1 className="section-title">診断結果</h1>
 
           {diagStatus === 'empty' && (
@@ -229,7 +229,7 @@ export default function MypageDiagnosisPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(200,164,90,0.8)', textTransform: 'uppercase' }}>Next Stage</span>
                     </div>
-                    <h2 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#111' }}>変わった自分を、世界へ発揮するステージ</h2>
+                    <h2 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>変わった自分を、世界へ発揮するステージ</h2>
                     {isReady ? (
                       <p style={{ fontSize: '13px', color: '#059669', fontWeight: 700, margin: '0 0 16px' }}>
                         ✦ 準備が整いました。次のステージへ進みましょう。
@@ -262,7 +262,7 @@ export default function MypageDiagnosisPage() {
                     </div>
                     {!isApproaching && (
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                        <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textDecoration: 'none' }}>
+                        <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#e8e4dc', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: 'rgba(200,164,90,0.7)' }}>
                           → New Me Mapでステップを進める
                         </Link>
                       </div>
@@ -310,11 +310,6 @@ export default function MypageDiagnosisPage() {
       </div>
 
       <style>{`
-        .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: #151b24; }
-        .sidenav-link--active { background: #151b24; font-weight: 700; color: #e8e4dc; }
         .result-hero { padding: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border-radius: 16px; margin-bottom: 16px; }
         .result-hero h2 { font-size: 18px; font-weight: 800; color: #fff !important; margin: 0 0 6px; line-height: 1.4; }
         .result-hero p { font-size: 13px; color: rgba(255,255,255,.75) !important; margin: 0; line-height: 1.6; }
@@ -322,7 +317,7 @@ export default function MypageDiagnosisPage() {
         .type-badge { display: inline-block; font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 99px; margin-bottom: 10px; color: #fff !important; }
         .analysis-block { padding: 12px 0; border-bottom: 1px solid rgba(232,228,220,0.1); }
         .analysis-block:last-child { border-bottom: none; }
-        .analysis-label { font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 4px; }
+        .analysis-label { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.62); text-transform: uppercase; letter-spacing: .05em; margin: 0 0 4px; }
         .analysis-text { font-size: 14px; font-weight: 700; color: #e8e4dc; margin: 0 0 2px; line-height: 1.5; }
         .concern-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .concern-bar-label { font-size: 12px; width: 70px; flex-shrink: 0; color: rgba(232,228,220,0.75); }

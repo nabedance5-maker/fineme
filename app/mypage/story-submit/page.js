@@ -152,7 +152,7 @@ export default function StorySubmitPage() {
 
         <section className="mypage-content" style={{ maxWidth: 640 }}>
           <div style={{ marginBottom: '24px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, color: '#6366f1', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.06em' }}>変容の記録</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.62)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.06em' }}>変容の記録</p>
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(232,228,220,0.90)', margin: '0 0 6px' }}>体験談を投稿する</h1>
             <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: 1.6 }}>
               実際に利用・来店したサービスについての体験談を残しましょう。<br />同じ悩みを持つ人の地図になります。
@@ -264,9 +264,9 @@ export default function StorySubmitPage() {
                       onClick={() => setAxisId(id)}
                       style={{
                         padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                        background: axisId === id ? '#6366f1' : 'rgba(13,17,23,0.45)',
-                        color: axisId === id ? '#fff' : 'rgba(232,228,220,0.75)',
-                        border: axisId === id ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
+                        background: axisId === id ? '#c8a45a' : 'rgba(13,17,23,0.45)',
+                        color: axisId === id ? '#0d1117' : 'rgba(232,228,220,0.75)',
+                        border: axisId === id ? '1.5px solid #c8a45a' : '1px solid rgba(232,228,220,0.15)',
                         transition: 'all .15s',
                       }}
                     >
@@ -278,9 +278,9 @@ export default function StorySubmitPage() {
                     onClick={() => setAxisId('')}
                     style={{
                       padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                      background: axisId === '' ? '#6366f1' : 'rgba(13,17,23,0.45)',
-                      color: axisId === '' ? '#fff' : 'rgba(232,228,220,0.75)',
-                      border: axisId === '' ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
+                      background: axisId === '' ? '#c8a45a' : 'rgba(13,17,23,0.45)',
+                      color: axisId === '' ? '#0d1117' : 'rgba(232,228,220,0.75)',
+                      border: axisId === '' ? '1.5px solid #c8a45a' : '1px solid rgba(232,228,220,0.15)',
                     }}
                   >
                     指定しない
@@ -421,20 +421,13 @@ export default function StorySubmitPage() {
       </div>
 
       <style>{`
-        .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
         .form-block { display: flex; flex-direction: column; gap: 4px; }
         .form-label { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; }
         .form-hint { font-size: 12px; color: rgba(232,228,220,0.40); margin: 0; line-height: 1.5; }
         .q-badge { display: inline-block; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; letter-spacing: .04em; }
         .q-badge.required { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
         .q-badge.optional { background: #151b24; color: rgba(232,228,220,0.40); border: 1px solid rgba(232,228,220,0.15); }
-        textarea:focus, input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+        textarea:focus, input:focus { border-color: #c8a45a !important; box-shadow: 0 0 0 3px rgba(200,164,90,.15); }
       `}</style>
     </main>
   );

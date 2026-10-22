@@ -1,280 +1,249 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { customerAccessToken } from '@/lib/browser-auth';
 import Link from 'next/link';
 import MypageSideNav from '@/app/mypage/_components/MypageSideNav';
+import { STATUS, RES_CSS, splitReservations, fmtDay, fmtUntil, hhmm } from '@/app/mypage/_components/reservation-format';
 
-const supabaseAnon = createClient(
-  'https://qsfpzlvucqzmjldshwwd.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
-);
+// 予約（2026-10-22 UI刷新）。
+// ・ログイン中はアカウントの予約をそのまま出す（以前はログインしていてもメールアドレスで検索させていた）
+// ・「これからの予約」と「これまで」に分け、日時を一番大きく出す
+// ・返事・キャンセルはこの画面の中で確認する（ブラウザの確認ダイアログは使わない）
+// ログインしていない方だけ、予約時のメールアドレスで確認できる（見るだけ。返事・キャンセルはログイン後）。
 
-const STATUS_LABELS = {
-  pending: '返答待ち',
-  approved: '承認済み',
-  rejected: 'お断り',
-  counter_proposed: '代替提案あり',
-  visited: '来店確認済み',
-  cancelled: 'キャンセル済み',
-  expired: '期限切れ',
-};
-const STATUS_COLORS = {
-  pending: '#f59e0b',
-  approved: '#10b981',
-  rejected: '#ef4444',
-  counter_proposed: '#6366f1',
-  visited: '#059669',
-  cancelled: '#9ca3af',
-  expired: '#9ca3af',
-};
+// メールで検索した予約（ゲスト）を、/api/me/reservations と同じ形にそろえる
+const normalizeGuest = r => ({
+  ...r,
+  user_id: null,
+  menu_name: (r.note || '').match(/【メニュー】([^\n]+)/)?.[1] || null,
+  date: r.confirmed_date || r.reserved_date || null,
+  time: hhmm(r.confirmed_time || r.start_time) || null,
+});
 
-function fmtDate(d) {
-  if (!d) return '';
-  try { return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }); }
-  catch { return String(d); }
+function counterLeft(expiresAt) {
+  if (!expiresAt) return null;
+  const diff = new Date(expiresAt) - new Date();
+  if (diff <= 0) return { text: '返事の期限が過ぎました', urgent: true };
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return { text: `あと${h >= 1 ? `${h}時間${m > 0 ? `${m}分` : ''}` : `${m}分`}で自動的にキャンセルされます`, urgent: diff < 3 * 3600000 };
 }
 
-function ReservationCard({ r, onRefresh, accessToken }) {
-  const [acting, setActing] = useState(false);
-  const statusColor = STATUS_COLORS[r.status] || '#6b7280';
-  const statusLabel = STATUS_LABELS[r.status] || r.status;
+function ReservationCard({ r, token, onDone, compact }) {
+  const [busy, setBusy] = useState(false);
+  const [askCancel, setAskCancel] = useState(false);
+  const [err, setErr] = useState('');
+  const st = STATUS[r.status] || { label: r.status, tone: 'done' };
+  const canAct = !!token && !!r.user_id;
+  const isProposal = r.status === 'counter_proposed';
+  const day = isProposal ? r.counter_date : r.date;
+  const time = isProposal ? hhmm(r.counter_time) : hhmm(r.time);
+  const left = isProposal ? counterLeft(r.counter_expires_at) : null;
 
-  // noteからメニューとメッセージを抽出
-  const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
-  const menuText = menuMatch ? menuMatch[1] : '';
-  const userMsg = (r.note || '')
-    .replace(/【メニュー】[^\n]*/g, '')
-    .replace(/【第[23]希望】\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/g, '')
-    .trim();
-
-  async function patchStatus(status, extra = {}) {
-    if (!accessToken) {
-      if (confirm('この操作にはログインが必要です。ログインページへ移動しますか？')) {
-        window.location.href = '/login';
-      }
-      return;
-    }
-    setActing(true);
+  async function patch(status, extra = {}) {
+    setBusy(true); setErr('');
     try {
       const res = await fetch(`/api/reservations/${r.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status, ...extra }),
       });
-      if (res.ok) onRefresh();
-      else { const e = await res.json().catch(() => {}); alert('エラー: ' + (e?.error || res.status)); }
-    } finally { setActing(false); }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); setErr(e?.error || '処理できませんでした。時間をおいてもう一度お試しください。'); return; }
+      setAskCancel(false);
+      onDone();
+    } catch {
+      setErr('通信できませんでした。電波の良い所でもう一度お試しください。');
+    } finally { setBusy(false); }
   }
 
   return (
-    <div style={{ border: `1.5px solid ${r.status === 'counter_proposed' ? '#818cf8' : 'rgba(232,228,220,0.15)'}`, borderRadius: '16px', padding: '20px', marginBottom: '12px', background: r.status === 'counter_proposed' ? 'rgba(99,102,241,0.12)' : 'rgba(13,17,23,0.65)', backdropFilter: 'blur(8px)' }}>
-      {/* ヘッダー */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-        <div>
-          <Link href={`/provider/${r.provider_slug}`} style={{ fontSize: '16px', fontWeight: '800', color: '#111', textDecoration: 'none' }}>
-            {r.provider_name || '掲載者'}
-          </Link>
-          <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0' }}>{fmtDate(r.created_at)} 送信</p>
-        </div>
-        <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '99px', background: statusColor + '20', color: statusColor }}>
-          {statusLabel}
-        </span>
+    <article className={`mr-card${isProposal ? ' mr-card--act' : ''}${compact ? ' mr-card--past' : ''}`}>
+      <div className="mr-top">
+        <span className={`rs-chip rs-chip--${st.tone}`}>{st.label}</span>
+        {!compact && fmtUntil(day) && <span className="mr-until">{fmtUntil(day)}</span>}
       </div>
-
-      {/* 希望日時 */}
-      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>
-        第1希望: {r.reserved_date || '—'} {r.start_time || ''}
+      <p className="mr-when">
+        <span className="mr-day">{fmtDay(day)}</span>
+        {time && <span className="mr-time">{time}</span>}
+      </p>
+      {isProposal && <p className="mr-note">お店から、この日時でどうかと提案が届いています。{r.date ? `（ご希望は${fmtDay(r.date)} ${hhmm(r.time)}）` : ''}</p>}
+      {r.status === 'pending' && <p className="mr-note">お店の返事を待っています。確定するとお知らせします。</p>}
+      <div className="mr-store">
+        {r.provider_slug ? <Link href={`/provider/${encodeURIComponent(r.provider_slug)}`}>{r.provider_name || 'お店'}</Link> : <span>{r.provider_name || 'お店'}</span>}
+        {r.menu_name && <span className="mr-menu">{r.menu_name}{r.is_lesson ? '（グループレッスン）' : ''}{r.tickets_used ? `・チケット${r.tickets_used}枚` : ''}</span>}
       </div>
-
-      {/* メニュー */}
-      {menuText && <p style={{ fontSize: '13px', fontWeight: '700', color: '#374151', margin: '0 0 8px' }}>{menuText}</p>}
-
-      {/* ユーザーメッセージ */}
-      {userMsg && <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', padding: '8px 12px', background: '#151b24', borderRadius: '8px', marginBottom: '10px' }}>{userMsg}</div>}
-
-      {/* 確定日時（承認済み） */}
-      {r.status === 'approved' && r.confirmed_date && (
-        <div style={{ padding: '12px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', marginBottom: '10px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#15803d', margin: '0 0 4px' }}>✓ 確定日時</p>
-          <p style={{ fontSize: '15px', fontWeight: '800', color: '#15803d', margin: 0 }}>{fmtDate(r.confirmed_date)} {r.confirmed_time}</p>
-        </div>
+      {r.provider_comment && (isProposal || r.status === 'rejected') && (
+        <p className="mr-comment"><span>お店から</span>{r.provider_comment}</p>
       )}
+      {left && <p className={`mr-left${left.urgent ? ' is-urgent' : ''}`}>{left.text}</p>}
 
-      {/* 代替提案 */}
-      {r.status === 'counter_proposed' && (
-        <div style={{ padding: '14px 16px', background: '#eef2ff', border: '1.5px solid #818cf8', borderRadius: '10px', marginBottom: '12px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#4f46e5', margin: '0 0 6px' }}>掲載者から代替日時の提案があります</p>
-          <p style={{ fontSize: '16px', fontWeight: '800', color: '#4f46e5', margin: '0 0 8px' }}>
-            {fmtDate(r.counter_date)} {r.counter_time}
-          </p>
-          {r.provider_comment && <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 8px' }}>{r.provider_comment}</p>}
-          {r.counter_expires_at ? (
-            (() => {
-              const diff = new Date(r.counter_expires_at) - new Date();
-              const h = Math.floor(diff / 3600000);
-              const m = Math.floor((diff % 3600000) / 60000);
-              const txt = diff <= 0 ? '期限切れ' : h >= 1 ? `残り${h}時間${m > 0 ? m + '分' : ''}` : `残り${m}分`;
-              const urgent = diff > 0 && diff < 3 * 3600000;
-              return <p style={{ fontSize: '12px', fontWeight: '700', color: urgent ? '#ef4444' : '#6b7280', margin: '0 0 12px' }}>{txt}に自動キャンセル</p>;
-            })()
+      {!compact && ['pending', 'counter_proposed', 'approved'].includes(r.status) && (
+        canAct ? (
+          askCancel ? (
+            <div className="mr-confirm" role="group" aria-label="キャンセルの確認">
+              <p>この予約をキャンセルしますか？{r.tickets_used ? '使ったチケットは戻ります。' : ''}</p>
+              <div className="mr-actions">
+                <button type="button" className="rs-btn mr-danger" disabled={busy} onClick={() => patch('cancelled')}>{busy ? '処理中…' : 'キャンセルする'}</button>
+                <button type="button" className="rs-btn rs-btn--quiet" disabled={busy} onClick={() => setAskCancel(false)}>やめる</button>
+              </div>
+            </div>
           ) : (
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>お早めにご返答ください（24時間以内推奨）</p>
-          )}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => patchStatus('approved', { confirmed_date: r.counter_date, confirmed_time: r.counter_time })}
-              disabled={acting}
-              style={{ flex: 1, padding: '10px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: acting ? 'not-allowed' : 'pointer' }}
-            >
-              {acting ? '処理中…' : 'この日時で承認する'}
-            </button>
-            <button
-              onClick={() => { if (confirm('キャンセルしますか？')) patchStatus('cancelled'); }}
-              disabled={acting}
-              style={{ padding: '10px 14px', background: '#151b24', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
-            >
-              キャンセル
-            </button>
-          </div>
-        </div>
+            <div className="mr-actions">
+              {isProposal && (
+                <button type="button" className="rs-btn rs-btn--primary" disabled={busy} onClick={() => patch('approved', { confirmed_date: r.counter_date, confirmed_time: r.counter_time })}>
+                  {busy ? '処理中…' : 'この日時で予約する'}
+                </button>
+              )}
+              <button type="button" className="rs-btn rs-btn--quiet" disabled={busy} onClick={() => setAskCancel(true)}>
+                {isProposal ? 'お断りしてキャンセル' : r.status === 'pending' ? 'リクエストを取り消す' : '予約をキャンセル'}
+              </button>
+            </div>
+          )
+        ) : (
+          <p className="mr-hint">{token ? 'この予約の返事・キャンセルは、お店に直接ご連絡ください。' : '返事・キャンセルは、ログインするとこの画面からできます。'}</p>
+        )
       )}
-
-      {/* 掲載者コメント（お断り） */}
-      {r.status === 'rejected' && r.provider_comment && (
-        <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', color: '#374151' }}>
-          掲載者より: {r.provider_comment}
-        </div>
-      )}
-
-      {/* キャンセルボタン（返答待ち） */}
-      {r.status === 'pending' && (
-        <button
-          onClick={() => { if (confirm('この予約リクエストをキャンセルしますか？')) patchStatus('cancelled'); }}
-          disabled={acting}
-          style={{ marginTop: '8px', padding: '8px 16px', background: '#151b24', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
-        >
-          {acting ? '処理中…' : 'リクエストをキャンセル'}
-        </button>
-      )}
-    </div>
+      {err && <p className="mr-err" role="alert">{err}</p>}
+    </article>
   );
 }
 
 function MyReservationsContent() {
-  const sp = useSearchParams();
-  const [reservations, setReservations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [contact, setContact] = useState('');
-  const [inputContact, setInputContact] = useState('');
-  const [searched, setSearched] = useState(false);
-  const [accessToken, setAccessToken] = useState(null);
+  const [items, setItems] = useState(null);
+  const [token, setToken] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [email, setEmail] = useState('');
+  const [guestSearched, setGuestSearched] = useState(false);
+  const [showPast, setShowPast] = useState(false);
+
+  async function loadMine(tk) {
+    const res = await fetch('/api/me/reservations', { headers: { Authorization: `Bearer ${tk}` } }).catch(() => null);
+    setItems(res?.ok ? await res.json() : []);
+  }
 
   useEffect(() => {
-    // ログイン中ユーザーのメールを自動取得
-    supabaseAnon.auth.getSession().then(({ data: { session } }) => {
-      const email = session?.user?.email || '';
-      if (session?.access_token) setAccessToken(session.access_token);
-      if (email) {
-        setContact(email);
-        setInputContact(email);
-        fetchReservations(email);
-      } else {
-        setLoading(false);
-      }
-    }).catch(() => setLoading(false));
+    customerAccessToken().then(tk => {
+      if (tk) { setToken(tk); loadMine(tk); }
+      setAuthChecked(true);
+    });
   }, []);
 
-  async function fetchReservations(email) {
-    setLoading(true);
-    try {
-      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-      const res = await fetch(`/api/reservations/by-contact?contact=${encodeURIComponent(email)}`, { headers });
-      if (res.ok) setReservations(await res.json());
-    } finally {
-      setLoading(false);
-      setSearched(true);
-      setContact(email);
-    }
+  async function searchGuest(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setItems(null);
+    const res = await fetch(`/api/reservations/by-contact?contact=${encodeURIComponent(email.trim())}`).catch(() => null);
+    setItems(res?.ok ? (await res.json()).map(normalizeGuest) : []);
+    setGuestSearched(true);
   }
 
-  function handleSearch(e) {
-    e.preventDefault();
-    if (inputContact.trim()) fetchReservations(inputContact.trim());
-  }
+  const { upcoming, past } = splitReservations(items || []);
+  const loggedOut = authChecked && !token;
 
   return (
     <main className="section">
-    <style>{`
-      .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-      .mypage-sidenav, .mypage-content { min-width: 0; }
-      .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-      @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; overflow-y: visible; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-      .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-      .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #e8e4dc; }
-      .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
-    `}</style>
-    <div className="container mypage-layout">
-      <MypageSideNav />
-    <section className="stack mypage-content" style={{ maxWidth: '680px', minWidth: 0 }}>
-      <h1 style={{ fontSize: 'clamp(20px,4vw,26px)', fontWeight: '800', margin: '0 0 8px' }}>予約履歴</h1>
-      <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>
-        予約リクエストの状況を確認できます。代替提案への回答もこちらから行えます。
-      </p>
+      <div className="container mypage-layout">
+        <MypageSideNav />
+        <section className="mypage-content mr">
+          <header>
+            <h1 className="section-title">予約</h1>
+          </header>
 
-      {/* メール入力フォーム */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
-        <input
-          value={inputContact}
-          onChange={e => setInputContact(e.target.value)}
-          placeholder="予約時に入力したメールアドレス"
-          type="email"
-          style={{ flex: 1, padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px' }}
-        />
-        <button type="submit" style={{ padding: '10px 20px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          確認する
-        </button>
-      </form>
-
-      {/* 結果 */}
-      {loading ? (
-        <p style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>読み込み中…</p>
-      ) : !searched ? null : reservations.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#151b24', borderRadius: '16px', border: '1px dashed rgba(232,228,220,0.20)' }}>
-          <p style={{ fontSize: '32px', margin: '0 0 12px' }}></p>
-          <p style={{ fontSize: '15px', fontWeight: '700', color: '#374151', margin: '0 0 6px' }}>予約履歴が見つかりません</p>
-          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>予約時に使用したメールアドレスで検索してください</p>
-        </div>
-      ) : (
-        <>
-          {/* 代替提案バナー */}
-          {reservations.some(r => r.status === 'counter_proposed') && (
-            <div style={{ padding: '14px 18px', background: '#eef2ff', border: '1.5px solid #818cf8', borderRadius: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}></span>
-              <p style={{ fontSize: '14px', fontWeight: '700', color: '#4f46e5', margin: 0 }}>
-                代替日時の提案が届いています。下記から確認・承認してください。
-              </p>
-            </div>
+          {loggedOut && (
+            <form onSubmit={searchGuest} className="mr-guest">
+              <label htmlFor="mr-email">予約の時に入力したメールアドレス</label>
+              <div className="mr-guest-row">
+                <input id="mr-email" type="email" autoComplete="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="example@mail.com" required />
+                <button type="submit" className="rs-btn rs-btn--primary">確認する</button>
+              </div>
+              <p className="mr-hint"><Link href="/login" className="rs-link">ログイン</Link>すると、メールアドレスを入れなくても予約が表示され、返事やキャンセルもできます。</p>
+            </form>
           )}
-          <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 16px' }}>{reservations.length}件の予約</p>
-          {reservations.map(r => (
-            <ReservationCard key={r.id} r={r} onRefresh={() => fetchReservations(contact)} accessToken={accessToken} />
-          ))}
-        </>
-      )}
 
-      <div style={{ marginTop: '32px', textAlign: 'center' }}>
-        <Link href="/search" style={{ fontSize: '14px', color: '#6b7280', textDecoration: 'none' }}>← サービスを探す</Link>
+          {!authChecked || (token && items === null) || (loggedOut && guestSearched && items === null) ? (
+            <div className="mr-skel" aria-busy="true" />
+          ) : (token || guestSearched) && (
+            <>
+              <section className="mr-block" aria-labelledby="mr-up">
+                <h2 id="mr-up" className="mr-h2">これからの予約{upcoming.length > 0 && <span>{upcoming.length}件</span>}</h2>
+                {upcoming.length ? (
+                  <div className="mr-cards">
+                    {upcoming.map(r => <ReservationCard key={r.id} r={r} token={token} onDone={() => loadMine(token)} />)}
+                  </div>
+                ) : (
+                  <div className="mr-empty">
+                    <p>これからの予約はありません。</p>
+                    <Link href="/search" className="rs-btn">お店を探す</Link>
+                  </div>
+                )}
+              </section>
+
+              {past.length > 0 && (
+                <section className="mr-block" aria-labelledby="mr-past">
+                  <h2 id="mr-past" className="mr-h2">これまで<span>{past.length}件</span></h2>
+                  <div className="mr-cards">
+                    {(showPast ? past : past.slice(0, 5)).map(r => <ReservationCard key={r.id} r={r} token={token} compact onDone={() => loadMine(token)} />)}
+                  </div>
+                  {past.length > 5 && !showPast && (
+                    <button type="button" className="rs-btn" onClick={() => setShowPast(true)}>残り{past.length - 5}件を表示</button>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+        </section>
       </div>
-    </section>
-    </div>
+
+      <style>{RES_CSS + `
+        .mr { display: flex; flex-direction: column; gap: 28px; max-width: 680px; }
+        .mr-block { display: flex; flex-direction: column; gap: 12px; }
+        .mr-h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; color: rgba(232,228,220,0.72); display: flex; gap: 8px; align-items: baseline; }
+        .mr-h2 span { font-weight: 500; letter-spacing: 0; }
+        .mr-cards { display: flex; flex-direction: column; gap: 12px; }
+        .mr-card { padding: 18px 20px; border-radius: 16px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); display: flex; flex-direction: column; gap: 10px; }
+        .mr-card--act { border-color: #e8e4dc; }
+        .mr-card--past { padding: 14px 18px; gap: 6px; background: transparent; }
+        .mr-card--past .mr-day { font-size: 16px; }
+        .mr-card--past .mr-time { font-size: 15px; }
+        .mr-top { display: flex; align-items: center; gap: 10px; }
+        .mr-until { font-size: 13px; color: rgba(232,228,220,0.72); }
+        .mr-when { margin: 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .mr-day { font-family: var(--font-serif-ja); font-size: clamp(20px, 5vw, 24px); font-weight: 700; color: #fff; }
+        .mr-time { font-size: 20px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+        .mr-note { margin: 0; font-size: 13px; line-height: 1.7; color: rgba(232,228,220,0.8); }
+        .mr-store { display: flex; flex-direction: column; gap: 2px; }
+        .mr-store a, .mr-store > span:first-child { font-size: 15px; font-weight: 700; color: #e8e4dc; text-decoration: none; }
+        .mr-store a:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .mr-menu { font-size: 13px; color: rgba(232,228,220,0.72); }
+        .mr-comment { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(232,228,220,0.05); font-size: 13px; line-height: 1.7; color: #e8e4dc; }
+        .mr-comment span { display: block; font-size: 11.5px; font-weight: 700; color: rgba(232,228,220,0.62); margin-bottom: 2px; }
+        .mr-left { margin: 0; font-size: 12.5px; color: rgba(232,228,220,0.72); }
+        .mr-left.is-urgent { color: #fff; font-weight: 700; }
+        .mr-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .mr-actions .rs-btn--primary { flex: 1 1 200px; }
+        .mr-confirm { padding: 12px; border-radius: 12px; border: 1px solid rgba(232,228,220,0.22); display: flex; flex-direction: column; gap: 10px; }
+        .mr-confirm p { margin: 0; font-size: 14px; }
+        .mr-danger { border-color: #e8e4dc; }
+        .mr-hint { margin: 0; font-size: 12.5px; line-height: 1.7; color: rgba(232,228,220,0.65); }
+        .mr-err { margin: 0; font-size: 13px; color: #fff; font-weight: 700; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(232,228,220,0.4); }
+        .mr-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 20px; border-radius: 16px; border: 1px dashed rgba(232,228,220,0.2); }
+        .mr-empty p { margin: 0; font-size: 14px; color: rgba(232,228,220,0.8); }
+        .mr-skel { min-height: 180px; border-radius: 16px; background: linear-gradient(90deg, #151b24, #1b2230, #151b24); background-size: 200% 100%; animation: mr-sh 1.4s ease-in-out infinite; }
+        @keyframes mr-sh { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+        @media (prefers-reduced-motion: reduce) { .mr-skel { animation: none; } }
+        .mr-guest { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 16px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); }
+        .mr-guest label { font-size: 13px; font-weight: 700; }
+        .mr-guest-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .mr-guest-row input { flex: 1 1 220px; min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(232,228,220,0.25); background: #0d1117; color: #e8e4dc; font-size: 16px; }
+        .mr-guest-row input:focus { outline: 2px solid #c8a45a; outline-offset: 1px; }
+      `}</style>
     </main>
   );
 }
 
 export default function MyReservationsPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>読み込み中…</div>}>
+    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(232,228,220,0.7)' }}>読み込み中…</div>}>
       <MyReservationsContent />
     </Suspense>
   );
