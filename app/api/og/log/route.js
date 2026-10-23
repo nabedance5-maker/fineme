@@ -2,12 +2,13 @@
 // /log の OG画像。SNSに貼られた時に「月にいくら使っているか」が最初に目に入るようにする。
 //
 // 背景は Log の FVカードと同じ羊皮紙（Canvaで作った案3から文字を削除したもの）。
+// ImageResponse は WebP を読めないので、OG用に JPEG 版を使う。
 // 既定はサンプル値。?m= &y= &p= で差し替えできる。
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-const BG = 'https://www.fineme.me/assets/images/log-parchment-v2.webp';
+const BG_PATH = '/assets/images/log-parchment-v2-og.jpg';
 const INK = '#472000';
 const INK_SOFT = 'rgba(71,48,32,0.85)';
 const INK_FAINT = 'rgba(71,48,32,0.7)';
@@ -22,7 +23,8 @@ const SAMPLE_ROWS = [
 const yen = (n) => `¥${Number(n).toLocaleString('en-US')}`;
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
+  const BG = `${origin}${BG_PATH}`;
   const monthly = parseInt(searchParams.get('m')) || 23536;
   const yearly = parseInt(searchParams.get('y')) || monthly * 12;
   const ports = parseInt(searchParams.get('p')) || 5;
