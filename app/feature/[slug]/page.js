@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getAllArticles, getArticle } from '@/lib/articles';
+import { getArticle } from '@/lib/articles';
 import { ArticleBlocks } from '@/app/_components/ArticleBlocks';
 import { ParallaxImg } from '@/app/_components/ParallaxImg';
 import { PersonalizedServices } from '@/app/_components/PersonalizedServices';
@@ -57,14 +57,11 @@ async function getRelatedProviders(category) {
   } catch { return []; }
 }
 
+// ビルド時には記事ページを作らず、最初のアクセスで作って revalidate の間キャッシュする。
+// 全記事をビルドで一斉に作ると本文と関連記事の問い合わせが千件単位でDBに集中し、
+// Supabase の Disk IO 枠を使い切って本番DBが止まった（2026-10-24）。
 export async function generateStaticParams() {
-  try {
-    // 静的生成の対象は男性トラックの記事だけ（Belle は /belle/journal/[slug] が持つ）
-    const articles = await getAllArticles('fineme');
-    return articles
-      .filter(a => a.slug)
-      .map(a => ({ slug: a.slug }));
-  } catch { return []; }
+  return [];
 }
 
 export async function generateMetadata({ params }) {

@@ -14,11 +14,9 @@ const CATEGORY_LABELS = {
   'ボディ': 'ボディ', '考え方': '考え方', '垢抜け': '垢抜け',
 };
 
+// ビルド時には作らず最初のアクセスで作る（理由は app/feature/[slug]/page.js と同じ）。
 export async function generateStaticParams() {
-  const staticList = getAllBelleArticles();
-  const dbList = await getAllBelleArticlesFromDB().catch(() => []);
-  const slugs = [...new Set([...staticList.map(a => a.slug), ...dbList.map(a => a.slug)])];
-  return slugs.map(slug => ({ slug }));
+  return [];
 }
 
 export async function generateMetadata({ params }) {
