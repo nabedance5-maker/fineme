@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, use } from 'react';
 import { rangeLabel, toMin } from '@/lib/time-span';
 import PaidLeave from './PaidLeave';
 
@@ -60,7 +60,8 @@ function buildMonthCells(year, month) {
   return cells;
 }
 
-export default function StaffShiftPage({ params }) {
+export default function StaffShiftPage(props) {
+  const params = use(props.params);
   const token = params.token;
   const [data, setData] = useState(null);
   const [error, setError] = useState('');

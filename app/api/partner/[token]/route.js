@@ -13,7 +13,8 @@ import { getReferralSummary } from '@/lib/referral-summary';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { data: partner, error } = await supabase
     .from('sales_partners')
     .select('id, name, referral_code, status, provider_id, created_at, is_collaborator, collaborator_rate, excluded_provider_ids')

@@ -16,8 +16,9 @@ async function load(request, params) {
   return { a, s };
 }
 
-export async function GET(request, { params }) {
-  const { res, a, s } = await load(request, params); if (res) return res;
+export async function GET(request, props) {
+  const params = await props.params;
+  const { res, a, s } = await load(request, params);if (res) return res;
   const { data: rows } = await supabase.from('provider_survey_responses').select('id, user_id, respondent_name, answers, created_at').eq('survey_id', s.id).order('created_at', { ascending: false }).limit(5000);
   const uids = [...new Set((rows || []).map(r => r.user_id).filter(Boolean))];
   const names = {};

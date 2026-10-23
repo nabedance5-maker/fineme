@@ -156,7 +156,8 @@ function PlanBadge({ plan }) {
   return <span className={`pj-plan-chip pj-plan-chip-${plan.toLowerCase()}`}>{plan === 'A' ? '全プラン' : `${plan}〜`}</span>;
 }
 
-export default function ProviderJoinPage({ searchParams }) {
+export default async function ProviderJoinPage(props) {
+  const searchParams = await props.searchParams;
   const ref = searchParams?.ref;
   const inquiryHref = ref ? `/provider/inquiry?ref=${encodeURIComponent(ref)}` : '/provider/inquiry';
   const industry = ['gym', 'brow'].includes(searchParams?.type) ? searchParams.type : null;

@@ -19,7 +19,8 @@ async function surveyOf(params) {
   return data;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const s = await surveyOf(params);
   if (!s) return Response.json({ error: 'アンケートが見つかりません' }, { status: 404 });
   const [{ data: p }, user] = await Promise.all([supabase.from('providers').select('name').eq('id', s.provider_id).single(), userOf(request)]);
@@ -31,7 +32,8 @@ export async function GET(request, { params }) {
   return Response.json({ title: s.title, description: s.description, questions: s.questions, status: s.status, allow_guest: s.allow_guest, provider_name: p?.name || '', logged_in: !!user, answered });
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   const s = await surveyOf(params);
   if (!s) return Response.json({ error: 'アンケートが見つかりません' }, { status: 404 });
   if (s.status !== 'open') return Response.json({ error: 'このアンケートは受付を終了しました' }, { status: 409 });

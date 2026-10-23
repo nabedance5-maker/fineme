@@ -5,7 +5,8 @@ import { withScopeLabels } from '@/lib/booking-eligibility';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { slug } = params;
 
   // slug から provider_id を取得（公開中のみ）

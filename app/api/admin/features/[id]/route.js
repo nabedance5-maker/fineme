@@ -16,7 +16,8 @@ function checkAdmin(request) {
   return key && key === process.env.ADMIN_API_KEY;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data, error } = await db()
@@ -29,7 +30,8 @@ export async function GET(request, { params }) {
   return Response.json(data);
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
@@ -75,7 +77,8 @@ export async function PUT(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { error } = await db()

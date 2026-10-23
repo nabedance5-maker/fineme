@@ -43,7 +43,7 @@ async function openWindowFor(staff, key) {
   const win = key ? findOpenWindow(key, cycle) : null;
   if (!win) return { error: Response.json({ error: 'この期間はすでに始まっているため、希望を変更できません' }, { status: 400 }) };
   const period = asPeriod(win);
-  if (isDeadlinePassed(period) && await hasSubmitted(staff.provider_id, staff.id, win.key)) return { error: Response.json({ error: LOCKED_MESSAGE }, { status: 400 }) };
+  if (isDeadlinePassed(period) && (await hasSubmitted(staff.provider_id, staff.id, win.key))) return { error: Response.json({ error: LOCKED_MESSAGE }, { status: 400 }) };
   return { win, period, request_format };
 }
 async function getStaffByToken(token) {
@@ -59,7 +59,8 @@ async function getStaffByToken(token) {
   return data || null;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
 
@@ -92,7 +93,8 @@ export async function GET(request, { params }) {
   });
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
 
@@ -159,7 +161,8 @@ export async function POST(request, { params }) {
   return Response.json(isBulk ? data : data[0]);
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
 

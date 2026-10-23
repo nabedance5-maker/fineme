@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -23,7 +23,8 @@ function isSafeReturnUrl(url) {
   return typeof url === 'string' && url.startsWith('/log');
 }
 
-export default function LineConnectPage({ params }) {
+export default function LineConnectPage(props) {
+  const params = use(props.params);
   const { slug } = params;
   const searchParams = useSearchParams();
   const returnUrl = isSafeReturnUrl(searchParams.get('return')) ? searchParams.get('return') : null;

@@ -12,7 +12,8 @@ function checkAdmin(request) {
   return key && key === ADMIN_KEY;
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;

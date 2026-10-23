@@ -100,7 +100,8 @@ ${menuList}
   return result;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { slug } = params;
   const { searchParams } = new URL(request.url);
   const axis = searchParams.get('axis');

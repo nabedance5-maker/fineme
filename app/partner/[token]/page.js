@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 
 // 営業パートナー専用の管理画面（でお要望2026-10-02）。
 // 紹介リンク・紹介コード・これまでの紹介実績・報酬額を、営業パートナー本人が
@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react';
 // アカウントは不要（掲載していない営業パートナーも多いため・app/staff-shift/[token]
 // と同じ「推測不可能なURL＝本人確認」方式）。報酬率・計算ロジックは変更しない
 // （lib/referral-summary.js を掲載者ダッシュボードの紹介報酬タブと共有）。
-export default function PartnerPortalPage({ params }) {
+export default function PartnerPortalPage(props) {
+  const params = use(props.params);
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [copied, setCopied] = useState('');
 

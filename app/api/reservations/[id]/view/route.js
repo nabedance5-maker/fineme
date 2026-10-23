@@ -3,7 +3,8 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { data: { user } } = await supabase.auth.getUser(token);
