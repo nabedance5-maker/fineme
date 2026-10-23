@@ -19,7 +19,7 @@ export async function GET(request, context) {
     const { data: { user } } = await db.auth.getUser(token);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const id = context.params.id;
+    const id = (await context.params).id;
     const { data, error } = await db.from('reservations').select('*').eq('id', id).single();
     if (error) return Response.json({ error: error.message }, { status: 500 });
 

@@ -23,7 +23,8 @@ export const metadata = {
 
 export const revalidate = 3600; // 1時間キャッシュ
 
-export default async function FeatureListPage({ searchParams }) {
+export default async function FeatureListPage(props) {
+  const searchParams = await props.searchParams;
   const q = (searchParams?.q || '').toLowerCase();
   // /feature は男性トラックの記事一覧（Belle は /belle/journal）
   const articles = (await getAllArticles('fineme')).filter(a =>

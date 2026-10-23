@@ -10,7 +10,8 @@ const CATEGORY_LABELS = {
   aga:'AGA', marriage:'結婚関連サービス', diagnosis:'骨格診断',
 };
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   try {
     const { data: provider } = await getSupabase()
       .from('providers')

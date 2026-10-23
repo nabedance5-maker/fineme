@@ -18,7 +18,8 @@ const CATEGORY_LABELS = {
 
 
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   // Supabase優先 → 静的fallback
   const dbArticle = await getBelleArticleFromDB(params.slug);
   const article = dbArticle || getBelleArticle(params.slug);
@@ -37,7 +38,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function BelleArticlePage({ params }) {
+export default async function BelleArticlePage(props) {
+  const params = await props.params;
   // Supabase優先（cronが生成したHTML記事）→ 静的JSON fallback（既存blocksベース記事）
   const dbArticle = await getBelleArticleFromDB(params.slug);
   const staticArticle = dbArticle ? null : getBelleArticle(params.slug);

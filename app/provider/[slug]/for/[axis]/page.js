@@ -20,7 +20,7 @@
 // 統一ラインアイコン(AxisIcon)・地図/羅針盤モチーフ(Fineme「地図と羅針盤」の
 // タグラインに準拠)・CTAの控えめなパルスを追加。Gemini画像生成は課金停止のため
 // 使わず（でお判断、2026-08-31）、外部アセット無し・手描きSVG+CSSのみで構成。
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
 import { AXIS_NARRATIVES, AXIS_FUTURE_VISION, CONSULT_STEPS } from '@/lib/axis-narratives';
@@ -126,7 +126,8 @@ function RouteStrip() {
   );
 }
 
-export default function ProviderLandingPage({ params }) {
+export default function ProviderLandingPage(props) {
+  const params = use(props.params);
   const { slug, axis } = params;
   const searchParams = useSearchParams();
   const mirrorScore = Number(searchParams.get('score'));

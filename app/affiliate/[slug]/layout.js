@@ -11,7 +11,8 @@ const CATEGORY_LABELS = {
   aga:'AGA', marriage:'結婚関連サービス', diagnosis:'骨格診断',
 };
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   try {
     // アフィリエイトは providers テーブル（entity_type='affiliate'）に格納されている。
     // 以前は存在しない 'affiliates' テーブルを参照していたため常に null となり、
@@ -59,7 +60,13 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function AffiliateSlugLayout({ children, params }) {
+export default async function AffiliateSlugLayout(props) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   let initial = null;
   try {
     const { data: a } = await getSupabase()

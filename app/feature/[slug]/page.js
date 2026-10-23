@@ -61,7 +61,8 @@ async function getRelatedProviders(category) {
 
 
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const article = await getArticle(params.slug);
   if (!article) return {};
   return {
@@ -140,7 +141,8 @@ async function getRelatedArticles(relatedSlugs) {
   } catch { return []; }
 }
 
-export default async function ArticlePage({ params }) {
+export default async function ArticlePage(props) {
+  const params = await props.params;
   const article = await getArticle(params.slug);
   if (!article) notFound();
 

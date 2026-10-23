@@ -4,7 +4,8 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { slug } = params;
 
   // RPC経由で取得（PostgREST スキーマキャッシュをバイパスし、新カラムも確実に返す）

@@ -11,7 +11,8 @@ function checkAdmin(request) {
   return key && key === ADMIN_KEY;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;
@@ -26,7 +27,8 @@ export async function GET(request, { params }) {
   return Response.json(data);
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;
@@ -63,7 +65,8 @@ export async function PATCH(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;

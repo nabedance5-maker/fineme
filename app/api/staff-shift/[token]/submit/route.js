@@ -20,7 +20,8 @@ async function getStaffByToken(token) {
   return data || null;
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
 

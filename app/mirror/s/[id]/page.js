@@ -23,7 +23,8 @@ async function getSession(id) {
   }
 }
 
-export async function generateMetadata({ params }) {
+export async function generateMetadata(props) {
+  const params = await props.params;
   const session = await getSession(params.id);
   const fi = session?.analysis?.first_impression;
   const desc = fi
@@ -41,7 +42,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function MirrorSharePage({ params }) {
+export default async function MirrorSharePage(props) {
+  const params = await props.params;
   const session = await getSession(params.id);
 
   if (!session?.analysis) {

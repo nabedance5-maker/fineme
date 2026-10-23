@@ -345,7 +345,8 @@ async function respondToEvent(attendanceId, status, channelProviderId, lineUserI
   return status === 'attending' ? '✓ 参加でご回答いただきました。ありがとうございます！' : '✓ 不参加でご回答いただきました。かしこまりました。';
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   const { providerId } = params;
   const { secret, token } = await resolveChannel(providerId);
   if (!secret || !token) return Response.json({ error: 'channel not configured' }, { status: 404 });

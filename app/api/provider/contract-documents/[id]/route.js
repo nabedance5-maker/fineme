@@ -21,7 +21,8 @@ async function loadOwned(providerId, id) {
   return data;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const provider = await getProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const doc = await loadOwned(provider.id, params.id);

@@ -4,7 +4,8 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { slug } = params;
   const { data: provider } = await supabase.from('providers').select('id, name').eq('slug', slug).single();
   if (!provider) return Response.json({ error: 'not-found' }, { status: 404 });
