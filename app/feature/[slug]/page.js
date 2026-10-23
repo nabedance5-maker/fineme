@@ -6,7 +6,9 @@ import { PersonalizedServices } from '@/app/_components/PersonalizedServices';
 import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
 
-export const revalidate = 3600;
+// ビルド時に全記事を一斉に作ると本文と関連記事の問い合わせが千件単位でDBに集中し、
+// Supabase の Disk IO 枠を使い切って本番DBが止まった（2026-10-24）。アクセス時にその場で作る。
+export const dynamic = 'force-dynamic';
 
 // カテゴリ → 関連サービスカテゴリ（広めに取得してクライアントでパーソナライズ）
 const ARTICLE_TO_SERVICE_CAT = {
@@ -57,12 +59,7 @@ async function getRelatedProviders(category) {
   } catch { return []; }
 }
 
-// ビルド時には記事ページを作らず、最初のアクセスで作って revalidate の間キャッシュする。
-// 全記事をビルドで一斉に作ると本文と関連記事の問い合わせが千件単位でDBに集中し、
-// Supabase の Disk IO 枠を使い切って本番DBが止まった（2026-10-24）。
-export async function generateStaticParams() {
-  return [];
-}
+
 
 export async function generateMetadata({ params }) {
   const article = await getArticle(params.slug);

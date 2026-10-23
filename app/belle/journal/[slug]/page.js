@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { getAllBelleArticles, getBelleArticle, getBelleArticleFromDB, getAllBelleArticlesFromDB } from '@/lib/belle-articles';
 import { ArticleBlocks } from '@/app/_components/ArticleBlocks';
 
-export const revalidate = 3600;
+// ビルド時に全記事を一斉に作ると本文と関連記事の問い合わせが千件単位でDBに集中し、
+// Supabase の Disk IO 枠を使い切って本番DBが止まった（2026-10-24）。アクセス時にその場で作る。
+export const dynamic = 'force-dynamic';
 
 const CATEGORY_LABELS = {
   eyebrow: '眉', skincare: 'スキンケア', hair: 'ヘアスタイル', fashion: 'ファッション',
@@ -14,10 +16,7 @@ const CATEGORY_LABELS = {
   'ボディ': 'ボディ', '考え方': '考え方', '垢抜け': '垢抜け',
 };
 
-// ビルド時には作らず最初のアクセスで作る（理由は app/feature/[slug]/page.js と同じ）。
-export async function generateStaticParams() {
-  return [];
-}
+
 
 export async function generateMetadata({ params }) {
   // Supabase優先 → 静的fallback
