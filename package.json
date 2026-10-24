@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:safe": "bash scripts/safe-build.sh",
     "start": "next start",
     "lint": "next lint",
     "gen-srcset": "node scripts/gen-srcset.js",
