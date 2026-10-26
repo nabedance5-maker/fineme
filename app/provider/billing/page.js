@@ -262,7 +262,7 @@ export default function BillingPage() {
           <div className="kpi-card">
             <div className="kpi-label">紹介報酬（今月）</div>
             <div id="kpi-reward" className="kpi-value">¥0</div>
-            <div className="kpi-sub">紹介した掲載者の課金×¥500</div>
+            <div className="kpi-sub">継続分：紹介した掲載者の課金×¥500（初月の90%は別途お支払い）</div>
           </div>
         </div>
 
@@ -381,7 +381,7 @@ export default function BillingPage() {
               <div className="timeline-dot"></div>
               <div>
                 <div style={{ fontWeight: 600 }}>紹介報酬が積み上がる</div>
-                <div className="muted" style={{ fontSize: '13px' }}>あなたが紹介した掲載者の課金が続くかぎり ¥500/月が報酬として積み上がります。</div>
+                <div className="muted" style={{ fontSize: '13px' }}>あなたが紹介した掲載者が課金を始めた月は初回課金額の90%、その後は課金が続くかぎり ¥500/月が報酬として積み上がります。</div>
               </div>
             </div>
           </div>
@@ -417,7 +417,7 @@ export default function BillingPage() {
         <div className="card" style={{ padding: '20px' }}>
           <h2 style={{ margin: '0 0 8px' }}>紹介コード</h2>
           <p className="muted" style={{ fontSize: '14px', marginBottom: '16px' }}>
-            このリンクから掲載申込みしてもらうと、その掲載者が課金を開始するたびに<strong>¥500/月</strong>があなたの報酬として積み上がります。
+            このリンクから掲載申込みしてもらうと、その掲載者が課金を始めた月は<strong>初回課金額の90%</strong>、その後は課金が続くかぎり毎月<strong>¥500</strong>があなたの報酬として積み上がります。
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <input id="referral-link" type="text" readOnly

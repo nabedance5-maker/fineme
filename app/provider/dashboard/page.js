@@ -18738,7 +18738,7 @@ export default function ProviderDashboardPage() {
             </div>
             <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
               <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.7)', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
-              <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が掲載を継続している限り¥500/月の報酬を受け取れます。</p>
+              <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が課金を始めた月は初回課金額の90%、その後は掲載を継続している限り¥500/月の報酬を受け取れます。</p>
               <div className="referral-code-box" id="referral-code">—</div>
               <button className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '10px', width: '100%' }} id="copy-referral">コードをコピー</button>
             </div>
@@ -18962,7 +18962,7 @@ export default function ProviderDashboardPage() {
           <div id="referral-registered-content" className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
-              あなたの紹介コードを使ってFinemeに登録した掲載者が月額課金を継続している間、毎月¥500の報酬が発生します。
+              あなたの紹介コードを使ってFinemeに登録した掲載者が課金を始めた月は初回課金額（税抜）の90%、その後は月額課金を継続している間、毎月¥500の報酬が発生します。
             </p>
 
             {/* 自分の紹介コード */}
