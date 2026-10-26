@@ -146,7 +146,10 @@ function calcMatch(provider, diagnosis) {
     if (diagnosis?.style && provider.provider_style) { total += 2; if (provider.provider_style === diagnosis.style) score += 2; }
     return { score: total === 0 ? null : Math.round((score / total) * 100), detail: null };
   }
-  const vectors = diagnosis.transform_vectors;
+  // transform_vectors は配列のことも、軸IDをキーにしたobject（{body:{...}, eyebrow:{...}}）のこともある
+  // （軸ごとの再スキャンでobject形式になる。app/mypage/page.js と同じ扱い）。object のまま .find して落ちていた（Sentry 2026-10-26）
+  const tvRaw = diagnosis.transform_vectors;
+  const vectors = Array.isArray(tvRaw) ? tvRaw : Object.entries(tvRaw || {}).map(([id, v]) => ({ id, ...(v || {}) }));
   const compassFirst = diagnosis.compass_first;
   const compassAxis = compassFirst ? (CAT_TO_AXIS[compassFirst] || compassFirst) : null;
   const allCats = [provider.main_category, ...(provider.sub_categories || [])].filter(Boolean);
