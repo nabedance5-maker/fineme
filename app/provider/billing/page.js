@@ -31,6 +31,7 @@ export default function BillingPage() {
   const [currentPlan, setCurrentPlan] = useState('A');
   const [billingStatus, setBillingStatus] = useState('free');
   const [connectStatus, setConnectStatus] = useState(null);
+  const [referralYen, setReferralYen] = useState(0); // 今月の紹介報酬（初月90%＋継続¥500の合計）
   const [subscribing, setSubscribing] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
@@ -105,17 +106,24 @@ export default function BillingPage() {
       const headers = { 'Authorization': `Bearer ${token}` };
 
       try {
+        // 自分の掲載者情報は /api/provider/me から取る（/api/billing/providers は管理者キーが要る旧API）
         const [provRes, connectRes] = await Promise.all([
-          fetch('/api/billing/providers', { headers }),
+          fetch('/api/provider/me', { headers }),
           fetch('/api/stripe/connect/status', { headers }),
         ]);
 
         if (provRes.ok) {
-          const providers = await provRes.json();
-          const me = providers.find(p => p.email === session.user.email);
-          if (me) {
+          const me = await provRes.json();
+          if (me?.id) {
             setCurrentPlan(me.plan || 'A');
             setBillingStatus(me.billing_status || 'free');
+            try {
+              const rr = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(me.id)}`);
+              if (rr.ok) {
+                const rj = await rr.json();
+                setReferralYen(rj.summary?.pending_this_month || 0);
+              }
+            } catch {}
           }
         }
 
@@ -261,8 +269,8 @@ export default function BillingPage() {
           </div>
           <div className="kpi-card">
             <div className="kpi-label">紹介報酬（今月）</div>
-            <div id="kpi-reward" className="kpi-value">¥0</div>
-            <div className="kpi-sub">継続分：紹介した掲載者の課金×¥500（初月の90%は別途お支払い）</div>
+            <div id="kpi-reward" className="kpi-value">¥{referralYen.toLocaleString()}</div>
+            <div className="kpi-sub">初月は初回課金額の90%、翌月以降は紹介した掲載者1社につき¥500</div>
           </div>
         </div>
 

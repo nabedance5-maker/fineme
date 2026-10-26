@@ -193,7 +193,7 @@ export default function BusinessPage() {
                 <thead><tr><th>対象</th><th>商品</th><th>価格</th></tr></thead>
                 <tbody>
                   <tr><td>掲載者</td><td>登録料</td><td>当面無料</td></tr>
-                  <tr><td>掲載者</td><td>ライト／プレミアム（¥7,000はキャンペーン用特別価格として温存）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
+                  <tr><td>掲載者</td><td>ライト（¥5,000）／スタンダード（¥7,000）／プレミアム（¥10,000）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
                   <tr><td>掲載者</td><td>紹介報酬（初月）</td><td>紹介した掲載店舗の初回課金額の<span className={styles.yen}>90%</span></td></tr>
                   <tr><td>掲載者</td><td>紹介報酬（継続）</td><td>その店舗が掲載を続ける限り<span className={styles.yen}>¥500</span> / 月</td></tr>
                   <tr><td>ユーザー</td><td>Mirror 単発分析</td><td><span className={styles.yen}>¥500</span></td></tr>

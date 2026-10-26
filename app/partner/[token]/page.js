@@ -164,7 +164,7 @@ export default function PartnerPortalPage(props) {
                 <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px', background: r.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(156,163,175,0.15)', color: r.status === 'active' ? '#34d399' : '#9ca3af' }}>
                   {r.status === 'active' ? '課金中' : '未課金'}
                 </span>
-                {!collaborator && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>累計 ¥{(r.total_earned || 0).toLocaleString()}</div>}
+                {!collaborator && <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>今月 ¥{(r.this_month_reward || 0).toLocaleString()}{r.status === 'active' && !r.this_month_recorded ? '（見込み）' : ''}　累計 ¥{(r.total_earned || 0).toLocaleString()}{r.first_month_reward > 0 ? `（初月分 ¥${r.first_month_reward.toLocaleString()} を含む）` : ''}</div>}
               </div>
             </div>
           ))}
