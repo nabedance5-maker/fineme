@@ -6932,6 +6932,14 @@ export default function ProviderDashboardPage() {
         if (!box) return;
         const parts = [];
         if (m.status === 'draft' && m.created_by_store) parts.push('<div data-dx-card class="mbr-form"></div>');
+        if ((m.billing_alerts || []).length) {
+          parts.push(`<div class="mbr-req" style="border-color:#b91c1c"><b style="color:#b91c1c">月会費の請求額に食い違いが見つかりました</b>
+            ${m.billing_alerts.map(a => `<div style="font-size:12.5px;line-height:1.7">${esc(ymd(a.created_at))}：${esc({ approval_blocked: '入会の確定を止めました（課金はしていません）', upcoming: '次回の請求の見積もり', paid: '払われた請求' }[a.kind] || a.kind)} — ${esc((a.problems || []).join(' / '))}</div>`).join('')}
+            <div style="font-size:12px">Finemeの運営にも自動で知らせています。返金・調整が必要な場合は運営からご連絡します。</div></div>`);
+        }
+        if (m.status === 'active' && m.billing_expected) {
+          parts.push(`<div style="font-size:12.5px;color:#111">次回の請求（見積もりで点検済み）：${esc(ymd(m.billing_expected.due) || '—')} ${fmtYen(m.billing_expected.total)}${m.billing_expected.discount ? `（割引 ${fmtYen(m.billing_expected.discount)} を含む）` : ''}</div>`);
+        }
         if (['draft', 'pending_approval', 'active'].includes(m.status)) {
           if ((m.manual_candidates || []).length) {
             parts.push(`<div class="mbr-req"><b>同じお客様かもしれません</b>
@@ -7159,7 +7167,7 @@ export default function ProviderDashboardPage() {
         if (!okApprove) return;
         const res = await fetch(`/api/provider/memberships/${currentDetailId}/approve`, { method: 'POST', headers: authH() });
         if (res.ok) { showToast('承認しました'); detailCard.style.display = 'none'; loadApplications(); }
-        else { const e = await res.json().catch(() => ({})); if (detailMsg) detailMsg.textContent = 'エラー: ' + (e.error || '不明'); }
+        else { const e = await res.json().catch(() => ({})); if (detailMsg) detailMsg.textContent = 'エラー: ' + (e.error || '不明') + ((e.problems || []).length ? `（${e.problems.join(' / ')}）` : ''); }
       });
       document.getElementById('mbr-detail-reject-btn')?.addEventListener('click', async () => {
         if (!currentDetailId) return;
@@ -7460,7 +7468,7 @@ export default function ProviderDashboardPage() {
           if (!ok) { finalizing = false; statusEl.textContent = 'カードは登録済みです。確定は、入会手続きの一覧からいつでもできます。'; return; }
           const ar = await fetch(`/api/provider/memberships/${membershipId}/approve`, { method: 'POST', headers: authH() });
           const ad = await ar.json().catch(() => ({}));
-          if (!ar.ok) { finalizing = false; statusEl.style.color = '#b91c1c'; statusEl.textContent = ad.error || '確定できませんでした'; return; }
+          if (!ar.ok) { finalizing = false; statusEl.style.color = '#b91c1c'; statusEl.textContent = (ad.error || '確定できませんでした') + ((ad.problems || []).length ? `（${ad.problems.join(' / ')}）` : ''); return; }
           showToast('入会を確定しました');
           loadApplications();
           if (onDone) onDone();

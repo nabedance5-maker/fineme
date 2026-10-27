@@ -80,6 +80,9 @@ export async function GET(request, { params }) {
       .slice(0, 5).map(x => ({ user_id: x.user_id, name: `${x.last_name || ''} ${x.first_name || ''}`.trim() || '（名前なし）' }));
   }
 
+  // 月会費の請求額の点検で見つかった食い違い（未対応のもの。lib/membership-billing-sync.js）
+  const { data: billingAlerts } = await supabase.from('provider_membership_billing_alerts').select('kind, problems, expected, actual, created_at').eq('membership_id', m.id).is('resolved_at', null).order('created_at', { ascending: false }).limit(5);
+
   let id_document_url = null;
   if (m.id_document_path) {
     const { data: signed } = await supabase.storage.from('id-documents').createSignedUrl(m.id_document_path, 300);
@@ -96,6 +99,7 @@ export async function GET(request, { params }) {
     next_charge_date,
     manual_candidates,
     same_person_members,
+    billing_alerts: billingAlerts || [],
     plans: (plans || []).filter(p => p.active || p.id === m.plan_id),
     option_items: optionItems || [],
     pending_options: pendingOptions,

@@ -8,6 +8,7 @@ import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
 import { planLockedResponse } from '@/lib/plan-features';
 import { applyMembershipChange, changeErrorMessage, CHANGE_LABEL } from '@/lib/membership-changes';
+import { syncManagedDiscount } from '@/lib/membership-billing-sync';
 import { resolveLineTarget } from '@/lib/line-channel';
 import { sendLinePush } from '@/lib/line-push';
 
@@ -59,6 +60,10 @@ async function __POST(request, { params }) {
   } catch (e) {
     return Response.json({ error: changeErrorMessage(e) }, { status: e.status || 500 });
   }
+
+  // 月額・割引・休会が変わったので、次の請求に入れる割引の明細を付け直し、次の請求を見積もりで点検する
+  // （Fineme が割引を入れる会員だけ。退会で次の請求が無い時は何もしない）
+  try { await syncManagedDiscount(supabase, stripe(), m.id); } catch (e) { console.error('[membership change] discount sync', e?.message); }
 
   const rec = {
     status: 'applied', from_plan_id: result.from_plan_id ?? m.plan_id, to_plan_id: result.to_plan_id ?? null,

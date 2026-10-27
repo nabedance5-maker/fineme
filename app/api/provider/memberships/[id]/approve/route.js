@@ -23,9 +23,12 @@ import { withAudit } from '@/lib/activity-log';
 import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
 import { planLockedResponse } from '@/lib/plan-features';
 import { profileFromMembership, fillEmpty } from '@/lib/customer-profile';
-import { ensureOptionProduct, ensureStripeCoupon } from '@/lib/membership-changes';
+import { ensureOptionProduct } from '@/lib/membership-changes';
 import { grantPlanTickets } from '@/lib/membership-plan';
-import { stripeStart, couponMonthsFor, jstToday } from '@/lib/membership-cycle';
+import { jstToday } from '@/lib/membership-cycle';
+import { membershipReceipt } from '@/lib/membership-receipt';
+import { planMembershipStart, startMembershipSubscription, BillingGuardError } from '@/lib/membership-billing-guard';
+import { raiseBillingAlert } from '@/lib/membership-billing-sync';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -110,90 +113,29 @@ async function __POST(request, { params }) {
     // 入会時に使ったクーポン（割引）
     const { data: discount } = m.discount_id ? await supabase.from('provider_membership_discounts').select('*').eq('id', m.discount_id).maybeSingle() : { data: null };
 
-    const subParams = {
-      customer: m.stripe_customer_id,
-      items,
-      default_payment_method: m.stripe_payment_method_id,
-      transfer_data: { destination: provider.stripe_connect_id },
-      application_fee_percent: PAYMENT_FEE_PERCENT,
-      metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id, fineme_locker_id: locker?.id || '' },
-    };
-    // 請求の予定（lib/membership-cycle.js）：「◯月分を、前の月／その月／次の月の◯日に請求」と初月の扱いはお店の設定どおり。
-    // 承認した日までに請求日が来ている月の分と入会金は、ここでまとめて1回で請求する。それより後の月はサブスクで毎月。
-    const monthlyTotal = (plan.monthly_price || 0) + (locker?.monthly_fee || 0) + (options || []).reduce((t, o) => t + (o.monthly_price || 0), 0);
-    const start = stripeStart(settings, { startDate, monthlyTotal, today });
-    Object.assign(subParams, start.params);
-
-    // クーポン（月会費から引く割引）は、承認時の請求に含まれる月の分から先に使い、残りの回数をサブスクに付ける
-    const monthCharges = start.immediate; // 承認時に請求する月（金額のあるもの）
-    let subCoupon = null;
-    const immediateLines = [];
-    if (plan.initial_fee > 0) immediateLines.push({ amount: plan.initial_fee, description: `入会金：${plan.name}` });
-    let couponLeft = discount ? (discount.duration === 'forever' ? Infinity : discount.duration === 'repeating' ? Math.max(1, Number(discount.months) || 1) : 1) : 0;
-    for (const mc of monthCharges) {
-      immediateLines.push({ amount: mc.amount, description: `月会費 ${mc.label}（${mc.from.slice(5).replace('-', '/')}〜${mc.to.slice(5).replace('-', '/')}）` });
-      if (discount && couponLeft > 0) {
-        const off = discount.kind === 'percent' ? Math.round(mc.amount * Number(discount.value) / 100) : Math.min(mc.amount, Number(discount.value) || 0);
-        if (off > 0) immediateLines.push({ amount: -off, description: `割引：${discount.name}（${mc.label}）` });
-        couponLeft -= 1;
-      }
-    }
-    if (discount && couponLeft > 0) {
-      // 残りの回数をサブスクの最初の請求から効かせる（Stripe はクーポンを付けた日から◯か月で数えるため、最初の請求までの間を足す）
-      const base = { name: discount.name.slice(0, 40), ...(discount.kind === 'percent' ? { percent_off: discount.value } : { amount_off: discount.value, currency: 'jpy' }), metadata: { fineme_provider_id: String(provider.id), fineme_discount_id: discount.id } };
-      subCoupon = couponLeft === Infinity
-        ? await ensureStripeCoupon(supabase, stripe, discount)
-        : discount.duration === 'once'
-          ? (await stripe.coupons.create({ ...base, duration: 'once' })).id
-          : (await stripe.coupons.create({ ...base, duration: 'repeating', duration_in_months: couponMonthsFor({ today, firstDue: start.schedule.scheduled.due, anchorDay: start.schedule.anchorDay, n: couponLeft }) })).id;
-    }
-    if (subCoupon) subParams.discounts = [{ coupon: subCoupon }];
-
-    // 承認時の請求（入会金と、請求日が来ている月の分）。カードで払えなければ、サブスクを作らずに止める
-    let immediateInvoice = null;
-    const immediateTotal = immediateLines.reduce((t, l) => t + l.amount, 0);
-    if (immediateTotal > 0) {
-      immediateInvoice = await stripe.invoices.create({
-        customer: m.stripe_customer_id,
-        collection_method: 'charge_automatically',
-        auto_advance: false,
-        pending_invoice_items_behavior: 'exclude',
-        default_payment_method: m.stripe_payment_method_id,
-        transfer_data: { destination: provider.stripe_connect_id },
-        application_fee_amount: Math.round(immediateTotal * PAYMENT_FEE_PERCENT / 100),
-        description: '入会時のお支払い',
-        metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id, fineme_kind: 'membership_initial' },
-      });
-      for (const l of immediateLines) {
-        await stripe.invoiceItems.create({ customer: m.stripe_customer_id, invoice: immediateInvoice.id, amount: l.amount, currency: 'jpy', description: l.description });
-      }
-      await stripe.invoices.finalizeInvoice(immediateInvoice.id);
-      try {
-        immediateInvoice = await stripe.invoices.pay(immediateInvoice.id);
-      } catch (e) {
-        try { await stripe.invoices.voidInvoice(immediateInvoice.id); } catch {}
-        return Response.json({ error: `カードで決済できませんでした（${e?.raw?.message || e.message}）。お客様にカードを確かめてもらってください` }, { status: 402 });
-      }
-    }
-
-    let subscription;
+    // お客様に見せたレシート（lib/membership-receipt.js）と、実際に請求する額を1円単位で照合してから課金する
+    // （でお指摘 2026-10-27：クーポンの請求とレシートは絶対にずれてはいけない）。割引は Stripe のクーポンを使わず、
+    // Fineme が計算して請求書に明細行で入れる（lib/membership-billing-guard.js）。食い違えば課金を始めずに止める。
+    const receipt = membershipReceipt({ cycle: settings, enrollmentDate: m.enrollment_date || today, plan, options: options || [], locker, coupon: discount, today });
+    const computed = planMembershipStart({ settings, startDate, today, plan, options: options || [], locker, discount, receipt });
+    const start = computed.start;
+    let started;
     try {
-      subscription = await stripe.subscriptions.create(subParams);
-      // 定期の請求の最初の月が入会した月（日割り・無料）の時は、その請求から差額を引く
-      if (start.adjust > 0) {
-        await stripe.invoiceItems.create({ customer: m.stripe_customer_id, subscription: subscription.id, amount: -start.adjust, currency: 'jpy', description: `${start.schedule.scheduled.label}は${start.schedule.cycle.first_month === 'free' ? '無料' : `日割り（${start.schedule.scheduled.days}日分）`}のため` });
-      }
+      started = await startMembershipSubscription(stripe, {
+        plan, customerId: m.stripe_customer_id, paymentMethodId: m.stripe_payment_method_id,
+        connectId: provider.stripe_connect_id, feePercent: PAYMENT_FEE_PERCENT,
+        membershipId: m.id, providerId: provider.id, lockerId: locker?.id || '',
+        subscriptionItems: items, discount, computed,
+      });
     } catch (e) {
-      // サブスクを作れなかったら、承認時に払ってもらった分を返金して止める
-      if (immediateInvoice) {
-        try {
-          const inv = await stripe.invoices.retrieve(immediateInvoice.id, { expand: ['payments'] });
-          const pi = inv.payments?.data?.[0]?.payment?.payment_intent;
-          if (pi) await stripe.refunds.create({ payment_intent: typeof pi === 'string' ? pi : pi.id, reverse_transfer: true, refund_application_fee: true });
-        } catch (re) { console.error('[memberships approve] refund failed', re?.message); }
+      if (e instanceof BillingGuardError) {
+        await raiseBillingAlert(supabase, { providerId: provider.id, membershipId: m.id, kind: 'approval_blocked', problems: e.problems, expected: computed.immediateTotal });
+        return Response.json({ error: `${e.message}。課金は始めていません（Finemeの運営に自動で知らせました）`, problems: e.problems }, { status: 409 });
       }
+      if (e.payment) return Response.json({ error: e.message }, { status: 402 });
       throw e;
     }
+    const subscription = started.subscription;
 
     if ((options || []).length) {
       await supabase.from('provider_membership_option_items').insert(options.map(o => ({
@@ -212,6 +154,9 @@ async function __POST(request, { params }) {
         billing_mode: start.schedule.cycle.billing_mode, billing_month_offset: start.schedule.cycle.billing_month_offset,
         prorated_first_amount: start.schedule.partial?.amount ?? null,
         ...(discount ? { discount_applied_at: new Date().toISOString() } : {}),
+        // 割引は Fineme が請求書に入れる。残り回数は承認後の定期の請求で数える（null＝ずっと）
+        discount_managed: true, discount_remaining: computed.remainingForSubscription,
+        discount_pending_item_id: started.pendingItemId, billing_expected: started.expected, approval_receipt: receipt,
       })
       .eq('id', id)
       .select()

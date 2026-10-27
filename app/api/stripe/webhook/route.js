@@ -5,6 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { getPlanKeyByPriceId, getPlanByPriceId } from '@/lib/stripe-plans';
 import { recordMembershipInvoice, recordMembershipSubscription, applyMembershipCardUpdate } from '@/lib/membership-billing';
+import { afterMembershipInvoice, syncManagedDiscount } from '@/lib/membership-billing-sync';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
 import { markInvoicePaid } from '@/lib/invoices';
@@ -39,7 +40,13 @@ export async function POST(request) {
       case 'customer.subscription.updated': {
         const sub = event.data.object;
         // お客様の月会費（会員プラン）は店舗自身の契約と別に扱う（2026-10-19：取り違えると店舗のプランがAに書き換わっていた）
-        if (await recordMembershipSubscription(supabaseAdmin, sub, false)) break;
+        if (await recordMembershipSubscription(supabaseAdmin, sub, false)) {
+          // 休会が明けた（再開日が来て Stripe が自動で再開した）時は、次の請求に割引の明細を付け直す
+          if (event.data.previous_attributes && 'pause_collection' in event.data.previous_attributes && !sub.pause_collection) {
+            try { await syncManagedDiscount(supabaseAdmin, stripe, sub.metadata.fineme_membership_id); } catch (e) { console.error('[webhook] membership discount sync', e?.message); }
+          }
+          break;
+        }
         const providerId = sub.metadata?.fineme_provider_id;
         if (!providerId) break;
 
@@ -73,7 +80,11 @@ export async function POST(request) {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
-        if (await recordMembershipInvoice(supabaseAdmin, invoice, 'succeeded')) break;
+        if (await recordMembershipInvoice(supabaseAdmin, invoice, 'succeeded')) {
+          // 月会費：払われた請求の点検（割引・請求額がレシートどおりか）と、次の月の割引の明細
+          try { await afterMembershipInvoice(supabaseAdmin, stripe, invoice, 'succeeded'); } catch (e) { console.error('[webhook] membership invoice check', e?.message); }
+          break;
+        }
         const providerId = invoice.subscription_details?.metadata?.fineme_provider_id
           || invoice.metadata?.fineme_provider_id;
         if (!providerId) break;
@@ -103,6 +114,15 @@ export async function POST(request) {
         const charge = event.data.object;
         if (charge.invoice) {
           try { await recordRefund(supabaseAdmin, charge.invoice); } catch (e) { console.error('[webhook] refund record error:', e); }
+        }
+        break;
+      }
+
+      // 月会費の請求が取り消された（休会中の請求など）：支払いの記録を取り消し、割引の明細を次の請求に付け直す
+      case 'invoice.voided': {
+        const invoice = event.data.object;
+        if (await recordMembershipInvoice(supabaseAdmin, invoice, 'void')) {
+          try { await afterMembershipInvoice(supabaseAdmin, stripe, invoice, 'void'); } catch (e) { console.error('[webhook] membership invoice void', e?.message); }
         }
         break;
       }
