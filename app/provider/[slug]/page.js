@@ -90,8 +90,10 @@ function tabsFor(provider, opts = {}) {
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
   // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
-  // 月額プラン（入会ページへ）と回数券を1つのタブに（でお要望 2026-10-27：入会ページへのリンクが管理画面にしか無かった）
-  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: 'プラン・回数券' });
+  // 月額プラン（入会ページへ）は回数券と別のタブ（でお指摘 2026-10-27：同じタブに混ぜない）。
+  // オンラインで入会できる月額プランがある店舗にだけ出す
+  if (opts.plans && isShown(provider, 'tab_plans')) tabs.push({ id: 'plans', label: '月額プラン' });
+  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: '回数券' });
   return tabs;
 }
 // 「今すぐ予約する」系CTAの着地先。予約は1つのタブにまとめた（2026-10-22）。旧タブ名（instant/consult/class）のリンクもここへ
@@ -1585,7 +1587,7 @@ function MemberTab({ provider, services, staff, elig, onEligChanged, diagnosis, 
 // ── タブ「回数券」（でお要望2026-09-27：決済機能Phase 6第一弾。オンラインでの
 //    回数券・パッケージ購入）。Stripe Checkout(mode:'payment')の hosted page に
 //    遷移し、決済完了後にこのタブへ戻ってconfirmを叩いて確定する。 ──
-function PackagesTab({ provider }) {
+function PackagesTab({ provider, mode = 'packages' }) {
   // マイページの使い切った回数券から来た時は、同じ回数券を目立たせてそこまで送る（でお要望 2026-10-22）
   const highlightId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('package') : null;
   const [packages, setPackages] = useState(null); // null=未取得
@@ -1667,10 +1669,14 @@ function PackagesTab({ provider }) {
   }
 
   if (packages === null || plans === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
+  const showPlans = mode === 'plans';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '60px' }}>
-      {plans.length > 0 && (
+      {showPlans && !plans.length && (
+        <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在、オンラインで入会できる月額プランはありません。</p>
+      )}
+      {showPlans && plans.length > 0 && (
         <section style={{ display: 'grid', gap: '10px', marginBottom: '10px' }}>
           <h2 style={{ margin: 0, fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800' }}>月額プラン</h2>
           {plans.map(pl => (
@@ -1688,18 +1694,18 @@ function PackagesTab({ provider }) {
           ))}
         </section>
       )}
-      {(packages.length > 0 || !plans.length) && <h2 style={{ margin: 0, fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800' }}>回数券</h2>}
-      {confirmMsg && (
+      {!showPlans && <h2 style={{ margin: 0, fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800' }}>回数券</h2>}
+      {!showPlans && confirmMsg && (
         <div role="status" style={{ padding: '14px 16px', background: ac(10), border: '1px solid var(--pv-accent)', borderRadius: '12px', color: 'var(--pv-text)', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700' }}>
           {confirmMsg}
         </div>
       )}
-      {error && (
+      {!showPlans && error && (
         <div role="alert" style={{ padding: '12px 16px', background: 'var(--pv-surface)', border: `1px solid ${tx(40)}`, borderRadius: '12px', color: 'var(--pv-text)', fontWeight: '700', fontSize: 'calc(13px * var(--pv-fs))' }}>
           {error}
         </div>
       )}
-      {!packages.length ? (
+      {!showPlans && (!packages.length ? (
         <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在お求めいただける回数券はありません。</p>
       ) : (<>
         {highlightId && !packages.some(x => x.id === highlightId) && (
@@ -1732,7 +1738,7 @@ function PackagesTab({ provider }) {
           </div>
         </div>
       ))}
-      </>)}
+      </>))}
     </div>
   );
 }
@@ -2440,7 +2446,7 @@ function ProviderPageContent() {
       if (prov) {
         const validIds = tabsFor(prov).map(t => t.id);
         setActiveTab(current => {
-          if (validIds.includes(current) || current === 'mine') return current;
+          if (validIds.includes(current) || current === 'mine' || current === 'plans') return current;
           if (OLD_BOOKING_TABS.includes(current)) return 'book';
           return validIds[0] || 'basic';
         });
@@ -2608,7 +2614,7 @@ function ProviderPageContent() {
 
       {/* タブ */}
       <div id="pv-tabs" style={{ scrollMarginTop: '0px' }} />
-      <TabBar activeTab={activeTab} tabs={tabsFor(provider, { member: isMemberish })} onSelect={tab => { setActiveTab(tab); if (tab !== 'book') setSelectedService(null); }} />
+      <TabBar activeTab={activeTab} tabs={tabsFor(provider, { member: isMemberish, plans: joinOpen })} onSelect={tab => { setActiveTab(tab); if (tab !== 'book') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
       {activeTab === 'basic' && <BasicInfoTab provider={provider} />}
@@ -2644,7 +2650,8 @@ function ProviderPageContent() {
         <MemberTab provider={provider} services={services} staff={staff} elig={elig} diagnosis={diagnosis} matchData={matchData} onEligChanged={() => setEligTick(x => x + 1)}
           onGoBook={svc => { setSelectedService(svc); setSubmitted(false); setActiveTab('book'); document.getElementById('pv-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} />
       )}
-      {activeTab === 'packages' && <PackagesTab provider={provider} />}
+      {activeTab === 'plans' && <PackagesTab provider={provider} mode="plans" />}
+      {activeTab === 'packages' && <PackagesTab provider={provider} mode="packages" />}
     </div>
     </div>
   );
