@@ -6,6 +6,8 @@
 // booking_cutoff_hours（予約開始の何時間前まで受け付けるか）も同じエンドポイントで扱う。
 // でお要望2026-09-18：「前日の何時までというのと、何時間前までを選べるように」を
 // 受けてbooking_cutoff_mode（hours/day_before_time）・booking_cutoff_timeも追加。
+import { horizonDays } from '@/lib/booking-cutoff';
+import { bookingMessageTemplate, normalizeBookingMessages, BOOKING_MESSAGE_DEFAULTS } from '@/lib/booking-messages';
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
@@ -25,8 +27,11 @@ export async function GET(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data } = await supabase.from('providers').select('max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time').eq('id', provider.id).single();
+  const { data } = await supabase.from('providers').select('max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, booking_horizon_days, booking_messages').eq('id', provider.id).single();
   return Response.json({
+    booking_horizon_days: horizonDays(data),
+    booking_messages: { instant: bookingMessageTemplate(data, 'instant'), request: bookingMessageTemplate(data, 'request') },
+    message_defaults: BOOKING_MESSAGE_DEFAULTS,
     max_active_reservations: data?.max_active_reservations ?? 1,
     booking_cutoff_mode: data?.booking_cutoff_mode || 'hours',
     booking_cutoff_hours: data?.booking_cutoff_hours ?? 0,
@@ -60,6 +65,14 @@ async function __PATCH(request) {
     if (body.booking_cutoff_time && !/^\d{2}:\d{2}$/.test(body.booking_cutoff_time)) return Response.json({ error: '時刻の形式が不正です' }, { status: 400 });
     update.booking_cutoff_time = body.booking_cutoff_time || null;
   }
+  // 何日先まで予約を受け付けるか（2026-10-27）
+  if ('booking_horizon_days' in body) {
+    const n = Number(body.booking_horizon_days);
+    if (!Number.isInteger(n) || n < 1 || n > 365) return Response.json({ error: '1〜365日で指定してください' }, { status: 400 });
+    update.booking_horizon_days = n;
+  }
+  // お客様に自動で送るメッセージ（2026-10-27）
+  if ('booking_messages' in body) update.booking_messages = normalizeBookingMessages(body.booking_messages);
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { error } = await supabase.from('providers').update(update).eq('id', provider.id);

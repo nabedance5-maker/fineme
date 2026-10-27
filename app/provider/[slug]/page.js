@@ -1774,7 +1774,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // ログイン中でアカウントに名前と連絡先がある時は、入力欄を畳んで「予約者」1行にする（毎回入力させない。2026-10-22）
   const [contactFromAccount, setContactFromAccount] = useState(false);
   const [editContact, setEditContact] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
+  // 日本時間の今日（以前は世界標準時の日付で、日本の朝9時前は前日になっていた）
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -1793,6 +1794,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 2タブに分け、どちらのモードで開かれたかをmode propで渡してくる
   // （'instant'=即時予約タブ、'request'=リクエストタブ、'closed'=両方OFFで受付停止）。
   const showInstantPicker = mode === 'instant';
+  // 何日先まで予約できるか（お店の設定。既定60日）
+  const horizon = Number.isInteger(provider?.booking_horizon_days) && provider.booking_horizon_days > 0 ? provider.booking_horizon_days : 60;
+  const lastDay = (() => { const d = new Date(`${today}T00:00:00`); d.setDate(d.getDate() + Math.min(horizon, 62)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
 
   const bookableStaff = (staff || []).filter(s => s.bookable !== false);
   // LINE通知「前回と同じで予約」から来た時は前回の担当を選んだ状態にする（指名できる担当のみ）
@@ -1855,7 +1859,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   useEffect(() => {
     if (!showInstantPicker || !provider?.slug) return;
-    const params = new URLSearchParams({ from: today });
+    // お店が決めた「何日先まで」の範囲をまとめて取る（2026-10-27。以前は2週間分だけ取っていて、3週目以降が空だった）
+    const params = new URLSearchParams({ from: today, to: lastDay });
     if (selectedService?.id) params.set('service_id', selectedService.id);
     fetch(`/api/providers/${provider.slug}/availability?${params}`)
       .then(r => r.ok ? r.json() : [])
@@ -2205,7 +2210,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <button
                 type="button"
                 onClick={() => setGridWeekOffset(w => w + 1)}
-                style={{ background: 'none', border: 'none', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontSize: 'calc(12px * var(--pv-fs))', cursor: 'pointer', padding: '4px' }}
+                disabled={(gridWeekOffset + 1) * 7 > horizon}
+                style={{ background: 'none', border: 'none', color: (gridWeekOffset + 1) * 7 > horizon ? tx(35) : tx(75), fontSize: 'calc(12px * var(--pv-fs))', cursor: (gridWeekOffset + 1) * 7 > horizon ? 'default' : 'pointer', padding: '4px' }}
               >
                 次の週へ ＞
               </button>
@@ -2275,7 +2281,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date} min={today} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: '#fff', color: '#111' }} required />
+            <input type="date" value={formState.date} min={today} max={lastDay} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: '#fff', color: '#111' }} required />
             <select value={formState.time} onChange={e => setFormState(p => ({ ...p, time: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: '#fff', color: '#111' }} required>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -2285,7 +2291,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>希望日時（第2希望）<span style={{ fontWeight: '400', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
+            <input type="date" value={formState.date2} min={today} max={lastDay} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
             <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -2295,7 +2301,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '6px' }}>希望日時（第3希望）<span style={{ fontWeight: '400', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
+            <input type="date" value={formState.date3} min={today} max={lastDay} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
             <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}

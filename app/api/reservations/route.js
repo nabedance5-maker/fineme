@@ -2,11 +2,12 @@
 // GET  /api/reservations  - 一覧取得（providerId or userId で絞り込み）
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
+import { bookingMessageTemplate, renderBookingMessage } from '@/lib/booking-messages';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
-import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
+import { isPastBookingCutoff, cutoffDescription, isBeyondHorizon, horizonDays } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { logCustomerActivity } from '@/lib/activity-log';
@@ -162,7 +163,13 @@ export async function POST(request) {
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
   // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
-  const { data: providerFeatureRow } = await supabase.from('providers').select('plan, enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
+  const { data: providerFeatureRow } = await supabase.from('providers').select('plan, enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, booking_horizon_days, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
+
+  // 何日先まで受け付けるか（お店ごとの設定。2026-10-27）
+  const askedDate = isInstant ? (instantDate || null) : preferred_date;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(askedDate || '') && isBeyondHorizon(providerFeatureRow, askedDate)) {
+    return Response.json({ error: `このお店は${horizonDays(providerFeatureRow)}日先までのご予約を受け付けています。もう少し近い日をお選びください`, code: 'beyond_horizon' }, { status: 400 });
+  }
 
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
@@ -331,7 +338,7 @@ export async function POST(request) {
   // 掲載者情報を取得（通知用）
   const { data: provider } = await supabase
     .from('providers')
-    .select('name, email, notify_emails, line_user_id, billing_started, id')
+    .select('name, email, notify_emails, line_user_id, billing_started, id, booking_messages')
     .eq('id', provider_id)
     .single();
 
@@ -342,12 +349,24 @@ export async function POST(request) {
     className = clsRow?.name || null;
   }
 
+  // お客様へ送る文面（お店が編集できる。即時予約＝確定／リクエスト＝受付。2026-10-27）
+  let menuLabel = className || null;
+  if (!menuLabel && effectiveServiceId) {
+    const { data: sv } = await supabase.from('provider_services').select('name').eq('id', effectiveServiceId).maybeSingle();
+    menuLabel = sv?.name || null;
+  }
+  const customerText = renderBookingMessage(bookingMessageTemplate(provider, isInstant ? 'instant' : 'request'), {
+    name: user_name, store: provider?.name, when: whenText, menu: menuLabel,
+  });
+
   // 通知（失敗しても予約は成功扱い）
   try {
     await sendReservationCreatedEmails({
       reservation: { ...data, preferred_date: data.reserved_date, preferred_time: data.start_time, message },
       providerEmail: providerRecipients(provider),
       providerName: provider?.name,
+      isInstant,
+      customerText,
     });
   } catch (e) { console.error('[reservation email]', e); }
 
@@ -371,11 +390,7 @@ export async function POST(request) {
   await notifyCustomerLine(getSupabase(), {
     userId: bookingUserId,
     providerId: provider_id,
-    message: isInstant
-      ? (className
-        ? `【${provider?.name || '店舗'}】「${className}」の予約が確定しました✓\n日時: ${whenText}\n当日お待ちしております。`
-        : `【${provider?.name || '店舗'}】予約が確定しました✓\n日時: ${whenText}\n当日お待ちしております。`)
-      : `【${provider?.name || '店舗'}】予約リクエストを受け付けました。\n希望日時: ${whenText}\n店舗からの返答をお待ちください。`,
+    message: customerText,
   });
 
   return Response.json({ ...data, deposit_checkout_url: depositCheckoutUrl }, { status: 201 });

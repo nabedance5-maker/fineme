@@ -7,6 +7,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { loadContext, availableStarts } from '@/lib/availability-engine';
+import { lastBookableDate } from '@/lib/booking-cutoff';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const jst = (n = 0) => new Date(Date.now() + 9 * 3600000 + n * 86400000).toISOString().slice(0, 10);
@@ -16,18 +17,22 @@ export async function GET(request, { params }) {
   const { searchParams } = new URL(request.url);
   const from = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('from') || '') ? searchParams.get('from') : jst();
   let to = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get('to') || '') ? searchParams.get('to') : null;
-  // 一度に計算するのは最大31日分
-  const maxTo = new Date(`${from}T00:00:00Z`); maxTo.setUTCDate(maxTo.getUTCDate() + 30);
+  // 一度に計算するのは最大62日分（お店が決めた「何日先まで」を超える日は下で切る）
+  const maxTo = new Date(`${from}T00:00:00Z`); maxTo.setUTCDate(maxTo.getUTCDate() + 61);
   if (!to || to > maxTo.toISOString().slice(0, 10)) to = (() => { const d = new Date(`${from}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 13); return d.toISOString().slice(0, 10); })();
   const serviceId = searchParams.get('service_id');
   const staffId = searchParams.get('staff_id');
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, plan, enabled_features, business_hours, booking_unit, booking_interval_minutes, store_capacity, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time')
+    .select('id, plan, enabled_features, business_hours, booking_unit, booking_interval_minutes, store_capacity, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time, booking_horizon_days')
     .eq('slug', slug).eq('published', true).eq('admin_hidden', false)
     .single();
   if (!provider) return Response.json([]);
+  // 何日先まで受け付けるか（2026-10-27）
+  const lastDay = lastBookableDate(provider);
+  if (from > lastDay) return Response.json([]);
+  if (to > lastDay) to = lastDay;
 
   const ctx = await loadContext(supabase, provider, from, to);
   const service = serviceId ? ctx.services[serviceId] : null;

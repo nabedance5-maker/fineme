@@ -941,7 +941,9 @@ export default function ProviderDashboardPage() {
       const btn = document.querySelector(`[data-tab="${tabId}"]`);
       // 「月額プラン」タブは入会手続きタブのプラン部分だけを見せる（2026-10-27）
       const plansOnly = tabId === 'membership-plans';
-      const pane = document.getElementById(plansOnly ? 'tab-memberships' : 'tab-' + tabId);
+      // 店舗設定の「予約の受付設定」は予約カレンダー側の受付設定と同じ画面（2026-10-27）
+      const PANE_ALIAS = { 'membership-plans': 'memberships', 'booking-settings': 'slots' };
+      const pane = document.getElementById('tab-' + (PANE_ALIAS[tabId] || tabId));
       document.getElementById('tab-memberships')?.classList.toggle('mbr-plans-only', plansOnly);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
@@ -7582,8 +7584,8 @@ export default function ProviderDashboardPage() {
         const d = await r.json().catch(() => ({}));
         const m = document.getElementById('bu-msg'); if (m) { m.textContent = r.ok ? '保存しました' : (d.error || '保存できませんでした'); setTimeout(() => { m.textContent = ''; }, 3000); }
       });
-      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadBookingUnit, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'slots') loadBookingUnit();
+      document.querySelectorAll('[data-tab="slots"], [data-tab="booking-settings"]').forEach(btn => btn.addEventListener('click', loadBookingUnit, { once: false }));
+      if (['slots', 'booking-settings'].includes(new URLSearchParams(location.search).get('tab'))) loadBookingUnit();
 
       // 即時予約のON/OFFをこのタブ内から直接切り替えられるように（でお要望2026-09-12：
       // 「機能設定タブでOFFにできる」という案内だけでなく、その場にトグルを置いた方が便利）。
@@ -7645,8 +7647,8 @@ export default function ProviderDashboardPage() {
           if (instantToggleStatus) { instantToggleStatus.style.color = '#ef4444'; instantToggleStatus.textContent = '保存に失敗しました'; }
         }
       });
-      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadInstantToggleState, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'slots') loadInstantToggleState();
+      document.querySelectorAll('[data-tab="slots"], [data-tab="booking-settings"]').forEach(btn => btn.addEventListener('click', loadInstantToggleState, { once: false }));
+      if (['slots', 'booking-settings'].includes(new URLSearchParams(location.search).get('tab'))) loadInstantToggleState();
 
       // ── 営業時間からの自動生成（でお要望2026-09-14） ──
       // でお要望2026-09-17：「営業時間の設定はそこにも必要だけど、店舗設定のタブ内にも
@@ -7735,8 +7737,11 @@ export default function ProviderDashboardPage() {
             else { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
           }
         });
-        document.querySelectorAll(`[data-tab="${ids.tab}"]`).forEach(btn => btn.addEventListener('click', load, { once: false }));
-        if (new URLSearchParams(location.search).get('tab') === ids.tab) load();
+        // 予約の受付設定は店舗設定側（booking-settings）からも開ける（2026-10-27）
+        const tabSel = ids.tab === 'slots' ? '[data-tab="slots"], [data-tab="booking-settings"]' : `[data-tab="${ids.tab}"]`;
+        const tabKeys = ids.tab === 'slots' ? ['slots', 'booking-settings'] : [ids.tab];
+        document.querySelectorAll(tabSel).forEach(btn => btn.addEventListener('click', load, { once: false }));
+        if (tabKeys.includes(new URLSearchParams(location.search).get('tab'))) load();
 
         // 臨時休業日（でお要望2026-09-18：「特定の1日だけ臨時休業、みたいな例外日の
         // 設定もできるようにしたい」）。曜日パターンだけでは表現できない不定休に対応。
@@ -7774,8 +7779,8 @@ export default function ProviderDashboardPage() {
             showToast('臨時休業日を追加しました');
             loadClosedDates();
           });
-          document.querySelectorAll(`[data-tab="${ids.tab}"]`).forEach(btn => btn.addEventListener('click', loadClosedDates, { once: false }));
-          if (new URLSearchParams(location.search).get('tab') === ids.tab) loadClosedDates();
+          document.querySelectorAll(tabSel).forEach(btn => btn.addEventListener('click', loadClosedDates, { once: false }));
+          if (tabKeys.includes(new URLSearchParams(location.search).get('tab'))) loadClosedDates();
         }
       }
 
@@ -7808,6 +7813,10 @@ export default function ProviderDashboardPage() {
           if (cutoffInput) cutoffInput.value = d.booking_cutoff_hours ?? 0;
           if (cutoffTimeInput) cutoffTimeInput.value = d.booking_cutoff_time || '';
           updateCutoffModeFields();
+          const hz = document.getElementById('booking-horizon-input'); if (hz) hz.value = d.booking_horizon_days ?? 60;
+          window.__bookingMsgDefaults = d.message_defaults || {};
+          const mi = document.getElementById('booking-msg-instant'); if (mi) mi.value = d.booking_messages?.instant || '';
+          const mr = document.getElementById('booking-msg-request'); if (mr) mr.value = d.booking_messages?.request || '';
         }
       }
       document.getElementById('booking-limit-save-btn')?.addEventListener('click', async () => {
@@ -7851,8 +7860,30 @@ export default function ProviderDashboardPage() {
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
       });
-      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadBookingLimit, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'slots') loadBookingLimit();
+      async function patchBookingLimits(body, msgId) {
+        const msg = document.getElementById(msgId);
+        const res = await fetch('/api/provider/booking-limits', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
+        const d = await res.json().catch(() => ({}));
+        if (msg) { msg.style.color = res.ok ? '#15803d' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : (d.error || '保存に失敗しました'); }
+        return res.ok;
+      }
+      document.getElementById('booking-horizon-save-btn')?.addEventListener('click', () => {
+        const n = Number(document.getElementById('booking-horizon-input')?.value);
+        if (!Number.isInteger(n) || n < 1 || n > 365) { const m = document.getElementById('booking-horizon-msg'); if (m) { m.style.color = '#ef4444'; m.textContent = '1〜365の整数で入れてください'; } return; }
+        patchBookingLimits({ booking_horizon_days: n }, 'booking-horizon-msg');
+      });
+      document.getElementById('booking-msg-save-btn')?.addEventListener('click', () => {
+        patchBookingLimits({ booking_messages: { instant: document.getElementById('booking-msg-instant')?.value || '', request: document.getElementById('booking-msg-request')?.value || '' } }, 'booking-msg-msg');
+      });
+      document.getElementById('booking-msg-reset-btn')?.addEventListener('click', () => {
+        const d = window.__bookingMsgDefaults || {};
+        const mi = document.getElementById('booking-msg-instant'); if (mi && d.instant) mi.value = d.instant;
+        const mr = document.getElementById('booking-msg-request'); if (mr && d.request) mr.value = d.request;
+        const m = document.getElementById('booking-msg-msg'); if (m) { m.style.color = ''; m.textContent = '標準の文面を入れました。「メッセージを保存する」で反映されます'; }
+      });
+      // 「予約の受付設定」は予約カレンダー側と店舗設定側（booking-settings）の両方から開ける（でお要望 2026-10-27）
+      document.querySelectorAll('[data-tab="slots"], [data-tab="booking-settings"]').forEach(btn => btn.addEventListener('click', loadBookingLimit, { once: false }));
+      if (['slots', 'booking-settings'].includes(new URLSearchParams(location.search).get('tab'))) loadBookingLimit();
     })();
 
     // ── 体験談タブ ────────────────────────────────────────────────
@@ -13398,6 +13429,14 @@ export default function ProviderDashboardPage() {
         holder.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       document.getElementById('cal-booking-settings-btn')?.addEventListener('click', () => toggleBookingSettings(!settingsNodes));
+      // 店舗設定の「予約の受付設定」から開いた時は、カレンダーの下に借りている中身を元の画面に戻して表示する（2026-10-27）
+      document.querySelectorAll('.tab-btn[data-tab="booking-settings"]').forEach(b => b.addEventListener('click', () => {
+        if (!settingsNodes) return;
+        const holder = document.getElementById('cal-booking-settings');
+        const pane = document.getElementById('tab-slots');
+        settingsNodes.forEach(n => pane.appendChild(n));
+        settingsNodes = null; if (holder) { holder.innerHTML = ''; holder.style.display = 'none'; }
+      }));
       window.__pdOpenBookingSettings = () => toggleBookingSettings(true);
       // 旧「空き枠」タブへの案内（URLの?tab=slots・AIコンサルの「開く」）は、予約カレンダーの受付設定を開く
       function redirectSlotsTab() {
@@ -16194,6 +16233,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
+                  <button className="tab-btn" data-tab="booking-settings" data-feature="instant_booking">予約の受付設定<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
@@ -17390,6 +17430,38 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
               <button type="button" className="btn btn-ghost" id="booking-cutoff-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
               <span id="booking-cutoff-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+
+            {/* 何日先まで予約を受け付けるか（でお要望 2026-10-27） */}
+            <div className="form-field" style={{ marginBottom: 0, maxWidth: '320px', marginTop: '16px' }}>
+              <label>何日先まで予約を受け付けるか</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>今日から<input type="number" id="booking-horizon-input" min="1" max="365" style={{ width: '90px' }} />日先まで</div>
+              <span className="muted" style={{ fontSize: '11.5px' }}>例：30にすると、お客様は30日先までの日時しか選べません（予約リクエストの希望日も同じ）。既定は60日。</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+              <button type="button" className="btn btn-ghost" id="booking-horizon-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
+              <span id="booking-horizon-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+          </div>
+
+          {/* お客様に自動で送るメッセージ（でお要望 2026-10-27：即時予約・リクエストそれぞれ店舗が編集できるように） */}
+          <div className="card stack" data-feature-exempt="true" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>予約の時にお客様へ自動で送るメッセージ</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>LINEとメールで送られます。<code>{'{お名前}'}</code> <code>{'{お店}'}</code> <code>{'{日時}'}</code> <code>{'{メニュー}'}</code> と書くと、送る時にその予約の内容に置き換わります。空にするとFinemeの標準の文面に戻ります。</p>
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>空いている時間から予約した時（その場で確定）</label>
+              <textarea id="booking-msg-instant" rows={5} maxLength={1000} style={{ width: '100%', fontSize: '13px', padding: '10px', lineHeight: 1.6 }}></textarea>
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>予約リクエストを受け付けた時（お店の返事待ち）</label>
+              <textarea id="booking-msg-request" rows={5} maxLength={1000} style={{ width: '100%', fontSize: '13px', padding: '10px', lineHeight: 1.6 }}></textarea>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="btn" id="booking-msg-save-btn" style={{ fontSize: '13px' }}>メッセージを保存する</button>
+              <button type="button" className="btn btn-ghost" id="booking-msg-reset-btn" style={{ fontSize: '12px' }}>標準の文面に戻す</button>
+              <span id="booking-msg-msg" className="muted" style={{ fontSize: '12px' }}></span>
             </div>
           </div>
 
