@@ -3,6 +3,7 @@
 // DELETE /api/provider/memberships/[id] → 店頭で始めた、カード登録待ちの入会手続きを取りやめる
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { firstBilling } from '@/lib/membership-cycle';
 import Stripe from 'stripe';
 import { planLockedResponse } from '@/lib/plan-features';
 import { periodEndOf, discountText, findCoupon } from '@/lib/membership-changes';
@@ -106,13 +107,6 @@ export async function GET(request, { params }) {
 }
 
 const str = (v, n = 100) => { const t = String(v ?? '').trim().slice(0, n); return t || null; };
-function estimateProratedAmount(enrollmentDateStr, monthlyPrice) {
-  const d = new Date(`${enrollmentDateStr}T00:00:00+09:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  return Math.round(((daysInMonth - d.getDate() + 1) / daysInMonth) * monthlyPrice);
-}
-
 // 入会情報の編集（でお要望 2026-10-27：編集でいろいろ直せるように）。
 // お名前・連絡先などは、確定後も直せる。プラン・入会日・ロッカー・オプション・クーポンは、まだ課金が始まっていない（確定前）の間だけ。
 // 確定後（課金が始まった後）のプラン変更・休会・退会・オプションの付け外しは、これまでどおり /change で行う（Stripeの課金に反映するため）。
@@ -146,7 +140,7 @@ async function __PATCH(request, { params }) {
     const lockerId = 'locker_id' in b ? (b.locker_id || null) : m.locker_id;
     const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
       supabase.from('provider_membership_plans').select('id, monthly_price, active, included_option_ids, selectable_option_ids, discount_ids').eq('id', planId).eq('provider_id', provider.id).maybeSingle(),
-      supabase.from('provider_membership_settings').select('prorate_first_month').eq('provider_id', provider.id).maybeSingle(),
+      supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle(),
       lockerId ? supabase.from('provider_lockers').select('monthly_fee').eq('id', lockerId).eq('provider_id', provider.id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     if (!plan || (!plan.active && planId !== m.plan_id)) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
@@ -169,7 +163,7 @@ async function __PATCH(request, { params }) {
       plan_id: planId, enrollment_date: date, locker_id: lockerId,
       option_ids: (opts || []).length ? opts.map(o => o.id) : null,
       discount_id: discountId,
-      prorated_first_amount: (settings?.prorate_first_month ?? true) ? estimateProratedAmount(date, monthlyTotal) : null,
+      prorated_first_amount: firstBilling(settings, { startDate: date, monthlyTotal }).partial?.amount ?? null,
     });
   }
   if (!Object.keys(patch).length) return Response.json({ error: '変更する項目がありません' }, { status: 400 });

@@ -3,6 +3,7 @@
 // 店舗のStripe Connect設定が完了している店舗でのみ利用可能。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeCycle } from '@/lib/membership-cycle';
 import { hasFeature } from '@/lib/feature-flags';
 import { normalizeFormFields } from '@/lib/membership-form';
 
@@ -25,7 +26,7 @@ export async function GET(request, { params }) {
   const [{ data: plans }, { data: settings }, { data: lockers }, { data: options }, { count: couponCount }] = await Promise.all([
     // 入会ページから申し込めるプランだけ（店頭だけのプランは出さない。でお要望 2026-10-22）
     supabase.from('provider_membership_plans').select('id, name, monthly_price, description, initial_fee, included_option_ids, selectable_option_ids, ticket_grants, online_enabled').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
-    supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text, form_fields, custom_fields').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_lockers').select('id, name, monthly_fee').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_options').select('id, name, monthly_price, description').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
     supabase.from('provider_membership_discounts').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('active', true).not('code', 'is', null),
@@ -50,7 +51,8 @@ export async function GET(request, { params }) {
     provider_id: provider.id,
     provider_name: provider.name,
     plans: visiblePlans,
-    prorate_first_month: settings?.prorate_first_month ?? true,
+    // 請求日・初月の扱い・退会の締め日（入会ページで請求の予定を見せる。lib/membership-cycle.js）
+    billing_cycle: normalizeCycle(settings),
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
     lockers: availableLockers,

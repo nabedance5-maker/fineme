@@ -8,6 +8,16 @@ const STATUS_LABEL = { requested: '店舗が確認中', applied: '反映済み',
 const ymd = d => (d ? String(d).slice(0, 10).replace(/-/g, '/') : '');
 const tomorrow = () => { const t = new Date(Date.now() + 9 * 3600000); t.setUTCDate(t.getUTCDate() + 1); return t.toISOString().slice(0, 10); };
 
+// 今日申し込んだ場合に、いつまで通えて、最後の請求はいつか（お店の締め日で決まる。でお指摘 2026-10-27）
+function cancelGuide(billing) {
+  const c = billing?.cancel_if_today;
+  if (!c) return <p>日付を選ばない場合は、お店の締め日に合わせて退会日が決まります（すでにお支払いした期間は通えます）。</p>;
+  if (c.before_start) return <p>入会日の前なので、今申し込むと月会費は請求されずに退会になります。</p>;
+  return c.inTime
+    ? <p>今日申し込むと、<b>{ymd(c.lastDay)}までご利用</b>いただけて、次の請求（{ymd(c.endBoundary)}）はありません。退会の締め日は{ymd(c.cutoff)}です。</p>
+    : <p>今月の締め日（{ymd(c.cutoff)}）を過ぎているため、今日申し込むと<b>{ymd(c.extraCharge)}にもう1回分の請求</b>があり、<b>{ymd(c.lastDay)}までご利用</b>いただけます。</p>;
+}
+
 export default function RequestPanel({ detail, token, onChanged }) {
   const [kind, setKind] = useState(null);
   const [planId, setPlanId] = useState('');
@@ -40,6 +50,11 @@ export default function RequestPanel({ detail, token, onChanged }) {
   return (
     <div className="mrq">
       <p className="mrq-title">会員プランの変更・休会・退会</p>
+      {detail.billing && (
+        <p className="mrq-note" style={{ margin: '0 0 8px' }}>
+          月会費：{detail.billing.rule}。次回の請求日：{ymd(detail.billing.next_billing_date)}
+        </p>
+      )}
       <div className="mrq-state">
         <span>状態：{detail.paused_at ? `休会中${detail.pause_until ? `（${ymd(detail.pause_until)}に再開）` : ''}` : '通常'}{detail.cancel_at ? `・${ymd(detail.cancel_at)}で退会予定` : ''}</span>
       </div>
@@ -48,7 +63,7 @@ export default function RequestPanel({ detail, token, onChanged }) {
         <div className="mrq-box">
           <p>「{KIND_LABEL[pending.kind]}」の申請を店舗が確認中です（{ymd(pending.created_at)}）。</p>
           {pending.kind === 'plan_change' && <p>変更先：{pending.to_plan_name}（次回の引き落としから）</p>}
-          {pending.kind === 'cancel' && <p>{pending.effective_date ? `${ymd(pending.effective_date)}で退会` : '今の支払い期間の終わりで退会'}</p>}
+          {pending.kind === 'cancel' && <p>{pending.effective_date ? `${ymd(pending.effective_date)}で退会` : `お店の締め日に合わせて退会（申し込んだ日：${ymd(pending.created_at)}）`}</p>}
           <button type="button" className="mrq-btn mrq-ghost" disabled={sending} onClick={() => post({ action: 'withdraw', request_id: pending.id })}>申請を取り下げる</button>
         </div>
       ) : !detail.allow_online_requests ? (
@@ -67,7 +82,7 @@ export default function RequestPanel({ detail, token, onChanged }) {
               <p className="mrq-strong">{KIND_LABEL[kind]}を申請する</p>
               {kind === 'pause' && <><p>休会中は月会費がかかりません。再開日を決めている場合は選んでください。</p><label>再開の希望日（任意）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
               {kind === 'plan_change' && <label>変更先のプラン<select value={planId} onChange={e => setPlanId(e.target.value)}><option value="">選んでください</option>{otherPlans.map(p => <option key={p.id} value={p.id}>{p.name}（月額¥{Number(p.monthly_price).toLocaleString()}）</option>)}</select><span className="mrq-hint">次回の引き落としから新しい月額になります。</span></label>}
-              {kind === 'cancel' && <><p>日付を選ばない場合は、今の支払い期間の終わりで退会になります（すでにお支払いした期間は通えます）。</p><label>退会の希望日（任意）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
+              {kind === 'cancel' && <>{cancelGuide(detail.billing)}<label>退会の希望日（任意。お店と相談のうえで決める場合）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
               {kind !== 'resume' && <label>理由・お店へのひとこと（任意）<input maxLength={300} value={reason} onChange={e => setReason(e.target.value)} /></label>}
               <div className="mrq-actions">
                 <button type="button" className="mrq-btn" disabled={sending} onClick={submit}>{sending ? '送信中…' : '申請を送る'}</button>

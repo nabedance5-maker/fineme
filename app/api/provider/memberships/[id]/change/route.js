@@ -50,6 +50,7 @@ async function __POST(request, { params }) {
     date: body.date ?? req?.effective_date,
     pause_until: body.pause_until ?? req?.pause_until,
     reason: body.reason ?? req?.reason,
+    requested_at: req?.created_at || null, // 退会の締め日はお客様が申請した日で判定する
     option_id: body.option_id, item_id: body.item_id, discount_id: body.discount_id,
   };
   let result;
@@ -73,7 +74,7 @@ async function __POST(request, { params }) {
     pause: `休会を受け付けました。${opts.pause_until ? `${ymd(opts.pause_until)}に再開します。` : '再開のご希望はお店にお伝えください。'}休会中の月会費はかかりません。`,
     resume: '休会から再開しました。次回から月会費の引き落としが再開します。',
     plan_change: `プランを「${toPlan?.name || ''}」に変更しました（${ymd(result.effective_date)}から新しい月額）。`,
-    cancel: `退会を受け付けました。${ymd(result.effective_date)}で退会となります。これまでのご利用ありがとうございました。`,
+    cancel: `退会を受け付けました。${result.detail ? `（${result.detail}）` : `${ymd(result.effective_date)}で退会となります。`}これまでのご利用ありがとうございました。`,
     cancel_undo: '退会のご予定を取り消しました。引き続きご利用いただけます。',
     option_add: `オプション「${result.detail}」を追加しました（次回の引き落としから）。`,
     option_remove: `オプション「${result.detail}」を外しました（次回の引き落としから）。`,

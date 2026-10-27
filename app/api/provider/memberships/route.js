@@ -2,6 +2,7 @@
 // POST /api/provider/memberships → 店頭で入会手続きを始める（メンバーを選び、入会内容を入れる。この後カード登録→確定）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { firstBilling } from '@/lib/membership-cycle';
 import { planLockedResponse } from '@/lib/plan-features';
 import { membershipAuth } from '@/lib/provider-members';
 import { withAudit } from '@/lib/activity-log';
@@ -55,15 +56,6 @@ export async function GET(request) {
   })));
 }
 
-// 入会希望日から、その月末までの日割り額を単純日割りで見積もる（表示用の目安。実際の請求額はStripeの比例配分が正）
-function estimateProratedAmount(enrollmentDateStr, monthlyPrice) {
-  const d = new Date(`${enrollmentDateStr}T00:00:00+09:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  const remainingDays = daysInMonth - d.getDate() + 1;
-  return Math.round((remainingDays / daysInMonth) * monthlyPrice);
-}
-
 const str = (v, n = 100) => { const t = String(v ?? '').trim().slice(0, n); return t || null; };
 
 // 店頭での入会手続き（でお要望 2026-10-27：管理画面から入会手続きができるように）。
@@ -102,7 +94,7 @@ async function __POST(request) {
 
   const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
     supabase.from('provider_membership_plans').select('id, name, monthly_price, active, included_option_ids, selectable_option_ids, discount_ids').eq('id', plan_id).eq('provider_id', provider.id).maybeSingle(),
-    supabase.from('provider_membership_settings').select('prorate_first_month, require_id_document, terms_text').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle(),
     locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   if (!plan || !plan.active) return Response.json({ error: 'プランが見つかりません（非公開のプランは選べません）' }, { status: 404 });
@@ -120,7 +112,7 @@ async function __POST(request) {
   }
 
   const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0) + (opts || []).reduce((t, o) => t + o.monthly_price, 0);
-  const prorated = (settings?.prorate_first_month ?? true) ? estimateProratedAmount(enrollment_date, monthlyTotal) : null;
+  const prorated = firstBilling(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
   const gender = ['female', 'male', 'other'].includes(b.gender) ? b.gender : null;
 
   const { data, error } = await supabase.from('provider_memberships').insert({

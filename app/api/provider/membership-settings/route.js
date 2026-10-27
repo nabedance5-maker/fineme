@@ -2,6 +2,7 @@
 // PATCH /api/provider/membership-settings → 保存
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeCycle } from '@/lib/membership-cycle';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 import { normalizeFormFields } from '@/lib/membership-form';
@@ -26,6 +27,7 @@ export async function GET(request) {
   const { data } = await supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle();
   return Response.json({
     prorate_first_month: data?.prorate_first_month ?? true,
+    ...normalizeCycle(data), // 請求日・初月の扱い・退会の締め日（でお指摘 2026-10-27）
     require_id_document: data?.require_id_document ?? true,
     allow_online_requests: data?.allow_online_requests ?? true,
     form_fields: normalizeFormFields(data?.form_fields),
@@ -44,6 +46,13 @@ async function __PATCH(request) {
   const body = await request.json().catch(() => ({}));
   const update = { provider_id: provider.id, updated_at: new Date().toISOString() };
   if ('prorate_first_month' in body) update.prorate_first_month = !!body.prorate_first_month;
+  // 請求日・初月の扱い・退会の締め日。変えても、すでに入会中の会員の請求日は変わらない（新しく承認する会員から）
+  if (['billing_mode', 'billing_day', 'first_month', 'cancel_cutoff_day', 'cancel_cutoff_days_before'].some(k => k in body)) {
+    const { data: cur } = await supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle();
+    const c = normalizeCycle({ ...(cur || {}), ...body });
+    Object.assign(update, c);
+    update.prorate_first_month = c.first_month === 'prorate';
+  }
   if ('require_id_document' in body) update.require_id_document = !!body.require_id_document;
   if ('allow_online_requests' in body) update.allow_online_requests = !!body.allow_online_requests;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;

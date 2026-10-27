@@ -6,6 +6,7 @@
 // カード登録、で仮契約（pending_approval）になる。実際の課金は店舗が承認した時点。
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import { firstBilling, describeCycle, jstToday } from '@/lib/membership-cycle';
 
 function getAuth() {
   try {
@@ -147,9 +148,10 @@ export default function JoinMembershipPage() {
   const selectableOptions = (info?.options || []).filter(o => !includedOptions.includes(o) && (selectedPlan?.selectable_option_ids == null || selectedPlan.selectable_option_ids.includes(o.id)));
   const optionTotal = [...includedOptions, ...selectableOptions.filter(o => form.option_ids.includes(o.id))].reduce((t, o) => t + o.monthly_price, 0);
   const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0) + optionTotal;
-  const daysInMonth = form.enrollment_date ? new Date(new Date(form.enrollment_date).getFullYear(), new Date(form.enrollment_date).getMonth() + 1, 0).getDate() : null;
-  const remainingDays = form.enrollment_date ? daysInMonth - new Date(form.enrollment_date).getDate() + 1 : null;
-  const estimatedFirstAmount = (info?.prorate_first_month && selectedPlan && remainingDays) ? Math.round((remainingDays / daysInMonth) * monthlyTotal) : monthlyTotal;
+  // 請求の予定（お店の請求日・初月の扱いどおり。でお指摘 2026-10-27）。入会日が過ぎていれば承認日から
+  const billingPlan = (selectedPlan && form.enrollment_date && info?.billing_cycle)
+    ? firstBilling(info.billing_cycle, { startDate: form.enrollment_date > jstToday() ? form.enrollment_date : jstToday(), monthlyTotal, initialFee: selectedPlan.initial_fee || 0 })
+    : null;
 
   async function submitApplication() {
     setSubmitting(true); setError('');
@@ -271,7 +273,11 @@ export default function JoinMembershipPage() {
             )}
             {selectedPlan && form.enrollment_date && (
               <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 16px' }}>
-                {info.prorate_first_month ? `初回のお支払い目安：約¥${(estimatedFirstAmount + (selectedPlan.initial_fee || 0))?.toLocaleString()}（日割り${selectedPlan.initial_fee > 0 ? '・入会金込み' : ''}。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${(monthlyTotal + (selectedPlan.initial_fee || 0)).toLocaleString()}（承認日から満額開始${selectedPlan.initial_fee > 0 ? '・入会金込み' : ''}）`}
+                <span style={{ display: 'block', fontWeight: 700, color: 'rgba(232,228,220,0.85)', marginBottom: '4px' }}>お支払いの予定（目安）</span>
+                {(billingPlan?.charges || []).map((c, i) => (
+                  <span key={i} style={{ display: 'block' }}>{c.date ? `${Number(c.date.slice(5, 7))}/${Number(c.date.slice(8, 10))}　` : ''}{c.label}：¥{c.amount.toLocaleString()}</span>
+                ))}
+                <span style={{ display: 'block', marginTop: '6px' }}>{describeCycle(info.billing_cycle)}。金額はお店が入会を承認した時に確定します。</span>
               </p>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>

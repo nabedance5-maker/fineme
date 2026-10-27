@@ -10,6 +10,7 @@ import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIO
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib/shift-request-format';
 import { CYCLES as SHIFT_CYCLES, normalizeCycle, upcomingWindows } from '@/lib/shift-windows';
+import { normalizeCycle as normalizeMembershipCycle, firstBilling as membershipFirstBilling, cancelPlan as membershipCancelPlan, jstToday as membershipJstToday, addDays as addDaysMembership } from '@/lib/membership-cycle';
 import { rangeLabel } from '@/lib/time-span';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
@@ -6595,7 +6596,7 @@ export default function ProviderDashboardPage() {
               <label>入会金（円）<input data-f="initial_fee" type="number" min="0" value="${p.initial_fee || ''}" placeholder="0（なし）"></label>
             </div>
             <label class="pl-wide">説明（入会ページに出ます）<input data-f="description" value="${esc(p.description || '')}" placeholder="任意"></label>
-            <p class="pl-note">入会金は最初のお支払いに1回だけ足して請求します。初月の日割りは「入会手続きの設定」で決めます。</p>
+            <p class="pl-note">入会金は最初のお支払いに1回だけ足して請求します。請求日・初月の扱い・退会の締め日は「入会手続きの設定」で決めます。</p>
           </section>
           <section class="pl-sec"><h4>オプション</h4>
             ${(R.options || []).length ? `<div class="pl-opts">${R.options.map(o => `<div class="pl-opt"><span>${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</span><select data-pl-opt="${o.id}">
@@ -6791,14 +6792,69 @@ export default function ProviderDashboardPage() {
       }
       document.getElementById('mbr-cf-add')?.addEventListener('click', () => { cfList.push({ type: 'text', label: '', options: [], required: false }); renderFormFields(); });
 
+      // ── 月会費の請求日・初月の扱い・退会の締め日（でお指摘 2026-10-27） ──
+      const dayOpts = cur => [...Array.from({ length: 28 }, (_, i) => i + 1), 31].map(d => `<option value="${d}"${Number(cur) === d ? ' selected' : ''}>${d === 31 ? '末日' : `${d}日`}</option>`).join('');
+      let billingState = null;
+      function billingFormValues() {
+        const box = document.getElementById('mbr-set-billing');
+        if (!box || !billingState) return {};
+        const v = sel => box.querySelector(sel)?.value;
+        return {
+          billing_mode: box.querySelector('[name="mbs-mode"]:checked')?.value || billingState.billing_mode,
+          billing_day: Number(v('[data-mbs-day]') || billingState.billing_day),
+          first_month: box.querySelector('[name="mbs-first"]:checked')?.value || billingState.first_month,
+          cancel_cutoff_day: Number(v('[data-mbs-cut]') || billingState.cancel_cutoff_day),
+          cancel_cutoff_days_before: Number(v('[data-mbs-before]') ?? billingState.cancel_cutoff_days_before),
+        };
+      }
+      function renderBillingSettings(s) {
+        const box = document.getElementById('mbr-set-billing');
+        if (!box) return;
+        billingState = normalizeMembershipCycle(s);
+        const st = billingState;
+        const radio = (name, val, cur, label, sub) => `<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:4px 0;cursor:pointer"><input type="radio" name="${name}" value="${val}" ${cur === val ? 'checked' : ''} style="margin-top:3px" /><span>${label}${sub ? `<br><span class="muted" style="font-size:11.5px">${sub}</span>` : ''}</span></label>`;
+        box.innerHTML = `
+          <div style="font-size:14px;font-weight:800;margin-bottom:6px">月会費の請求日と締め日</div>
+          <div style="font-size:12.5px;font-weight:700;margin-top:8px">請求日</div>
+          ${radio('mbs-mode', 'fixed_day', st.billing_mode, `全員 毎月 <select data-mbs-day style="padding:3px 6px;border:1px solid #d1d5db;border-radius:6px">${dayOpts(st.billing_day)}</select> に請求`, '入会日に関係なく、全員の請求日がそろいます（おすすめ）')}
+          ${radio('mbs-mode', 'anniversary', st.billing_mode, '入会日と同じ日に毎月請求', 'お客様ごとに請求日がばらばらになります')}
+          <div data-mbs-first-wrap style="display:${st.billing_mode === 'fixed_day' ? '' : 'none'}">
+            <div style="font-size:12.5px;font-weight:700;margin-top:10px">入会日から最初の請求日の前日まで（初月）</div>
+            ${radio('mbs-first', 'prorate', st.first_month, '日割りで請求する', '入会日に、その日数分だけ請求します')}
+            ${radio('mbs-first', 'full', st.first_month, '1か月分を請求する', '入会の承認時に、1か月分を請求します')}
+            ${radio('mbs-first', 'free', st.first_month, '請求しない（次の請求日から）', '')}
+          </div>
+          <div style="font-size:12.5px;font-weight:700;margin-top:10px">退会の締め日</div>
+          <div data-mbs-cut-fixed style="display:${st.billing_mode === 'fixed_day' ? '' : 'none'};font-size:13px;margin-top:4px">毎月 <select data-mbs-cut style="padding:3px 6px;border:1px solid #d1d5db;border-radius:6px">${dayOpts(st.cancel_cutoff_day)}</select> 締め</div>
+          <div data-mbs-cut-anniv style="display:${st.billing_mode === 'anniversary' ? '' : 'none'};font-size:13px;margin-top:4px">次の請求日の <input type="number" data-mbs-before min="0" max="27" value="${st.cancel_cutoff_days_before}" style="width:64px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px" /> 日前まで</div>
+          <p class="muted" style="font-size:11.5px;margin:4px 0 0;line-height:1.6">締め日までに退会を申し込んだ人は、次の請求日の前日で退会（その後の請求なし）。締め日を過ぎて申し込んだ人は、もう1回分を請求してから、その次の請求日の前日で退会になります。お客様が申し込んだ日で判定します（お店の承認が遅れても不利になりません）。</p>
+          <div data-mbs-preview style="margin-top:10px;padding:10px 12px;border-radius:8px;background:#fff;font-size:12.5px;line-height:1.7"></div>
+          <p class="muted" style="font-size:11.5px;margin:6px 0 0">変えても、すでに入会中の会員の請求日は変わりません（これから承認する会員から）。</p>`;
+        const preview = () => {
+          const c = normalizeMembershipCycle(billingFormValues());
+          box.querySelector('[data-mbs-first-wrap]').style.display = c.billing_mode === 'fixed_day' ? '' : 'none';
+          box.querySelector('[data-mbs-cut-fixed]').style.display = c.billing_mode === 'fixed_day' ? '' : 'none';
+          box.querySelector('[data-mbs-cut-anniv]').style.display = c.billing_mode === 'anniversary' ? '' : 'none';
+          const today = membershipJstToday();
+          const ex = addDaysMembership(today, 10);
+          const fb = membershipFirstBilling(c, { startDate: ex, monthlyTotal: 10000 });
+          const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+          const cp = membershipCancelPlan(c, { requestDate: today, nextBilling: fb.firstFullDate, anchorDay: fb.anchorDay });
+          box.querySelector('[data-mbs-preview]').innerHTML = `<b>例：月会費10,000円、${md(ex)}入会の場合</b><br>`
+            + fb.charges.map(x => `${x.date ? md(x.date) + '　' : ''}${esc(x.label)}：¥${x.amount.toLocaleString()}`).join('<br>')
+            + `<br><b>退会の例</b>：${md(fb.firstFullDate)}の請求に間に合う退会の締め日は${md(cp.cutoff)}です。`;
+        };
+        box.querySelectorAll('input,select').forEach(el => el.addEventListener('change', preview));
+        preview();
+      }
+
       async function loadSettings() {
         const res = await fetch('/api/provider/membership-settings', { headers: authH() });
         if (!res.ok) return;
         const s = await res.json();
-        const prorateEl = document.getElementById('mbr-set-prorate');
+        renderBillingSettings(s);
         const idreqEl = document.getElementById('mbr-set-idreq');
         const termsEl = document.getElementById('mbr-set-terms');
-        if (prorateEl) prorateEl.checked = !!s.prorate_first_month;
         if (idreqEl) idreqEl.checked = !!s.require_id_document;
         if (termsEl) termsEl.value = s.terms_text || '';
         const allowEl = document.getElementById('mbr-set-allowreq');
@@ -6810,7 +6866,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('mbr-set-save-btn')?.addEventListener('click', async () => {
         const msgEl = document.getElementById('mbr-set-msg');
         const body = {
-          prorate_first_month: document.getElementById('mbr-set-prorate')?.checked,
+          ...billingFormValues(),
           require_id_document: document.getElementById('mbr-set-idreq')?.checked,
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
           form_fields: ffState,
@@ -6996,7 +7052,7 @@ export default function ProviderDashboardPage() {
           if (act === 'cancel_undo') { send({ kind: 'cancel_undo' }, '退会の予定を取り消しました'); return; }
           if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>休会中の月会費は引き落としません（すでに払った期間はそのまま）。再開日を決めると、その日に自動で再開します。</p><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'plan_change') formEl.innerHTML = `<div class="mbr-form"><b>プランを変更する</b><label>変更先のプラン<select id="mbr-f-plan">${otherPlans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select></label><label>いつから<select id="mbr-f-timing"><option value="period_end">次回の引き落としから新しい月額（差額の精算なし）</option><option value="now">今日から（差額を日割りで次回の請求に加減）</option></select></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">変更する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
-          if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">今の支払い期間の終わり（${esc(ymd(m.next_charge_date) || '次回の引き落とし日')}の前日まで通える）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" style="display:none">退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">お店の締め日どおり（今日が締め日までなら${esc(ymd(m.next_charge_date) || '次回の引き落とし日')}の前日まで。過ぎていればもう1回請求してから）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" style="display:none">退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           document.getElementById('mbr-f-x')?.addEventListener('click', () => { formEl.innerHTML = ''; });
           const tEl = document.getElementById('mbr-f-timing');
           if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').style.display = tEl.value === 'date' ? '' : 'none'; });
@@ -7089,7 +7145,7 @@ export default function ProviderDashboardPage() {
             ['ロッカー', dm.locker_name || 'なし'],
             ...((dm.pending_options || []).length ? [['オプション', dm.pending_options.map(o => o.name).join('、')]] : []),
             ...(dm.discount ? [['クーポン', dm.discount.name]] : []),
-            '確定すると、すぐに課金が始まります（日割り設定がある場合は入会日までの日割り分から）。',
+            '確定すると、お店の請求日の設定どおりに課金が始まります（入会金は確定時。月会費は入会日から）。',
           ],
           okLabel: '確定して課金を始める',
         });
@@ -7364,7 +7420,7 @@ export default function ProviderDashboardPage() {
               ...(s.monthly != null ? [['毎月の合計', fmtYen(s.monthly)]] : []),
               ...(s.date ? [['入会日', s.date]] : []),
               ...(s.prorated != null ? [['初回の目安', fmtYen(s.prorated)]] : []),
-              'カードの登録が済んでいます。確定すると、すぐに課金が始まります（日割り設定がある場合は入会日までの日割り分から）。',
+              'カードの登録が済んでいます。確定すると、お店の請求日の設定どおりに課金が始まります（入会金は確定時。月会費は入会日から）。',
             ],
             okLabel: '確定して課金を始める',
           });
@@ -18759,9 +18815,8 @@ export default function ProviderDashboardPage() {
           {/* 入会手続き設定（でお要望：各項目は店舗ごとにカスタマイズ可能に） */}
           <div className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '15px' }}>入会手続きの設定</h3>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
-              <input type="checkbox" id="mbr-set-prorate" />初月を日割りにする（OFFの場合は承認日から満額で開始）
-            </label>
+            {/* でお指摘（2026-10-27）：お店で決める一律の請求日・締め日が無いとトラブルになる。請求日・初月の扱い・退会の締め日をここで決める */}
+            <div id="mbr-set-billing" style={{ padding: '14px 16px', border: '1px solid rgba(201,168,76,.45)', borderRadius: '10px', background: 'rgba(201,168,76,.06)' }}>読み込み中…</div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-idreq" />本人確認書類（免許証・保険証・パスポート）を必須にする
             </label>

@@ -3,6 +3,7 @@
 //      別ステップ。ここでは個人情報・プラン・入会日・緊急連絡先・規約同意までを保存する）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { firstBilling } from '@/lib/membership-cycle';
 import { findCoupon } from '@/lib/membership-changes';
 import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
 import { validateAnswers } from '@/lib/surveys';
@@ -47,16 +48,6 @@ export async function GET(request) {
   })));
 }
 
-// 入会希望日から、その月末までの日割り額を単純日割りで見積もる（表示用の目安。
-// 実際の請求額はStripeのbilling_cycle_anchorによる比例配分計算が正となる）。
-function estimateProratedAmount(enrollmentDateStr, monthlyPrice) {
-  const d = new Date(`${enrollmentDateStr}T00:00:00+09:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  const remainingDays = daysInMonth - d.getDate() + 1;
-  return Math.round((remainingDays / daysInMonth) * monthlyPrice);
-}
-
 export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -82,7 +73,7 @@ export async function POST(request) {
 
   const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
     supabase.from('provider_membership_plans').select('id, monthly_price, active, online_enabled, included_option_ids, selectable_option_ids, discount_ids').eq('id', plan_id).eq('provider_id', provider_id).single(),
-    supabase.from('provider_membership_settings').select('prorate_first_month, form_fields, custom_fields').eq('provider_id', provider_id).maybeSingle(),
+    supabase.from('provider_membership_settings').select('*').eq('provider_id', provider_id).maybeSingle(),
     locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider_id).single() : Promise.resolve({ data: null }),
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
@@ -113,7 +104,8 @@ export async function POST(request) {
   // 初回目安額にはロッカー代も含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
   // 課金したい」。ロッカーも同じサブスクリプションの明細として日割り対象になるため）。
   const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0) + (opts || []).reduce((t, o) => t + o.monthly_price, 0);
-  const proratedAmount = (settings?.prorate_first_month ?? true) ? estimateProratedAmount(enrollment_date, monthlyTotal) : null;
+  // 初月（入会日〜最初の請求日の前日）の目安。店舗の請求日・初月の設定どおり（lib/membership-cycle.js）
+  const proratedAmount = firstBilling(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
 
   const { data, error } = await supabase
     .from('provider_memberships')
