@@ -39,6 +39,7 @@ async function __POST(request, { params }) {
     }
     const session = await stripe.checkout.sessions.create({
       mode: 'setup',
+      currency: 'jpy', // 最近のStripeは setup モードでも通貨の指定が必須（無いと Missing required param: currency。2026-10-27）
       customer: customerId,
       success_url: `${BASE_URL}/card-registered?status=success`,
       cancel_url: `${BASE_URL}/card-registered?status=cancel`,

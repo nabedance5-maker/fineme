@@ -85,6 +85,7 @@ async function __POST(request) {
     const { data: prov } = await supabase.from('providers').select('id, slug, name, line_user_id').eq('id', a.provider.id).single();
     const session = await s.checkout.sessions.create({
       mode: 'setup',
+      currency: 'jpy', // 最近のStripeは setup モードでも通貨の指定が必須（無いと Missing required param: currency。2026-10-27）
       customer: m.stripe_customer_id,
       payment_method_types: ['card'],
       metadata: { fineme_membership_card_update: m.id, fineme_provider_id: prov.id },
