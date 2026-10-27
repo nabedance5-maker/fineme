@@ -3,6 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { bookingMessageTemplate, renderBookingMessage } from '@/lib/booking-messages';
+import { findOrCreateUser, upsertProfile } from '@/lib/customer-accounts';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
@@ -84,14 +85,18 @@ export async function POST(request) {
   }
   const body = await request.json();
   // preferred_date/preferred_time/message はフロントからの名前。DB上は reserved_date/start_time/note
-  const { provider_id, user_name, user_contact, preferred_date, preferred_time, message, user_id } = body;
+  const { provider_id, preferred_date, preferred_time, message, user_id } = body;
+  // 予約者の名前・連絡先は、ログイン中ならFinemeの登録情報を使う（下で上書き。でお指摘 2026-10-27：
+  // 同じアカウントで名前を変えて何度も予約できてしまい、体験メニューを何回も取られて困る）
+  let user_name = String(body.user_name || '').trim().slice(0, 60);
+  let user_contact = String(body.user_contact || '').trim().slice(0, 120);
   // スタッフ指名予約・即時予約モード（hacomono/STORES網羅計画 Phase 1）。
   // staff_idは申請制・即時予約どちらでも受け付ける（指名だけして日程は店舗と相談、も可）。
   // booking_mode省略時は完全に従来通りの申請制コードパス（既存挙動の回帰防止）。
   const { staff_id, booking_mode, slot_id, referral_code, service_id, package_id } = body;
   const isInstant = booking_mode === 'instant';
 
-  if (!provider_id || !user_name || !user_contact) {
+  if (!provider_id) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
   // 即時予約は「グループレッスンの開催回（slot_id）」か「メニュー×日時（date・start_time）」のどちらか（2026-10-21）
@@ -113,8 +118,36 @@ export async function POST(request) {
   }
   let bookingUserId = authUser?.id || null;
 
+  // ── 予約者の情報（2026-10-27）──────────────────────────────
+  // ・ログイン中：Finemeの登録情報（名前・メール・電話）で予約する。フォームの入力は使わない。
+  //   名前がまだ登録されていない時だけ、入力された名前をアカウントに保存して使う。
+  // ・ログインしていない：入力されたメールでFinemeのアカウントを用意して予約をひも付け、お店のメンバーに入れる
+  //   （でお要望：体験メニューを予約したらそのお店のメンバーに入る）。そのメールがすでにログインしたことのある
+  //   アカウントなら、他人のアカウントに予約を付けられないよう、ログインしてからの予約にしてもらう。
+  const contactEmail = (user_contact.match(/[^\s/]+@[^\s/]+/) || [])[0] || null;
+  const contactPhone = (user_contact.match(/\+?\d[\d-]{8,}/) || [])[0] || null;
+  if (authUser) {
+    const { data: prof } = await supabase.from('profiles').select('display_name, last_name, first_name, phone').eq('id', authUser.id).maybeSingle();
+    const profName = [prof?.last_name, prof?.first_name].filter(Boolean).join(' ') || prof?.display_name || '';
+    if (profName) user_name = profName;
+    else if (user_name) await supabase.from('profiles').update({ display_name: user_name }).eq('id', authUser.id);
+    const realEmail = authUser.email && !authUser.email.endsWith('@line.fineme.me') ? authUser.email : '';
+    const phone = prof?.phone || '';
+    if (!phone && contactPhone) await supabase.from('profiles').update({ phone: contactPhone }).eq('id', authUser.id);
+    user_contact = [realEmail, phone || contactPhone].filter(Boolean).join(' / ') || user_contact;
+  } else if (contactEmail) {
+    try {
+      const { user: acct, existed } = await findOrCreateUser(contactEmail);
+      if (existed && acct?.last_sign_in_at) {
+        return Response.json({ error: 'このメールアドレスはFinemeに登録済みです。ログインしてから予約してください', code: 'login_required_existing' }, { status: 401 });
+      }
+      bookingUserId = acct?.id || null;
+    } catch (e) { console.error('[reservations] account link', e); }
+  }
+  if (!user_name || !user_contact) return Response.json({ error: 'お名前と連絡先（メールアドレスか電話番号）を入れてください' }, { status: 400 });
+
   let verifiedPackageId = null;
-  if (package_id && bookingUserId) {
+  if (package_id && authUser) { // チケットを使えるのはログインした本人だけ
     const { data: pkg } = await supabase.from('customer_packages').select('id').eq('id', package_id).eq('user_id', bookingUserId).eq('provider_id', provider_id).maybeSingle();
     if (pkg) verifiedPackageId = pkg.id;
   }
@@ -139,12 +172,34 @@ export async function POST(request) {
     }
   }
   const { data: svcRow } = effectiveServiceId
-    ? await supabase.from('provider_services').select('id, ticket_ids, ticket_cost, ticket_only, hide_for_members').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle()
+    ? await supabase.from('provider_services').select('id, name, ticket_ids, ticket_cost, ticket_only, hide_for_members, per_customer_limit').eq('id', effectiveServiceId).eq('provider_id', provider_id).maybeSingle()
     : { data: null };
   const svc = lessonRule && needsTicket(lessonRule) ? lessonRule : svcRow;
   const what = svc && svc === lessonRule ? 'このレッスン' : 'このメニュー';
   const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
   if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
+  // お一人様◯回まで（体験メニューなど。2026-10-27）。同じアカウント・メール・電話番号の予約を数える
+  if (svcRow?.per_customer_limit) {
+    const ACTIVE = ['pending', 'approved', 'counter_proposed', 'visited'];
+    const ids = new Set();
+    if (bookingUserId) {
+      const { data: mine } = await supabase.from('reservations').select('id').eq('provider_id', provider_id).eq('service_id', svcRow.id).eq('user_id', bookingUserId).in('status', ACTIVE);
+      (mine || []).forEach(r => ids.add(r.id));
+    }
+    const finalEmail = (user_contact.match(/[^\s/]+@[^\s/]+/) || [])[0];
+    const finalPhone = (user_contact.match(/\+?\d[\d-]{8,}/) || [])[0];
+    const keys = [finalEmail?.toLowerCase(), (finalPhone || '').replace(/\D/g, '')].filter(k => k && k.length >= 6);
+    if (keys.length) {
+      const { data: others } = await supabase.from('reservations').select('id, user_contact').eq('provider_id', provider_id).eq('service_id', svcRow.id).in('status', ACTIVE).limit(2000);
+      (others || []).forEach(r => {
+        const c = String(r.user_contact || '').toLowerCase();
+        if (keys.some(k => c.includes(k) || c.replace(/\D/g, '').includes(k))) ids.add(r.id);
+      });
+    }
+    if (ids.size >= svcRow.per_customer_limit) {
+      return Response.json({ error: `「${svcRow.name}」はお一人様${svcRow.per_customer_limit}回までのご予約です。ほかのメニューからお選びください`, code: 'per_customer_limit' }, { status: 409 });
+    }
+  }
   if (svc && needsTicket(svc) && (requiresTicket(svc) || verifiedPackageId)) {
     const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
     const label = scopeLabel(svc, Object.fromEntries((tk || []).map(x => [x.id, x.name])));
@@ -304,6 +359,13 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // 予約したお客様をこのお店のメンバー（顧客の基本情報）に入れる（でお要望 2026-10-27。空欄の項目だけ埋め、お店が入れた値は変えない）
+  if (bookingUserId) {
+    const [ln, ...rest] = user_name.split(/[\s　]+/);
+    try { await upsertProfile(provider_id, bookingUserId, { last_name: ln || null, first_name: rest.join(' ') || null, phone: contactPhone || null }, 'customer'); }
+    catch (e) { console.error('[reservations] member profile', e); }
+  }
 
   let usedPackageName = null;
   if (verifiedPackageId) {

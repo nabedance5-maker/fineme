@@ -2807,6 +2807,8 @@ export default function ProviderDashboardPage() {
         editForm.elements['hide_when_locked'].checked = !!s?.hide_when_locked;
         editForm.elements['ticket_only'].checked = !!s?.ticket_only;
         editForm.elements['hide_for_members'].checked = !!s?.hide_for_members;
+        editForm.elements['hide_staff_select'].checked = !!s?.hide_staff_select;
+        editForm.elements['per_customer_limit'].value = s?.per_customer_limit || '';
         syncTicketFields();
       }
       function syncTicketFields() {
@@ -2842,6 +2844,8 @@ export default function ProviderDashboardPage() {
           ticket_only: !!editForm.elements['ticket_only']?.checked,
           hide_when_locked: !!editForm.elements['ticket_only']?.checked && !!editForm.elements['hide_when_locked']?.checked,
           hide_for_members: !!editForm.elements['hide_for_members']?.checked,
+          hide_staff_select: !!editForm.elements['hide_staff_select']?.checked,
+          per_customer_limit: editForm.elements['per_customer_limit']?.value || null,
           axes: editForm.elements['is_trial']?.checked ? [...editForm.querySelectorAll('[name=axes]:checked')].map(el => el.value) : [],
           ...(document.getElementById('svc-assign-staff')?.style.display !== 'none' ? { staff_ids: [...editForm.querySelectorAll('[name=staff_ids]:checked')].map(el => el.value) } : {}),
           ...(document.getElementById('svc-assign-room')?.style.display !== 'none' ? { resource_ids: [...editForm.querySelectorAll('[name=resource_ids]:checked')].map(el => el.value) } : {}) };
@@ -17636,6 +17640,13 @@ export default function ProviderDashboardPage() {
                 <label id="svc-ticket-only-wrap" style={{ display: 'none' }}><input type="checkbox" name="ticket_only" />チケット専用にする（チケットを持っていない方は単発で予約できない）</label>
                 <label id="svc-ticket-hide-wrap" style={{ display: 'none' }}><input type="checkbox" name="hide_when_locked" />チケット専用のこのメニューを、チケットを持っていないお客様には表示しない</label>
                 <label><input type="checkbox" name="hide_for_members" />会員には表示しない（体験メニューなど、初めての方だけに見せる）</label>
+              </div>
+              {/* 予約の受け方（でお要望 2026-10-27：体験メニューを何回も予約されないように・スタッフを選ばせずに予約させたい） */}
+              <div className="svc-scope">
+                <b>予約の受け方</b>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>お一人様<input type="number" name="per_customer_limit" min="1" max="99" placeholder="制限なし" style={{ width: '90px' }} />回まで予約できる</label>
+                <span style={{ fontSize: '12px' }}>空欄なら何回でも。体験メニューなら「1」がおすすめです。同じFinemeアカウント・メールアドレス・電話番号の予約を同じ方として数えます（キャンセルした予約は数えません）。</span>
+                <label><input type="checkbox" name="hide_staff_select" />お客様の予約画面でスタッフを選ばせない（空いているスタッフをお店で割り当てます）</label>
               </div>
               <h4 className="mn-sub">お店のページ・おすすめでの見せ方</h4>
               {/* サービスカテゴリ（L14） */}

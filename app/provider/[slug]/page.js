@@ -1346,6 +1346,7 @@ function BookTab({ provider, services, staff, elig, onEligChanged, selectedServi
               </span>
               {st !== 'open' ? <span style={chip}>{st === 'ok' ? `チケット${s.ticket_cost || 1}枚` : 'チケット専用'}</span>
                 : s.ticket_label ? <span style={chip}>チケットも使えます</span> : null}
+              {s.per_customer_limit ? <span style={chip}>お一人様{s.per_customer_limit}回まで</span> : null}
               <span aria-hidden="true" style={{ fontSize: '18px' }}>{on ? '−' : '＋'}</span>
             </button>
             {on && (
@@ -1773,7 +1774,8 @@ function MemberCard({ provider, elig }) {
 function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, presetStaffId, mode, forMember, onAskRequest, preferTicket }) {
   // ログイン中でアカウントに名前と連絡先がある時は、入力欄を畳んで「予約者」1行にする（毎回入力させない。2026-10-22）
   const [contactFromAccount, setContactFromAccount] = useState(false);
-  const [editContact, setEditContact] = useState(false);
+  const [needLogin, setNeedLogin] = useState(false);
+  const editContact = false; // ログイン中は登録情報で予約する（変更はマイページのプロフィールから）
   // 日本時間の今日（以前は世界標準時の日付で、日本の朝9時前は前日になっていた）
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
@@ -1888,9 +1890,13 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
     d.setDate(d.getDate() + n);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const gridStaffOptions = [...new Map(usableSlots.map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
-  const gridHasNamedStaff = gridStaffOptions.some(o => o.id);
-  const gridFilteredSlots = gridStaffFilter ? usableSlots.filter(s => s.staff_id === gridStaffFilter) : usableSlots;
+  // スタッフのタブの先頭は必ず「指定しない」（全員の空き）。以前は空き枠に担当なしの枠が無いと出ず、
+  // 一度スタッフを選ぶと戻れなかった（でお指摘 2026-10-27）
+  const gridStaffOptions = [{ id: null, name: '指定しない' }, ...[...new Map(usableSlots.filter(s => s.staff_id).map(s => [s.staff_id, { id: s.staff_id, name: s.staff_name || 'スタッフ' }])).values()]];
+  // メニューで「スタッフを選ばせない」にしている時は、スタッフのタブも指名欄も出さない（2026-10-27）
+  const hideStaffPick = !!selectedService?.hide_staff_select;
+  const gridHasNamedStaff = !hideStaffPick && gridStaffOptions.some(o => o.id);
+  const gridFilteredSlots = gridStaffFilter && !hideStaffPick ? usableSlots.filter(s => s.staff_id === gridStaffFilter) : usableSlots;
   const gridWeekDates = Array.from({ length: 7 }, (_, i) => addDaysStr(today, gridWeekOffset * 7 + i));
   const gridTimes = [...new Set(gridFilteredSlots.map(s => s.start_time))].sort();
   const gridCellMap = {};
@@ -2005,7 +2011,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         if (resData?.deposit_checkout_url) { window.location.href = resData.deposit_checkout_url; return; }
         setLastWasInstant(useInstant); setSubmitted(true);
       }
-      else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); }
+      else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); setNeedLogin(String(err.code || '').startsWith('login_required')); }
     } catch { setFormError('通信エラーが発生しました'); }
     finally { setSubmitting(false); }
   }
@@ -2057,7 +2063,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* スタッフ指名（hacomono/STORES網羅計画 Phase 1）。店舗の「機能設定」でONの時だけ表示。
           指名なし（お任せ）も選択肢として並べ、指名スタッフには指名料をその場で明示する
           （hacomonoの「指名無し＝無料／実名スタッフ＝+指名料」表示に合わせた設計）。 */}
-      {staffDesignationOn && bookableStaff.length > 0 && !showInstantPicker && (
+      {staffDesignationOn && bookableStaff.length > 0 && !showInstantPicker && !hideStaffPick && (
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '8px' }}>スタッフの指名（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2090,7 +2096,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: tx(80), minWidth: 0 }}>
               <span style={{ fontWeight: 700, color: 'var(--pv-text)', marginRight: '8px' }}>予約者</span>{formState.name}{formState.email || formState.phone ? `・${formState.email || formState.phone}` : ''}
             </span>
-            <button type="button" onClick={() => setEditContact(true)} style={{ background: 'none', border: 'none', color: 'var(--pv-text)', textDecoration: 'underline', textUnderlineOffset: '3px', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer', padding: '6px 0' }}>変更</button>
+            {/* 予約はFinemeの登録情報で行う（その場で名前・連絡先を変えられない。でお指摘 2026-10-27） */}
+            <a href="/mypage/profile" style={{ color: 'var(--pv-text)', textDecoration: 'underline', textUnderlineOffset: '3px', fontWeight: 700, fontSize: 'calc(12px * var(--pv-fs))', padding: '6px 0' }}>登録内容を変える</a>
           </div>
         ) : (
         <>
@@ -2314,7 +2321,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>お店に伝えたいこと・聞きたいこと（任意）</label>
           <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', resize: 'vertical', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
         </div>
-        {formError && <p role="alert" style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: 700, margin: 0 }}>{formError}</p>}
+        {formError && <p role="alert" style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: 700, margin: 0 }}>{formError}{needLogin && <> <a href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`} style={{ color: 'var(--pv-text)' }}>ログインする</a></>}</p>}
         {!(showInstantPicker && slots !== null && usableSlots.length === 0) && <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'var(--pv-accent)', opacity: submitting ? 0.5 : 1, color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', minHeight: '52px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
           {submitting ? '送信中…' : (showInstantPicker ? 'この日時で予約を確定する' : '相談リクエストを送る')}
         </button>}

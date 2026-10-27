@@ -26,6 +26,9 @@ async function __PATCH(request, { params }) {
   const updates = {};
   for (const k of allowed) { if (body[k] !== undefined) updates[k] = body[k]; }
   if (updates.price !== undefined) updates.price = Number(updates.price) || 0;
+  // 予約画面でスタッフを選ばせない・お一人様◯回まで（2026-10-27）
+  if (body.hide_staff_select !== undefined) updates.hide_staff_select = !!body.hide_staff_select;
+  if (body.per_customer_limit !== undefined) { const n = parseInt(body.per_customer_limit, 10); updates.per_customer_limit = Number.isInteger(n) && n >= 1 ? Math.min(n, 99) : null; }
   if (updates.axes !== undefined) updates.axes = Array.isArray(updates.axes) ? updates.axes.map(String).slice(0, 20) : [];
   // 予約できる人（でお要望 2026-10-20）
   const scope = await normalizeTicketRule(supabase, provider.id, body); // 使えるチケット・枚数・会員には表示しない（2026-10-22）
