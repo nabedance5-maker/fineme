@@ -1,7 +1,7 @@
 // GET /api/me/memberships/[id] → 自分の入会申込の詳細（同意した規約全文を含む）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { nextBillingDate, cancelPlan, describeCycle, jstToday } from '@/lib/membership-cycle';
+import { nextCharge, cancelPlan, describeCycle, memberCycle, normalizeCycle, jstToday } from '@/lib/membership-cycle';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -32,14 +32,16 @@ export async function GET(request, { params }) {
   // 次回の請求日と、今日退会を申し込んだらいつまで・最後の請求はいつか（でお指摘 2026-10-27：締め日を必ず見せる）
   const today = jstToday();
   let billing = null;
-  if (m.status === 'active' && m.billing_first_full_date) {
-    const beforeStart = m.billing_start_date && today < m.billing_start_date;
-    const next = beforeStart ? m.billing_first_full_date : nextBillingDate({ firstFullDate: m.billing_first_full_date, anchorDay: m.billing_anchor_day }, today);
+  if (m.status === 'active' && m.billing_start_date) {
+    // 請求の基準は承認した時のもの、締め日はお店の今の設定
+    const cyc = normalizeCycle({ ...memberCycle(m), cancel_cutoff_day: settings?.cancel_cutoff_day, cancel_cutoff_days_before: settings?.cancel_cutoff_days_before });
+    const next = nextCharge(m, today);
     billing = {
-      rule: describeCycle(settings),
+      rule: describeCycle(cyc),
       start_date: m.billing_start_date,
-      next_billing_date: next,
-      cancel_if_today: beforeStart ? { before_start: true } : cancelPlan(settings, { requestDate: today, nextBilling: next, anchorDay: m.billing_anchor_day }),
+      next_billing_date: next?.date || null,
+      next_billing_label: next?.label || null,
+      cancel_if_today: m.cancel_at ? null : cancelPlan(cyc, { requestDate: today, nextBilling: next?.date, startDate: m.billing_start_date }),
     };
   }
 

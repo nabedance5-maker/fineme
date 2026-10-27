@@ -3,7 +3,7 @@
 //      別ステップ。ここでは個人情報・プラン・入会日・緊急連絡先・規約同意までを保存する）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { firstBilling } from '@/lib/membership-cycle';
+import { billingSchedule } from '@/lib/membership-cycle';
 import { findCoupon } from '@/lib/membership-changes';
 import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
 import { validateAnswers } from '@/lib/surveys';
@@ -105,7 +105,7 @@ export async function POST(request) {
   // 課金したい」。ロッカーも同じサブスクリプションの明細として日割り対象になるため）。
   const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0) + (opts || []).reduce((t, o) => t + o.monthly_price, 0);
   // 初月（入会日〜最初の請求日の前日）の目安。店舗の請求日・初月の設定どおり（lib/membership-cycle.js）
-  const proratedAmount = firstBilling(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
+  const proratedAmount = billingSchedule(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
 
   const { data, error } = await supabase
     .from('provider_memberships')

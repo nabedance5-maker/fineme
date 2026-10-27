@@ -3,9 +3,11 @@
 // ことで毎月チケットが付与される仕組みのところもある」）。毎日実行し、
 // next_grant_at が今日以前かつ契約継続中(subscription_status='active')のパッケージに、
 // service_packages.recurring_sessions分をtotal_sessionsへ加算し、次回付与日を1ヶ月進める。
+// あわせて、会員プランの退会日（cancel_at）が来た会員を退会済みにする。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { grantPlanTickets } from '@/lib/membership-plan';
+import { endLockerContracts } from '@/lib/membership-changes';
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
@@ -16,6 +18,14 @@ export async function GET(request) {
 
   const db = getSupabase();
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  // 会員プランの退会日が来た会員を退会済みにする（前払いの店では、請求は先に終わり、退会日まで会員のまま。でお要望 2026-10-27）
+  const jstToday = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  const { data: ending } = await db.from('provider_memberships').select('id').eq('status', 'active').not('cancel_at', 'is', null).lte('cancel_at', jstToday);
+  for (const m of ending || []) {
+    await db.from('provider_memberships').update({ status: 'cancelled', cancelled_at: new Date().toISOString(), paused_at: null, pause_until: null, updated_at: new Date().toISOString() }).eq('id', m.id);
+    await endLockerContracts(db, m.id);
+  }
 
   const { data: due, error } = await db
     .from('customer_packages')

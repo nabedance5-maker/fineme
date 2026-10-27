@@ -11,11 +11,15 @@ const tomorrow = () => { const t = new Date(Date.now() + 9 * 3600000); t.setUTCD
 // 今日申し込んだ場合に、いつまで通えて、最後の請求はいつか（お店の締め日で決まる。でお指摘 2026-10-27）
 function cancelGuide(billing) {
   const c = billing?.cancel_if_today;
-  if (!c) return <p>日付を選ばない場合は、お店の締め日に合わせて退会日が決まります（すでにお支払いした期間は通えます）。</p>;
-  if (c.before_start) return <p>入会日の前なので、今申し込むと月会費は請求されずに退会になります。</p>;
-  return c.inTime
-    ? <p>今日申し込むと、<b>{ymd(c.lastDay)}までご利用</b>いただけて、次の請求（{ymd(c.endBoundary)}）はありません。退会の締め日は{ymd(c.cutoff)}です。</p>
-    : <p>今月の締め日（{ymd(c.cutoff)}）を過ぎているため、今日申し込むと<b>{ymd(c.extraCharge)}にもう1回分の請求</b>があり、<b>{ymd(c.lastDay)}までご利用</b>いただけます。</p>;
+  if (!c) return <p>日付を選ばない場合は、お店の締め日に合わせて退会日が決まります。</p>;
+  const what = c.lastMonthLabel ? `${c.lastMonthLabel}まで（${ymd(c.lastDay)}まで）` : `${ymd(c.lastDay)}まで`;
+  return (
+    <p>
+      今日申し込むと、<b>{what}ご利用</b>いただけます。
+      {c.lastCharge ? <>最後の請求は<b>{ymd(c.lastCharge)}{c.lastChargeLabel ? `（${c.lastChargeLabel}）` : ''}</b>です。</> : <>この後の請求はありません。</>}
+      {c.inTime ? `退会の締め日は${ymd(c.cutoff)}です。` : `締め日（${ymd(c.cutoff)}）を過ぎているため、翌月分までのご利用になります。`}
+    </p>
+  );
 }
 
 export default function RequestPanel({ detail, token, onChanged }) {
@@ -52,7 +56,7 @@ export default function RequestPanel({ detail, token, onChanged }) {
       <p className="mrq-title">会員プランの変更・休会・退会</p>
       {detail.billing && (
         <p className="mrq-note" style={{ margin: '0 0 8px' }}>
-          月会費：{detail.billing.rule}。次回の請求日：{ymd(detail.billing.next_billing_date)}
+          月会費：{detail.billing.rule}。次回の請求：{ymd(detail.billing.next_billing_date)}{detail.billing.next_billing_label ? `（${detail.billing.next_billing_label}）` : ''}
         </p>
       )}
       <div className="mrq-state">

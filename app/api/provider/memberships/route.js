@@ -2,7 +2,7 @@
 // POST /api/provider/memberships → 店頭で入会手続きを始める（メンバーを選び、入会内容を入れる。この後カード登録→確定）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { firstBilling } from '@/lib/membership-cycle';
+import { billingSchedule } from '@/lib/membership-cycle';
 import { planLockedResponse } from '@/lib/plan-features';
 import { membershipAuth } from '@/lib/provider-members';
 import { withAudit } from '@/lib/activity-log';
@@ -112,7 +112,7 @@ async function __POST(request) {
   }
 
   const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0) + (opts || []).reduce((t, o) => t + o.monthly_price, 0);
-  const prorated = firstBilling(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
+  const prorated = billingSchedule(settings, { startDate: enrollment_date, monthlyTotal }).partial?.amount ?? null;
   const gender = ['female', 'male', 'other'].includes(b.gender) ? b.gender : null;
 
   const { data, error } = await supabase.from('provider_memberships').insert({

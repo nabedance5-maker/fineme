@@ -3,7 +3,7 @@
 // DELETE /api/provider/memberships/[id] → 店頭で始めた、カード登録待ちの入会手続きを取りやめる
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { firstBilling } from '@/lib/membership-cycle';
+import { billingSchedule } from '@/lib/membership-cycle';
 import Stripe from 'stripe';
 import { planLockedResponse } from '@/lib/plan-features';
 import { periodEndOf, discountText, findCoupon } from '@/lib/membership-changes';
@@ -163,7 +163,7 @@ async function __PATCH(request, { params }) {
       plan_id: planId, enrollment_date: date, locker_id: lockerId,
       option_ids: (opts || []).length ? opts.map(o => o.id) : null,
       discount_id: discountId,
-      prorated_first_amount: firstBilling(settings, { startDate: date, monthlyTotal }).partial?.amount ?? null,
+      prorated_first_amount: billingSchedule(settings, { startDate: date, monthlyTotal }).partial?.amount ?? null,
     });
   }
   if (!Object.keys(patch).length) return Response.json({ error: '変更する項目がありません' }, { status: 400 });
