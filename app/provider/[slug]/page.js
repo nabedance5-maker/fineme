@@ -90,7 +90,8 @@ function tabsFor(provider, opts = {}) {
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
   // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
-  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: '回数券' });
+  // 月額プラン（入会ページへ）と回数券を1つのタブに（でお要望 2026-10-27：入会ページへのリンクが管理画面にしか無かった）
+  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: 'プラン・回数券' });
   return tabs;
 }
 // 「今すぐ予約する」系CTAの着地先。予約は1つのタブにまとめた（2026-10-22）。旧タブ名（instant/consult/class）のリンクもここへ
@@ -380,7 +381,7 @@ function TabBar({ activeTab, onSelect, tabs }) {
         return (
           <button key={t.id} role="tab" aria-selected={on} onClick={() => { onSelect(t.id); }} style={{
             flex: list.length <= 5 ? '1 0 auto' : '0 0 auto', whiteSpace: 'nowrap', minHeight: '48px',
-            padding: '0 14px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: on ? '800' : '500',
+            padding: '0 10px', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: on ? '800' : '500',
             color: on ? 'var(--pv-text)' : tx(62), background: 'none', border: 'none',
             boxShadow: on ? 'inset 0 -2px 0 var(--pv-accent)' : 'none', cursor: 'pointer', transition: 'color .15s',
           }}>{t.label}</button>
@@ -1588,6 +1589,7 @@ function PackagesTab({ provider }) {
   // マイページの使い切った回数券から来た時は、同じ回数券を目立たせてそこまで送る（でお要望 2026-10-22）
   const highlightId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('package') : null;
   const [packages, setPackages] = useState(null); // null=未取得
+  const [plans, setPlans] = useState(null); // 月額プラン（オンライン入会できる店舗だけ）
   const [userId, setUserId] = useState('');
   const [purchasingId, setPurchasingId] = useState(null);
   const [confirmMsg, setConfirmMsg] = useState('');
@@ -1599,6 +1601,10 @@ function PackagesTab({ provider }) {
     try { return JSON.parse(localStorage.getItem(sbKey))?.access_token || null; } catch { return null; }
   }
 
+  useEffect(() => {
+    if (!provider?.slug) return;
+    fetch(`/api/providers/${provider.slug}/membership-info`).then(r => (r.ok ? r.json() : null)).then(d => setPlans(d?.plans || [])).catch(() => setPlans([]));
+  }, [provider?.slug]);
   useEffect(() => {
     if (!provider?.slug) return;
     fetch(`/api/providers/${provider.slug}/packages`)
@@ -1660,10 +1666,29 @@ function PackagesTab({ provider }) {
     }
   }
 
-  if (packages === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
+  if (packages === null || plans === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '60px' }}>
+      {plans.length > 0 && (
+        <section style={{ display: 'grid', gap: '10px', marginBottom: '10px' }}>
+          <h2 style={{ margin: 0, fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800' }}>月額プラン</h2>
+          {plans.map(pl => (
+            <div key={pl.id} style={{ ...PV_CARD, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ minWidth: 0, flex: '1 1 200px' }}>
+                <p style={{ margin: 0, fontWeight: 800, fontSize: 'calc(15px * var(--pv-fs))' }}>{pl.name}</p>
+                {pl.description && <p style={{ margin: '4px 0 0', fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(70), lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{pl.description}</p>}
+                {Number(pl.initial_fee) > 0 && <p style={{ margin: '4px 0 0', fontSize: 'calc(12px * var(--pv-fs))', color: tx(62) }}>入会金 ¥{Number(pl.initial_fee).toLocaleString()}</p>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: 'calc(18px * var(--pv-fs))', fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>¥{Number(pl.monthly_price || 0).toLocaleString()}<span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 500, color: tx(62) }}>／月</span></span>
+                <a href={`/provider/${encodeURIComponent(provider.slug)}/join?plan=${pl.id}`} style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', padding: '0 18px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>入会する</a>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+      {(packages.length > 0 || !plans.length) && <h2 style={{ margin: 0, fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800' }}>回数券</h2>}
       {confirmMsg && (
         <div role="status" style={{ padding: '14px 16px', background: ac(10), border: '1px solid var(--pv-accent)', borderRadius: '12px', color: 'var(--pv-text)', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700' }}>
           {confirmMsg}
@@ -1675,7 +1700,7 @@ function PackagesTab({ provider }) {
         </div>
       )}
       {!packages.length ? (
-        <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在オンラインで購入できる回数券はありません。</p>
+        <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在お求めいただける回数券はありません。</p>
       ) : (<>
         {highlightId && !packages.some(x => x.id === highlightId) && (
           <p style={{ margin: '0 0 4px', fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700 }}>前回お使いの回数券は、今はオンラインで購入できません。お店に直接お問い合わせください。</p>
@@ -1693,6 +1718,9 @@ function PackagesTab({ provider }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: 'calc(18px * var(--pv-fs))', fontWeight: '900', color: 'var(--pv-text)' }}>¥{Number(pkg.price).toLocaleString()}</span>
+            {pkg.online === false ? (
+              <span style={{ fontSize: 'calc(12.5px * var(--pv-fs))', color: tx(70), maxWidth: '12em', lineHeight: 1.5 }}>店頭でお求めください（オンライン購入は準備中）</span>
+            ) : (
             <button
               onClick={() => handlePurchase(pkg)}
               disabled={purchasingId === pkg.id}
@@ -1700,6 +1728,7 @@ function PackagesTab({ provider }) {
             >
               {purchasingId === pkg.id ? '手続き中…' : '購入する'}
             </button>
+            )}
           </div>
         </div>
       ))}
@@ -2317,6 +2346,7 @@ function ProviderPageContent() {
   const [facilities, setFacilities] = useState([]);
   const [appealBlocks, setAppealBlocks] = useState([]);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false); // オンライン入会できる月額プランがあるか
 
   // お気に入り確認
   useEffect(() => {
@@ -2442,6 +2472,12 @@ function ProviderPageContent() {
     else if (provider) setMatchData(null);
   }, [provider, diagnosis]);
 
+  // 月額プランにオンライン入会できる店舗だけ、店名の下に入会ページへのリンクを出す（でお要望 2026-10-27）
+  useEffect(() => {
+    if (!provider?.slug || !hasFeature(provider, 'membership_enrollment')) return;
+    fetch(`/api/providers/${provider.slug}/membership-info`).then(r => (r.ok ? r.json() : null)).then(d => setJoinOpen((d?.plans || []).length > 0)).catch(() => {});
+  }, [provider?.slug]);
+
   // ページ閲覧トラッキング（1セッション1カウント）
   useEffect(() => {
     if (!provider?.id) return;
@@ -2562,6 +2598,9 @@ function ProviderPageContent() {
             {isFavorited ? '★ 保存済み' : '☆ 保存'}
           </button>
         </div>
+        {joinOpen && (
+          <a href={`/provider/${encodeURIComponent(provider.slug)}/join`} style={{ display: 'inline-block', marginTop: '12px', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: 700, color: 'var(--pv-text)', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: 'var(--pv-accent)' }}>月額プランに入会する</a>
+        )}
       </header>
 
       {/* クイックファクト（施設写真は基本情報タブへ。予約までの距離を短くするため 2026-10-22） */}

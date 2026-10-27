@@ -18,8 +18,9 @@ export async function GET(request, { params }) {
     .single();
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
 
-  // オンライン決済の受け皿（Stripe Connect）が整っていない店舗は購入不可
-  if (provider.stripe_connect_status !== 'active') return Response.json([]);
+  // オンライン決済の受け皿（Stripe Connect）が整っていない店舗も、回数券は一覧には出す（買うボタンは出さない）。
+  // 以前は1件も返さず、店舗が作った回数券が公開ページに出ないと見えていた（今野さんの店舗 2026-10-27）
+  const online = !!provider.stripe_connect_id && provider.stripe_connect_status === 'active';
 
   const { data, error } = await supabase
     .from('service_packages')
@@ -30,5 +31,5 @@ export async function GET(request, { params }) {
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data || []);
+  return Response.json((data || []).map(p => ({ ...p, online })));
 }

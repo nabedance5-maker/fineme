@@ -32,7 +32,9 @@ export async function GET(request) {
 
   try {
     const account = await stripe.accounts.retrieve(provider.stripe_connect_id);
-    const connected = account.details_submitted && account.charges_enabled && account.payouts_enabled;
+    // カード決済を受けられれば有効にする。入金先口座の確認（payouts_enabled）は後から終わることが多く、
+    // それを待つと回数券・入会がいつまでも公開ページに出なかった（今野さんの店舗 2026-10-27）。入金はStripe側で保留される
+    const connected = !!(account.details_submitted && account.charges_enabled);
     const status = connected ? 'active' : 'pending';
 
     // ステータスが変わっていれば更新

@@ -937,7 +937,10 @@ export default function ProviderDashboardPage() {
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       openGroupFor(tabId);
       const btn = document.querySelector(`[data-tab="${tabId}"]`);
-      const pane = document.getElementById('tab-' + tabId);
+      // 「月額プラン」タブは入会手続きタブのプラン部分だけを見せる（2026-10-27）
+      const plansOnly = tabId === 'membership-plans';
+      const pane = document.getElementById(plansOnly ? 'tab-memberships' : 'tab-' + tabId);
+      document.getElementById('tab-memberships')?.classList.toggle('mbr-plans-only', plansOnly);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
     }
@@ -6960,8 +6963,8 @@ export default function ProviderDashboardPage() {
         loadSettings();
         loadApplications();
       }
-      document.querySelectorAll('[data-tab="memberships"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'memberships') loadAll();
+      document.querySelectorAll('[data-tab="memberships"], [data-tab="membership-plans"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (['memberships', 'membership-plans'].includes(new URLSearchParams(location.search).get('tab'))) loadAll();
     })();
 
     // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
@@ -9957,8 +9960,15 @@ export default function ProviderDashboardPage() {
         });
       }
 
+      async function checkPkgConnect() {
+        const el = document.getElementById('pkg-not-ready');
+        if (!el) return;
+        const r = await fetch('/api/stripe/connect/status', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } }).catch(() => null);
+        const d = r?.ok ? await r.json() : null;
+        el.style.display = d && d.status !== 'active' ? 'block' : 'none';
+      }
       async function loadAll() {
-        await Promise.all([loadTickets(), loadDefs(), loadUsersForSelect(), loadCustomerPackages()]);
+        await Promise.all([loadTickets(), loadDefs(), loadUsersForSelect(), loadCustomerPackages(), checkPkgConnect()]);
       }
       document.querySelectorAll('[data-tab="packages"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'packages') loadAll();
@@ -15551,6 +15561,10 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="pd-rail-btn" data-category="hidden" id="pd-rail-hidden-btn" style={{ display: 'none' }}>非表示</button>
               </div>
               <div className="pd-rail-panel">
+                {/* 既定の並び（2026-10-27 でお要望：hacomonoに合わせる）。hacomonoの「運営（予約スケジュール・入退館・メンバー・メッセージ配信・お知らせ・アンケート）／
+                    売上・請求／マスタ（店舗・設備・ロッカー・スタッフ・プログラム・チケット・プラン）／システム」の順に寄せ、hacomonoに無いもの（AIコンサル・接客の引き出し・
+                    アピール設定・LP設定・集客の分析など）は近いものの後ろにまとめた。チケット・回数券／ロッカーはhacomonoと同じくマスタ（店舗設定）側に置く
+                    （お客様ごとの付与・契約はメンバーのお客様詳細から行える）。並び・所属は lib/dashboard-prefs.js の TAB_CATALOG と揃えること。 */}
                 <div className="pd-panel-section" data-panel="home" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="today">今日の業務</button>
                   <button className="tab-btn" data-tab="stats">概況</button>
@@ -15559,45 +15573,41 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="reservation">
                   <button className="tab-btn active" data-tab="calendar">予約カレンダー</button>
                   <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-                  <button className="tab-btn" data-tab="slots" data-feature="instant_booking">予約の受付設定<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="slots" data-feature="instant_booking">予約の受付設定<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">メンバー</button>
-                  <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
-                  <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
-                  <button className="tab-btn" data-tab="surveys">アンケート</button>
-                  <button className="tab-btn" data-tab="notices">お知らせ掲示</button>
-                  <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="visit-settings">来店設定</button>
-                  {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
-                      性質が強いため、売上カテゴリーから顧客管理カテゴリーへ移動
-                      （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。
-                      ロッカーも同じ理由（顧客ごとの契約管理台帳）で顧客管理に置く
-                      （でお指摘2026-09-14）。 */}
-                  <button className="tab-btn" data-tab="packages" data-feature="customer_packages">チケット・回数券<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="memberships" data-feature="membership_enrollment">入会手続き<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="broadcast-email">メッセージ配信</button>
+                  <button className="tab-btn" data-tab="notices">お知らせ掲示</button>
+                  <button className="tab-btn" data-tab="surveys">アンケート</button>
+                  <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
+                  <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                 </div>
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
-                  <button className="tab-btn" data-tab="invoices">請求</button>
                   <button className="tab-btn" data-tab="membership-billing" data-feature="membership_enrollment">月会費の支払い状況<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="reports">レポート・データ出力</button>
+                  <button className="tab-btn" data-tab="invoices">請求</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="reports">レポート・データ出力</button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
-                  <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
-                  <button className="tab-btn" data-tab="widget">予約ウィジェット</button>
-                  <button className="tab-btn" data-tab="page-design">ページデザイン</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
-                  <button className="tab-btn" data-tab="service">メニュー</button>
-                  <button className="tab-btn" data-tab="staff">スタッフ</button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="stories">体験談</button>
+                  <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="staff">スタッフ</button>
+                  <button className="tab-btn" data-tab="service">メニュー</button>
+                  <button className="tab-btn" data-tab="packages" data-feature="customer_packages">チケット・回数券<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="membership-plans" data-feature="membership_enrollment">月額プラン<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
+                  <button className="tab-btn" data-tab="page-design">ページデザイン</button>
+                  <button className="tab-btn" data-tab="widget">予約ウィジェット</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
+                  <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="publish">公開設定</button>
                 </div>
                 <div className="pd-panel-section" data-panel="labor" style={{ display: 'none' }}>
@@ -15605,19 +15615,19 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="attendance" data-feature="attendance">打刻・勤怠記録<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="growth" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="area-demand">エリア需要</button>
                   <button className="tab-btn" data-tab="trial-funnel">体験→入会</button>
+                  <button className="tab-btn" data-tab="area-demand">エリア需要</button>
                   <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
                   <button className="tab-btn" data-tab="referral">紹介報酬</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
                   <button className="tab-btn" data-tab="member-referral" data-feature="referral_program">友達紹介<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="line-channel" data-feature="line_channel">LINE連携<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="features">機能設定</button>
                   <button className="tab-btn" data-tab="members">ログインと通知</button>
-                  <button className="tab-btn" data-tab="activity-log" data-feature="activity_log">操作ログ<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="features">機能設定</button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
+                  <button className="tab-btn" data-tab="line-channel" data-feature="line_channel">LINE連携<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="activity-log" data-feature="activity_log">操作ログ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="billing" style={{ borderLeft: '3px solid #2f4f8f' }}>Fineme利用契約</button>
                   <button type="button" className="tab-btn" id="pd-logout-btn" style={{ color: '#ef4444' }}>ログアウト</button>
                 </div>
@@ -17676,6 +17686,11 @@ export default function ProviderDashboardPage() {
 
         {/* 回数券・パッケージ：店舗が記録して発行、またはお客様がオンライン購入（Stripe Connect）。店舗・顧客双方が残り回数を確認できる */}
         <div className="tab-pane" id="tab-packages">
+          {/* オンライン決済が使えない間は、お客様がお店のページで回数券を買えないことを伝える（今野さんの店舗 2026-10-27：作った回数券が公開ページで買えない） */}
+          <p id="pkg-not-ready" style={{ display: 'none', fontSize: '12.5px', margin: '0 0 12px', padding: '10px 12px', borderRadius: '8px', background: '#fffbeb', color: '#92400e', lineHeight: 1.7 }}>
+            カード決済の受け取り設定（Stripe）が完了していないため、お店のページの回数券は「店頭でお求めください」と表示され、お客様はオンラインで購入できません。設定が終わると自動で購入できるようになります。
+            <button type="button" className="btn" data-stripe-connect-start style={{ display: 'block', marginTop: '8px', fontSize: '12px', padding: '6px 14px' }}>カード決済の受け取りを設定する（Stripe）</button>
+          </p>
           {/* チケットと回数券の違いが分かるよう、流れの例を1行（でお要望 2026-10-22：名前はそのまま、役割を見出しに書く） */}
           <div className="tk-flow">例）ストレッチ10回券（30,000円）を買う → ストレッチチケットが10枚付く → ストレッチを1回予約するごとに1枚使う</div>
           {/* チケット（でお要望 2026-10-22：「ストレッチ」などのメニューに対してチケットを消費して予約する） */}
@@ -18159,7 +18174,18 @@ export default function ProviderDashboardPage() {
             口座振替は日本未対応のためV1では非対応）。公開ページ側（/provider/[slug]/join）で
             お客様が入力〜カード登録まで完結し、ここで店舗が最終承認する。 */}
         <div className="tab-pane" id="tab-memberships">
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+          {/* 「月額プラン」タブ（でお要望 2026-10-27：プラン作成が入会手続きの中にしか無い）は、このタブの
+              プラン・オプション・割引だけを見せる（中身は1つなので、どちらから編集しても同じ） */}
+          <style>{`
+            .mbr-plans-head { display: none; }
+            #tab-memberships.mbr-plans-only .mbr-hide-in-plans { display: none !important; }
+            #tab-memberships.mbr-plans-only .mbr-plans-head { display: block; }
+          `}</style>
+          <div className="card stack mbr-plan-part mbr-plans-head" style={{ padding: '20px 24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>月額プラン</h2>
+            <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.7 }}>月額プランと、プランに付けるオプション・割引を作ります。お客様の入会の受付・入会ページの設定は「入会手続き」タブで行います（ここで作ったプランはそのまま使われます）。</p>
+          </div>
+          <div className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
             <div>
               <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>入会手続き</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
@@ -18176,7 +18202,7 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* プラン管理 */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+          <div className="card stack mbr-plan-part" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 300px' }}>
                 <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>会員プラン</h3>
@@ -18189,7 +18215,7 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* オプション（でお要望 2026-10-19：hacomono差分 #5） */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+          <div className="card stack mbr-plan-part" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>オプション</h3>
               <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>プランに足せる月額の追加サービスです（例：タオル、水素水、プロテイン飲み放題）。お客様は入会時に選べて、月会費と一緒に引き落とされます。入会後は会員の詳細から付け外しできます。</p>
@@ -18204,7 +18230,7 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* 割引・クーポン（でお要望 2026-10-19：hacomono差分 #5） */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+          <div className="card stack mbr-plan-part" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>割引・クーポン</h3>
               <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>月会費から引く割引です（例：学割、家族割、入会キャンペーン）。会員の詳細から付けられます。クーポンコードを設定すると、お客様が入会ページでコードを入れて使えます。金額と期間は作った後に変えられないため、変えたい時は新しく作ってください。</p>
@@ -18226,7 +18252,7 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* 入会手続き設定（でお要望：各項目は店舗ごとにカスタマイズ可能に） */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+          <div className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '15px' }}>入会手続きの設定</h3>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-prorate" />初月を日割りにする（OFFの場合は承認日から満額で開始）
@@ -18256,14 +18282,14 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* 申込一覧 */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
+          <div className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '14px' }}>
             <h3 style={{ margin: 0, fontSize: '15px' }}>会員・入会申込の一覧</h3>
             <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410' }}>会員を開くと、休会・プラン変更・退会の操作と、お客様からの申請の承認ができます。</p>
             <div id="mbr-app-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
           </div>
 
           {/* 申込詳細（一覧から開く） */}
-          <div id="mbr-detail-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px', display: 'none' }}>
+          <div id="mbr-detail-card" className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '12px', marginTop: '16px', display: 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '15px' }}>会員の詳細</h3>
               <button type="button" className="btn btn-ghost" id="mbr-detail-close" style={{ fontSize: '12px' }}>閉じる</button>
