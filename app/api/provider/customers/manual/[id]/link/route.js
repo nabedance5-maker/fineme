@@ -8,6 +8,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { transferManualNumberToUser } from '@/lib/customer-numbers';
+import { isStoreCustomer } from '@/lib/customer-accounts';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -20,6 +21,7 @@ async function getProviderByToken(token) {
 }
 
 async function __POST(request, { params }) {
+  const { id } = await params;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -28,27 +30,23 @@ async function __POST(request, { params }) {
   const { user_id } = await request.json();
   if (!user_id) return Response.json({ error: 'user_id は必須です' }, { status: 400 });
 
-  // なりすまし防止：紐付け先は実際にこの店舗にNew Me Logを紐づけている会員のみ許可
-  const { data: linked } = await supabase
-    .from('user_service_logs')
-    .select('id')
-    .eq('provider_slug', provider.slug)
-    .eq('user_id', user_id)
-    .eq('active', true)
-    .limit(1)
-    .single();
-  if (!linked) return Response.json({ error: '指定されたお客様は貴店に紐づく会員として見つかりません' }, { status: 404 });
+  // なりすまし防止：紐付け先は、この店舗とつながりのある会員（New Me Log・予約・入会・回数券・基本情報のどれか）のみ許可
+  // （以前はNew Me Logの連携だけを見ていたため、店頭で入会した会員には紐づけできなかった。でお指摘 2026-10-27）
+  if (!(await isStoreCustomer(provider.id, user_id))) {
+    const { data: linked } = await supabase.from('user_service_logs').select('id').eq('provider_slug', provider.slug).eq('user_id', user_id).eq('active', true).limit(1).maybeSingle();
+    if (!linked) return Response.json({ error: '指定されたお客様は貴店に紐づく会員として見つかりません' }, { status: 404 });
+  }
 
   const { data, error } = await supabase
     .from('provider_manual_customers')
     .update({ linked_user_id: user_id, linked_at: new Date().toISOString() })
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('provider_id', provider.id)
     .select()
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  try { await transferManualNumberToUser(supabase, provider.id, params.id, user_id); } catch { /* 番号の引き継ぎ失敗でも紐付け自体は成立させる */ }
+  try { await transferManualNumberToUser(supabase, provider.id, id, user_id); } catch { /* 番号の引き継ぎ失敗でも紐付け自体は成立させる */ }
   return Response.json(data);
 }
 

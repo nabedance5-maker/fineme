@@ -104,12 +104,14 @@ export async function GET(request) {
   let hasCard = false;
   let cardSource = null;
   let memberships = [];
+  let pendingMemberships = []; // 確定前（カード登録待ち・確定待ち）の入会
+  let accountHasEmail = null;
 
   if (userId) {
     const [resRes, pkgRes, memRes] = await Promise.all([
       supabase.from('reservations').select(RES_COLS).eq('provider_id', provider.id).eq('user_id', userId).order('reserved_date', { ascending: false }).limit(200),
       supabase.from('customer_packages').select('id, package_name, package_type, total_sessions, purchased_at, expires_at, subscription_status, next_grant_at').eq('provider_id', provider.id).eq('user_id', userId).order('purchased_at', { ascending: false }),
-      supabase.from('provider_memberships').select('id, status, plan_id, payment_status, enrollment_date, approved_at, created_at, paused_at, pause_until, cancel_at, cancelled_at, stripe_payment_method_id').eq('provider_id', provider.id).eq('user_id', userId).neq('status', 'draft'),
+      supabase.from('provider_memberships').select('id, status, created_by_store, plan_id, payment_status, enrollment_date, approved_at, created_at, paused_at, pause_until, cancel_at, cancelled_at, stripe_payment_method_id').eq('provider_id', provider.id).eq('user_id', userId).or('status.neq.draft,created_by_store.eq.true'), // お客様が途中でやめた下書きは除く。店頭で始めたカード登録待ちは含める
     ]);
     reservations = resRes.data || [];
     const pkgs = pkgRes.data || [];
@@ -143,6 +145,15 @@ export async function GET(request) {
       });
     }
     memberships = await membershipPayments(provider.id, (memRes.data || []).filter(m => ['active', 'cancelled'].includes(m.status)));
+    pendingMemberships = (memRes.data || []).filter(m => ['draft', 'pending_approval'].includes(m.status) && (m.status !== 'draft' || m.created_by_store))
+      .map(m => ({ id: m.id, status: m.status, created_by_store: !!m.created_by_store, plan_id: m.plan_id, enrollment_date: m.enrollment_date }));
+    if (pendingMemberships.length) {
+      const { data: pl } = await supabase.from('provider_membership_plans').select('id, name').in('id', pendingMemberships.map(x => x.plan_id).filter(Boolean));
+      const nameOf = Object.fromEntries((pl || []).map(x => [x.id, x.name]));
+      pendingMemberships = pendingMemberships.map(x => ({ ...x, plan: nameOf[x.plan_id] || '月額プラン' }));
+    }
+    // 届かないアドレス（店頭だけのお客様用に作ったアカウント）か。そのアカウントには入会のリンクを送っても、お客様は別のアカウントで申し込んでしまい、同じ人が2人できる
+    try { const { data: au } = await supabase.auth.admin.getUserById(userId); accountHasEmail = !!au?.user?.email && !au.user.email.endsWith('.invalid'); } catch { accountHasEmail = null; }
     const withCard = (memRes.data || []).filter(m => m.stripe_payment_method_id);
     hasCard = withCard.length > 0;
     cardSource = hasCard ? 'オンライン入会で登録' : null;
@@ -178,6 +189,8 @@ export async function GET(request) {
 
   return Response.json({
     memberships,
+    pending_memberships: pendingMemberships,
+    account_has_email: accountHasEmail,
     has_card: hasCard,
     card_source: cardSource,
     packages,

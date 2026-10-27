@@ -2324,6 +2324,36 @@ export default function ProviderDashboardPage() {
     // 呼べるようwindowにも公開する（approveRequest等の既存グローバル関数と同じ理由）。
     window.showToast = showToast;
 
+    // 大事な登録・変更の最終確認（でお要望 2026-10-27）。入会・課金・退会など取り消しにくい操作の前に、内容を一覧で見せて確かめてもらう。
+    // 使い方：if (!(await pdConfirm({ title, lines: [['項目', '値'], '説明文'], okLabel, danger }))) return;
+    function pdConfirm({ title = '確認', lines = [], okLabel = '確定する', cancelLabel = 'やめる', danger = false } = {}) {
+      return new Promise(resolve => {
+        const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const ov = document.createElement('div');
+        ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+        const main = danger ? '#b91c1c' : '#111';
+        ov.innerHTML = `<div style="background:#fff;color:#111;border-radius:14px;max-width:440px;width:100%;max-height:88vh;overflow:auto;padding:20px 20px 16px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
+          <h3 style="margin:0 0 4px;font-size:16px;color:#111">${esc(title)}</h3>
+          <p style="margin:0 0 12px;font-size:12.5px;color:#444">内容を確かめて、よければ「${esc(okLabel)}」を押してください。</p>
+          <div>${lines.map(l => (Array.isArray(l)
+            ? `<div style="display:flex;gap:12px;padding:7px 0;border-top:1px solid #e5e5e5;font-size:13px"><span style="flex:0 0 7em;color:#444">${esc(l[0])}</span><b style="flex:1;color:#111;word-break:break-all;white-space:pre-wrap">${esc(l[1])}</b></div>`
+            : `<p style="margin:8px 0;font-size:13px;color:#111;line-height:1.7">${esc(l)}</p>`)).join('')}</div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+            <button type="button" data-pdc="no" style="padding:9px 16px;border-radius:8px;border:1.5px solid #111;background:#fff;color:#111;font-weight:700;cursor:pointer">${esc(cancelLabel)}</button>
+            <button type="button" data-pdc="ok" style="padding:9px 18px;border-radius:8px;border:1.5px solid ${main};background:${main};color:#fff;font-weight:700;cursor:pointer">${esc(okLabel)}</button>
+          </div></div>`;
+        const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+        const done = v => { document.removeEventListener('keydown', onKey, true); ov.remove(); resolve(v); };
+        ov.querySelector('[data-pdc="no"]').addEventListener('click', () => done(false));
+        ov.querySelector('[data-pdc="ok"]').addEventListener('click', () => done(true));
+        document.addEventListener('keydown', onKey, true);
+        document.body.appendChild(ov);
+        ov.querySelector('[data-pdc="ok"]').focus();
+      });
+    }
+    window.pdConfirm = pdConfirm;
+
     // プラン不足の機能に触れたとき「不具合」ではなく「上のプランで使える機能」と伝えるための案内。
     // 機能ごとに「使うと何が変わるか」を示し、Fineme利用契約タブ（プラン変更）へ誘導する。
     const PLAN_INFO = { A: { name: 'ライト', price: 5000 }, B: { name: 'スタンダード', price: 7000 }, C: { name: 'プレミアム', price: 10000 } };
@@ -6454,8 +6484,8 @@ export default function ProviderDashboardPage() {
       const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
-      const STATUS_LABEL = { pending_approval: '承認待ち', active: '入会中', rejected: '却下', cancelled: '退会' };
-      const STATUS_COLOR = { pending_approval: '#fde68a', active: '#bbf7d0', rejected: '#fecaca', cancelled: '#e5e7eb' };
+      const STATUS_LABEL = { draft: 'カード登録待ち', pending_approval: '承認待ち', active: '入会中', rejected: '却下', cancelled: '退会' };
+      const STATUS_COLOR = { draft: '#c7d2fe', pending_approval: '#fde68a', active: '#bbf7d0', rejected: '#fecaca', cancelled: '#e5e7eb' };
 
       const warningEl = document.getElementById('mbr-connect-warning');
       const joinUrlEl = document.getElementById('mbr-join-url');
@@ -6465,6 +6495,7 @@ export default function ProviderDashboardPage() {
       const detailBody = document.getElementById('mbr-detail-body');
       const detailMsg = document.getElementById('mbr-detail-msg');
       let currentDetailId = null;
+      let currentDetailM = null;
       let loaded = false;
 
       async function checkConnectStatus() {
@@ -6803,6 +6834,112 @@ export default function ProviderDashboardPage() {
         if (m.pending_request) chips.push(`${CHANGE_LABEL[m.pending_request]}の申請あり`);
         return chips.map(c => `<span class="mbr-chip mbr-chip-sub">${esc(c)}</span>`).join('');
       }
+      // 契約の変更の最終確認に出す内容（でお要望 2026-10-27）
+      function changeConfirmLines(m, p) {
+        const req = p.request_id ? (m.changes || []).find(c => c.id === p.request_id) : null;
+        const kind = p.kind || req?.kind;
+        const lines = [['お客様', `${m.last_name || ''} ${m.first_name || ''}`.trim() || '—'], ['操作', CHANGE_LABEL[kind] || kind || '—']];
+        const timing = p.timing || req?.timing;
+        const date = p.date || req?.effective_date;
+        if (kind === 'plan_change') {
+          const to = (m.plans || []).find(x => x.id === (p.to_plan_id || req?.to_plan_id));
+          lines.push(['変更前', `${m.plan_name || ''}（月額${fmtYen(m.plan_price)}）`], ['変更後', to ? `${to.name}（月額${fmtYen(to.monthly_price)}）` : '—']);
+          if (timing) lines.push(['反映', TIMING_LABEL[timing] || timing]);
+        } else if (kind === 'pause') {
+          lines.push(['再開日', ymd(p.pause_until || req?.pause_until) || '未定（手動で再開）']);
+        } else if (kind === 'cancel') {
+          lines.push(['退会日', timing === 'date' ? (ymd(date) || '—') : (TIMING_LABEL[timing] || '今の支払い期間の終わり')]);
+        } else if (kind === 'option_add') {
+          const o = (m.options || []).find(x => x.id === p.option_id); lines.push(['オプション', o ? `${o.name}（月額${fmtYen(o.monthly_price)}）` : '—']);
+        } else if (kind === 'option_remove') {
+          const i = (m.option_items || []).find(x => x.id === p.item_id); lines.push(['オプション', i ? i.name : '—']);
+        } else if (kind === 'discount_apply') {
+          const d = (m.discounts || []).find(x => x.id === p.discount_id); lines.push(['割引', d ? `${d.name}（${d.text}）` : '—']);
+        } else if (kind === 'discount_remove') {
+          lines.push(['割引', m.discount ? m.discount.name : '—']);
+        }
+        if (p.reason) lines.push(['理由', p.reason]);
+        lines.push('お客様のLINEへ、変更の知らせが届く場合があります。');
+        return lines;
+      }
+
+      // 申込詳細の下に出すもの：カード登録待ちの手続き／同じ人かもしれない候補／内容の編集
+      function renderDetailExtra(m) {
+        const box = document.getElementById('mbr-detail-extra');
+        if (!box) return;
+        const parts = [];
+        if (m.status === 'draft' && m.created_by_store) parts.push('<div data-dx-card class="mbr-form"></div>');
+        if (['draft', 'pending_approval', 'active'].includes(m.status)) {
+          if ((m.manual_candidates || []).length) {
+            parts.push(`<div class="mbr-req"><b>同じお客様かもしれません</b>
+              <div style="font-size:12.5px;line-height:1.7">メンバー一覧に、同じお名前か電話番号の「非会員」のお客様がいます。同じ方なら、記録を1人にまとめられます（カルテ・予約の記録は残ります）。</div>
+              ${m.manual_candidates.map(c => `<div class="mbr-actions"><span>${esc(c.name)}（非会員）</span><button type="button" class="btn" data-dx-link="${c.id}" data-dx-name="${esc(c.name)}">同じ方です。この入会の方にまとめる</button></div>`).join('')}</div>`);
+          }
+          if ((m.same_person_members || []).length) {
+            parts.push(`<div class="mbr-req"><b>同じお名前・電話番号のメンバーがほかにもいます</b>
+              <div style="font-size:12.5px;line-height:1.7">${m.same_person_members.map(c => esc(c.name)).join('、')}。同じ方の場合は、メンバー一覧で確認してください（別々のアカウントのため、自動ではまとめられません）。</div></div>`);
+          }
+          parts.push('<div><button type="button" class="btn btn-ghost" data-dx-edit>内容を編集する（お名前・連絡先・プランなど）</button></div><div id="mbr-edit-form"></div>');
+        }
+        box.innerHTML = parts.join('');
+        const cardBox = box.querySelector('[data-dx-card]');
+        if (cardBox) renderCardStep(cardBox, m.id, { name: `${m.last_name || ''} ${m.first_name || ''}`.trim(), plan: { name: m.plan_name, monthly_price: m.plan_price }, monthly: m.plan_price, date: m.enrollment_date, prorated: m.prorated_first_amount }, () => { detailCard.style.display = 'none'; currentDetailId = null; loadApplications(); });
+        box.querySelectorAll('[data-dx-link]').forEach(b => b.addEventListener('click', async () => {
+          const ok = await pdConfirm({ title: '同じ方として、記録をまとめますか？', lines: [['非会員の記録', b.dataset.dxName], ['まとめ先', `${m.last_name || ''} ${m.first_name || ''}`.trim()], 'まとめると、非会員の一覧からは消え、カルテ・予約・会員番号はこのメンバーに引き継がれます。別の人だった場合は、まとめないでください。'], okLabel: 'まとめる' });
+          if (!ok) return;
+          const r = await fetch(`/api/provider/customers/manual/${b.dataset.dxLink}/link`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ user_id: m.user_id }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || 'まとめられませんでした'); return; }
+          showToast('1人にまとめました'); openDetail(m.id);
+        }));
+        box.querySelector('[data-dx-edit]')?.addEventListener('click', () => openEditForm(m));
+      }
+
+      // 入会情報の編集（でお要望 2026-10-27）。確定前はプラン・入会日・ロッカーも。確定後の契約変更は上の「プランを変更する」などで行う
+      async function openEditForm(m) {
+        const host = document.getElementById('mbr-edit-form');
+        if (!host) return;
+        const before = ['draft', 'pending_approval'].includes(m.status);
+        const R = before ? await wizLoadRefs() : null;
+        const fld = (k, label, type = 'text', wide = false) => `<div class="form-field" style="margin:0;${wide ? 'flex:1 1 100%' : 'flex:1 1 150px'}"><label>${label}</label><input data-ed="${k}" type="${type}" value="${esc(m[k] || '')}"></div>`;
+        host.innerHTML = `<div class="mbr-form"><b>入会情報を編集する</b>
+          ${before ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+            <div class="form-field" style="margin:0;flex:2 1 220px"><label>プラン</label><select data-ed="plan_id">${(R.plans.some(p => p.id === m.plan_id) ? R.plans : [...R.plans, { id: m.plan_id, name: m.plan_name || '（非公開のプラン）', monthly_price: m.plan_price }]).map(p => `<option value="${p.id}" ${p.id === m.plan_id ? 'selected' : ''}>${esc(p.name)}（月額${fmtYen(p.monthly_price)}）</option>`).join('')}</select></div>
+            ${fld('enrollment_date', '入会日', 'date')}
+            ${R.lockers.length || m.locker_id ? `<div class="form-field" style="margin:0;flex:1 1 150px"><label>ロッカー</label><select data-ed="locker_id"><option value="">なし</option>${R.lockers.map(l => `<option value="${l.id}" ${l.id === m.locker_id ? 'selected' : ''}>${esc(l.name)}（月額${fmtYen(l.monthly_fee)}）</option>`).join('')}${m.locker_id && !R.lockers.some(l => l.id === m.locker_id) ? `<option value="${m.locker_id}" selected>${esc(m.locker_name || '現在のロッカー')}</option>` : ''}</select></div>` : ''}
+          </div>` : '<p class="muted" style="font-size:12px;margin:4px 0">課金が始まっているため、プラン・オプション・割引の変更は、上の「プランを変更する」などから行ってください。</p>'}
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+            ${fld('last_name', '姓')}${fld('first_name', '名')}${fld('last_name_kana', 'セイ')}${fld('first_name_kana', 'メイ')}${fld('phone', '電話番号')}
+            <div class="form-field" style="margin:0;flex:1 1 150px"><label>性別</label><select data-ed="gender"><option value="">未入力</option>${[['female', '女性'], ['male', '男性'], ['other', 'その他']].map(([k, v]) => `<option value="${k}" ${m.gender === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+            ${fld('birthdate', '生年月日', 'date')}${fld('postal_code', '郵便番号')}${fld('address', '住所', 'text', true)}
+            ${fld('emergency_contact_name', '緊急連絡先のお名前')}${fld('emergency_contact_relation', '続柄')}${fld('emergency_contact_phone', '緊急連絡先の電話番号')}
+          </div>
+          <div class="mbr-actions" style="margin-top:10px"><button type="button" class="btn" data-ed-save>保存する</button><button type="button" class="btn btn-ghost" data-ed-x>やめる</button><span data-ed-msg style="font-size:12.5px;color:#b91c1c"></span></div></div>`;
+        host.querySelector('[data-ed-x]').addEventListener('click', () => { host.innerHTML = ''; });
+        host.querySelector('[data-ed-save]').addEventListener('click', async () => {
+          const say = t => { host.querySelector('[data-ed-msg]').textContent = t; };
+          const body = {}; const diffs = [];
+          const LABEL = { plan_id: 'プラン', enrollment_date: '入会日', locker_id: 'ロッカー', last_name: '姓', first_name: '名', last_name_kana: 'セイ', first_name_kana: 'メイ', phone: '電話番号', gender: '性別', birthdate: '生年月日', postal_code: '郵便番号', address: '住所', emergency_contact_name: '緊急連絡先のお名前', emergency_contact_relation: '続柄', emergency_contact_phone: '緊急連絡先の電話番号' };
+          host.querySelectorAll('[data-ed]').forEach(el => {
+            const k = el.dataset.ed; const cur = m[k] || ''; const nv = el.value || '';
+            if (nv !== cur) {
+              body[k] = nv;
+              const show = el.tagName === 'SELECT' ? (el.selectedOptions[0]?.textContent || '') : nv;
+              diffs.push([LABEL[k] || k, `${k === 'plan_id' ? (m.plan_name || '') : k === 'locker_id' ? (m.locker_name || 'なし') : (cur || '未入力')} → ${show || '未入力'}`]);
+            }
+          });
+          if (!diffs.length) return say('変更した項目がありません');
+          if (('last_name' in body && !body.last_name) || ('first_name' in body && !body.first_name) || ('phone' in body && !body.phone)) return say('お名前（姓・名）と電話番号は空にできません');
+          const ok = await pdConfirm({ title: 'この内容で保存しますか？', lines: [...diffs, ...(body.plan_id || body.enrollment_date || body.locker_id !== undefined ? ['プラン・入会日・ロッカーを変えると、初回の目安額が計算し直されます。'] : [])], okLabel: '保存する' });
+          if (!ok) return;
+          const r = await fetch(`/api/provider/memberships/${m.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) return say(d.error || '保存できませんでした');
+          showToast('保存しました'); openDetail(m.id); loadApplications();
+        });
+        host.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
       function renderManage(m) {
         const box = document.getElementById('mbr-manage');
         if (!box) return;
@@ -6838,6 +6975,13 @@ export default function ProviderDashboardPage() {
         const today = new Date(Date.now() + 9 * 3600000); today.setUTCDate(today.getUTCDate() + 1);
         const tomorrow = today.toISOString().slice(0, 10);
         const send = async (payload, okText) => {
+          const okChange = await pdConfirm({
+            title: `${CHANGE_LABEL[payload.kind || (m.changes || []).find(c => c.id === payload.request_id)?.kind] || '変更'}を反映しますか？`,
+            lines: changeConfirmLines(m, payload),
+            okLabel: '反映する',
+            danger: (payload.kind || (m.changes || []).find(c => c.id === payload.request_id)?.kind) === 'cancel',
+          });
+          if (!okChange) return;
           if (detailMsg) detailMsg.textContent = '';
           const res = await fetch(`/api/provider/memberships/${m.id}/change`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(payload) });
           const d = await res.json().catch(() => ({}));
@@ -6904,6 +7048,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch(`/api/provider/memberships/${id}`, { headers: authH() });
         if (!res.ok) { detailBody.innerHTML = '読み込みに失敗しました'; return; }
         const m = await res.json();
+        currentDetailM = m;
         const approveBtn = document.getElementById('mbr-detail-approve-btn');
         const rejectBtn = document.getElementById('mbr-detail-reject-btn');
         if (approveBtn) approveBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
@@ -6925,13 +7070,30 @@ export default function ProviderDashboardPage() {
           <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
           ${m.cancel_reason ? `<div>退会の理由：${esc(m.cancel_reason)}</div>` : ''}
           ${(m.custom_fields_snapshot || []).map(q => { const v = m.custom_answers?.[q.id]; return `<div>${esc(q.label)}：${v == null ? '未回答' : esc(Array.isArray(v) ? v.join('、') : v)}</div>`; }).join('')}
+          <div id="mbr-detail-extra" class="stack" style="gap:10px;margin-top:8px"></div>
         `;
         renderManage(m);
+        renderDetailExtra(m);
       }
       document.getElementById('mbr-detail-close')?.addEventListener('click', () => { detailCard.style.display = 'none'; currentDetailId = null; });
       document.getElementById('mbr-detail-approve-btn')?.addEventListener('click', async () => {
         if (!currentDetailId) return;
-        if (!confirm('承認して課金を開始しますか？')) return;
+        const dm = currentDetailM || {};
+        const okApprove = await pdConfirm({
+          title: '入会を確定して、課金を始めますか？',
+          lines: [
+            ['お客様', `${dm.last_name || ''} ${dm.first_name || ''}`.trim() || '—'],
+            ['プラン', `${dm.plan_name || '未選択'}（月額${fmtYen(dm.plan_price)}）`],
+            ['入会日', dm.enrollment_date || '未設定'],
+            ...(dm.prorated_first_amount != null ? [['初回の目安', fmtYen(dm.prorated_first_amount)]] : []),
+            ['ロッカー', dm.locker_name || 'なし'],
+            ...((dm.pending_options || []).length ? [['オプション', dm.pending_options.map(o => o.name).join('、')]] : []),
+            ...(dm.discount ? [['クーポン', dm.discount.name]] : []),
+            '確定すると、すぐに課金が始まります（日割り設定がある場合は入会日までの日割り分から）。',
+          ],
+          okLabel: '確定して課金を始める',
+        });
+        if (!okApprove) return;
         const res = await fetch(`/api/provider/memberships/${currentDetailId}/approve`, { method: 'POST', headers: authH() });
         if (res.ok) { showToast('承認しました'); detailCard.style.display = 'none'; loadApplications(); }
         else { const e = await res.json().catch(() => ({})); if (detailMsg) detailMsg.textContent = 'エラー: ' + (e.error || '不明'); }
@@ -6950,6 +7112,312 @@ export default function ProviderDashboardPage() {
         if (!url) return;
         navigator.clipboard?.writeText(url).then(() => showToast('コピーしました')).catch(() => {});
       });
+
+      // ── 店頭で入会手続き（でお要望 2026-10-27：管理画面から入会手続きとプラン契約ができるように） ──
+      // 流れ：メンバーを選ぶ → 入会内容を入れる → 最終確認 → カード登録の案内（QR・リンク）→ お客様がカードを登録 → 最終確認 → 確定（課金開始）
+      // すでにいるメンバー（アカウント）に入会を付けるので、メンバーが2人にならない。
+      const storeEnrollEl = document.getElementById('mbr-store-enroll');
+      const JHs = () => ({ 'Content-Type': 'application/json', ...authH() });
+      let wizPool = null;
+      let wizRefs = null;
+      let wiz = null;
+      let wizTimer = null;
+      const stopWizPoll = () => { if (wizTimer) { clearInterval(wizTimer); wizTimer = null; } };
+
+      async function wizLoadPool() {
+        if (wizPool) return wizPool;
+        const [r1, r2] = await Promise.all([fetch('/api/provider/customers?scope=all', { headers: authH() }), fetch('/api/provider/customers/manual', { headers: authH() })]);
+        const mem = r1.ok ? await r1.json() : []; const man = r2.ok ? await r2.json() : [];
+        const seen = new Set();
+        wizPool = mem.filter(c => c.user_id && !seen.has(c.user_id) && seen.add(c.user_id)).map(c => ({ user_id: c.user_id, name: c.customer_name || 'お客様', phone: c.phone || '', no: c.member_number }))
+          .concat(man.filter(m => !m.linked_user_id).map(m => ({ manual_id: m.id, name: m.display_name, phone: m.phone || '', no: m.member_number, manual: true })));
+        return wizPool;
+      }
+      async function wizLoadRefs() {
+        if (wizRefs) return wizRefs;
+        const get = u => fetch(u, { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
+        const [plans, lockers, options, settings] = await Promise.all([
+          get('/api/provider/membership-plans'), get('/api/provider/lockers'), get('/api/provider/membership-options'),
+          fetch('/api/provider/membership-settings', { headers: authH() }).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
+        ]);
+        wizRefs = {
+          plans: (Array.isArray(plans) ? plans : []).filter(p => p.active),
+          lockers: (Array.isArray(lockers) ? lockers : []).filter(l => l.monthly_fee && !l.activeContract),
+          options: (Array.isArray(options) ? options : []).filter(o => o.active !== false),
+          settings: settings || {},
+        };
+        return wizRefs;
+      }
+      async function wizPrefill(target) {
+        const q = target.user_id ? `user_id=${encodeURIComponent(target.user_id)}` : `manual_id=${encodeURIComponent(target.manual_id)}`;
+        const r = await fetch(`/api/provider/customer-profile?${q}`, { headers: authH() }).catch(() => null);
+        const p = r && r.ok ? (await r.json()).profile || {} : {};
+        const addr = [p.prefecture, p.city, p.address1, p.address2].filter(Boolean).join('');
+        return {
+          last_name: p.last_name || '', first_name: p.first_name || '', last_name_kana: p.last_name_kana || '', first_name_kana: p.first_name_kana || '',
+          phone: p.phone || '', gender: p.gender || '', birthdate: p.birthday || '', postal_code: p.postal_code || '', address: addr,
+          emergency_contact_name: p.emergency_name || '', emergency_contact_relation: p.emergency_relation || '', emergency_contact_phone: p.emergency_phone || '',
+        };
+      }
+
+      function wizPlan() { return wizRefs.plans.find(p => p.id === wiz.plan_id) || null; }
+      function wizOptionLists() {
+        const plan = wizPlan();
+        if (!plan) return { included: [], choosable: [] };
+        const incl = new Set(plan.included_option_ids || []);
+        return {
+          included: wizRefs.options.filter(o => incl.has(o.id)),
+          choosable: wizRefs.options.filter(o => !incl.has(o.id) && (plan.selectable_option_ids == null || plan.selectable_option_ids.includes(o.id))),
+        };
+      }
+      function wizMonthly() {
+        const plan = wizPlan();
+        if (!plan) return 0;
+        const lk = wizRefs.lockers.find(l => l.id === wiz.locker_id);
+        const { included, choosable } = wizOptionLists();
+        const chosen = choosable.filter(o => wiz.option_ids.includes(o.id));
+        return Number(plan.monthly_price || 0) + Number(lk?.monthly_fee || 0) + [...included, ...chosen].reduce((t, o) => t + Number(o.monthly_price || 0), 0);
+      }
+
+      function wizField(key, label, attrs = '', wide = false) {
+        return `<div class="form-field" style="margin-bottom:0;${wide ? 'flex:1 1 100%' : 'flex:1 1 150px'}"><label>${label}</label><input data-we="${key}" value="${esc(wiz.f[key] || '')}" ${attrs}></div>`;
+      }
+
+      function wizRender() {
+        if (!storeEnrollEl || !wiz) return;
+        stopWizPoll();
+        const R = wizRefs; const w = wiz;
+        if (w.membership_id) { wizRenderCardStep(); return; }
+        const plan = wizPlan();
+        const { included, choosable } = wizOptionLists();
+        const needId = R.settings.require_id_document !== false;
+        const pool = (wizPool || []);
+        const kw = (w.q || '').trim().toLowerCase();
+        const digits = kw.replace(/\D/g, '');
+        const hits = !w.target && kw ? pool.filter(c => c.name.toLowerCase().includes(kw) || (digits.length >= 3 && String(c.phone).replace(/\D/g, '').includes(digits)) || (c.no != null && String(c.no) === kw)).slice(0, 8) : [];
+        storeEnrollEl.style.display = '';
+        storeEnrollEl.innerHTML = `<div class="card stack" style="padding:20px;gap:14px;border:2px solid #111;margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0;font-size:15px">店頭で入会手続き</h3><button type="button" class="btn btn-ghost" data-we-close style="font-size:12px">閉じる</button></div>
+          <p class="muted" style="font-size:12.5px;margin:0;line-height:1.7">メンバーを選んで入会内容を入れ、最後にお客様にカードを登録してもらうと入会を確定できます（お客様のログインは要りません）。新しい人は作らず、選んだメンバーに入会を付けます。</p>
+          <div>
+            <b style="font-size:13px">1. 入会するメンバー</b>
+            ${w.target ? `<div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap"><span style="font-weight:700">${esc(w.target.name)}</span>${w.target.manual ? '<span class="muted" style="font-size:12px">非会員のお客様（入会するとメンバーになります）</span>' : ''}<button type="button" class="btn btn-ghost" data-we-change style="font-size:12px">変更</button></div>`
+              : `<div class="form-field" style="margin:6px 0 0"><input data-we-q placeholder="お名前・電話番号・会員番号で探す" value="${esc(w.q || '')}" autocomplete="off"></div>
+                 <div data-we-hits style="display:flex;flex-direction:column;gap:4px;margin-top:6px">${hits.map((c, i) => `<button type="button" class="btn btn-ghost" data-we-pick="${i}" style="text-align:left;justify-content:flex-start">${esc(c.name)}${c.phone ? `　${esc(c.phone)}` : ''}${c.manual ? '　（非会員）' : ''}</button>`).join('') || (kw ? '<span class="muted" style="font-size:12px">見つかりません。先に「メンバー」タブでお客様を追加してください。</span>' : '')}</div>`}
+          </div>
+          ${w.target ? `
+          <div>
+            <b style="font-size:13px">2. プラン・入会日</b>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+              <div class="form-field" style="margin:0;flex:2 1 220px"><label>プラン</label><select data-we-plan><option value="">選んでください</option>${R.plans.map(p => `<option value="${p.id}" ${p.id === w.plan_id ? 'selected' : ''}>${esc(p.name)}（月額${fmtYen(p.monthly_price)}${Number(p.initial_fee) > 0 ? `・入会金${fmtYen(p.initial_fee)}` : ''}）</option>`).join('')}</select></div>
+              <div class="form-field" style="margin:0;flex:1 1 150px"><label>入会日</label><input type="date" data-we="enrollment_date" value="${esc(w.enrollment_date)}"></div>
+            </div>
+            ${plan ? `
+              ${R.lockers.length ? `<div class="form-field" style="margin:8px 0 0"><label>ロッカー（任意）</label><select data-we-locker><option value="">なし</option>${R.lockers.map(l => `<option value="${l.id}" ${l.id === w.locker_id ? 'selected' : ''}>${esc(l.name)}（月額${fmtYen(l.monthly_fee)}）</option>`).join('')}</select></div>` : ''}
+              ${included.length ? `<p class="muted" style="font-size:12.5px;margin:8px 0 0">プランに含まれるオプション：${included.map(o => `${esc(o.name)}（月額${fmtYen(o.monthly_price)}）`).join('、')}</p>` : ''}
+              ${choosable.length ? `<div style="margin-top:8px;font-size:13px"><b>オプション（任意）</b>${choosable.map(o => `<label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" data-we-opt="${o.id}" ${w.option_ids.includes(o.id) ? 'checked' : ''}>${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</label>`).join('')}</div>` : ''}
+              <div class="form-field" style="margin:8px 0 0"><label>クーポンコード（任意）</label><input data-we="coupon_code" value="${esc(w.coupon_code)}" placeholder="お持ちの場合だけ"></div>
+              <p style="margin:8px 0 0;font-size:13px">毎月の合計：<b>${fmtYen(wizMonthly())}</b>${Number(plan.initial_fee) > 0 ? `（このほか初回に入会金${fmtYen(plan.initial_fee)}）` : ''}</p>` : ''}
+          </div>
+          <div>
+            <b style="font-size:13px">3. お客様の情報</b>
+            <p class="muted" style="font-size:12px;margin:2px 0 6px">メンバーに登録済みの内容を入れてあります。足りないところを入れてください（お名前と電話番号は必須）。</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              ${wizField('last_name', '姓')}${wizField('first_name', '名')}${wizField('last_name_kana', 'セイ')}${wizField('first_name_kana', 'メイ')}
+              ${wizField('phone', '電話番号', 'inputmode="tel"')}
+              <div class="form-field" style="margin:0;flex:1 1 150px"><label>性別</label><select data-we="gender"><option value="">未入力</option>${[['female', '女性'], ['male', '男性'], ['other', 'その他']].map(([k, v]) => `<option value="${k}" ${w.f.gender === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+              ${wizField('birthdate', '生年月日', 'type="date"')}${wizField('postal_code', '郵便番号')}${wizField('address', '住所', '', true)}
+              ${wizField('emergency_contact_name', '緊急連絡先のお名前')}${wizField('emergency_contact_relation', '続柄')}${wizField('emergency_contact_phone', '緊急連絡先の電話番号', 'inputmode="tel"')}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+            ${needId ? `<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-we-chk="id_checked" ${w.id_checked ? 'checked' : ''}><span>本人確認書類（免許証・保険証・パスポートなど）を、店頭で確認しました</span></label>` : ''}
+            <label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-we-chk="terms_confirmed" ${w.terms_confirmed ? 'checked' : ''}><span>お客様に、規約と重要事項（月会費・自動更新・解約方法など）を説明し、同意を得ました</span></label>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn" data-we-submit>入会内容を確認する</button><span data-we-msg style="font-size:12.5px;color:#b91c1c"></span></div>` : ''}
+        </div>`;
+        wizBind();
+      }
+
+      function wizBind() {
+        const root = storeEnrollEl;
+        root.querySelector('[data-we-close]')?.addEventListener('click', closeStoreEnroll);
+        root.querySelector('[data-we-change]')?.addEventListener('click', () => { wiz.target = null; wiz.q = ''; wizRender(); });
+        const qEl = root.querySelector('[data-we-q]');
+        if (qEl) {
+          qEl.addEventListener('input', () => { wiz.q = qEl.value; const pos = qEl.selectionStart; wizRender(); const n = root.querySelector('[data-we-q]'); n?.focus(); n?.setSelectionRange(pos, pos); });
+        }
+        root.querySelectorAll('[data-we-pick]').forEach(b => b.addEventListener('click', async () => {
+          const kw = (wiz.q || '').trim().toLowerCase(); const digits = kw.replace(/\D/g, '');
+          const hits = wizPool.filter(c => c.name.toLowerCase().includes(kw) || (digits.length >= 3 && String(c.phone).replace(/\D/g, '').includes(digits)) || (c.no != null && String(c.no) === kw)).slice(0, 8);
+          const c = hits[Number(b.dataset.wePick)];
+          if (!c) return;
+          wiz.target = c;
+          wiz.f = await wizPrefill(c);
+          if (!wiz.f.last_name && !wiz.f.first_name) { const [l, ...r] = String(c.name || '').trim().split(/\s+/); wiz.f.last_name = l || ''; wiz.f.first_name = r.join(' '); }
+          if (!wiz.f.phone && c.phone) wiz.f.phone = c.phone;
+          wizRender();
+        }));
+        root.querySelector('[data-we-plan]')?.addEventListener('change', e => { wiz.plan_id = e.target.value; wiz.option_ids = []; wiz.locker_id = ''; wizRender(); });
+        root.querySelector('[data-we-locker]')?.addEventListener('change', e => { wiz.locker_id = e.target.value; wizRender(); });
+        root.querySelectorAll('[data-we-opt]').forEach(c => c.addEventListener('change', () => {
+          const id = c.dataset.weOpt; wiz.option_ids = c.checked ? [...new Set([...wiz.option_ids, id])] : wiz.option_ids.filter(x => x !== id); wizRender();
+        }));
+        root.querySelectorAll('[data-we]').forEach(inp => inp.addEventListener('input', () => {
+          const k = inp.dataset.we;
+          if (k in wiz.f) wiz.f[k] = inp.value; else wiz[k] = inp.value;
+        }));
+        root.querySelectorAll('[data-we-chk]').forEach(c => c.addEventListener('change', () => { wiz[c.dataset.weChk] = c.checked; }));
+        root.querySelector('[data-we-submit]')?.addEventListener('click', wizSubmit);
+      }
+
+      async function wizSubmit() {
+        const msg = storeEnrollEl.querySelector('[data-we-msg]');
+        const say = t => { if (msg) msg.textContent = t; };
+        const w = wiz; const f = w.f; const plan = wizPlan();
+        if (!w.target) return say('メンバーを選んでください');
+        if (!plan) return say('プランを選んでください');
+        if (!w.enrollment_date) return say('入会日を選んでください');
+        if (!f.last_name.trim() || !f.first_name.trim() || !f.phone.trim()) return say('お名前（姓・名）と電話番号を入れてください');
+        if (wizRefs.settings.require_id_document !== false && !w.id_checked) return say('本人確認書類を確認したら、チェックを入れてください');
+        if (!w.terms_confirmed) return say('規約と重要事項の説明と同意のチェックを入れてください');
+        say('');
+        const lk = wizRefs.lockers.find(l => l.id === w.locker_id);
+        const { included, choosable } = wizOptionLists();
+        const opts = [...included, ...choosable.filter(o => w.option_ids.includes(o.id))];
+        const ok = await pdConfirm({
+          title: '入会手続きを始めますか？',
+          lines: [
+            ['お客様', `${f.last_name} ${f.first_name}（${w.target.name}）`], ['電話番号', f.phone],
+            ['プラン', `${plan.name}（月額${fmtYen(plan.monthly_price)}）`],
+            ...(Number(plan.initial_fee) > 0 ? [['入会金', `${fmtYen(plan.initial_fee)}（初回のみ）`]] : []),
+            ['入会日', w.enrollment_date],
+            ['ロッカー', lk ? `${lk.name}（月額${fmtYen(lk.monthly_fee)}）` : 'なし'],
+            ['オプション', opts.length ? opts.map(o => o.name).join('、') : 'なし'],
+            ['クーポン', w.coupon_code.trim() || 'なし'],
+            ['毎月の合計', fmtYen(wizMonthly())],
+            'ここではまだ課金しません。次の画面でお客様にカードを登録してもらい、そのあと最終確認をして確定すると、課金が始まります。',
+          ],
+          okLabel: '入会手続きを始める',
+        });
+        if (!ok) return;
+        const btn = storeEnrollEl.querySelector('[data-we-submit]'); if (btn) btn.disabled = true;
+        const body = { ...f, ...(w.target.user_id ? { user_id: w.target.user_id } : { manual_id: w.target.manual_id }), plan_id: w.plan_id, enrollment_date: w.enrollment_date, locker_id: w.locker_id || null, option_ids: w.option_ids, coupon_code: w.coupon_code.trim() || null, id_checked: !!w.id_checked, terms_confirmed: !!w.terms_confirmed };
+        const r = await fetch('/api/provider/memberships', { method: 'POST', headers: JHs(), body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (btn) btn.disabled = false;
+        if (!r.ok) {
+          say(d.error || '入会手続きを始められませんでした');
+          if (d.existing_id) { storeEnrollEl.querySelector('[data-we-msg]').insertAdjacentHTML('afterend', `<button type="button" class="btn btn-ghost" data-we-existing="${d.existing_id}" style="font-size:12px">その入会手続きを開く</button>`); storeEnrollEl.querySelector('[data-we-existing]')?.addEventListener('click', () => { closeStoreEnroll(); openDetail(d.existing_id); }); }
+          return;
+        }
+        wiz.membership_id = d.id;
+        wiz.summary = { plan, monthly: wizMonthly(), date: w.enrollment_date, prorated: d.prorated_first_amount, name: `${f.last_name} ${f.first_name}`, locker: lk?.name || '', opts: opts.map(o => o.name) };
+        loadApplications();
+        wizRender();
+      }
+
+      // カード登録の案内（QR・リンク）と、登録できたかの確認・確定。申込の詳細（カード登録待ちの一覧から開いた時）でも同じものを使う。
+      async function renderCardStep(box, membershipId, summary, onDone) {
+        stopWizPoll();
+        box.innerHTML = '<p class="muted" style="font-size:13px;margin:0">カード登録の案内を作っています…</p>';
+        const r = await fetch(`/api/provider/memberships/${membershipId}/card`, { method: 'POST', headers: JHs() });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.url) { box.innerHTML = `<p style="color:#b91c1c;font-size:13px;margin:0">${esc(d.error || 'カード登録の案内を作れませんでした')}</p>`; return; }
+        let qr = '';
+        try { const QRCode = (await import('qrcode')).default || (await import('qrcode')); qr = await QRCode.toDataURL(d.url, { width: 200, margin: 1, color: { dark: '#111111', light: '#ffffff' } }); } catch {}
+        box.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">
+          <b style="font-size:13.5px">カード登録（お客様の操作）</b>
+          <p class="muted" style="font-size:12.5px;margin:0;line-height:1.7">お客様にカードを登録してもらってください。登録の画面はStripeの安全なページで、カード番号はFinemeには保存されません。ログインは要りません。</p>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            ${qr ? `<img src="${qr}" alt="カード登録のQRコード" width="140" height="140" style="border:1px solid #ddd;border-radius:8px;background:#fff">` : ''}
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <a class="btn" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">この端末で登録画面を開く</a>
+              <button type="button" class="btn btn-ghost" data-cs-copy>リンクをコピー（LINE・メールで送る）</button>
+              <span class="muted" style="font-size:11.5px">お客様のスマホでQRを読み取ってもらうこともできます</span>
+            </div>
+          </div>
+          <div data-cs-status style="font-size:13px;font-weight:700">登録を待っています…（自動で確認します）</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" data-cs-check>登録できたか確認する</button><button type="button" class="btn btn-ghost" data-cs-cancel style="color:#b91c1c">この入会手続きを取りやめる</button></div>
+        </div>`;
+        const statusEl = box.querySelector('[data-cs-status]');
+        box.querySelector('[data-cs-copy]').addEventListener('click', async () => { try { await navigator.clipboard.writeText(d.url); showToast('リンクをコピーしました'); } catch { showToast('コピーできませんでした'); } });
+        const check = async () => {
+          const rr = await fetch(`/api/provider/memberships/${membershipId}/card/confirm`, { method: 'POST', headers: JHs() });
+          const dd = await rr.json().catch(() => ({}));
+          if (!rr.ok) { statusEl.textContent = dd.error || '確認できませんでした'; return false; }
+          if (dd.status === 'active') { stopWizPoll(); statusEl.textContent = 'この入会はすでに確定しています。'; return true; }
+          if (['rejected', 'cancelled'].includes(dd.status)) { stopWizPoll(); statusEl.textContent = 'この入会は終了しています。'; return true; }
+          if (dd.registered) { stopWizPoll(); statusEl.textContent = 'カードの登録を確認しました。'; await finalize(); return true; }
+          statusEl.textContent = '登録を待っています…（自動で確認します）';
+          return false;
+        };
+        let finalizing = false;
+        const finalize = async () => {
+          if (finalizing) return; finalizing = true;
+          const s = summary || {};
+          const ok = await pdConfirm({
+            title: '入会を確定して、課金を始めますか？',
+            lines: [
+              ...(s.name ? [['お客様', s.name]] : []),
+              ...(s.plan ? [['プラン', `${s.plan.name}（月額${fmtYen(s.plan.monthly_price)}）`]] : []),
+              ...(s.monthly != null ? [['毎月の合計', fmtYen(s.monthly)]] : []),
+              ...(s.date ? [['入会日', s.date]] : []),
+              ...(s.prorated != null ? [['初回の目安', fmtYen(s.prorated)]] : []),
+              'カードの登録が済んでいます。確定すると、すぐに課金が始まります（日割り設定がある場合は入会日までの日割り分から）。',
+            ],
+            okLabel: '確定して課金を始める',
+          });
+          if (!ok) { finalizing = false; statusEl.textContent = 'カードは登録済みです。確定は、入会手続きの一覧からいつでもできます。'; return; }
+          const ar = await fetch(`/api/provider/memberships/${membershipId}/approve`, { method: 'POST', headers: authH() });
+          const ad = await ar.json().catch(() => ({}));
+          if (!ar.ok) { finalizing = false; statusEl.style.color = '#b91c1c'; statusEl.textContent = ad.error || '確定できませんでした'; return; }
+          showToast('入会を確定しました');
+          loadApplications();
+          if (onDone) onDone();
+        };
+        box.querySelector('[data-cs-check]').addEventListener('click', check);
+        box.querySelector('[data-cs-cancel]').addEventListener('click', async () => {
+          const ok = await pdConfirm({ title: 'この入会手続きを取りやめますか？', lines: ['入力した入会内容は消えます。お客様のカードはまだ登録されていません。'], okLabel: '取りやめる', danger: true });
+          if (!ok) return;
+          const dr = await fetch(`/api/provider/memberships/${membershipId}`, { method: 'DELETE', headers: authH() });
+          if (!dr.ok) { const e = await dr.json().catch(() => ({})); showToast(e.error || '取りやめできませんでした'); return; }
+          stopWizPoll(); showToast('取りやめました'); loadApplications(); if (onDone) onDone();
+        });
+        let tries = 0;
+        wizTimer = setInterval(async () => { if (++tries > 225) { stopWizPoll(); statusEl.textContent = '時間がたちました。「登録できたか確認する」を押してください。'; return; } await check(); }, 4000);
+      }
+      function wizRenderCardStep() {
+        storeEnrollEl.style.display = '';
+        storeEnrollEl.innerHTML = `<div class="card stack" style="padding:20px;gap:12px;border:2px solid #111;margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-size:15px">店頭で入会手続き（${esc(wiz.summary?.name || '')}）</h3><button type="button" class="btn btn-ghost" data-we-close style="font-size:12px">閉じる</button></div><div data-we-card></div></div>`;
+        storeEnrollEl.querySelector('[data-we-close]').addEventListener('click', closeStoreEnroll);
+        renderCardStep(storeEnrollEl.querySelector('[data-we-card]'), wiz.membership_id, wiz.summary, closeStoreEnroll);
+      }
+      function closeStoreEnroll() { stopWizPoll(); wiz = null; if (storeEnrollEl) { storeEnrollEl.style.display = 'none'; storeEnrollEl.innerHTML = ''; } }
+
+      async function openStoreEnroll(pre = {}) {
+        if (!storeEnrollEl) return;
+        stopWizPoll();
+        storeEnrollEl.style.display = '';
+        storeEnrollEl.innerHTML = '<p class="muted" style="font-size:13px;margin:12px 0">読み込み中…</p>';
+        const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+        wiz = { target: null, q: '', f: {}, plan_id: '', enrollment_date: today, locker_id: '', option_ids: [], coupon_code: '', id_checked: false, terms_confirmed: false, membership_id: null };
+        await Promise.all([wizLoadPool(), wizLoadRefs()]);
+        if (!wizRefs.plans.length) { storeEnrollEl.innerHTML = '<p style="font-size:13px;margin:12px 0;color:#b91c1c">公開中の月額プランがありません。先に「月額プラン」タブでプランを作ってください。</p>'; return; }
+        if (pre.user_id || pre.manual_id) {
+          const c = wizPool.find(x => (pre.user_id && x.user_id === pre.user_id) || (pre.manual_id && x.manual_id === pre.manual_id)) || { user_id: pre.user_id, manual_id: pre.manual_id, name: pre.name || 'お客様', phone: '' };
+          wiz.target = c; wiz.f = await wizPrefill(c);
+          if (!wiz.f.last_name && !wiz.f.first_name) { const [l, ...r] = String(c.name || '').trim().split(/\s+/); wiz.f.last_name = l || ''; wiz.f.first_name = r.join(' '); }
+          if (!wiz.f.phone && c.phone) wiz.f.phone = c.phone;
+        }
+        wizRender();
+        storeEnrollEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      document.getElementById('mbr-store-enroll-btn')?.addEventListener('click', () => openStoreEnroll());
+      // 顧客の詳細・他のタブから呼ぶ入口
+      const goMembershipsTab = () => { const cm = document.getElementById('customer-detail-modal'); if (cm) cm.style.display = 'none'; document.querySelector('.tab-btn[data-tab="memberships"]')?.click(); };
+      window.pdStartEnrollment = pre => { goMembershipsTab(); loadAll(); openStoreEnroll(pre || {}); };
+      window.pdOpenMembership = id => { goMembershipsTab(); loadAll(); openDetail(id); };
 
       function loadAll() {
         if (loaded) return;
@@ -8750,7 +9218,7 @@ export default function ProviderDashboardPage() {
         }).join('');
         return `<div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:0 0 10px;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <strong style="font-size:13px;">月額プラン：${caEsc(m.plan)}</strong>${statusChip}
+            <strong style="font-size:13px;">月額プラン：${caEsc(m.plan)}</strong>${statusChip}${m.status === 'active' ? `<button type="button" class="btn btn-ghost" data-ca-mbr-open="${m.id}" style="font-size:11.5px;padding:3px 10px;">契約を管理（プラン変更・休会・退会）</button>` : ''}
             <span class="muted" style="font-size:11.5px;margin-left:auto;">${m.monthly_price != null ? `月¥${Number(m.monthly_price).toLocaleString()}` : ''}${m.enrollment_date ? `・${caEsc(caDate(m.enrollment_date))}入会` : ''}</span>
           </div>
           <div style="font-size:12px;font-weight:700;margin:10px 0 6px;">月会費の支払い状況（新しい月から）</div>
@@ -8804,7 +9272,7 @@ export default function ProviderDashboardPage() {
         const pkgs = d.packages || [];
         custActivityEl.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">${card}</div>
-          ${(d.memberships || []).map(caMembershipBlock).join('')}
+          ${caPendingBlock(d)}${(d.memberships || []).map(caMembershipBlock).join('')}${caEnrollBlock(d)}
           <details style="margin-top:4px;" ${pkgs.some(p => !p.expired && !p.used_up) ? 'open' : ''}>
             <summary style="cursor:pointer;font-size:13px;font-weight:700;">チケット・回数券（${pkgs.length}件）</summary>
             <div style="margin-top:8px;">
@@ -8814,7 +9282,8 @@ export default function ProviderDashboardPage() {
               ${isManual ? `<div class="sm-inline" data-ca-tomember style="margin-top:6px"><input type="email" placeholder="メールアドレス（任意）" data-ca-tm-email style="flex:1 1 200px"><button type="button" class="btn btn-ghost" data-ca-tm-go>アカウントを用意する（月額プランの入会リンクや、ご本人のログイン予約に使う）</button></div>` : ''}
             </div>
           </details>
-          ${!isManual ? '<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;">月額プランの入会を案内</summary><div data-ca-plan class="ca-sub"></div></details>' : ''}
+          ${!isManual && d.account_has_email === false ? '<p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.6;">このお客様は届くメールアドレスが未登録のため、入会のリンクは使えません（お客様が別のアカウントで申し込むと、同じ方が2人になってしまうため）。上の「店頭で入会手続きをする」から進めてください。</p>'
+            : (!isManual ? '<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;">月額プランの入会を案内（リンクを送る）</summary><div data-ca-plan class="ca-sub"></div></details>' : '')}
           ${caResBlock('予約', d.reservations || {}, 'この店舗での予約はまだありません。')}
           ${caResBlock('グループレッスン', d.lessons || {}, 'グループレッスンの予約はまだありません。')}
           ${isManual && d.matched_by ? `<p class="muted" style="font-size:11px;margin:6px 0 0;">非会員のお客様の予約は、${caEsc(d.matched_by)}を表示しています。</p>` : ''}
@@ -8823,6 +9292,19 @@ export default function ProviderDashboardPage() {
           box.querySelectorAll('[data-ca-act]').forEach(btn => btn.addEventListener('click', () => caPackageAction(box.dataset.caPkg, btn.dataset.caAct, box)));
         });
         bindCaTicketsAndPlan(isManual);
+        custActivityEl.querySelectorAll('[data-ca-mbr-open]').forEach(b => b.addEventListener('click', () => window.pdOpenMembership?.(b.dataset.caMbrOpen)));
+        custActivityEl.querySelector('[data-ca-enroll]')?.addEventListener('click', () => window.pdStartEnrollment?.(isManual ? { manual_id: currentCustUid } : { user_id: currentCustUid }));
+      }
+
+      // 入会手続き中（カード登録待ち・確定待ち）と、入会の入口（でお要望 2026-10-27）
+      function caPendingBlock(d) {
+        return (d.pending_memberships || []).map(p => `<div style="border:1px solid #c7d2fe;background:#eef2ff;border-radius:12px;padding:10px 12px;margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <b style="font-size:13px;">入会手続き中：${caEsc(p.plan)}</b><span style="font-size:11px;padding:1px 8px;border-radius:99px;background:#c7d2fe;color:#1e1b4b;">${p.status === 'draft' ? 'カード登録待ち' : '確定待ち'}</span>
+          <button type="button" class="btn" data-ca-mbr-open="${p.id}" style="margin-left:auto;font-size:12px;padding:4px 12px;">続ける</button></div>`).join('');
+      }
+      function caEnrollBlock(d) {
+        if ((d.memberships || []).some(x => x.status === 'active') || (d.pending_memberships || []).length) return '';
+        return '<div style="margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn" data-ca-enroll>店頭で入会手続きをする</button><span class="muted" style="font-size:11.5px;">月額プランへの入会を、この場で進められます</span></div>';
       }
 
       // チケットを付ける・月額プランの入会を案内・非会員のお客様にアカウントを用意する（でお要望 2026-10-22：会員タブは作らず顧客管理にまとめる）
@@ -8839,6 +9321,12 @@ export default function ProviderDashboardPage() {
         if (isManual) {
           const box = custActivityEl.querySelector('[data-ca-tomember]');
           box?.querySelector('[data-ca-tm-go]')?.addEventListener('click', async e => {
+            const okAcc = await pdConfirm({
+              title: 'このお客様のアカウントを用意しますか？',
+              lines: [['メールアドレス', box.querySelector('[data-ca-tm-email]').value.trim() || '（なし。店頭だけでご利用の方として作ります）'], 'アカウントを用意すると、チケットの付与や月額プランの入会ができるようになります。'],
+              okLabel: '用意する',
+            });
+            if (!okAcc) return;
             e.target.disabled = true;
             const r = await fetch(`/api/provider/customers/manual/${uid}/account`, { method: 'POST', headers: caHeaders(), body: JSON.stringify({ email: box.querySelector('[data-ca-tm-email]').value.trim() }) });
             const d = await r.json().catch(() => ({}));
@@ -8864,6 +9352,12 @@ export default function ProviderDashboardPage() {
           const q = k => g.querySelector(`[data-g="${k}"]`);
           if (q('unlimited')) q('unlimited').onchange = () => { q('count').disabled = q('unlimited').checked; };
           if (q('go')) q('go').onclick = async () => {
+            const okGrant = await pdConfirm({
+              title: 'チケットを付けますか？',
+              lines: [['チケット', q('ticket').selectedOptions[0]?.textContent || ''], ['枚数', q('unlimited').checked ? '使い放題' : `${q('count').value || 1}枚`], ['有効期限', q('days').value ? `${q('days').value}日` : '無期限'], ['メモ', q('note').value || 'なし']],
+              okLabel: '付ける',
+            });
+            if (!okGrant) return;
             q('go').disabled = true;
             // 非会員のお客様は manual_id で送る（チケットを持てるよう、裏でアカウントを用意して紐づける）
             const r = await fetch('/api/provider/tickets/grant', { method: 'POST', headers: caHeaders(), body: JSON.stringify({ ...(isManual ? { manual_id: uid } : { user_id: uid }), ticket_id: q('ticket').value, count: q('count').value, unlimited: q('unlimited').checked, valid_days: q('days').value, note: q('note').value }) });
@@ -9492,6 +9986,12 @@ export default function ProviderDashboardPage() {
         // メールアドレスを入れた時はFinemeのアカウントと紐づけて追加する（でお要望 2026-10-22：チケットや月額プランを使える。会員タブは作らず顧客管理にまとめる）
         const emailEl = document.getElementById('manual-email-input');
         const email = emailEl?.value.trim() || '';
+        const okAdd = await pdConfirm({
+          title: 'お客様を追加しますか？',
+          lines: [['お名前', display_name.trim()], ['電話番号', manualPhoneInput?.value || '（なし）'], ['メールアドレス', email || '（なし。非会員のお客様として追加します）'], ...(email ? ['メールアドレスを入れたので、Finemeのアカウントと紐づけて追加します（すでにアカウントがある方は、そのアカウントに紐づきます）。'] : [])],
+          okLabel: '追加する',
+        });
+        if (!okAdd) return;
         if (email) {
           const [last, ...rest] = display_name.trim().split(/\s+/);
           const r = await fetch('/api/provider/customers/register', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ last_name: last, first_name: rest.join(' '), phone: manualPhoneInput?.value || '', email }) });
@@ -18199,6 +18699,11 @@ export default function ProviderDashboardPage() {
               入会ページのURL：<code id="mbr-join-url"></code>
               <button type="button" className="btn btn-ghost" id="mbr-copy-url-btn" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: '8px' }}>コピー</button>
             </p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" className="btn" id="mbr-store-enroll-btn">＋ 店頭で入会手続きをする</button>
+              <span className="muted" style={{ fontSize: '12px' }}>メンバーを選んで入会内容を入れ、お客様にカードを登録してもらうと確定できます（お客様のログインは要りません）</span>
+            </div>
+            <div id="mbr-store-enroll" style={{ display: 'none' }}></div>
           </div>
 
           {/* プラン管理 */}
