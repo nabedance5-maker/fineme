@@ -1,4 +1,4 @@
-// GET /api/provider/shift-submissions?periodId=X | ?from=&to= → 店舗側が見る、その日付範囲に重なる区切りで
+// GET /api/provider/shift-submissions?from=&to= → 店舗側が見る、その日付範囲に重なる区切りで
 //     「提出を完了」したスタッフ一覧（区切りは店舗の提出ルールで決まる。でお指摘 2026-10-16）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
@@ -22,15 +22,9 @@ export async function GET(request) {
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const { searchParams } = new URL(request.url);
-  const periodId = searchParams.get('periodId');
-  let from = searchParams.get('from');
-  let to = searchParams.get('to');
-  if (periodId) {
-    const { data: period } = await supabase.from('provider_shift_periods').select('period_start, period_end').eq('id', periodId).eq('provider_id', provider.id).single();
-    if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
-    from = period.period_start; to = period.period_end;
-  }
-  if (!from || !to) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  if (!from || !to) return Response.json({ error: 'from・to を指定してください' }, { status: 400 });
 
   const map = await loadSubmittedInRange(supabase, provider.id, from, to);
   return Response.json(Object.entries(map).map(([staff_id, submitted_at]) => ({ staff_id, submitted_at })));

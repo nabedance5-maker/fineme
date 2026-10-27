@@ -1,5 +1,4 @@
-// GET /api/provider/shift-requests?periodId=X → 店舗側が見る、作るシフトの期間内の全スタッフの希望一覧
-//     /api/provider/shift-requests?from=&to= → 日付範囲の希望一覧（月カレンダー・期間を作る前の確認用）
+// GET /api/provider/shift-requests?from=&to= → 日付範囲のスタッフの希望一覧（シフトのカレンダー用。2026-10-27：期間はやめた）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -21,17 +20,10 @@ export async function GET(request) {
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const { searchParams } = new URL(request.url);
-  const periodId = searchParams.get('periodId');
-  let from = searchParams.get('from');
-  let to = searchParams.get('to');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
 
-  // 希望は期間に紐づけず日付で持つ（でお指摘 2026-10-16）。periodId の時は、その期間の日付範囲で返す
-  if (periodId) {
-    const { data: period } = await supabase.from('provider_shift_periods').select('id, period_start, period_end').eq('id', periodId).eq('provider_id', provider.id).single();
-    if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
-    from = period.period_start; to = period.period_end;
-  }
-  if (!from || !to) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
+  if (!from || !to) return Response.json({ error: 'from・to を指定してください' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_shift_requests')

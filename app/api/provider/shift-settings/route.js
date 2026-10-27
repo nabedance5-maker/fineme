@@ -51,7 +51,9 @@ export async function GET(request) {
     .eq('provider_id', provider.id)
     .maybeSingle();
 
-  return Response.json(withDerived({ ...DEFAULT_SETTINGS, ...(data || {}) }));
+  // シフト希望の提出リンク（お店に1本。2026-10-27）
+  const { data: prov } = await supabase.from('providers').select('shift_link_token').eq('id', provider.id).maybeSingle();
+  return Response.json({ ...withDerived({ ...DEFAULT_SETTINGS, ...(data || {}) }), shift_link_token: prov?.shift_link_token || null });
 }
 
 async function __PATCH(request) {

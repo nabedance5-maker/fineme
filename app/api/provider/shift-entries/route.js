@@ -1,93 +1,47 @@
-// GET  /api/provider/shift-entries?periodId=X → 指定期間の確定シフト一覧
-//      /api/provider/shift-entries?from=YYYY-MM-DD&to=YYYY-MM-DD → 期間をまたいだ日付範囲の一覧（月カレンダー用）
-// POST /api/provider/shift-entries → 1コマ手動追加
+// GET  /api/provider/shift-entries?from=&to= → その範囲のシフト（確定した日のものは period_status='confirmed'）
+// POST /api/provider/shift-entries → 1コマ追加（希望が出ていなくても・確定した日でも、お店が自由に入れられる）
+// 2026-10-27：「期間」をやめ、お店＋日付で持つ（確定は日付ごと：provider_shift_confirmed_days）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
+import { confirmedDaysIn, entriesIn } from '@/lib/shift-store';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-async function getProviderByToken(token) {
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
+async function getProvider(request) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) return null;
+  const { data: { user } } = await supabase.auth.getUser(token);
+  if (!user) return null;
   const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
-
-async function assertOwnPeriod(providerId, periodId) {
-  const { data } = await supabase.from('provider_shift_periods').select('id').eq('id', periodId).eq('provider_id', providerId).single();
-  return !!data;
-}
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+const isTime = s => /^\d{1,2}:\d{2}/.test(String(s || ''));
 
 export async function GET(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  const provider = await getProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
-
-  const { searchParams } = new URL(request.url);
-  const periodId = searchParams.get('periodId');
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-
-  if (!periodId && from && to) {
-    const { data: periods } = await supabase
-      .from('provider_shift_periods')
-      .select('id, status')
-      .eq('provider_id', provider.id)
-      .lte('period_start', to)
-      .gte('period_end', from);
-    const ids = (periods || []).map(p => p.id);
-    if (!ids.length) return Response.json([]);
-    // シフトカレンダーで「確定」と「作成中」を分けて表示するため、期間の状態を付けて返す
-    const statusOf = Object.fromEntries((periods || []).map(p => [p.id, p.status]));
-    const { data, error } = await supabase
-      .from('provider_shift_entries')
-      .select('*')
-      .in('period_id', ids)
-      .gte('date', from)
-      .lte('date', to)
-      .order('date', { ascending: true });
-    if (error) return Response.json({ error: error.message }, { status: 500 });
-    return Response.json((data || []).map(e => ({ ...e, period_status: statusOf[e.period_id] || null })));
-  }
-
-  if (!periodId) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
-  if (!(await assertOwnPeriod(provider.id, periodId))) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
-
-  const { data, error } = await supabase
-    .from('provider_shift_entries')
-    .select('*')
-    .eq('period_id', periodId)
-    .order('date', { ascending: true });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
-  return Response.json(data || []);
+  const sp = new URL(request.url).searchParams;
+  const from = sp.get('from'), to = sp.get('to');
+  if (!isDate(from) || !isDate(to)) return Response.json({ error: 'from・to を指定してください' }, { status: 400 });
+  const [days, entries] = await Promise.all([confirmedDaysIn(supabase, provider.id, from, to), entriesIn(supabase, provider.id, from, to)]);
+  return Response.json(entries.map(e => ({ ...e, period_status: days.has(e.date) ? 'confirmed' : 'draft' })));
 }
 
 async function __POST(request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  const provider = await getProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
-
-  const body = await request.json().catch(() => ({}));
-  const { period_id, staff_id, date, start_time, end_time } = body;
-  if (!period_id || !staff_id || !date || !start_time || !end_time) {
-    return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
-  }
-  if (!(await assertOwnPeriod(provider.id, period_id))) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
-
-  const { data, error } = await supabase
-    .from('provider_shift_entries')
-    .insert({ period_id, staff_id, date, start_time, end_time, source: 'manual' })
-    .select()
-    .single();
+  const { staff_id, date, start_time, end_time } = await request.json().catch(() => ({}));
+  if (!staff_id || !isDate(date) || !isTime(start_time) || !isTime(end_time)) return Response.json({ error: 'スタッフ・日付・開始・終了を入れてください' }, { status: 400 });
+  const { data: staff } = await supabase.from('provider_staff').select('id').eq('id', staff_id).eq('provider_id', provider.id).maybeSingle();
+  if (!staff) return Response.json({ error: 'スタッフが見つかりません' }, { status: 404 });
+  const { data, error } = await supabase.from('provider_shift_entries')
+    .insert({ provider_id: provider.id, staff_id, date, start_time, end_time, source: 'manual' }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
-
   return Response.json(data);
 }
 

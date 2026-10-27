@@ -7,6 +7,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { planLockedResponse } from '@/lib/plan-features';
+import { confirmedEntriesIn } from '@/lib/shift-store';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -29,30 +30,10 @@ export async function GET(request) {
   const to = searchParams.get('to');
   if (!from || !to) return Response.json({ error: 'from/toは必須です' }, { status: 400 });
 
-  // この範囲と重なる「確定済み」期間を先に洗い出す。confirmedPeriods自体は、シフト管理を
-  // 使っていない店舗・その日をカバーする確定期間が無い日を「対象外（グレー表示しない）」
-  // と区別するために呼び出し側へそのまま返す。
-  const { data: periods } = await supabase
-    .from('provider_shift_periods')
-    .select('id, period_start, period_end')
-    .eq('provider_id', provider.id)
-    .eq('status', 'confirmed')
-    .lte('period_start', to)
-    .gte('period_end', from);
-
-  const periodIds = (periods || []).map(p => p.id);
-  if (!periodIds.length) return Response.json({ entries: [], coveredPeriods: [] });
-
-  const { data: entries, error } = await supabase
-    .from('provider_shift_entries')
-    .select('staff_id, date, start_time, end_time')
-    .in('period_id', periodIds)
-    .gte('date', from)
-    .lte('date', to);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-
+  // 確定は日付ごと（2026-10-27：期間をやめた）。呼び出し側の形（coveredPeriods）は変えず、確定した日を1日ずつ返す
+  const { days, entries } = await confirmedEntriesIn(supabase, provider.id, from, to);
   return Response.json({
-    entries: entries || [],
-    coveredPeriods: (periods || []).map(p => ({ start: p.period_start, end: p.period_end })),
+    entries,
+    coveredPeriods: [...days].sort().map(d => ({ start: d, end: d })),
   });
 }

@@ -14,13 +14,10 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-// このシフトコマが自店舗のものか、period経由で確認する（entries自体にはprovider_idを
-// 持たせていないため、periodを介した所有権チェックが必要）
+// このシフトのコマが自店舗のものか（2026-10-27：シフトはお店＋日付で持つ）
 async function assertOwnEntry(providerId, entryId) {
-  const { data: entry } = await supabase.from('provider_shift_entries').select('id, period_id').eq('id', entryId).single();
-  if (!entry) return false;
-  const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', entry.period_id).eq('provider_id', providerId).single();
-  return !!period;
+  const { data } = await supabase.from('provider_shift_entries').select('id').eq('id', entryId).eq('provider_id', providerId).maybeSingle();
+  return !!data;
 }
 
 async function __PATCH(request, { params }) {

@@ -68,7 +68,7 @@ export async function GET(request) {
         head,
         `対象：${win.label}（${win.start} 〜 ${win.end}・締切：${win.deadline}）`,
         `提出：${st.submitted}/${st.total}人`,
-        ...(st.missing.length ? [`未提出：${st.missing.join('、')}`, '', cycle.remind_staff ? 'LINE連携済みの未提出の方には、本人にもお知らせしています。' : '声かけをお願いします。'] : ['', '全員提出済みです。ダッシュボードの「新しいシフトを作る」から作成に進めます。']),
+        ...(st.missing.length ? [`未提出：${st.missing.join('、')}`, '', cycle.remind_staff ? 'LINE連携済みの未提出の方には、本人にもお知らせしています。' : '声かけをお願いします。'] : ['', '全員提出済みです。ダッシュボードのシフト管理で日付を選び、「自動で作る」から作成に進めます。']),
         'https://www.fineme.me/provider/dashboard?tab=shift',
       ].join('\n');
       const r = await sendLinePush(provider.line_user_id, text);
