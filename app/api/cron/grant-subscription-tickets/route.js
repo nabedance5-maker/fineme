@@ -6,7 +6,7 @@
 // あわせて、会員プランの退会日（cancel_at）が来た会員を退会済みにする。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { grantPlanTickets } from '@/lib/membership-plan';
+import { grantPlanTickets, memberStartDate, monthlyGrantDue } from '@/lib/membership-plan';
 import { endLockerContracts } from '@/lib/membership-changes';
 
 export async function GET(request) {
@@ -57,16 +57,23 @@ export async function GET(request) {
     }
   }
 
-  // 会員プランで毎月配る回数券（でお要望 2026-10-22）。毎日動くが、同じ月には1回だけ配る（その月の初回の実行で配る）
+  // 会員プランで配るチケット（でお要望 2026-10-22／2026-10-27）。毎日動く。
+  // ・入会時の分：入会日が来たら付ける（入会日が先の方に、承認した日には付けない）
+  // ・毎月の分：プランで決めた「毎月◯日」が来たら、その月に1回だけ。入会日より前の月・入会日と同じ日の二重は付けない
   let planGranted = 0;
+  const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
   const { data: plans } = await db.from('provider_membership_plans').select('*');
-  const monthlyPlans = (plans || []).filter(p => (p.ticket_grants || []).some(g => g.timing === 'monthly'));
-  if (monthlyPlans.length) {
-    const { data: members } = await db.from('provider_memberships').select('id, provider_id, user_id, plan_id, paused_at')
-      .eq('status', 'active').is('paused_at', null).in('plan_id', monthlyPlans.map(p => p.id));
+  const grantPlans = (plans || []).filter(p => (p.ticket_grants || []).some(g => g.ticket_id));
+  if (grantPlans.length) {
+    const { data: members } = await db.from('provider_memberships').select('id, provider_id, user_id, plan_id, paused_at, billing_start_date, enrollment_date, approved_at')
+      .eq('status', 'active').is('paused_at', null).in('plan_id', grantPlans.map(p => p.id));
     for (const m of members || []) {
-      try { planGranted += await grantPlanTickets(db, m, monthlyPlans.find(p => p.id === m.plan_id), 'monthly'); }
-      catch (e) { console.error('[cron/grant-subscription-tickets] plan', m.id, e); }
+      const plan = grantPlans.find(p => p.id === m.plan_id);
+      const start = memberStartDate(m);
+      try {
+        if (start && start <= today) planGranted += await grantPlanTickets(db, m, plan, 'join');
+        planGranted += await grantPlanTickets(db, m, plan, 'monthly', today.slice(0, 7), g => monthlyGrantDue(g, plan, m, today));
+      } catch (e) { console.error('[cron/grant-subscription-tickets] plan', m.id, e); }
     }
   }
 

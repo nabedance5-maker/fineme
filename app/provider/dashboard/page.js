@@ -6008,7 +6008,7 @@ export default function ProviderDashboardPage() {
       const nameOf = (list, id) => (list || []).find(x => x.id === id)?.name || '';
       function planSummary(p) {
         const R = planRefs || {};
-        const grants = (p.ticket_grants || []).filter(g => nameOf(R.tickets, g.ticket_id)).map(g => `${nameOf(R.tickets, g.ticket_id)} ${g.unlimited ? '使い放題' : `${g.sessions}枚`}（${g.timing === 'monthly' ? '毎月' : '入会時'}）`);
+        const grants = (p.ticket_grants || []).filter(g => nameOf(R.tickets, g.ticket_id)).map(g => `${nameOf(R.tickets, g.ticket_id)} ${g.unlimited ? '使い放題' : `${g.sessions}枚`}（${g.timing === 'monthly' ? `毎月${g.day || 1}日` : '入会時'}）`);
         const parts = [
           `月会費 ${fmtYen(p.monthly_price)}`,
           p.initial_fee > 0 ? `入会金 ${fmtYen(p.initial_fee)}` : null,
@@ -6062,7 +6062,8 @@ export default function ProviderDashboardPage() {
             <select data-g="ticket_id">${tkOpts(g.ticket_id)}</select>
             <label>枚数<input type="number" min="1" max="99" data-g="sessions" value="${g.sessions || 1}" ${g.unlimited ? 'disabled' : ''}></label>
             <label><input type="checkbox" data-g="unlimited" ${g.unlimited ? 'checked' : ''}>使い放題</label>
-            <select data-g="timing"><option value="join" ${g.timing !== 'monthly' ? 'selected' : ''}>入会した時に</option><option value="monthly" ${g.timing === 'monthly' ? 'selected' : ''}>毎月1日に</option></select>
+            <select data-g="timing"><option value="join" ${g.timing !== 'monthly' ? 'selected' : ''}>入会した時に</option><option value="monthly" ${g.timing === 'monthly' ? 'selected' : ''}>毎月</option></select>
+            <label data-g-daywrap style="display:${g.timing === 'monthly' ? '' : 'none'}"><select data-g="day">${Array.from({ length: 28 }, (_, i) => i + 1).map(d => `<option value="${d}" ${Number(g.day || 1) === d ? 'selected' : ''}>${d}日</option>`).join('')}</select>に</label>
             <label>有効<input type="number" min="1" max="730" data-g="valid_days" value="${g.valid_days || ''}" placeholder="${g.timing === 'monthly' ? '31' : '30'}">日</label>
             <button type="button" class="btn btn-ghost" data-pl-grant-del>外す</button>
           </div>`;
@@ -6088,7 +6089,7 @@ export default function ProviderDashboardPage() {
             ${(R.discounts || []).length ? `<div class="pl-checks">${R.discounts.map(d => `<label><input type="checkbox" data-pl-disc value="${d.id}" ${p.discount_ids == null || p.discount_ids.includes(d.id) ? 'checked' : ''}>${esc(d.name)}${d.code ? `（コード ${esc(d.code)}）` : ''}</label>`).join('')}</div><p class="pl-note">チェックした割引だけ、このプランで使えます。</p>` : '<p class="pl-note">割引・クーポンはまだありません（下の「割引・クーポン」で登録します）。</p>'}
           </section>
           <section class="pl-sec"><h4>付けるチケット</h4>
-            <p class="pl-note">入会した時や毎月1日に、このプランの方へチケットを自動で付けます（例：ストレッチチケットを毎月4枚）。予約はこのチケットを使って行うので、何回予約できるかは付ける枚数で決まります。使い放題にもできます。</p>
+            <p class="pl-note">入会した時（入会日が先の方は入会日に）や毎月決めた日に、このプランの方へチケットを自動で付けます。入会日と毎月の日が重なる時は、同じチケットを二重に付けません（例：ストレッチチケットを毎月4枚）。予約はこのチケットを使って行うので、何回予約できるかは付ける枚数で決まります。使い放題にもできます。</p>
             <div data-pl-grants>${(p.ticket_grants || []).filter(g => g.ticket_id).map(grantRow).join('')}</div>
             ${(R.tickets || []).length ? '<button type="button" class="btn btn-ghost" data-pl-grant-add>＋ チケットを付ける</button>' : '<p class="pl-note">チケットがまだありません（「チケット・回数券」タブで作れます）。</p>'}
           </section>
@@ -6103,6 +6104,8 @@ export default function ProviderDashboardPage() {
         const bindGrantDel = () => {
           editorEl.querySelectorAll('[data-pl-grant-del]').forEach(b => { b.onclick = () => b.closest('[data-pl-grant]').remove(); });
           editorEl.querySelectorAll('[data-g="unlimited"]').forEach(c => { c.onchange = () => { c.closest('[data-pl-grant]').querySelector('[data-g="sessions"]').disabled = c.checked; }; });
+          // 「毎月」を選んだ時だけ、付ける日（毎月◯日）を出す
+          editorEl.querySelectorAll('[data-g="timing"]').forEach(c => { c.onchange = () => { c.closest('[data-pl-grant]').querySelector('[data-g-daywrap]').style.display = c.value === 'monthly' ? '' : 'none'; }; });
         };
         bindGrantDel();
         q('[data-pl-grant-add]')?.addEventListener('click', () => { q('[data-pl-grants]').insertAdjacentHTML('beforeend', grantRow({ sessions: 1, timing: 'monthly' })); bindGrantDel(); });
@@ -6118,7 +6121,7 @@ export default function ProviderDashboardPage() {
             included_option_ids: opt.filter(x => x.value === 'included').map(x => x.dataset.plOpt),
             selectable_option_ids: opt.filter(x => x.value === 'selectable').map(x => x.dataset.plOpt),
             discount_ids: [...editorEl.querySelectorAll('[data-pl-disc]')].filter(x => x.checked).map(x => x.value),
-            ticket_grants: [...editorEl.querySelectorAll('[data-pl-grant]')].map(r => ({ ticket_id: r.querySelector('[data-g="ticket_id"]').value, sessions: r.querySelector('[data-g="sessions"]').value, unlimited: r.querySelector('[data-g="unlimited"]').checked, timing: r.querySelector('[data-g="timing"]').value, valid_days: r.querySelector('[data-g="valid_days"]').value })),
+            ticket_grants: [...editorEl.querySelectorAll('[data-pl-grant]')].map(r => ({ ticket_id: r.querySelector('[data-g="ticket_id"]').value, sessions: r.querySelector('[data-g="sessions"]').value, unlimited: r.querySelector('[data-g="unlimited"]').checked, timing: r.querySelector('[data-g="timing"]').value, day: r.querySelector('[data-g="day"]')?.value || 1, valid_days: r.querySelector('[data-g="valid_days"]').value })),
           };
           if (!(R.discounts || []).length) delete body.discount_ids;
           const btn = q('[data-pl-save]'); btn.disabled = true;
@@ -6285,12 +6288,13 @@ export default function ProviderDashboardPage() {
           first_month: box.querySelector('[name="mbs-first"]:checked')?.value || billingState.first_month,
           cancel_cutoff_day: Number(v('[data-mbs-cut]') || billingState.cancel_cutoff_day),
           cancel_cutoff_days_before: Number(v('[data-mbs-before]') ?? billingState.cancel_cutoff_days_before),
+          initial_fee_timing: box.querySelector('[name="mbs-fee"]:checked')?.value || billingState.initial_fee_timing || 'approval',
         };
       }
       function renderBillingSettings(s) {
         const box = document.getElementById('mbr-set-billing');
         if (!box) return;
-        billingState = normalizeMembershipCycle(s);
+        billingState = { ...normalizeMembershipCycle(s), initial_fee_timing: s?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval' };
         const st = billingState;
         const sel = 'padding:3px 6px;border:1px solid #d1d5db;border-radius:6px';
         const radio = (name, val, cur, label, sub) => `<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:4px 0;cursor:pointer"><input type="radio" name="${name}" value="${val}" ${cur === val ? 'checked' : ''} style="margin-top:3px" /><span>${label}${sub ? `<br><span class="muted" style="font-size:11.5px">${sub}</span>` : ''}</span></label>`;
@@ -6304,6 +6308,9 @@ export default function ProviderDashboardPage() {
             ${radio('mbs-first', 'full', st.first_month, '1か月分を請求する', '')}
             ${radio('mbs-first', 'free', st.first_month, '請求しない（翌月分から）', '')}
           </div>
+          <div style="font-size:12.5px;font-weight:700;margin-top:10px">入会金を請求する時</div>
+          ${radio('mbs-fee', 'approval', st.initial_fee_timing, 'お店が入会を承認した時', '入会日が先の方でも、承認した日に入会金をいただきます')}
+          ${radio('mbs-fee', 'first_dues', st.initial_fee_timing, '最初の月会費のお支払いと一緒に', '入会日が先の方は、その時まで入会金を請求しません（例：3か月後から入会なら、3か月後の最初の請求で）')}
           <div style="font-size:12.5px;font-weight:700;margin-top:10px">退会の締め日</div>
           <div data-mbs-cut-fixed style="display:${st.billing_mode === 'fixed_day' ? '' : 'none'};font-size:13px;margin-top:4px">毎月 <select data-mbs-cut style="${sel}">${dayOpts(st.cancel_cutoff_day)}</select> 締め<br><span class="muted" style="font-size:11.5px;line-height:1.6">締め日までに退会を申し込んだ人はその月分まで、過ぎてから申し込んだ人は翌月分まで払って退会になります。お客様が申し込んだ日で判定します（お店の承認が遅れても不利になりません）。</span></div>
           <div data-mbs-cut-anniv style="display:${st.billing_mode === 'anniversary' ? '' : 'none'};font-size:13px;margin-top:4px">次の請求日の <input type="number" data-mbs-before min="0" max="27" value="${st.cancel_cutoff_days_before}" style="width:64px;${sel}" /> 日前まで</div>

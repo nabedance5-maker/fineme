@@ -52,7 +52,7 @@ export async function GET(request, { params }) {
     provider_name: provider.name,
     plans: visiblePlans,
     // 請求日・初月の扱い・退会の締め日（入会ページで請求の予定を見せる。lib/membership-cycle.js）
-    billing_cycle: normalizeCycle(settings),
+    billing_cycle: { ...normalizeCycle(settings), initial_fee_timing: settings?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval' },
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
     lockers: availableLockers,

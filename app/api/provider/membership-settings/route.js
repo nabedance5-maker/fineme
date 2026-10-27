@@ -28,6 +28,7 @@ export async function GET(request) {
   return Response.json({
     prorate_first_month: data?.prorate_first_month ?? true,
     ...normalizeCycle(data), // 請求日・初月の扱い・退会の締め日（でお指摘 2026-10-27）
+    initial_fee_timing: data?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval', // 入会金をいつ請求するか（2026-10-27）
     require_id_document: data?.require_id_document ?? true,
     allow_online_requests: data?.allow_online_requests ?? true,
     form_fields: normalizeFormFields(data?.form_fields),
@@ -55,6 +56,7 @@ async function __PATCH(request) {
     Object.assign(update, c);
     update.prorate_first_month = c.first_month === 'prorate';
   }
+  if ('initial_fee_timing' in body) update.initial_fee_timing = body.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval';
   if ('require_id_document' in body) update.require_id_document = !!body.require_id_document;
   if ('allow_online_requests' in body) update.allow_online_requests = !!body.allow_online_requests;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;

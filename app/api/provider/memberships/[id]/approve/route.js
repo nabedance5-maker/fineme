@@ -178,8 +178,8 @@ async function __POST(request, { params }) {
       });
     }
 
-    // プランで入会時に配る回数券（でお要望 2026-10-22）
-    try { await grantPlanTickets(supabase, updated, plan, 'join'); } catch (e) { console.error('[memberships approve] tickets', e); }
+    // プランで入会時に配るチケット（でお要望 2026-10-22）。入会日が先の方には、入会日が来てから付ける（毎日の自動処理。2026-10-27）
+    if (startDate <= today) { try { await grantPlanTickets(supabase, updated, plan, 'join'); } catch (e) { console.error('[memberships approve] tickets', e); } }
 
     // 申込で入力してもらった内容を、顧客の基本情報に取り込む（空欄の項目だけ。店舗が入れた値は上書きしない）
     // でお要望（2026-10-16）：入会した時に入力してもらった情報を顧客情報内に入れておく。
