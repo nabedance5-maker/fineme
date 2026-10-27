@@ -2,15 +2,14 @@
 // 店舗が申込内容（個人情報・本人確認書類・緊急連絡先）を確認した上で押す、入会手続き
 // フローの最終ステップ（でお要望2026-09-15：「店舗側で承認・完了処理を行う」）。
 //
-// 日割り設定（店舗ごとにON/OFF）はStripeのbilling_cycle_anchorで実現する：
-// ・ONの場合：billing_cycle_anchorを入会希望日に設定（proration_behaviorは既定の
-//   create_prorations）→ Stripeが「今日から入会希望日の前日まで」を自動で日割り課金し、
-//   以降は入会希望日を基準に毎月満額課金される（Stripe公式ドキュメントで確認済みの挙動）。
-// ・OFFの場合：billing_cycle_anchorを指定せず、承認した今日から満額で課金開始する
-//   （日割りせず「初回決済日＝会員開始日」とするシンプルな運用）。
+// 請求日・初月の扱いは店舗の設定（lib/membership-cycle.js）で決める（でお指摘 2026-10-27）：
+// ・全員 毎月◯日に請求 or 入会日と同じ日に毎月請求
+// ・入会日〜最初の請求日の前日は、日割り／1か月分／無料 から選ぶ
+// 入会日が未来なら trial_end＝入会日にして、それまでは月会費を請求しない（入会金は承認時）。
+// 以前は「承認した日〜入会希望日の前日」を日割りで請求しており、入会前の日数まで払わせる誤りだった。
 //
-// 資金は店舗のStripe Connectアカウントへtransfer_data.destinationで送金する
-// （紹介報酬送金と同じConnect基盤を流用。Financeの取り分は設定していない＝全額店舗）。
+// 資金は店舗のStripe Connectアカウントへtransfer_data.destinationで送金する（紹介報酬送金と同じConnect基盤を流用）。
+// Fineme決済手数料（lib/payment-fee.js：4.5%・Stripe手数料込み）を application_fee_percent で差し引き、残りが店舗へ。
 //
 // ロッカーを選んだお客様（でお要望2026-09-18：「ロッカー代を自動で一緒に課金したい」）は、
 // 同じサブスクリプションにロッカー代を2つ目の明細として追加する。ロッカーの金額は店舗が
@@ -25,6 +24,7 @@ import { planLockedResponse } from '@/lib/plan-features';
 import { profileFromMembership, fillEmpty } from '@/lib/customer-profile';
 import { ensureOptionProduct, ensureStripeCoupon } from '@/lib/membership-changes';
 import { grantPlanTickets } from '@/lib/membership-plan';
+import { stripeTiming, firstBilling, jstToday } from '@/lib/membership-cycle';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -75,8 +75,10 @@ async function __POST(request, { params }) {
     locker = lockerRow;
   }
 
-  const { data: settings } = await supabase.from('provider_membership_settings').select('prorate_first_month').eq('provider_id', provider.id).maybeSingle();
-  const prorateOn = settings?.prorate_first_month ?? true;
+  const { data: settings } = await supabase.from('provider_membership_settings').select('*').eq('provider_id', provider.id).maybeSingle();
+  // 会員としての開始日：入会希望日。承認が入会希望日より後になったら承認した日（過ぎた日の分は請求しない）
+  const today = jstToday();
+  const startDate = m.enrollment_date && m.enrollment_date > today ? m.enrollment_date : today;
 
   try {
     // 保存済みのカードを今後の請求の既定支払い方法にする
@@ -115,10 +117,16 @@ async function __POST(request, { params }) {
       application_fee_percent: PAYMENT_FEE_PERCENT,
       metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id, fineme_locker_id: locker?.id || '' },
     };
-    if (prorateOn && m.enrollment_date) {
-      const enrollTs = Math.floor(new Date(`${m.enrollment_date}T00:00:00+09:00`).getTime() / 1000);
-      const minTs = Math.floor(Date.now() / 1000) + 60; // 過去日は切り上げ、Stripe側の「未来日必須」制約を満たす
-      subParams.billing_cycle_anchor = Math.max(enrollTs, minTs);
+    // 請求日・初月の扱いは店舗の設定どおり（lib/membership-cycle.js）。入会日より前の日の分は請求しない
+    // （でお指摘 2026-10-27：以前は「承認した日〜入会希望日の前日」を日割りで請求していた）
+    const timing = stripeTiming(settings, { startDate });
+    Object.assign(subParams, timing.params);
+    const monthlyTotal = (plan.monthly_price || 0) + (locker?.monthly_fee || 0) + (options || []).reduce((t, o) => t + (o.monthly_price || 0), 0);
+    const firstItems = [];
+    // 「初月も1か月分」：入会日〜最初の請求日の前日の分として、1か月分を最初の請求に足す
+    if (timing.fullFirstMonth && monthlyTotal > 0) {
+      const planProduct = (await stripe.prices.retrieve(plan.stripe_price_id)).product;
+      firstItems.push({ price_data: { currency: 'jpy', product: typeof planProduct === 'string' ? planProduct : planProduct.id, unit_amount: monthlyTotal } });
     }
 
     if (discount) subParams.discounts = [{ coupon: await ensureStripeCoupon(supabase, stripe, discount) }];
@@ -130,8 +138,9 @@ async function __POST(request, { params }) {
         feeProduct = (await stripe.products.create({ name: `入会金：${plan.name}`, metadata: { fineme_provider_id: String(provider.id) } })).id;
         await supabase.from('provider_membership_plans').update({ initial_fee_product_id: feeProduct }).eq('id', plan.id);
       }
-      subParams.add_invoice_items = [{ price_data: { currency: 'jpy', product: feeProduct, unit_amount: plan.initial_fee } }];
+      firstItems.push({ price_data: { currency: 'jpy', product: feeProduct, unit_amount: plan.initial_fee } });
     }
+    if (firstItems.length) subParams.add_invoice_items = firstItems;
 
     const subscription = await stripe.subscriptions.create(subParams);
 
@@ -145,7 +154,12 @@ async function __POST(request, { params }) {
 
     const { data: updated, error } = await supabase
       .from('provider_memberships')
-      .update({ status: 'active', stripe_subscription_id: subscription.id, approved_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...(discount ? { discount_applied_at: new Date().toISOString() } : {}) })
+      .update({
+        status: 'active', stripe_subscription_id: subscription.id, approved_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        billing_start_date: startDate, billing_first_full_date: timing.billing.firstFullDate, billing_anchor_day: timing.billing.anchorDay,
+        prorated_first_amount: firstBilling(settings, { startDate, monthlyTotal }).partial?.amount ?? null,
+        ...(discount ? { discount_applied_at: new Date().toISOString() } : {}),
+      })
       .eq('id', id)
       .select()
       .single();
