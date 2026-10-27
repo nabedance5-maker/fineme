@@ -12,6 +12,7 @@ import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib
 import { CYCLES as SHIFT_CYCLES, normalizeCycle, upcomingWindows } from '@/lib/shift-windows';
 import { normalizeCycle as normalizeMembershipCycle, firstBilling as membershipFirstBilling, cancelPlan as membershipCancelPlan, jstToday as membershipJstToday, addDays as addDaysMembership } from '@/lib/membership-cycle';
 import { rangeLabel } from '@/lib/time-span';
+import { membershipReceipt } from '@/lib/membership-receipt';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
 import ConsultantWidget from './ConsultantWidget';
@@ -7192,15 +7193,17 @@ export default function ProviderDashboardPage() {
       async function wizLoadRefs() {
         if (wizRefs) return wizRefs;
         const get = u => fetch(u, { headers: authH() }).then(r => (r.ok ? r.json() : [])).catch(() => []);
-        const [plans, lockers, options, settings] = await Promise.all([
+        const [plans, lockers, options, settings, discounts] = await Promise.all([
           get('/api/provider/membership-plans'), get('/api/provider/lockers'), get('/api/provider/membership-options'),
           fetch('/api/provider/membership-settings', { headers: authH() }).then(r => (r.ok ? r.json() : {})).catch(() => ({})),
+          get('/api/provider/membership-discounts'),
         ]);
         wizRefs = {
           plans: (Array.isArray(plans) ? plans : []).filter(p => p.active),
           lockers: (Array.isArray(lockers) ? lockers : []).filter(l => l.monthly_fee && !l.activeContract),
           options: (Array.isArray(options) ? options : []).filter(o => o.active !== false),
           settings: settings || {},
+          discounts: (Array.isArray(discounts) ? discounts : []).filter(d => d.active !== false),
         };
         return wizRefs;
       }
@@ -7233,6 +7236,30 @@ export default function ProviderDashboardPage() {
         const { included, choosable } = wizOptionLists();
         const chosen = choosable.filter(o => wiz.option_ids.includes(o.id));
         return Number(plan.monthly_price || 0) + Number(lk?.monthly_fee || 0) + [...included, ...chosen].reduce((t, o) => t + Number(o.monthly_price || 0), 0);
+      }
+
+      // お支払いの内容（レシートの形。でお指摘 2026-10-27）。クーポンは店舗の割引一覧からコードで探す（最終判定はサーバー）
+      function wizReceipt() {
+        const plan = wizPlan();
+        if (!plan || !wiz.enrollment_date) return null;
+        const lk = wizRefs.lockers.find(l => l.id === wiz.locker_id);
+        const { included, choosable } = wizOptionLists();
+        const code = (wiz.coupon_code || '').trim().toLowerCase();
+        const coupon = code ? wizRefs.discounts.find(d => (d.code || '').toLowerCase() === code) || null : null;
+        return membershipReceipt({ cycle: wizRefs.settings, enrollmentDate: wiz.enrollment_date, plan, options: [...included, ...choosable.filter(o => wiz.option_ids.includes(o.id))], locker: lk || null, coupon });
+      }
+      const yenS = n => `${n < 0 ? '−' : ''}¥${Math.abs(n).toLocaleString()}`;
+      function receiptLines(r) {
+        if (!r) return [];
+        const out = ['【月会費の内訳（毎月）】', ...r.monthlyLines.map(l => [l.label, yenS(l.amount)]), ['月会費の合計', yenS(r.monthlyTotal)]];
+        r.payments.forEach(g => {
+          out.push(`【${g.title}】`);
+          g.lines.forEach(l => out.push([l.label, yenS(l.amount) + (l.note ? `\n${l.note}` : '')]));
+          out.push(['このお支払いの合計', yenS(g.total)]);
+        });
+        out.push([r.after.title, yenS(r.after.amount) + (r.after.note ? `\n${r.after.note}` : '')]);
+        r.notes.forEach(n => out.push(n));
+        return out;
       }
 
       function wizField(key, label, attrs = '', wide = false) {
@@ -7273,7 +7300,8 @@ export default function ProviderDashboardPage() {
               ${included.length ? `<p class="muted" style="font-size:12.5px;margin:8px 0 0">プランに含まれるオプション：${included.map(o => `${esc(o.name)}（月額${fmtYen(o.monthly_price)}）`).join('、')}</p>` : ''}
               ${choosable.length ? `<div style="margin-top:8px;font-size:13px"><b>オプション（任意）</b>${choosable.map(o => `<label style="display:flex;gap:6px;align-items:center;margin-top:4px"><input type="checkbox" data-we-opt="${o.id}" ${w.option_ids.includes(o.id) ? 'checked' : ''}>${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</label>`).join('')}</div>` : ''}
               <div class="form-field" style="margin:8px 0 0"><label>クーポンコード（任意）</label><input data-we="coupon_code" value="${esc(w.coupon_code)}" placeholder="お持ちの場合だけ"></div>
-              <p style="margin:8px 0 0;font-size:13px">毎月の合計：<b>${fmtYen(wizMonthly())}</b>${Number(plan.initial_fee) > 0 ? `（このほか初回に入会金${fmtYen(plan.initial_fee)}）` : ''}</p>` : ''}
+              ${(() => { const r = wizReceipt(); return r ? `<div style="margin-top:10px;padding:12px;border:1px dashed #111;border-radius:10px;font-size:12.5px;font-variant-numeric:tabular-nums">${receiptLines(r).map(l => Array.isArray(l) ? `<div style="display:flex;justify-content:space-between;gap:10px"><span>${esc(l[0])}</span><b style="white-space:pre-wrap;text-align:right">${esc(l[1])}</b></div>` : `<div style="margin-top:6px;font-weight:700">${esc(l)}</div>`).join('')}</div>` : ''; })()}
+              ${(wiz.coupon_code || '').trim() && !wizRefs.discounts.some(d => (d.code || '').toLowerCase() === wiz.coupon_code.trim().toLowerCase()) ? '<p style="margin:6px 0 0;font-size:12.5px;color:#b91c1c">このクーポンコードは見つかりません（割引・クーポンの一覧を確認してください）</p>' : ''}` : ''}
           </div>
           <div>
             <b style="font-size:13px">3. お客様の情報</b>
@@ -7323,6 +7351,8 @@ export default function ProviderDashboardPage() {
           const k = inp.dataset.we;
           if (k in wiz.f) wiz.f[k] = inp.value; else wiz[k] = inp.value;
         }));
+        // 入会日・クーポンは金額が変わるので、離れた時に描き直す
+        root.querySelectorAll('[data-we="enrollment_date"], [data-we="coupon_code"]').forEach(inp => inp.addEventListener('change', () => wizRender()));
         root.querySelectorAll('[data-we-chk]').forEach(c => c.addEventListener('change', () => { wiz[c.dataset.weChk] = c.checked; }));
         root.querySelector('[data-we-submit]')?.addEventListener('click', wizSubmit);
       }
@@ -7345,13 +7375,8 @@ export default function ProviderDashboardPage() {
           title: '入会手続きを始めますか？',
           lines: [
             ['お客様', `${f.last_name} ${f.first_name}（${w.target.name}）`], ['電話番号', f.phone],
-            ['プラン', `${plan.name}（月額${fmtYen(plan.monthly_price)}）`],
-            ...(Number(plan.initial_fee) > 0 ? [['入会金', `${fmtYen(plan.initial_fee)}（初回のみ）`]] : []),
             ['入会日', w.enrollment_date],
-            ['ロッカー', lk ? `${lk.name}（月額${fmtYen(lk.monthly_fee)}）` : 'なし'],
-            ['オプション', opts.length ? opts.map(o => o.name).join('、') : 'なし'],
-            ['クーポン', w.coupon_code.trim() || 'なし'],
-            ['毎月の合計', fmtYen(wizMonthly())],
+            ...receiptLines(wizReceipt()),
             'ここではまだ課金しません。次の画面でお客様にカードを登録してもらい、そのあと最終確認をして確定すると、課金が始まります。',
           ],
           okLabel: '入会手続きを始める',
@@ -7368,7 +7393,7 @@ export default function ProviderDashboardPage() {
           return;
         }
         wiz.membership_id = d.id;
-        wiz.summary = { plan, monthly: wizMonthly(), date: w.enrollment_date, prorated: d.prorated_first_amount, name: `${f.last_name} ${f.first_name}`, locker: lk?.name || '', opts: opts.map(o => o.name) };
+        wiz.summary = { plan, monthly: wizMonthly(), date: w.enrollment_date, prorated: d.prorated_first_amount, name: `${f.last_name} ${f.first_name}`, locker: lk?.name || '', opts: opts.map(o => o.name), receipt: wizReceipt() };
         loadApplications();
         wizRender();
       }
@@ -7416,10 +7441,12 @@ export default function ProviderDashboardPage() {
             title: '入会を確定して、課金を始めますか？',
             lines: [
               ...(s.name ? [['お客様', s.name]] : []),
-              ...(s.plan ? [['プラン', `${s.plan.name}（月額${fmtYen(s.plan.monthly_price)}）`]] : []),
-              ...(s.monthly != null ? [['毎月の合計', fmtYen(s.monthly)]] : []),
               ...(s.date ? [['入会日', s.date]] : []),
-              ...(s.prorated != null ? [['初回の目安', fmtYen(s.prorated)]] : []),
+              ...(s.receipt ? receiptLines(s.receipt) : [
+                ...(s.plan ? [['プラン', `${s.plan.name}（月額${fmtYen(s.plan.monthly_price)}）`]] : []),
+                ...(s.monthly != null ? [['毎月の合計', fmtYen(s.monthly)]] : []),
+                ...(s.prorated != null ? [['初回の目安', fmtYen(s.prorated)]] : []),
+              ]),
               'カードの登録が済んでいます。確定すると、お店の請求日の設定どおりに課金が始まります（入会金は確定時。月会費は入会日から）。',
             ],
             okLabel: '確定して課金を始める',

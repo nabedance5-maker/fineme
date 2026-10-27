@@ -6,7 +6,8 @@
 // カード登録、で仮契約（pending_approval）になる。実際の課金は店舗が承認した時点。
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { firstBilling, describeCycle, jstToday } from '@/lib/membership-cycle';
+import { describeCycle } from '@/lib/membership-cycle';
+import { membershipReceipt } from '@/lib/membership-receipt';
 
 function getAuth() {
   try {
@@ -61,6 +62,26 @@ export default function JoinMembershipPage() {
   }
   const toggleOption = id => setForm(f => ({ ...f, option_ids: f.option_ids.includes(id) ? f.option_ids.filter(x => x !== id) : [...f.option_ids, id] }));
   const [membershipId, setMembershipId] = useState(null);
+  // 基本情報は、Finemeに登録されている内容を最初から入れておく（でお要望 2026-10-27）。間違っていることもあるので、そのまま直せる
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    const a = getAuth();
+    if (!a) return;
+    fetch('/api/me/profile', { headers: { Authorization: `Bearer ${a.token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(p => {
+        if (!p) return;
+        const vals = { last_name: p.last_name, first_name: p.first_name, phone: p.phone, birthdate: /^\d{4}-\d{2}-\d{2}$/.test(p.birthday || '') ? p.birthday : '' };
+        let any = false;
+        setForm(f => {
+          const next = { ...f };
+          Object.entries(vals).forEach(([k, v]) => { if (v && !f[k]) { next[k] = v; any = true; } });
+          return next;
+        });
+        setTimeout(() => setPrefilled(any), 0);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const a = getAuth();
@@ -146,11 +167,15 @@ export default function JoinMembershipPage() {
   // プランに必ず付くオプションと、このプランで選べるオプション（でお要望 2026-10-22）
   const includedOptions = (info?.options || []).filter(o => (selectedPlan?.included_option_ids || []).includes(o.id));
   const selectableOptions = (info?.options || []).filter(o => !includedOptions.includes(o) && (selectedPlan?.selectable_option_ids == null || selectedPlan.selectable_option_ids.includes(o.id)));
-  const optionTotal = [...includedOptions, ...selectableOptions.filter(o => form.option_ids.includes(o.id))].reduce((t, o) => t + o.monthly_price, 0);
-  const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0) + optionTotal;
-  // 請求の予定（お店の請求日・初月の扱いどおり。でお指摘 2026-10-27）。入会日が過ぎていれば承認日から
-  const billingPlan = (selectedPlan && form.enrollment_date && info?.billing_cycle)
-    ? firstBilling(info.billing_cycle, { startDate: form.enrollment_date > jstToday() ? form.enrollment_date : jstToday(), monthlyTotal, initialFee: selectedPlan.initial_fee || 0 })
+
+  // お支払いの内容（レシートの形。でお指摘 2026-10-27：クーポン・入会金・日割りがいくらか全部はっきり見せる）
+  const receipt = (selectedPlan && form.enrollment_date && info)
+    ? membershipReceipt({
+      cycle: info.billing_cycle, enrollmentDate: form.enrollment_date, plan: selectedPlan,
+      options: [...includedOptions, ...selectableOptions.filter(o => form.option_ids.includes(o.id))],
+      locker: selectedLocker?.monthly_fee ? selectedLocker : null,
+      coupon: coupon || null,
+    })
     : null;
 
   async function submitApplication() {
@@ -195,7 +220,10 @@ export default function JoinMembershipPage() {
 
         {step === 1 && (
           <div>
-            <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 16px' }}>基本情報</h2>
+            <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 6px' }}>基本情報</h2>
+            <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.7)', margin: '0 0 16px', lineHeight: 1.7 }}>
+              {prefilled ? 'Finemeに登録されている内容を入れています。違っているところがあれば、このまま直してください。' : 'お名前・電話番号などを入れてください。'}
+            </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>姓 *</label><input style={INPUT} value={form.last_name} onChange={e => set('last_name', e.target.value)} /></div>
               <div style={{ ...FIELD, flex: 1 }}><label style={LABEL}>名 *</label><input style={INPUT} value={form.first_name} onChange={e => set('first_name', e.target.value)} /></div>
@@ -271,15 +299,7 @@ export default function JoinMembershipPage() {
                 {couponMsg && <p style={{ fontSize: '13px', color: '#fff', margin: '6px 0 0' }}>{couponMsg}</p>}
               </div>
             )}
-            {selectedPlan && form.enrollment_date && (
-              <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 16px' }}>
-                <span style={{ display: 'block', fontWeight: 700, color: 'rgba(232,228,220,0.85)', marginBottom: '4px' }}>お支払いの予定（目安）</span>
-                {(billingPlan?.charges || []).map((c, i) => (
-                  <span key={i} style={{ display: 'block' }}>{c.date ? `${Number(c.date.slice(5, 7))}/${Number(c.date.slice(8, 10))}　` : ''}{c.label}：¥{c.amount.toLocaleString()}</span>
-                ))}
-                <span style={{ display: 'block', marginTop: '6px' }}>{describeCycle(info.billing_cycle)}。金額はお店が入会を承認した時に確定します。</span>
-              </p>
-            )}
+            {receipt && <Receipt r={receipt} cycleText={describeCycle(info.billing_cycle)} />}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={BTN_GHOST} onClick={() => setStep(1)}>戻る</button>
               <button style={BTN} onClick={() => setStep(hasStep3 ? 3 : 4)} disabled={!form.plan_id || !form.enrollment_date || (form.coupon_code.trim() && !coupon)}>次へ</button>
@@ -344,6 +364,12 @@ export default function JoinMembershipPage() {
 
         {step === 5 && (
           <div>
+            {receipt && (
+              <div style={{ marginBottom: '22px' }}>
+                <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 10px' }}>お支払いの内容（最終確認）</h2>
+                <Receipt r={receipt} cycleText={describeCycle(info.billing_cycle)} />
+              </div>
+            )}
             <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 16px' }}>利用規約・同意</h2>
             <div style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '14px', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', whiteSpace: 'pre-wrap', marginBottom: '14px' }}>
               {info?.terms_text || 'この店舗は規約テキストを設定していません。ご不明点は店舗に直接お問い合わせください。'}
@@ -360,6 +386,43 @@ export default function JoinMembershipPage() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const yen = n => `${n < 0 ? '−' : ''}¥${Math.abs(n).toLocaleString()}`;
+// レシートの形で、お支払いを1行ずつ見せる
+function Receipt({ r, cycleText }) {
+  const row = { display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '13px', color: '#e8e4dc', padding: '3px 0' };
+  const sub = { fontSize: '11.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 2px' };
+  const box = { background: '#fff', color: '#111', borderRadius: '12px', padding: '16px', margin: '0 0 16px', fontVariantNumeric: 'tabular-nums' };
+  const line = { ...row, color: '#111' };
+  const rule = { borderTop: '1px dashed #999', margin: '8px 0' };
+  return (
+    <div style={box} aria-label="お支払いの内容">
+      <p style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '14px', color: '#111' }}>お支払いの内容</p>
+      <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#111' }}>月会費の内訳（毎月）</p>
+      {r.monthlyLines.map((l, i) => <div key={i} style={line}><span>{l.label}</span><span>{yen(l.amount)}</span></div>)}
+      <div style={{ ...line, fontWeight: 800 }}><span>月会費の合計</span><span>{yen(r.monthlyTotal)}</span></div>
+      {r.payments.map(g => (
+        <div key={g.key}>
+          <div style={rule} />
+          <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#111' }}>{g.title}</p>
+          {g.lines.map((l, i) => (
+            <div key={i}>
+              <div style={line}><span>{l.label}</span><span>{yen(l.amount)}</span></div>
+              {l.note && <p style={{ ...sub, color: '#555' }}>{l.note}</p>}
+            </div>
+          ))}
+          <div style={{ ...line, fontWeight: 800 }}><span>このお支払いの合計</span><span>{yen(g.total)}</span></div>
+        </div>
+      ))}
+      <div style={rule} />
+      <div style={{ ...line, fontWeight: 800 }}><span>{r.after.title}</span><span>{yen(r.after.amount)}</span></div>
+      {r.after.note && <p style={{ ...sub, color: '#555' }}>{r.after.note}</p>}
+      <div style={rule} />
+      {cycleText && <p style={{ ...sub, color: '#555' }}>{cycleText}</p>}
+      {r.notes.map((n, i) => <p key={i} style={{ ...sub, color: '#555' }}>{n}</p>)}
     </div>
   );
 }
