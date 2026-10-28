@@ -1,6 +1,7 @@
 // POST /api/stripe/webhook
 // Stripeイベントを受信してSupabaseを更新する
 // billing_status: free → active（payment_succeeded）/ cancelled / past_due
+import { completeEnrollmentSetup } from '@/lib/membership-enroll';
 import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { getPlanKeyByPriceId, getPlanByPriceId } from '@/lib/stripe-plans';
@@ -146,6 +147,11 @@ export async function POST(request) {
         // 月会費のカード更新（店舗が送った更新リンク）：新しいカードを既定にし、未払いの月会費を引き落とし直す
         if (session.mode === 'setup' && session.metadata?.fineme_membership_card_update) {
           try { await applyMembershipCardUpdate(supabaseAdmin, session, stripe); } catch (e) { console.error('[webhook] membership card update error:', e); }
+          break;
+        }
+        // オンライン入会のカード登録が終わった（お客様が入会ページに戻らなくても、承認待ちにしてお店に知らせる。2026-10-28）
+        if (session.mode === 'setup' && session.metadata?.fineme_membership_enroll) {
+          try { await completeEnrollmentSetup(supabaseAdmin, stripe, session.metadata.fineme_membership_enroll, session); } catch (e) { console.error('[webhook] membership enroll error:', e); }
           break;
         }
         const pendingId = session.metadata?.fineme_pos_pending_id;

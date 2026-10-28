@@ -51,6 +51,8 @@ export async function POST(request, { params }) {
       mode: 'setup',
       currency: 'jpy', // 最近のStripeは setup モードでも通貨の指定が必須（無いと Missing required param: currency。2026-10-27）
       customer: customerId,
+      // 画面を閉じても webhook で入会の申し込みを確定・お店に通知できるように（2026-10-28）
+      metadata: { fineme_membership_enroll: id },
       success_url: `${BASE_URL}/provider/${slug}/join?membership=${id}&setup=success`,
       cancel_url: `${BASE_URL}/provider/${slug}/join?membership=${id}&setup=cancel`,
     });

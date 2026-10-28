@@ -5,7 +5,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
-import { logCustomerActivity } from '@/lib/activity-log';
+import { completeEnrollmentSetup } from '@/lib/membership-enroll';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -23,31 +23,13 @@ export async function POST(request, { params }) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
   if (authError || !user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: m } = await supabase.from('provider_memberships').select('*').eq('id', id).single();
+  const { data: m } = await supabase.from('provider_memberships').select('id, user_id').eq('id', id).single();
   if (!m || m.user_id !== user.id) return Response.json({ error: '見つかりません' }, { status: 404 });
-  if (m.status === 'pending_approval' || m.status === 'active') return Response.json(m); // 既に確定済み（二重呼び出し対策）
-  if (!m.stripe_checkout_session_id) return Response.json({ error: '決済手続きが開始されていません' }, { status: 409 });
-
   try {
-    const session = await stripe.checkout.sessions.retrieve(m.stripe_checkout_session_id, { expand: ['setup_intent'] });
-    if (session.status !== 'complete' || !session.setup_intent?.payment_method) {
-      return Response.json({ error: 'カードの登録が完了していません' }, { status: 409 });
-    }
-    const paymentMethodId = session.setup_intent.payment_method;
-
-    const { data: updated, error } = await supabase
-      .from('provider_memberships')
-      .update({ status: 'pending_approval', stripe_payment_method_id: paymentMethodId, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) return Response.json({ error: error.message }, { status: 500 });
-    await logCustomerActivity({
-      providerId: updated.provider_id, userId: user.id,
-      name: [m.last_name, m.first_name].filter(Boolean).join(' '),
-      label: 'お客様が入会を申し込み', category: '顧客', targetId: id,
-    });
-    return Response.json(updated);
+    // 承認待ちにして、お店にメール・LINEで知らせる（webhook と共通。どちらが先でも1回だけ。lib/membership-enroll.js）
+    const r = await completeEnrollmentSetup(supabase, stripe, id);
+    if (r.error) return Response.json({ error: r.error }, { status: r.status || 409 });
+    return Response.json(r.membership);
   } catch (e) {
     console.error('[memberships confirm-setup]', e);
     return Response.json({ error: '確認に失敗しました: ' + e.message }, { status: 500 });
