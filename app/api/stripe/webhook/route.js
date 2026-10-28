@@ -179,6 +179,7 @@ export async function POST(request) {
               discount: pending.discount || undefined,
               customer: pending.customer || undefined,
               source: 'pos_online',
+              stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
             });
             await supabaseAdmin.from('provider_pos_pending_checkouts')
               .update({ status: 'paid', transaction_id: result.transaction.id })

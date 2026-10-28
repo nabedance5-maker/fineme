@@ -14621,6 +14621,9 @@ export default function ProviderDashboardPage() {
       let cart = []; // [{kind, product_id?, service_id?, name, unit_price, qty, discount?}]
       let cartDiscount = null; // {type, value, label}
       let customer = null; // {user_id?, manual_id?, name}
+      let memberCard = null; // { label, exp } | null（今選んでいるお客様のカード）
+      let cardRequestId = null; // 1回のお会計につき1つ。二度押しで二重に請求しない
+      const cardBtn = $('pos-card-checkout-btn');
       let source = 'product';
       let customerPool = null;
 
@@ -14670,6 +14673,7 @@ export default function ProviderDashboardPage() {
         $('pos-change').textContent = pay?.cash && Number.isFinite(rec) ? (rec >= t.total ? `おつり ${yen(rec - t.total)}` : `${yen(t.total - rec)}不足`) : '';
         checkoutBtn.disabled = !cart.length;
         if (onlineCheckoutBtn) onlineCheckoutBtn.disabled = !cart.length;
+        renderCardBtn();
       }
       function openDiscountForm(onApply, perLine) {
         const box = $('pos-disc-form');
@@ -14750,6 +14754,8 @@ export default function ProviderDashboardPage() {
       function renderCustomer() {
         $('pos-cust-name').textContent = customer ? customer.name : 'お客様を選ぶ（任意）';
         $('pos-cust-clear').style.display = customer ? '' : 'none';
+        if (!customer) memberCard = null;
+        renderCardBtn();
       }
       $('pos-cust-btn')?.addEventListener('click', async () => {
         const box = $('pos-cust-picker');
@@ -14774,14 +14780,17 @@ export default function ProviderDashboardPage() {
         $('pos-cust-results').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
           const c = list[+b.dataset.pick];
           customer = c.manual ? { manual_id: c.manual_id, name: c.name } : { user_id: c.user_id, name: c.name };
+          memberCard = null; cardRequestId = null;
           $('pos-cust-picker').hidden = true; renderCustomer();
+          // 会員を選んだ時も、このお店で登録済みのカードがあれば使えるようにする
+          if (c.user_id) fetch(`/api/provider/pos/member-card?user_id=${encodeURIComponent(c.user_id)}`, { headers: authHeadersPos() }).then(r => (r.ok ? r.json() : null)).then(d => { if (d && customer?.user_id === c.user_id) { memberCard = d.card; renderCardBtn(); } }).catch(() => {});
         }));
       }
       $('pos-cust-q')?.addEventListener('input', renderPicker);
       $('pos-cust-clear')?.addEventListener('click', () => { customer = null; renderCustomer(); });
 
       function resetSale() {
-        cart = []; cartDiscount = null; customer = null;
+        cart = []; cartDiscount = null; customer = null; memberCard = null; cardRequestId = null;
         if ($('pos-cash')) $('pos-cash').value = '';
         $('pos-disc-form').hidden = true;
         renderCart(); renderCustomer();
@@ -14805,15 +14814,90 @@ export default function ProviderDashboardPage() {
         checkoutBtn.disabled = false;
         const d = await res.json().catch(() => ({}));
         if (!res.ok) { checkoutMsg.textContent = d?.error || '会計に失敗しました'; return; }
-        const tx = d.transaction;
+        await showSaleDone(d.transaction);
+      });
+
+      async function showSaleDone(tx, extra = '') {
         $('pos-done').hidden = false;
-        $('pos-done').innerHTML = `<b>会計しました（${esc(tx.receipt_no)}）</b><span>合計 ${yen(tx.total_amount)}${tx.cash_received != null ? `・お預かり ${yen(tx.cash_received)}・おつり ${yen(tx.cash_received - tx.total_amount)}` : ''}</span>
+        $('pos-done').innerHTML = `<b>会計しました（${esc(tx.receipt_no)}）</b><span>合計 ${yen(tx.total_amount)}${tx.cash_received != null ? `・お預かり ${yen(tx.cash_received)}・おつり ${yen(tx.cash_received - tx.total_amount)}` : ''}${extra}</span>
           <div class="pos-row"><button type="button" class="btn" data-print-receipt="${tx.id}">レシートを印刷</button><button type="button" class="btn btn-ghost" data-print-ryoshu="${tx.id}">領収書を発行</button><button type="button" class="btn btn-ghost" id="pos-done-x">閉じる</button></div>`;
         $('pos-done-x').onclick = () => { $('pos-done').hidden = true; };
         resetSale();
         await Promise.all([loadProducts(), loadTransactions(), loadRegister()]);
         bindPrintButtons($('pos-done'));
         showToast('会計を記録しました');
+      }
+
+      // ── 会員証（QR）を読み取って、登録済みのカードで払う（でお要望 2026-10-28：今野さん「会員証で何か買う時って決済できる？」）──
+      // 読み取りはお店のタブレット・スマホのカメラ。お客様を呼び出し、このお店で登録したカード（月額プランの入会時）があれば、その場で請求する
+      function renderCardBtn() {
+        if (!cardBtn) return;
+        cardBtn.style.display = memberCard ? '' : 'none';
+        cardBtn.textContent = memberCard ? `登録済みのカードで払う（${memberCard.label}）` : '';
+        cardBtn.disabled = !cart.length || !memberCard;
+      }
+      async function lookupMember(q) {
+        const r = await fetch(`/api/provider/pos/member-card?${q}`, { headers: authHeadersPos() });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || 'お客様を呼び出せませんでした'); return false; }
+        customer = { user_id: d.user_id, name: d.name };
+        memberCard = d.card; cardRequestId = null;
+        renderCustomer();
+        showToast(d.card ? `${d.name} 様（${d.card.label}）` : `${d.name} 様（このお店で登録済みのカードはありません）`);
+        return true;
+      }
+      let posStream = null, posRaf = null;
+      function stopPosScan() {
+        if (posRaf) cancelAnimationFrame(posRaf); posRaf = null;
+        if (posStream) { posStream.getTracks().forEach(t => t.stop()); posStream = null; }
+        const box = $('pos-scan-box'); if (box) box.hidden = true;
+      }
+      $('pos-scan-btn')?.addEventListener('click', async () => {
+        const box = $('pos-scan-box'), video = $('pos-scan-video'), canvas = $('pos-scan-canvas'), msg = $('pos-scan-msg');
+        if (!box.hidden) { stopPosScan(); return; }
+        box.hidden = false; msg.textContent = 'お客様の会員証（マイページのQR）をカメラに向けてください';
+        try {
+          const jsQRModule = await import('jsqr');
+          const jsQR = jsQRModule.default || jsQRModule;
+          posStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          video.srcObject = posStream; await video.play();
+          let busy = false;
+          const tick = () => {
+            if (!posStream) return;
+            if (video.readyState === video.HAVE_ENOUGH_DATA && !busy) {
+              canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+              if (code?.data) {
+                busy = true; msg.textContent = '読み取りました…';
+                lookupMember(`code=${encodeURIComponent(code.data)}`).then(ok => { if (ok) stopPosScan(); else { busy = false; msg.textContent = 'もう一度読み取ってください'; } });
+              }
+            }
+            posRaf = requestAnimationFrame(tick);
+          };
+          tick();
+        } catch { msg.textContent = 'カメラを起動できませんでした（ブラウザのカメラの許可をご確認ください）'; }
+      });
+      $('pos-scan-stop')?.addEventListener('click', stopPosScan);
+      document.querySelectorAll('.tab-btn:not([data-tab="pos"])').forEach(btn => btn.addEventListener('click', stopPosScan));
+
+      cardBtn?.addEventListener('click', async () => {
+        if (!cart.length || !memberCard || !customer?.user_id) return;
+        const t = totals();
+        if (!confirm(`${customer.name} 様の登録済みのカード（${memberCard.label}）に ${yen(t.total)} を請求します。\n\nお客様ご本人に金額を確認していただいてから「OK」を押してください。`)) return;
+        cardRequestId = cardRequestId || crypto.randomUUID();
+        cardBtn.disabled = true; checkoutMsg.textContent = 'カードに請求しています…';
+        const res = await fetch('/api/provider/pos/card-checkout', {
+          method: 'POST', headers: authHeadersPos(),
+          body: JSON.stringify({
+            items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
+            discount: cartDiscount, customer, staff_id: staffSel?.value || null, request_id: cardRequestId,
+          }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { checkoutMsg.textContent = d?.error || 'カードで払えませんでした'; cardRequestId = null; renderCardBtn(); return; }
+        checkoutMsg.textContent = '';
+        await showSaleDone(d.transaction, `・${esc(d.card_label)}で支払い済み`);
       });
 
       // オンライン決済（お客様のスマホで払ってもらう）
@@ -18215,9 +18299,16 @@ export default function ProviderDashboardPage() {
             <div className="pos-cart">
               <div className="pos-cart-head"><h3>カート</h3>
                 <div className="pos-row">
+                  <button type="button" className="btn btn-ghost" id="pos-scan-btn">会員証を読み取る</button>
                   <button type="button" className="btn btn-ghost" id="pos-cust-btn"><span id="pos-cust-name">お客様を選ぶ（任意）</span></button>
                   <button type="button" className="btn btn-ghost" id="pos-cust-clear" style={{ display: 'none' }}>外す</button>
                 </div>
+              </div>
+              <div id="pos-scan-box" hidden style={{ padding: '12px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}>
+                <video id="pos-scan-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '10px', background: '#000' }}></video>
+                <canvas id="pos-scan-canvas" style={{ display: 'none' }}></canvas>
+                <p id="pos-scan-msg" style={{ fontSize: '13px', margin: '8px 0', color: '#1a1410' }}></p>
+                <button type="button" className="btn btn-ghost" id="pos-scan-stop">読み取りをやめる</button>
               </div>
               <div id="pos-cust-picker" className="pos-picker" hidden>
                 <input id="pos-cust-q" placeholder="名前・電話番号・会員番号で探す" />
@@ -18241,6 +18332,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="pos-row" style={{ justifyContent: 'flex-end' }}>
                 <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled>お客様のスマホで払う（QR）</button>
+                <button type="button" id="pos-card-checkout-btn" className="btn" disabled style={{ display: 'none' }}></button>
                 <button type="button" id="pos-checkout-btn" className="btn" disabled>会計を確定する</button>
               </div>
               <p id="pos-checkout-msg" style={{ fontSize: '13px', margin: 0, fontWeight: 700, color: '#1a1410' }}></p>
