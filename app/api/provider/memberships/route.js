@@ -2,6 +2,7 @@
 // POST /api/provider/memberships → 店頭で入会手続きを始める（メンバーを選び、入会内容を入れる。この後カード登録→確定）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeTermsFiles } from '@/lib/membership-terms';
 import { billingSchedule } from '@/lib/membership-cycle';
 import { planLockedResponse } from '@/lib/plan-features';
 import { membershipAuth } from '@/lib/provider-members';
@@ -129,7 +130,7 @@ async function __POST(request) {
     emergency_contact_name: str(b.emergency_contact_name, 60), emergency_contact_phone: str(b.emergency_contact_phone, 30), emergency_contact_relation: str(b.emergency_contact_relation, 30),
     terms_snapshot: settings?.terms_text?.trim() || '（店頭でのお申し込み）お客様に規約・重要事項を説明し、同意を得ました。',
     terms_agreed_at: new Date().toISOString(),
-    terms_file_url: settings?.terms_file_url || null,
+    terms_files: normalizeTermsFiles(settings?.terms_files),
   }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data, { status: 201 });

@@ -3,6 +3,7 @@
 //      別ステップ。ここでは個人情報・プラン・入会日・緊急連絡先・規約同意までを保存する）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeTermsFiles } from '@/lib/membership-terms';
 import { memberGate } from '@/lib/store-member';
 import { billingSchedule } from '@/lib/membership-cycle';
 import { findCoupon } from '@/lib/membership-changes';
@@ -131,7 +132,7 @@ export async function POST(request) {
       custom_answers: customFields.length ? custom.answers : null,
       custom_fields_snapshot: customFields.length ? customFields : null,
       terms_snapshot: terms_snapshot.trim(),
-      terms_file_url: settings?.terms_file_url || null, // 同意した時点の規約ファイル（2026-10-28）
+      terms_files: normalizeTermsFiles(settings?.terms_files), // 同意した時点の規約のファイル・リンク（2026-10-28）
       terms_agreed_at: new Date().toISOString(),
     })
     .select()

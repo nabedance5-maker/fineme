@@ -2,6 +2,7 @@
 // PATCH /api/provider/membership-settings → 保存
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeTermsFiles } from '@/lib/membership-terms';
 import { normalizeCycle, cycleError } from '@/lib/membership-cycle';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -34,8 +35,7 @@ export async function GET(request) {
     form_fields: normalizeFormFields(data?.form_fields),
     custom_fields: data?.custom_fields || [],
     terms_text: data?.terms_text || '',
-    terms_file_url: data?.terms_file_url || null,
-    terms_file_name: data?.terms_file_name || null,
+    terms_files: normalizeTermsFiles(data?.terms_files),
   });
 }
 

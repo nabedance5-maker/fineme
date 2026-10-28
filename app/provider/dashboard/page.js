@@ -6340,40 +6340,56 @@ export default function ProviderDashboardPage() {
         preview();
       }
 
-      // 利用規約・同意書（PDF・文章。2026-10-28）
-      let termsState = { text: '', file: null };
+      // 利用規約・同意書（PDF・画像・リンク・文章。2026-10-28）
+      const TERMS_KIND_LABEL = { pdf: 'PDF', image: '画像', link: 'リンク' };
+      let termsState = { text: '', files: [] };
       function updateTermsWarn() {
         const w = document.getElementById('mbr-terms-warn');
-        if (w) w.style.display = !termsState.text.trim() && !termsState.file ? '' : 'none';
+        if (w) w.style.display = !termsState.text.trim() && !termsState.files.length ? '' : 'none';
       }
       function renderTermsFile(s) {
-        termsState = { text: s.terms_text || '', file: s.terms_file_url ? { url: s.terms_file_url, name: s.terms_file_name || '利用規約.pdf' } : null };
+        termsState = { text: s.terms_text || '', files: s.terms_files || [] };
         const cur = document.getElementById('mbr-terms-file-cur');
         if (cur) {
-          cur.innerHTML = termsState.file
-            ? `いま置いているファイル：<a href="${esc(termsState.file.url)}" target="_blank" rel="noopener noreferrer">${esc(termsState.file.name)}</a> <button type="button" class="btn btn-ghost" id="mbr-terms-file-del" style="font-size:12px;padding:4px 10px;margin-left:6px">外す</button>`
+          cur.innerHTML = termsState.files.length
+            ? termsState.files.map((f, i) => `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="badge" style="font-size:11px">${TERMS_KIND_LABEL[f.kind] || ''}</span><a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.name)}</a><button type="button" class="btn btn-ghost" data-terms-del="${i}" style="font-size:12px;padding:4px 10px">外す</button></div>`).join('')
             : '<span class="muted">まだ置いていません</span>';
-          document.getElementById('mbr-terms-file-del')?.addEventListener('click', async () => {
-            if (!confirm('規約のファイルを外しますか？（これまでに同意した方の記録は残ります）')) return;
-            const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'DELETE', headers: authH() });
-            if (r.ok) renderTermsFile({ terms_text: termsState.text });
-          });
+          cur.querySelectorAll('[data-terms-del]').forEach(btn => btn.addEventListener('click', async () => {
+            const f = termsState.files[Number(btn.dataset.termsDel)];
+            if (!f || !confirm(`「${f.name}」を外しますか？（これまでに同意した方の記録は残ります）`)) return;
+            const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'DELETE', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ url: f.url }) });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok) renderTermsFile({ terms_text: termsState.text, terms_files: d.terms_files });
+          }));
         }
         updateTermsWarn();
       }
       document.getElementById('mbr-terms-upload-btn')?.addEventListener('click', async () => {
         const input = document.getElementById('mbr-terms-file');
         const msg = document.getElementById('mbr-terms-msg');
-        const f = input?.files?.[0];
-        if (!f) { if (msg) msg.textContent = 'PDFのファイルを選んでください'; return; }
-        const fd = new FormData(); fd.append('file', f);
-        if (msg) msg.textContent = 'アップロード中…';
-        const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'POST', headers: authH(), body: fd });
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) { if (msg) msg.textContent = d.error || 'アップロードできませんでした'; return; }
+        const list = [...(input?.files || [])];
+        if (!list.length) { if (msg) msg.textContent = 'PDFか画像のファイルを選んでください'; return; }
+        for (const [i, f] of list.entries()) {
+          if (msg) msg.textContent = `アップロード中…（${i + 1}/${list.length}）`;
+          const fd = new FormData(); fd.append('file', f);
+          const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'POST', headers: authH(), body: fd });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { if (msg) msg.textContent = `${f.name}：${d.error || 'アップロードできませんでした'}`; return; }
+          renderTermsFile({ terms_text: termsState.text, terms_files: d.terms_files });
+        }
         if (msg) msg.textContent = '置きました。入会ページに表示されます';
         input.value = '';
-        renderTermsFile({ terms_text: termsState.text, terms_file_url: d.terms_file_url, terms_file_name: d.terms_file_name });
+      });
+      document.getElementById('mbr-terms-link-add-btn')?.addEventListener('click', async () => {
+        const msg = document.getElementById('mbr-terms-msg');
+        const urlEl = document.getElementById('mbr-terms-link-url');
+        const titleEl = document.getElementById('mbr-terms-link-title');
+        const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ link_url: urlEl?.value || '', title: titleEl?.value || '' }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { if (msg) msg.textContent = d.error || '追加できませんでした'; return; }
+        if (urlEl) urlEl.value = ''; if (titleEl) titleEl.value = '';
+        if (msg) msg.textContent = 'リンクを追加しました';
+        renderTermsFile({ terms_text: termsState.text, terms_files: d.terms_files });
       });
       document.getElementById('mbr-terms-save-btn')?.addEventListener('click', async () => {
         const msg = document.getElementById('mbr-terms-msg');
@@ -6667,7 +6683,7 @@ export default function ProviderDashboardPage() {
           ${m.status === 'pending_approval' && m.discount ? `<div>クーポン：${esc(m.discount.name)}（${esc(m.discount.text)}）</div>` : ''}
           <div>緊急連絡先：${esc(m.emergency_contact_name || '未入力')}（${esc(m.emergency_contact_relation || '')}）${esc(m.emergency_contact_phone || '')}</div>
           <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
-          <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}${m.terms_file_url ? ` <a href="${esc(m.terms_file_url)}" target="_blank" rel="noopener noreferrer">同意した規約のファイル</a>` : ''}</div>
+          <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}${(m.terms_files || []).map(f => ` <a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.name)}</a>`).join('、')}</div>
           ${m.cancel_reason ? `<div>退会の理由：${esc(m.cancel_reason)}</div>` : ''}
           ${(m.custom_fields_snapshot || []).map(q => { const v = m.custom_answers?.[q.id]; return `<div>${esc(q.label)}：${v == null ? '未回答' : esc(Array.isArray(v) ? v.join('、') : v)}</div>`; }).join('')}
           <div id="mbr-detail-extra" class="stack" style="gap:10px;margin-top:8px"></div>
@@ -18427,13 +18443,19 @@ export default function ProviderDashboardPage() {
               規約がまだ設定されていません。このままだと、お客様は規約の無いまま入会を申し込めてしまいます。今お使いの規約のPDFを置くか、文章を貼り付けてください。
             </div>
             <div className="stack" style={{ gap: '8px' }}>
-              <b style={{ fontSize: '13px' }}>PDFで置く</b>
-              <div id="mbr-terms-file-cur" style={{ fontSize: '13px' }}></div>
+              <b style={{ fontSize: '13px' }}>ファイル・リンクで置く</b>
+              <div id="mbr-terms-file-cur" className="stack" style={{ gap: '6px', fontSize: '13px' }}></div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <input type="file" id="mbr-terms-file" accept="application/pdf,.pdf" style={{ fontSize: '13px' }} />
+                <input type="file" id="mbr-terms-file" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" multiple style={{ fontSize: '13px' }} />
                 <button type="button" className="btn" id="mbr-terms-upload-btn">アップロードする</button>
               </div>
-              <span className="muted" style={{ fontSize: '11.5px' }}>PDF・10MBまで。Wordの規約は「PDFとして保存」してから選んでください。お客様は入会ページでファイルを開いてから同意します。</span>
+              <span className="muted" style={{ fontSize: '11.5px' }}>PDF・画像（JPG・PNG・WebP）、1つ10MBまで。紙の規約は写真でも置けます（複数ページなら複数枚まとめて選べます）。Wordの規約は「PDFとして保存」してから選んでください。</span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="form-field" style={{ marginBottom: 0, minWidth: '140px' }}><label htmlFor="mbr-terms-link-title">リンクの名前</label><input id="mbr-terms-link-title" placeholder="例：会員規約" /></div>
+                <div className="form-field" style={{ marginBottom: 0, flex: '1 1 240px' }}><label htmlFor="mbr-terms-link-url">リンク（お店のサイト・Googleドキュメントなど）</label><input id="mbr-terms-link-url" type="url" placeholder="https://" /></div>
+                <button type="button" className="btn" id="mbr-terms-link-add-btn">リンクを追加する</button>
+              </div>
+              <span className="muted" style={{ fontSize: '11.5px' }}>お客様は入会ページで、PDF・リンクを開いてから同意します（画像はその場に表示されます）。リンク先の中身を後から書き換えると、お客様が同意した内容と食い違うことがあります。変える時は新しいリンクとして追加し直すのがおすすめです。</span>
             </div>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label htmlFor="mbr-set-terms">文章で書く（PDFと両方あれば、両方を表示します）</label>

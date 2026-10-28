@@ -3,6 +3,7 @@
 // 店舗のStripe Connect設定が完了している店舗でのみ利用可能。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { normalizeTermsFiles } from '@/lib/membership-terms';
 import { normalizeCycle } from '@/lib/membership-cycle';
 import { hasFeature } from '@/lib/feature-flags';
 import { normalizeFormFields } from '@/lib/membership-form';
@@ -55,8 +56,7 @@ export async function GET(request, { params }) {
     billing_cycle: { ...normalizeCycle(settings), initial_fee_timing: settings?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval' },
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
-    terms_file_url: settings?.terms_file_url || null,
-    terms_file_name: settings?.terms_file_name || null,
+    terms_files: normalizeTermsFiles(settings?.terms_files),
     lockers: availableLockers,
     options: options || [],
     tickets: ticketRows || [],

@@ -50,8 +50,8 @@ export default function JoinMembershipPage() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const [idFile, setIdFile] = useState(null);
-  // 規約のPDFを開いたか（PDFがあるお店は、開いてから同意できる。2026-10-28）
-  const [openedTermsFile, setOpenedTermsFile] = useState(false);
+  // 規約のPDF・リンクを開いたか（開いてから同意できる。画像はその場に表示する。2026-10-28）
+  const [openedTerms, setOpenedTerms] = useState({});
   // 会員登録してから入会のお店で、まだ登録していない（2026-10-28。lib/store-member.js）
   const [needMember, setNeedMember] = useState(false);
   // クーポン（でお要望 2026-10-19：hacomono差分 #5）
@@ -124,6 +124,9 @@ export default function JoinMembershipPage() {
     if (mid && setupResult === 'cancel') { setMembershipId(mid); setError('カード登録がキャンセルされました。もう一度お試しください'); setStep(5); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const termsFiles = info?.terms_files || [];
+  const termsAllOpened = termsFiles.every(f => f.kind === 'image' || openedTerms[f.url]);
 
   if (loading) return <div style={{ maxWidth: '480px', margin: '60px auto', padding: '0 20px', color: '#e8e4dc' }}>読み込み中…</div>;
   if (error && !info) return <div style={{ maxWidth: '480px', margin: '60px auto', padding: '0 20px', color: '#e8e4dc' }}>{error}</div>;
@@ -211,7 +214,7 @@ export default function JoinMembershipPage() {
         last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, gender: form.gender || null, custom_answers: form.custom_answers,
         last_name: form.last_name, first_name: form.first_name, birthdate: form.birthdate || null, postal_code: form.postal_code, address: form.address, phone: form.phone,
         emergency_contact_name: form.emergency_contact_name, emergency_contact_phone: form.emergency_contact_phone, emergency_contact_relation: form.emergency_contact_relation,
-        terms_snapshot: info.terms_text || (info.terms_file_url ? `（規約はファイルで提示：${info.terms_file_name || '利用規約.pdf'}）` : '（この店舗は規約テキストを設定していません）'),
+        terms_snapshot: info.terms_text || (termsFiles.length ? `（規約はファイル・リンクで提示：${termsFiles.map(f => f.name).join('、')}）` : '（この店舗は規約テキストを設定していません）'),
       }),
     });
     if (!res.ok) { const d = await res.json().catch(() => ({})); setSubmitting(false); setError(d.error || '申込の保存に失敗しました'); return; }
@@ -392,19 +395,26 @@ export default function JoinMembershipPage() {
               </div>
             )}
             <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 16px' }}>利用規約・同意</h2>
-            <div style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '14px', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', whiteSpace: 'pre-wrap', marginBottom: '14px' }}>
-              {info?.terms_text || (info?.terms_file_url ? '利用規約・同意書は下のファイルをご確認ください。' : 'この店舗は規約テキストを設定していません。ご不明点は店舗に直接お問い合わせください。')}
-            </div>
-            {info?.terms_file_url && (
-              <a href={info.terms_file_url} target="_blank" rel="noopener noreferrer" onClick={() => setOpenedTermsFile(true)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', minHeight: '48px', padding: '0 16px', margin: '-4px 0 14px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.3)', color: '#e8e4dc', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-                <span>利用規約・同意書を開く（{info.terms_file_name || 'PDF'}）</span>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: openedTermsFile ? '#e8e4dc' : 'rgba(232,228,220,0.6)' }}>{openedTermsFile ? '確認済み' : '別のタブで開きます'}</span>
-              </a>
+            {(info?.terms_text || !termsFiles.length) && (
+              <div style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '14px', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', whiteSpace: 'pre-wrap', marginBottom: '14px' }}>
+                {info?.terms_text || 'この店舗は規約テキストを設定していません。ご不明点は店舗に直接お問い合わせください。'}
+              </div>
             )}
-            <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', color: '#e8e4dc', marginBottom: '18px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={form.agree} disabled={!!info?.terms_file_url && !openedTermsFile} onChange={e => set('agree', e.target.checked)} style={{ marginTop: '3px' }} />
-              <span>上記の利用規約・同意書の内容を確認し、同意します{info?.terms_file_url && !openedTermsFile && <><br /><span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.65)' }}>先に利用規約・同意書のファイルを開いてください</span></>}</span>
+            {termsFiles.map(f => (f.kind === 'image' ? (
+              <a key={f.url} href={f.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '14px' }}>
+                <img src={f.url} alt={f.name} style={{ width: '100%', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', background: '#fff' }} />
+                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(232,228,220,0.65)', marginTop: '4px' }}>{f.name}（押すと大きく開きます）</span>
+              </a>
+            ) : (
+              <a key={f.url} href={f.url} target="_blank" rel="noopener noreferrer" onClick={() => setOpenedTerms(o => ({ ...o, [f.url]: true }))}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', minHeight: '48px', padding: '8px 16px', marginBottom: '10px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.3)', color: '#e8e4dc', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
+                <span>{f.name}を開く</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, flexShrink: 0, color: openedTerms[f.url] ? '#e8e4dc' : 'rgba(232,228,220,0.6)' }}>{openedTerms[f.url] ? '確認済み' : '別のタブで開きます'}</span>
+              </a>
+            )))}
+            <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', color: '#e8e4dc', margin: '4px 0 18px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.agree} disabled={!termsAllOpened} onChange={e => set('agree', e.target.checked)} style={{ marginTop: '3px' }} />
+              <span>上記の利用規約・同意書の内容を確認し、同意します{!termsAllOpened && <><br /><span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.65)' }}>先に上の規約をすべて開いてください</span></>}</span>
             </label>
             <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 16px' }}>次に進むとカード登録画面（Stripe）が開きます。ここではまだ課金されません。店舗の確認・承認後に、登録したカードで初回のお支払いが行われます。</p>
             <div style={{ display: 'flex', gap: '8px' }}>
