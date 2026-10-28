@@ -1762,7 +1762,7 @@ function MemberGateBanner({ provider }) {
     <div style={{ ...PV_CARD, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 16px', marginBottom: '16px', border: '1.5px solid var(--pv-accent)' }}>
       <p style={{ margin: 0, flex: '1 1 240px', fontSize: 'calc(13.5px * var(--pv-fs))', lineHeight: 1.7, color: 'var(--pv-text)' }}>
         <b>このお店は、会員登録（無料）をしてから予約・お申し込みができます。</b><br />
-        Finemeのアカウントで、お名前と電話番号を登録するだけです。
+        お名前と電話番号を登録するだけです（Finemeに未登録の方も、その場でアカウントを作れます）。
       </p>
       <a href={memberRegisterHref(provider)} style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', padding: '0 20px', borderRadius: '10px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', fontWeight: 800, textDecoration: 'none' }}>会員登録する</a>
     </div>
