@@ -6340,6 +6340,49 @@ export default function ProviderDashboardPage() {
         preview();
       }
 
+      // 利用規約・同意書（PDF・文章。2026-10-28）
+      let termsState = { text: '', file: null };
+      function updateTermsWarn() {
+        const w = document.getElementById('mbr-terms-warn');
+        if (w) w.style.display = !termsState.text.trim() && !termsState.file ? '' : 'none';
+      }
+      function renderTermsFile(s) {
+        termsState = { text: s.terms_text || '', file: s.terms_file_url ? { url: s.terms_file_url, name: s.terms_file_name || '利用規約.pdf' } : null };
+        const cur = document.getElementById('mbr-terms-file-cur');
+        if (cur) {
+          cur.innerHTML = termsState.file
+            ? `いま置いているファイル：<a href="${esc(termsState.file.url)}" target="_blank" rel="noopener noreferrer">${esc(termsState.file.name)}</a> <button type="button" class="btn btn-ghost" id="mbr-terms-file-del" style="font-size:12px;padding:4px 10px;margin-left:6px">外す</button>`
+            : '<span class="muted">まだ置いていません</span>';
+          document.getElementById('mbr-terms-file-del')?.addEventListener('click', async () => {
+            if (!confirm('規約のファイルを外しますか？（これまでに同意した方の記録は残ります）')) return;
+            const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'DELETE', headers: authH() });
+            if (r.ok) renderTermsFile({ terms_text: termsState.text });
+          });
+        }
+        updateTermsWarn();
+      }
+      document.getElementById('mbr-terms-upload-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('mbr-terms-file');
+        const msg = document.getElementById('mbr-terms-msg');
+        const f = input?.files?.[0];
+        if (!f) { if (msg) msg.textContent = 'PDFのファイルを選んでください'; return; }
+        const fd = new FormData(); fd.append('file', f);
+        if (msg) msg.textContent = 'アップロード中…';
+        const r = await fetch('/api/provider/membership-settings/terms-file', { method: 'POST', headers: authH(), body: fd });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { if (msg) msg.textContent = d.error || 'アップロードできませんでした'; return; }
+        if (msg) msg.textContent = '置きました。入会ページに表示されます';
+        input.value = '';
+        renderTermsFile({ terms_text: termsState.text, terms_file_url: d.terms_file_url, terms_file_name: d.terms_file_name });
+      });
+      document.getElementById('mbr-terms-save-btn')?.addEventListener('click', async () => {
+        const msg = document.getElementById('mbr-terms-msg');
+        const text = document.getElementById('mbr-set-terms')?.value || '';
+        const r = await fetch('/api/provider/membership-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ terms_text: text }) });
+        if (msg) msg.textContent = r.ok ? '保存しました' : '保存に失敗しました';
+        if (r.ok) { termsState.text = text; updateTermsWarn(); }
+      });
+
       async function loadSettings() {
         const res = await fetch('/api/provider/membership-settings', { headers: authH() });
         if (!res.ok) return;
@@ -6349,6 +6392,8 @@ export default function ProviderDashboardPage() {
         const termsEl = document.getElementById('mbr-set-terms');
         if (idreqEl) idreqEl.checked = !!s.require_id_document;
         if (termsEl) termsEl.value = s.terms_text || '';
+        renderTermsFile(s);
+        fetch('/api/provider/booking-limits', { headers: authH() }).then(r => (r.ok ? r.json() : null)).then(d => { if (d) window.__setMemberRegToggles?.(d.require_member_registration); }).catch(() => {});
         const allowEl = document.getElementById('mbr-set-allowreq');
         if (allowEl) allowEl.checked = s.allow_online_requests !== false;
         ffState = { ...(s.form_fields || {}) };
@@ -6363,7 +6408,6 @@ export default function ProviderDashboardPage() {
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
           form_fields: ffState,
           custom_fields: cfList,
-          terms_text: document.getElementById('mbr-set-terms')?.value || '',
         };
         const res = await fetch('/api/provider/membership-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
         const d = res.ok ? null : await res.json().catch(() => ({}));
@@ -6623,7 +6667,7 @@ export default function ProviderDashboardPage() {
           ${m.status === 'pending_approval' && m.discount ? `<div>クーポン：${esc(m.discount.name)}（${esc(m.discount.text)}）</div>` : ''}
           <div>緊急連絡先：${esc(m.emergency_contact_name || '未入力')}（${esc(m.emergency_contact_relation || '')}）${esc(m.emergency_contact_phone || '')}</div>
           <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
-          <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
+          <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}${m.terms_file_url ? ` <a href="${esc(m.terms_file_url)}" target="_blank" rel="noopener noreferrer">同意した規約のファイル</a>` : ''}</div>
           ${m.cancel_reason ? `<div>退会の理由：${esc(m.cancel_reason)}</div>` : ''}
           ${(m.custom_fields_snapshot || []).map(q => { const v = m.custom_answers?.[q.id]; return `<div>${esc(q.label)}：${v == null ? '未回答' : esc(Array.isArray(v) ? v.join('、') : v)}</div>`; }).join('')}
           <div id="mbr-detail-extra" class="stack" style="gap:10px;margin-top:8px"></div>
@@ -7297,6 +7341,7 @@ export default function ProviderDashboardPage() {
           if (cutoffTimeInput) cutoffTimeInput.value = d.booking_cutoff_time || '';
           updateCutoffModeFields();
           const hz = document.getElementById('booking-horizon-input'); if (hz) hz.value = d.booking_horizon_days ?? 60;
+          setMemberRegToggles(d.require_member_registration);
           window.__bookingMsgDefaults = d.message_defaults || {};
           const mi = document.getElementById('booking-msg-instant'); if (mi) mi.value = d.booking_messages?.instant || '';
           const mr = document.getElementById('booking-msg-request'); if (mr) mr.value = d.booking_messages?.request || '';
@@ -7355,6 +7400,14 @@ export default function ProviderDashboardPage() {
         if (!Number.isInteger(n) || n < 1 || n > 365) { const m = document.getElementById('booking-horizon-msg'); if (m) { m.style.color = '#ef4444'; m.textContent = '1〜365の整数で入れてください'; } return; }
         patchBookingLimits({ booking_horizon_days: n }, 'booking-horizon-msg');
       });
+      // 会員登録してから予約・入会（2026-10-28）。予約の受付設定と入会手続きタブの両方に同じチェックがある
+      function setMemberRegToggles(v) { document.querySelectorAll('[data-member-reg-toggle]').forEach(el => { el.checked = !!v; }); }
+      window.__setMemberRegToggles = setMemberRegToggles;
+      document.querySelectorAll('[data-member-reg-toggle]').forEach(el => el.addEventListener('change', async () => {
+        const v = el.checked;
+        const ok = await patchBookingLimits({ require_member_registration: v }, el.closest('#mbr-terms-card') ? 'mbr-terms-msg' : 'member-reg-msg');
+        setMemberRegToggles(ok ? v : !v);
+      }));
       document.getElementById('booking-msg-save-btn')?.addEventListener('click', () => {
         patchBookingLimits({ booking_messages: { instant: document.getElementById('booking-msg-instant')?.value || '', request: document.getElementById('booking-msg-request')?.value || '' } }, 'booking-msg-msg');
       });
@@ -16866,6 +16919,13 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="booking-horizon-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
               <span id="booking-horizon-msg" className="muted" style={{ fontSize: '12px' }}></span>
             </div>
+
+            {/* 会員登録してから予約・入会（でお要望 2026-10-28） */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', marginTop: '16px' }}>
+              <input type="checkbox" data-member-reg-toggle="1" style={{ marginTop: '3px' }} />
+              <span><b>会員登録（無料）を済ませた方だけ予約できるようにする</b><br /><span className="muted" style={{ fontSize: '11.5px' }}>オンにすると、登録していないお客様には予約・月額プランの入会・回数券の購入の前に、お名前と電話番号の会員登録を案内します（Finemeのログインが必要）。前から通っているお客様・お店で追加したお客様は登録済みとして扱います。お店の画面から入れる予約には影響しません。</span></span>
+            </label>
+            <span id="member-reg-msg" className="muted" style={{ fontSize: '12px' }}></span>
           </div>
 
           {/* お客様に自動で送るメッセージ（でお要望 2026-10-27：即時予約・リクエストそれぞれ店舗が編集できるように） */}
@@ -18356,6 +18416,39 @@ export default function ProviderDashboardPage() {
             <div id="mbr-disc-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
           </div>
 
+          {/* 利用規約・同意書（でお指摘 2026-10-28：オンライン入会の規約をアップロードする場所が分からない）。
+              設定の一番下の入力欄だけだったため、独立したカードにしてPDFも置けるようにし、未設定なら警告を出す */}
+          <div className="card stack mbr-hide-in-plans" id="mbr-terms-card" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>利用規約・同意書</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>オンライン入会のお客様は、ここに置いた規約を確認して同意してから申し込みます。同意した時点の内容は申込ごとに残ります（あとで差し替えても、それまでの方が同意した内容は変わりません）。</p>
+            </div>
+            <div id="mbr-terms-warn" role="alert" style={{ display: 'none', padding: '12px 14px', border: '1.5px solid #b45309', borderRadius: '10px', background: 'rgba(180,83,9,.08)', fontSize: '13px', fontWeight: 700, color: '#1a1410', lineHeight: 1.7 }}>
+              規約がまだ設定されていません。このままだと、お客様は規約の無いまま入会を申し込めてしまいます。今お使いの規約のPDFを置くか、文章を貼り付けてください。
+            </div>
+            <div className="stack" style={{ gap: '8px' }}>
+              <b style={{ fontSize: '13px' }}>PDFで置く</b>
+              <div id="mbr-terms-file-cur" style={{ fontSize: '13px' }}></div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input type="file" id="mbr-terms-file" accept="application/pdf,.pdf" style={{ fontSize: '13px' }} />
+                <button type="button" className="btn" id="mbr-terms-upload-btn">アップロードする</button>
+              </div>
+              <span className="muted" style={{ fontSize: '11.5px' }}>PDF・10MBまで。Wordの規約は「PDFとして保存」してから選んでください。お客様は入会ページでファイルを開いてから同意します。</span>
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label htmlFor="mbr-set-terms">文章で書く（PDFと両方あれば、両方を表示します）</label>
+              <textarea id="mbr-set-terms" style={{ width: '100%', minHeight: '140px', fontSize: '13px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="規約・同意書の文面を貼り付けてください"></textarea>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button type="button" className="btn" id="mbr-terms-save-btn">文章を保存する</button>
+              <span id="mbr-terms-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '12px' }}>
+              <input type="checkbox" data-member-reg-toggle="1" style={{ marginTop: '3px' }} />
+              <span>会員登録（無料）を済ませた方だけ、入会・予約・回数券の購入ができるようにする<br /><span className="muted" style={{ fontSize: '11.5px' }}>予約の受付設定の同じ項目と連動します。前から通っているお客様・お店で追加したお客様は登録済みとして扱います。</span></span>
+            </label>
+          </div>
+
           {/* 入会手続き設定（でお要望：各項目は店舗ごとにカスタマイズ可能に） */}
           <div className="card stack mbr-hide-in-plans" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '15px' }}>入会手続きの設定</h3>
@@ -18376,10 +18469,6 @@ export default function ProviderDashboardPage() {
               <span>例：ご入会のきっかけ、運動経験、既往歴など。答えは申込の詳細で確認できます（10個まで）。</span>
               <div id="mbr-cf" className="stack" style={{ gap: '8px' }}></div>
               <button type="button" className="btn btn-ghost" id="mbr-cf-add" style={{ width: 'fit-content', fontSize: '12.5px' }}>質問を追加</button>
-            </div>
-            <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>利用規約・同意書の内容（入会ページとお客様のマイページに表示されます）</label>
-              <textarea id="mbr-set-terms" style={{ width: '100%', minHeight: '140px', fontSize: '13px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="規約・同意書の文面を入力してください"></textarea>
             </div>
             <button type="button" className="btn" id="mbr-set-save-btn" style={{ width: 'fit-content' }}>設定を保存する</button>
             <span id="mbr-set-msg" className="muted" style={{ fontSize: '12px' }}></span>

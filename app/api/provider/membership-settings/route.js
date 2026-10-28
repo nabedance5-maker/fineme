@@ -34,6 +34,8 @@ export async function GET(request) {
     form_fields: normalizeFormFields(data?.form_fields),
     custom_fields: data?.custom_fields || [],
     terms_text: data?.terms_text || '',
+    terms_file_url: data?.terms_file_url || null,
+    terms_file_name: data?.terms_file_name || null,
   });
 }
 

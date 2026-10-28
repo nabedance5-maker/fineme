@@ -3,12 +3,13 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { customerEntitlements, checkService, hiddenForMember, needsTicket } from '@/lib/booking-eligibility';
+import { isStoreCustomer } from '@/lib/customer-accounts';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request, { params }) {
   const { slug } = await params;
-  const { data: provider } = await supabase.from('providers').select('id').eq('slug', slug).eq('published', true).maybeSingle();
+  const { data: provider } = await supabase.from('providers').select('id, require_member_registration').eq('slug', slug).eq('published', true).maybeSingle();
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const { data: { user } = {} } = token ? await supabase.auth.getUser(token).catch(() => ({ data: {} })) : { data: {} };
@@ -19,5 +20,8 @@ export async function GET(request, { params }) {
   // グループレッスン（でお要望 2026-10-22：開催回の予約もチケットを使う）
   const { data: cls } = await supabase.from('provider_classes').select('id, ticket_ids, ticket_cost, ticket_only').eq('provider_id', provider.id);
   const classes = Object.fromEntries((cls || []).filter(needsTicket).map(c => { const r = checkService(c, ent); return [c.id, { ok: r.ok, ticket_only: r.ticketOnly, ticket_ids: r.tickets.map(t => t.id) }]; }));
-  return Response.json({ logged_in: !!user, tickets: ent.tickets, member: ent.isMember, services, classes, hidden_for_member: hidden });
+  // 会員登録してから予約・入会のお店か、このお客様は登録済みか（2026-10-28）
+  const memberRequired = !!provider.require_member_registration;
+  const memberRegistered = memberRequired && user ? await isStoreCustomer(provider.id, user.id) : !memberRequired;
+  return Response.json({ logged_in: !!user, member_required: memberRequired, member_registered: memberRegistered, tickets: ent.tickets, member: ent.isMember, services, classes, hidden_for_member: hidden });
 }

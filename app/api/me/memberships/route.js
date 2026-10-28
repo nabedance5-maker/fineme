@@ -3,6 +3,7 @@
 //      別ステップ。ここでは個人情報・プラン・入会日・緊急連絡先・規約同意までを保存する）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { memberGate } from '@/lib/store-member';
 import { billingSchedule } from '@/lib/membership-cycle';
 import { findCoupon } from '@/lib/membership-changes';
 import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
@@ -67,6 +68,9 @@ export async function POST(request) {
     return Response.json({ error: '規約への同意が必要です' }, { status: 400 });
   }
 
+  // 会員登録してから入会するお店（2026-10-28）
+  { const g = await memberGate(supabase, provider_id, user.id); if (g) return Response.json({ error: g.error, code: g.code }, { status: g.status }); }
+
   // 既にこの店舗で有効な会員申込（承認待ち・会員）を持っていないか確認
   const { data: existing } = await supabase.from('provider_memberships').select('id').eq('user_id', user.id).eq('provider_id', provider_id).in('status', ['pending_approval', 'active']).limit(1);
   if (existing?.length) return Response.json({ error: 'この店舗への入会申込は既にあります' }, { status: 409 });
@@ -127,6 +131,7 @@ export async function POST(request) {
       custom_answers: customFields.length ? custom.answers : null,
       custom_fields_snapshot: customFields.length ? customFields : null,
       terms_snapshot: terms_snapshot.trim(),
+      terms_file_url: settings?.terms_file_url || null, // 同意した時点の規約ファイル（2026-10-28）
       terms_agreed_at: new Date().toISOString(),
     })
     .select()

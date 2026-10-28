@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { bookingMessageTemplate, renderBookingMessage } from '@/lib/booking-messages';
 import { findOrCreateUser, upsertProfile } from '@/lib/customer-accounts';
+import { memberGate } from '@/lib/store-member';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
@@ -117,6 +118,8 @@ export async function POST(request) {
     return Response.json({ error: 'ログインの確認ができませんでした。ページを開き直すか、ログインし直してから予約してください', code: 'auth_mismatch' }, { status: 401 });
   }
   let bookingUserId = authUser?.id || null;
+  // 会員登録してから予約するお店（2026-10-28）。ゲストのアカウントを作る前に止める
+  { const g = await memberGate(supabase, provider_id, authUser?.id || null); if (g) return Response.json({ error: g.error, code: g.code }, { status: g.status }); }
 
   // ── 予約者の情報（2026-10-27）──────────────────────────────
   // ・ログイン中：Finemeの登録情報（名前・メール・電話）で予約する。フォームの入力は使わない。

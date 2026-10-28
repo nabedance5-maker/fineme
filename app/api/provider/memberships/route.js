@@ -129,6 +129,7 @@ async function __POST(request) {
     emergency_contact_name: str(b.emergency_contact_name, 60), emergency_contact_phone: str(b.emergency_contact_phone, 30), emergency_contact_relation: str(b.emergency_contact_relation, 30),
     terms_snapshot: settings?.terms_text?.trim() || '（店頭でのお申し込み）お客様に規約・重要事項を説明し、同意を得ました。',
     terms_agreed_at: new Date().toISOString(),
+    terms_file_url: settings?.terms_file_url || null,
   }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data, { status: 201 });

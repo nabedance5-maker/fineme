@@ -55,6 +55,8 @@ export async function GET(request, { params }) {
     billing_cycle: { ...normalizeCycle(settings), initial_fee_timing: settings?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval' },
     require_id_document: settings?.require_id_document ?? true,
     terms_text: settings?.terms_text || '',
+    terms_file_url: settings?.terms_file_url || null,
+    terms_file_name: settings?.terms_file_name || null,
     lockers: availableLockers,
     options: options || [],
     tickets: ticketRows || [],

@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { memberGate } from '@/lib/store-member';
 import { applicationFeeAmount } from '@/lib/payment-fee';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -34,6 +35,8 @@ export async function POST(request) {
 
   const { data: provider } = await supabase.from('providers').select('id, slug, name, stripe_connect_id, stripe_connect_status').eq('id', pkg.provider_id).single();
   if (!provider) return Response.json({ error: '店舗が見つかりません' }, { status: 404 });
+  // 会員登録してから購入するお店（2026-10-28）
+  { const g = await memberGate(supabase, provider.id, user.id); if (g) return Response.json({ error: g.error, code: g.code }, { status: g.status }); }
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
     return Response.json({ error: 'この店舗はまだオンライン決済の受け入れ準備が完了していません' }, { status: 409 });
   }

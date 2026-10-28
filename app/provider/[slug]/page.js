@@ -1175,7 +1175,7 @@ function ClassTab({ provider, classId, preferTicket }) {
             const on = d === day;
             return (
               <button key={d} type="button" onClick={() => { setSelectedDate(d); setPickedId(null); }}
-                style={{ flex: '0 0 auto', minWidth: '56px', padding: '7px 8px', borderRadius: '8px', border: on ? 'none' : line, background: on ? 'var(--pv-accent, #c9a84c)' : 'var(--pv-surface)', color: on ? 'var(--pv-on-accent, #0a0f1e)' : (f.sun ? '#f87171' : f.sat ? '#60a5fa' : 'var(--pv-text)'), fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>
+                style={{ flex: '0 0 auto', minWidth: '56px', padding: '7px 8px', borderRadius: '8px', border: on ? 'none' : line, background: on ? 'var(--pv-accent, #c9a84c)' : 'var(--pv-surface)', color: on ? 'var(--pv-on-accent)' : (f.sun ? '#f87171' : f.sat ? '#60a5fa' : 'var(--pv-text)'), fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', cursor: 'pointer' }}>
                 {f.dd}（{f.wd}）
               </button>
             );
@@ -1183,7 +1183,7 @@ function ClassTab({ provider, classId, preferTicket }) {
         </div>
         <button type="button" disabled={weekStart + 7 >= dates.length} onClick={() => setWeekOffset(weekStart + 7)} aria-label="次の日程" style={{ padding: '6px 10px', borderRadius: '8px', border: line, background: 'transparent', color: 'var(--pv-text)', opacity: weekStart + 7 >= dates.length ? 0.3 : 1, cursor: 'pointer' }}>›</button>
       </div>
-      <div style={{ background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', textAlign: 'center', fontWeight: 800, borderRadius: '8px', padding: '7px', fontSize: 'calc(13px * var(--pv-fs))', marginBottom: '10px' }}>{fmtDay(day).md}（{fmtDay(day).wd}）</div>
+      <div style={{ background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent)', textAlign: 'center', fontWeight: 800, borderRadius: '8px', padding: '7px', fontSize: 'calc(13px * var(--pv-fs))', marginBottom: '10px' }}>{fmtDay(day).md}（{fmtDay(day).wd}）</div>
 
       <div style={{ overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${usedRooms.length}, minmax(130px, 1fr))`, gap: '8px', minWidth: `${usedRooms.length * 138}px` }}>
@@ -1261,7 +1261,7 @@ function ClassTab({ provider, classId, preferTicket }) {
               </div>
               {error && <p role="alert" style={{ color: 'var(--pv-text)', fontWeight: 700, fontSize: 'calc(12.5px * var(--pv-fs))', margin: '8px 0 0' }}>{error}</p>}
               <button type="button" onClick={() => { if (canTicket && !onlyT && !choice) { setError('チケットを使うか、単発で予約するかを選んでください'); return; } bookSession(picked.id, picked.class_name, chosenTicket); }} disabled={bookingSlotId === picked.id}
-                style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent, #0a0f1e)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
+                style={{ marginTop: '12px', width: '100%', padding: '12px', background: 'var(--pv-accent, #c9a84c)', color: 'var(--pv-on-accent)', border: 'none', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: 800, cursor: 'pointer', opacity: bookingSlotId === picked.id ? 0.6 : 1 }}>
                 {bookingSlotId === picked.id ? '予約中…' : 'このレッスンを予約する'}
               </button>
             </>
@@ -1744,8 +1744,34 @@ function PackagesTab({ provider, mode = 'packages' }) {
   );
 }
 
+// 会員登録してから予約・入会のお店（でお要望 2026-10-28）。登録がまだのお客様に、予約・入会の前に登録を案内する
+function memberRegisterHref(provider) {
+  const next = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '';
+  return `/provider/${encodeURIComponent(provider.slug)}/register${next ? `?next=${encodeURIComponent(next)}` : ''}`;
+}
+
+function MemberGateBanner({ provider }) {
+  const [st, setSt] = useState(null);
+  useEffect(() => {
+    if (!provider?.slug || !provider.require_member_registration) return;
+    freshAccessToken().then(t => fetch(`/api/providers/${provider.slug}/register`, { headers: t ? { Authorization: `Bearer ${t}` } : {} }))
+      .then(r => (r.ok ? r.json() : null)).then(setSt).catch(() => setSt(null));
+  }, [provider?.slug, provider?.require_member_registration]);
+  if (!st?.required || st.registered) return null;
+  return (
+    <div style={{ ...PV_CARD, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 16px', marginBottom: '16px', border: '1.5px solid var(--pv-accent)' }}>
+      <p style={{ margin: 0, flex: '1 1 240px', fontSize: 'calc(13.5px * var(--pv-fs))', lineHeight: 1.7, color: 'var(--pv-text)' }}>
+        <b>このお店は、会員登録（無料）をしてから予約・お申し込みができます。</b><br />
+        Finemeのアカウントで、お名前と電話番号を登録するだけです。
+      </p>
+      <a href={memberRegisterHref(provider)} style={{ display: 'inline-flex', alignItems: 'center', minHeight: '44px', padding: '0 20px', borderRadius: '10px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', fontWeight: 800, textDecoration: 'none' }}>会員登録する</a>
+    </div>
+  );
+}
+
 // 持っているチケットの表示（会員・チケットをお持ちの方だけ）。
 // ※ お客様が自分で会員登録する仕組みは廃止（でお指摘 2026-10-22：たまたま見た人がイタズラで登録できてしまう。会員登録はお店だけが行う）。
+//   ただし、お店が「会員登録してから予約・入会」をオンにした時だけは、ログインしたお客様が自分で登録する（2026-10-28。MemberGateBanner）。
 function MemberCard({ provider, elig }) {
   if (!elig) return null;
   const box = { border: '1.5px solid color-mix(in srgb, var(--pv-text) 18%, transparent)', borderRadius: '14px', padding: '14px 16px', color: 'var(--pv-text)', background: 'var(--pv-surface)' };
@@ -1775,6 +1801,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // ログイン中でアカウントに名前と連絡先がある時は、入力欄を畳んで「予約者」1行にする（毎回入力させない。2026-10-22）
   const [contactFromAccount, setContactFromAccount] = useState(false);
   const [needLogin, setNeedLogin] = useState(false);
+  const [needMember, setNeedMember] = useState(false);
   const editContact = false; // ログイン中は登録情報で予約する（変更はマイページのプロフィールから）
   // 日本時間の今日（以前は世界標準時の日付で、日本の朝9時前は前日になっていた）
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
@@ -2011,7 +2038,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         if (resData?.deposit_checkout_url) { window.location.href = resData.deposit_checkout_url; return; }
         setLastWasInstant(useInstant); setSubmitted(true);
       }
-      else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); setNeedLogin(String(err.code || '').startsWith('login_required')); }
+      else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); setNeedLogin(String(err.code || '').startsWith('login_required')); setNeedMember(err.code === 'member_required'); }
     } catch { setFormError('通信エラーが発生しました'); }
     finally { setSubmitting(false); }
   }
@@ -2321,7 +2348,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           <label style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', display: 'block', marginBottom: '4px' }}>お店に伝えたいこと・聞きたいこと（任意）</label>
           <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', boxSizing: 'border-box', resize: 'vertical', background: 'var(--pv-surface-2)', color: 'var(--pv-text)' }} />
         </div>
-        {formError && <p role="alert" style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: 700, margin: 0 }}>{formError}{needLogin && <> <a href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`} style={{ color: 'var(--pv-text)' }}>ログインする</a></>}</p>}
+        {formError && <p role="alert" style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'var(--pv-text)', fontWeight: 700, margin: 0 }}>{formError}{needLogin && <> <a href={`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/')}`} style={{ color: 'var(--pv-text)' }}>ログインする</a></>}{needMember && <> <a href={memberRegisterHref(provider)} style={{ color: 'var(--pv-text)' }}>会員登録する</a></>}</p>}
         {!(showInstantPicker && slots !== null && usableSlots.length === 0) && <button type="submit" disabled={submitting} style={{ padding: '14px', background: 'var(--pv-accent)', opacity: submitting ? 0.5 : 1, color: 'var(--pv-on-accent)', border: 'none', borderRadius: '12px', minHeight: '52px', fontSize: 'calc(16px * var(--pv-fs))', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
           {submitting ? '送信中…' : (showInstantPicker ? 'この日時で予約を確定する' : '相談リクエストを送る')}
         </button>}
@@ -2628,6 +2655,8 @@ function ProviderPageContent() {
       {/* タブ */}
       <div id="pv-tabs" style={{ scrollMarginTop: '0px' }} />
       <TabBar activeTab={activeTab} tabs={tabsFor(provider, { member: isMemberish, plans: joinOpen })} onSelect={tab => { setActiveTab(tab); if (tab !== 'book') setSelectedService(null); }} />
+
+      {activeTab !== 'basic' && activeTab !== 'appeal' && <MemberGateBanner provider={provider} />}
 
       {/* タブコンテンツ */}
       {activeTab === 'basic' && <BasicInfoTab provider={provider} />}

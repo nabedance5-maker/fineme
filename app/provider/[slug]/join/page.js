@@ -50,6 +50,10 @@ export default function JoinMembershipPage() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const [idFile, setIdFile] = useState(null);
+  // 規約のPDFを開いたか（PDFがあるお店は、開いてから同意できる。2026-10-28）
+  const [openedTermsFile, setOpenedTermsFile] = useState(false);
+  // 会員登録してから入会のお店で、まだ登録していない（2026-10-28。lib/store-member.js）
+  const [needMember, setNeedMember] = useState(false);
   // クーポン（でお要望 2026-10-19：hacomono差分 #5）
   const [coupon, setCoupon] = useState(null);
   const [couponMsg, setCouponMsg] = useState('');
@@ -92,6 +96,10 @@ export default function JoinMembershipPage() {
       .then(setInfo)
       .catch(() => setError('この店舗はオンライン入会に対応していません'))
       .finally(() => setLoading(false));
+    if (a && !searchParams.get('membership')) {
+      fetch(`/api/providers/${slug}/register`, { headers: { Authorization: `Bearer ${a.token}` } })
+        .then(r => (r.ok ? r.json() : null)).then(d => setNeedMember(!!(d?.required && !d.registered))).catch(() => {});
+    }
   }, [slug]);
 
   // Stripe Checkout(setup)から戻ってきた場合の確定処理
@@ -126,6 +134,19 @@ export default function JoinMembershipPage() {
           <h1 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px', color: '#e8e4dc' }}>{info?.provider_name} への入会</h1>
           <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.7)', margin: '0 0 20px' }}>入会手続きにはFinemeへのログインが必要です。</p>
           <a href={`/login?next=${encodeURIComponent(`/provider/${slug}/join`)}`} style={{ ...BTN, display: 'block', textAlign: 'center', textDecoration: 'none' }}>ログイン / 新規登録</a>
+        </div>
+      </div>
+    );
+  }
+
+  if (needMember) {
+    const back = `/provider/${slug}/join${typeof window !== 'undefined' ? window.location.search : ''}`;
+    return (
+      <div style={{ maxWidth: '480px', margin: '60px auto', padding: '0 20px' }}>
+        <div style={CARD}>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px', color: '#e8e4dc' }}>{info?.provider_name} への入会</h1>
+          <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', margin: '0 0 20px', lineHeight: 1.8 }}>このお店は、会員登録（無料）をしてから入会のお申し込みができます。お名前と電話番号を登録すると、この画面に戻ります。</p>
+          <a href={`/provider/${slug}/register?next=${encodeURIComponent(back)}`} style={{ ...BTN, display: 'block', textAlign: 'center', textDecoration: 'none' }}>会員登録する</a>
         </div>
       </div>
     );
@@ -190,7 +211,7 @@ export default function JoinMembershipPage() {
         last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, gender: form.gender || null, custom_answers: form.custom_answers,
         last_name: form.last_name, first_name: form.first_name, birthdate: form.birthdate || null, postal_code: form.postal_code, address: form.address, phone: form.phone,
         emergency_contact_name: form.emergency_contact_name, emergency_contact_phone: form.emergency_contact_phone, emergency_contact_relation: form.emergency_contact_relation,
-        terms_snapshot: info.terms_text || '（この店舗は規約テキストを設定していません）',
+        terms_snapshot: info.terms_text || (info.terms_file_url ? `（規約はファイルで提示：${info.terms_file_name || '利用規約.pdf'}）` : '（この店舗は規約テキストを設定していません）'),
       }),
     });
     if (!res.ok) { const d = await res.json().catch(() => ({})); setSubmitting(false); setError(d.error || '申込の保存に失敗しました'); return; }
@@ -372,11 +393,18 @@ export default function JoinMembershipPage() {
             )}
             <h2 style={{ fontSize: '15px', color: '#e8e4dc', margin: '0 0 16px' }}>利用規約・同意</h2>
             <div style={{ maxHeight: '220px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '14px', fontSize: '12.5px', color: 'rgba(232,228,220,0.8)', whiteSpace: 'pre-wrap', marginBottom: '14px' }}>
-              {info?.terms_text || 'この店舗は規約テキストを設定していません。ご不明点は店舗に直接お問い合わせください。'}
+              {info?.terms_text || (info?.terms_file_url ? '利用規約・同意書は下のファイルをご確認ください。' : 'この店舗は規約テキストを設定していません。ご不明点は店舗に直接お問い合わせください。')}
             </div>
+            {info?.terms_file_url && (
+              <a href={info.terms_file_url} target="_blank" rel="noopener noreferrer" onClick={() => setOpenedTermsFile(true)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', minHeight: '48px', padding: '0 16px', margin: '-4px 0 14px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.3)', color: '#e8e4dc', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
+                <span>利用規約・同意書を開く（{info.terms_file_name || 'PDF'}）</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: openedTermsFile ? '#e8e4dc' : 'rgba(232,228,220,0.6)' }}>{openedTermsFile ? '確認済み' : '別のタブで開きます'}</span>
+              </a>
+            )}
             <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', color: '#e8e4dc', marginBottom: '18px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={form.agree} onChange={e => set('agree', e.target.checked)} style={{ marginTop: '3px' }} />
-              上記の利用規約・同意書の内容を確認し、同意します
+              <input type="checkbox" checked={form.agree} disabled={!!info?.terms_file_url && !openedTermsFile} onChange={e => set('agree', e.target.checked)} style={{ marginTop: '3px' }} />
+              <span>上記の利用規約・同意書の内容を確認し、同意します{info?.terms_file_url && !openedTermsFile && <><br /><span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.65)' }}>先に利用規約・同意書のファイルを開いてください</span></>}</span>
             </label>
             <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 16px' }}>次に進むとカード登録画面（Stripe）が開きます。ここではまだ課金されません。店舗の確認・承認後に、登録したカードで初回のお支払いが行われます。</p>
             <div style={{ display: 'flex', gap: '8px' }}>
