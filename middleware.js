@@ -19,16 +19,18 @@ async function memberPerms(sub) {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   let value = null
-  try {
-    const h = { apikey: key, Authorization: `Bearer ${key}` }
-    const r = await fetch(`${base}/rest/v1/provider_members?user_id=eq.${sub}&status=eq.active&select=provider_id,role&limit=1`, { headers: h })
-    const rows = r.ok ? await r.json() : []
-    if (rows[0]) {
-      const pr = await fetch(`${base}/rest/v1/provider_role_permissions?provider_id=eq.${rows[0].provider_id}&role=eq.${rows[0].role}&select=perms`, { headers: h })
-      const prow = pr.ok ? await pr.json() : []
-      value = normalizePerms(rows[0].role, prow[0]?.perms)
-    }
-  } catch { value = null }
+  // Supabase が応答しない時に入口で25秒待って止まらないよう、5秒で打ち切る（2026-10-28 の障害）。
+  // 確かめられなかった時は権限を緩めず「一時的に確認できない」を返す（キャッシュもしない）
+  const h = { apikey: key, Authorization: `Bearer ${key}` }
+  const r = await fetch(`${base}/rest/v1/provider_members?user_id=eq.${sub}&status=eq.active&select=provider_id,role&limit=1`, { headers: h, signal: AbortSignal.timeout(5000) })
+  if (!r.ok) throw new Error(`members ${r.status}`)
+  const rows = await r.json()
+  if (rows[0]) {
+    const pr = await fetch(`${base}/rest/v1/provider_role_permissions?provider_id=eq.${rows[0].provider_id}&role=eq.${rows[0].role}&select=perms`, { headers: h, signal: AbortSignal.timeout(5000) })
+    if (!pr.ok) throw new Error(`perms ${pr.status}`)
+    const prow = await pr.json()
+    value = normalizePerms(rows[0].role, prow[0]?.perms)
+  }
   memberCache.set(sub, { at: Date.now(), value })
   return value
 }
@@ -39,7 +41,10 @@ async function guardMemberApi(request) {
   if (!perm) return null
   const sub = decodeSub(auth.slice(7))
   if (!sub) return null
-  const perms = await memberPerms(sub)
+  let perms
+  try { perms = await memberPerms(sub) } catch {
+    return NextResponse.json({ error: 'ただいまサーバーにつながりにくくなっています。少し時間をおいて、もう一度お試しください', code: 'upstream_unavailable' }, { status: 503 })
+  }
   if (!perms || perms[perm]) return null
   const label = PERM_DEFS.find(p => p.key === perm)?.label || perm
   return NextResponse.json({ error: `この操作（${label}）の権限がありません。店舗のオーナーに権限の変更を依頼してください`, code: 'no_permission', perm }, { status: 403 })

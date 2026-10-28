@@ -44,6 +44,7 @@ import '../styles/style.css';
 import Navbar from './_components/Navbar';
 import Footer from './_components/Footer';
 import ServiceWorkerRegister from './_components/ServiceWorkerRegister';
+import ConnectionBanner from './_components/ConnectionBanner';
 import GoogleAnalytics from './_components/GoogleAnalytics';
 import Script from 'next/script';
 
@@ -140,6 +141,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <ConnectionBanner />
         <GoogleAnalytics />
         {pixelId && (
           <>

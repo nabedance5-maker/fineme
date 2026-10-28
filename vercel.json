@@ -29,6 +29,7 @@
     { "path": "/api/cron/provider-log-toolkit-announce", "schedule": "0 1 * * *" },
     { "path": "/api/cron/grant-subscription-tickets", "schedule": "0 5 * * *" },
     { "path": "/api/cron/shift-deadline", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/uptime-check", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/broadcasts", "schedule": "*/10 * * * *" }
   ],
   "redirects": [

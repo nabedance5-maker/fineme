@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { timedFetch } from '@/lib/browser-auth';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
 import { syncLocalLogsToServer } from '@/lib/log-store';
 import { syncLocalAttributesToServer } from '@/lib/attributes';
 
 const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { global: { fetch: timedFetch } }); // 応答しない時は15秒で打ち切る（2026-10-28 の障害）
 const SITE_URL = 'https://www.fineme.me';
 
 // Android Chromeなど一部ブラウザは、<form>のsubmitイベントを検知できないと
@@ -151,9 +152,11 @@ export default function LoginPage() {
       return;
     }
     setLoginLoading(true);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password }).catch(e => ({ data: null, error: e }));
     if (error) {
-      setLoginError('ログインエラー: ' + error.message);
+      // サーバーにつながらない時（2026-10-28 の障害）は、パスワード違いと誤解しないよう分けて伝える
+      const down = !error.status || error.status >= 500 || /fetch|load failed|network|abort|timeout/i.test(`${error.name} ${error.message}`);
+      setLoginError(down ? 'ただいまサーバーにつながりにくくなっています。少し時間をおいて、もう一度お試しください。' : 'ログインエラー: ' + error.message);
       setLoginLoading(false);
       return;
     }
