@@ -14802,7 +14802,19 @@ export default function ProviderDashboardPage() {
         const pay = currentPay();
         const cashRec = pay?.cash && $('pos-cash').value !== '' ? parseInt($('pos-cash').value, 10) : null;
         if (cashRec != null && cashRec < t.total) { showToast('お預かりが合計より少ないです'); return; }
+        // 押し間違いで会計を確定しないよう、最後に確かめてもらう（でお要望 2026-10-28）
         checkoutBtn.disabled = true;
+        const ok = await pdConfirm({
+          title: '会計しますか？',
+          lines: [
+            ['合計', yen(t.total)],
+            ...(pay?.label ? [['支払い方法', pay.label]] : []),
+            ...(cashRec != null ? [['お預かり', yen(cashRec)], ['おつり', yen(cashRec - t.total)]] : []),
+            ...(customer?.name ? [['お客様', customer.name]] : []),
+          ],
+          okLabel: 'はい', cancelLabel: 'いいえ',
+        });
+        if (!ok) { checkoutBtn.disabled = !cart.length; return; }
         checkoutMsg.textContent = '';
         const res = await fetch('/api/provider/pos/checkout', {
           method: 'POST', headers: authHeadersPos(),
@@ -14884,7 +14896,12 @@ export default function ProviderDashboardPage() {
       cardBtn?.addEventListener('click', async () => {
         if (!cart.length || !memberCard || !customer?.user_id) return;
         const t = totals();
-        if (!confirm(`${customer.name} 様の登録済みのカード（${memberCard.label}）に ${yen(t.total)} を請求します。\n\nお客様ご本人に金額を確認していただいてから「OK」を押してください。`)) return;
+        const ok = await pdConfirm({
+          title: '会計しますか？',
+          lines: [['合計', yen(t.total)], ['支払い方法', `登録済みのカード（${memberCard.label}）`], ['お客様', customer.name], 'お客様ご本人に金額を確認していただいてから「はい」を押してください。押すとカードに請求されます。'],
+          okLabel: 'はい', cancelLabel: 'いいえ',
+        });
+        if (!ok || !cart.length || !memberCard) return;
         cardRequestId = cardRequestId || crypto.randomUUID();
         cardBtn.disabled = true; checkoutMsg.textContent = 'カードに請求しています…';
         const res = await fetch('/api/provider/pos/card-checkout', {
