@@ -46,7 +46,7 @@ export async function GET(request) {
   const [{ data: allRows, error }, { data: classSlots }] = await Promise.all([
     supabase
       .from('reservations')
-      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id, service_id')
+      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id, service_id, same_name_warning')
       .eq('provider_id', provider.id)
       .in('status', ['pending', 'approved', 'visited', 'counter_proposed'])
       .gte('reserved_date', from)
@@ -146,6 +146,7 @@ export async function GET(request) {
       staff_id: r.staff_id || null,
       staff_name: r.staff_id ? staffMap[r.staff_id] || null : null,
       staff_manually_assigned: !!r.staff_manually_assigned,
+      same_name_warning: r.same_name_warning || null,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
       duration_minutes: r.slot_id ? (slotDurationMap[r.slot_id] || null) : (r.service_id ? (serviceDurationMap[r.service_id] || null) : null),

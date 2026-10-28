@@ -5,6 +5,7 @@ import { sendReservationCreatedEmails } from '@/lib/email';
 import { bookingMessageTemplate, renderBookingMessage } from '@/lib/booking-messages';
 import { findOrCreateUser, upsertProfile } from '@/lib/customer-accounts';
 import { memberGate } from '@/lib/store-member';
+import { nameKeys } from '@/lib/name-match';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
@@ -182,6 +183,7 @@ export async function POST(request) {
   const ent = authUser ? await customerEntitlements(supabase, provider_id, authUser.id) : null;
   if (svc && hiddenForMember(svc, ent)) return Response.json({ error: 'このメニューは初めての方向けです。会員の方は他のメニューからご予約ください', code: 'member_hidden' }, { status: 403 });
   // お一人様◯回まで（体験メニューなど。2026-10-27）。同じアカウント・メール・電話番号の予約を数える
+  let sameNameWarning = null;
   if (svcRow?.per_customer_limit) {
     const ACTIVE = ['pending', 'approved', 'counter_proposed', 'visited'];
     const ids = new Set();
@@ -202,6 +204,21 @@ export async function POST(request) {
     if (ids.size >= svcRow.per_customer_limit) {
       return Response.json({ error: `「${svcRow.name}」はお一人様${svcRow.per_customer_limit}回までのご予約です。ほかのメニューからお選びください`, code: 'per_customer_limit' }, { status: 409 });
     }
+    // アカウント・メール・電話番号は違うが、同じお名前の方がすでに予約している時は、止めずにお店に知らせる（2026-10-28）。
+    // 別の連絡先に変えて何度も体験を予約する「すり抜け」に気づけるように（同姓同名の別人もいるため、判断はお店）
+    try {
+      const profKey = uid => supabase.from('provider_customer_profiles').select('user_id, last_name, first_name, last_name_kana, first_name_kana').eq('provider_id', provider_id).in('user_id', uid);
+      const keysOf = p => (p ? [`${p.last_name || ''}${p.first_name || ''}`, `${p.last_name_kana || ''}${p.first_name_kana || ''}`] : []);
+      const { data: myProf } = bookingUserId ? await profKey([bookingUserId]) : { data: [] };
+      const mine = nameKeys(user_name, ...keysOf(myProf?.[0]));
+      const { data: past } = await supabase.from('reservations').select('id, user_id, user_name, reserved_date, confirmed_date').eq('provider_id', provider_id).eq('service_id', svcRow.id).in('status', ACTIVE).order('created_at', { ascending: false }).limit(2000);
+      const others = (past || []).filter(r => !ids.has(r.id) && (!bookingUserId || r.user_id !== bookingUserId));
+      const uids = [...new Set(others.map(r => r.user_id).filter(Boolean))];
+      const { data: profs } = uids.length ? await profKey(uids) : { data: [] };
+      const profBy = Object.fromEntries((profs || []).map(p => [p.user_id, p]));
+      const hit = mine.length && others.find(r => nameKeys(r.user_name, ...keysOf(profBy[r.user_id])).some(k => mine.includes(k)));
+      if (hit) sameNameWarning = `同じお名前（${hit.user_name}）の方が、${hit.confirmed_date || hit.reserved_date || '以前'}にこのメニューを別の連絡先で予約しています。同じ方の場合は「お一人様${svcRow.per_customer_limit}回まで」を超えています`;
+    } catch (e) { console.error('[reservation same-name]', e?.message); }
   }
   if (svc && needsTicket(svc) && (requiresTicket(svc) || verifiedPackageId)) {
     const { data: tk } = await supabase.from('provider_tickets').select('id, name').in('id', svc.ticket_ids);
@@ -272,6 +289,7 @@ export async function POST(request) {
     ticket_cost: verifiedPackageId ? ticketCost : 1,
     designation_fee: designationFee,
     booking_mode: isInstant ? 'instant' : 'request',
+    same_name_warning: sameNameWarning,
   };
 
   let slot = null;
@@ -442,6 +460,7 @@ export async function POST(request) {
       `お客様: ${user_name}`,
       `${isInstant ? '確定日時' : '希望日'}: ${whenText}`,
       `連絡先: ${user_contact}`,
+      sameNameWarning ? `【確認】${sameNameWarning}` : '',
       message ? `メッセージ: ${message}` : '',
       isInstant ? '' : '管理画面から対応してください。',
     ].filter(Boolean).join('\n');

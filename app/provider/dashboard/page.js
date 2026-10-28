@@ -11595,6 +11595,7 @@ export default function ProviderDashboardPage() {
             <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">${esc(r.user_name)}</p>
             <p style="font-size:13px;color:#374151;margin:0">${esc(r.user_contact)}</p>
           </div>` : `<p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>`}
+          ${r.same_name_warning ? `<div role="note" style="margin:8px 0;padding:8px 12px;border:1.5px solid #b45309;border-radius:8px;background:rgba(180,83,9,.08);font-size:12.5px;font-weight:700;color:#1a1410">確認：${esc(r.same_name_warning)}</div>` : ''}
           ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">${esc(menuText)}</p>` : ''}
           <div style="margin-bottom:8px">${choicesHtml}</div>
           ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
@@ -13996,6 +13997,7 @@ export default function ProviderDashboardPage() {
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
             ${r.class_id && classById[r.class_id] ? `<div style="margin-top:4px;font-size:12.5px;font-weight:700;color:#16a34a">${esc(classById[r.class_id])}</div>` : ''}
+            ${r.same_name_warning ? `<div role="note" style="margin:8px 0;padding:8px 12px;border:1.5px solid #b45309;border-radius:8px;background:rgba(180,83,9,.08);font-size:12.5px;font-weight:700;color:#1a1410">確認：${esc(r.same_name_warning)}</div>` : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
             ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">顧客情報を見る（カルテ・回数券など）</button>' : `
               <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
