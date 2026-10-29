@@ -35,8 +35,8 @@ export async function GET(request) {
   const userIds = [...new Set(rows.filter(r => r.user_id).map(r => r.user_id))];
   let nameMap = {};
   if (userIds.length) {
-    const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', userIds);
-    (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
+    const { data: profiles } = await supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', userIds);
+    (profiles || []).forEach(p => { nameMap[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; }); // ニックネームより氏名
   }
 
   const result = rows.map(r => ({
@@ -56,7 +56,7 @@ async function __POST(request) {
   const { code, offline_member_name } = await request.json().catch(() => ({}));
 
   if (code) {
-    const { data: profile } = await supabase.from('profiles').select('id, display_name').eq('checkin_code', code).single();
+    const { data: profile } = await supabase.from('profiles').select('id, display_name, last_name, first_name').eq('checkin_code', code).single();
     if (!profile) return Response.json({ error: 'QRコードに対応する会員が見つかりません' }, { status: 404 });
 
     const { data: row, error } = await supabase
@@ -97,10 +97,10 @@ async function __POST(request) {
     if (provider.slug && !matchedReservationId) {
       // 予約と自動連携できた場合は上のPATCHが同じ処理(New Me Log同期含む)を
       // 行っているため、ここでの直接呼び出しは二重実行を避けてスキップする
-      await notifyStoreIfAtRiskVisit(supabase, { userId: profile.id, providerId: provider.id, providerSlug: provider.slug, memberName: profile.display_name });
+      await notifyStoreIfAtRiskVisit(supabase, { userId: profile.id, providerId: provider.id, providerSlug: provider.slug, memberName: [profile.last_name, profile.first_name].filter(Boolean).join(' ') || profile.display_name });
       await syncVisitToLog(supabase, { userId: profile.id, providerSlug: provider.slug });
     }
-    return Response.json({ ...row, customer_name: profile.display_name || '(名前未設定)', matched_reservation_id: matchedReservationId });
+    return Response.json({ ...row, customer_name: [profile.last_name, profile.first_name].filter(Boolean).join(' ') || profile.display_name || '(名前未設定)', matched_reservation_id: matchedReservationId });
   }
 
   if (offline_member_name?.trim()) {

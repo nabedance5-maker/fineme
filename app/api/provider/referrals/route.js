@@ -30,8 +30,8 @@ export async function GET(request) {
   const referrerIds = [...new Set((rows || []).map(r => r.referrer_user_id))];
   let nameMap = {};
   if (referrerIds.length) {
-    const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', referrerIds);
-    (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
+    const { data: profiles } = await supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', referrerIds);
+    (profiles || []).forEach(p => { nameMap[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; });
   }
 
   return Response.json((rows || []).map(r => ({ ...r, referrer_name: nameMap[r.referrer_user_id] || '(名前不明)' })));

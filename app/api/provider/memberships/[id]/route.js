@@ -91,7 +91,7 @@ export async function GET(request, { params }) {
 
   return Response.json({
     ...m,
-    customer_name: profile?.display_name || null,
+    customer_name: [m.last_name, m.first_name].filter(Boolean).join(' ') || profile?.display_name || null, // ニックネームより入会時の氏名
     id_document_url,
     plan_name: plan?.name || null,
     plan_price: plan?.monthly_price ?? null,

@@ -49,6 +49,12 @@ export async function PUT(request) {
   const body = await request.json().catch(() => ({}));
   const { display_name, share_diagnosis, share_roadmap, last_name, first_name, phone, axis_progress, step_done, area, city, body_data, birthday, mirror_privacy_consent } = body;
 
+  // 予約者情報（氏名・電話番号）は必須（でお要望 2026-10-29）。送られてきた時だけ確かめる（他の画面からの部分的な保存は通す）
+  for (const [k, label] of [['last_name', '姓'], ['first_name', '名'], ['phone', '電話番号']]) {
+    if (body[k] !== undefined && !String(body[k] ?? '').trim()) return Response.json({ error: `${label}を入力してください` }, { status: 400 });
+  }
+  if (phone !== undefined && String(phone).replace(/\D/g, '').length < 10) return Response.json({ error: '電話番号は10桁以上の数字で入力してください' }, { status: 400 });
+
   // auth.users の display_name を更新
   if (display_name !== undefined) {
     await supabase.auth.admin.updateUserById(user.id, {

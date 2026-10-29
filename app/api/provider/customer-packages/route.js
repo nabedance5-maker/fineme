@@ -36,11 +36,11 @@ export async function GET(request) {
 
   const [{ data: usages }, { data: profiles }] = await Promise.all([
     supabase.from('package_usages').select('id, customer_package_id, used_at, undone_at').in('customer_package_id', ids),
-    supabase.from('profiles').select('id, display_name').in('id', userIds),
+    supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', userIds),
   ]);
 
   const nameMap = {};
-  (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
+  (profiles || []).forEach(p => { nameMap[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; }); // ニックネームより氏名
 
   const usageByPkg = {};
   (usages || []).forEach(u => { (usageByPkg[u.customer_package_id] = usageByPkg[u.customer_package_id] || []).push(u); });

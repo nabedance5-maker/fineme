@@ -132,7 +132,7 @@ export async function GET(request) {
     { data: memRows },
     { data: futureRows },
   ] = await Promise.all([
-    supabase.from('profiles').select('id, display_name, line_user_id, birthday').in('id', userIds),
+    supabase.from('profiles').select('id, display_name, last_name, first_name, line_user_id, birthday').in('id', userIds),
     supabase.from('provider_recommended_frequencies').select('axis, frequency_weeks, frequency_months').eq('provider_id', provider.id),
     supabase.from('provider_customer_notes').select('user_id, note, assigned_staff_id').eq('provider_id', provider.id).in('user_id', userIds),
     supabase.from('provider_dormant_settings').select('no_visit_days').eq('provider_id', provider.id).maybeSingle(),
@@ -158,8 +158,8 @@ export async function GET(request) {
   try { numberMap = (await ensureCustomerNumbers(supabase, provider.id, { userIds })).user; } catch { /* 番号が振れなくても一覧は返す */ }
 
   const nameMap = {};
-  (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
-  // 店舗が登録した基本情報（氏名・電話）を優先する
+  // ニックネームより氏名（Finemeの会員情報）を出す。店舗が登録した基本情報（氏名・電話）があればそれを優先する（2026-10-29）
+  (profiles || []).forEach(p => { nameMap[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; });
   const phoneMap = {};
   (profileRows || []).forEach(p => {
     if (p.phone) phoneMap[p.user_id] = p.phone;

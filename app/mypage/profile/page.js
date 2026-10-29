@@ -231,6 +231,9 @@ export default function MypageProfilePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!displayName.trim()) { setMessage('名前は必須です。'); return; }
+    // 予約者情報（氏名・電話番号）も必須（でお要望 2026-10-29）
+    if (!lastName.trim() || !firstName.trim() || !phone.trim()) { setMessage('予約者情報（姓・名・電話番号）を入力してください。'); return; }
+    if (phone.replace(/\D/g, '').length < 10) { setMessage('電話番号は10桁以上の数字で入力してください。'); return; }
     setSaving(true);
     setMessage('');
     try {
@@ -343,12 +346,14 @@ export default function MypageProfilePage() {
               {/* 予約者情報 */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>予約者情報</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。任意入力ですが、入力しておくとスムーズです。</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。お店がお客様を確認するため、必ず入力してください。</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>姓</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>姓（必須）</label>
                     <input
                       type="text"
+                      required
+                      autoComplete="family-name"
                       placeholder="山田"
                       value={lastName}
                       onChange={e => setLastName(e.target.value)}
@@ -356,9 +361,11 @@ export default function MypageProfilePage() {
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>名</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>名（必須）</label>
                     <input
                       type="text"
+                      required
+                      autoComplete="given-name"
                       placeholder="太郎"
                       value={firstName}
                       onChange={e => setFirstName(e.target.value)}
@@ -367,9 +374,11 @@ export default function MypageProfilePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>電話番号</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>電話番号（必須）</label>
                   <input
                     type="tel"
+                    required
+                    autoComplete="tel"
                     placeholder="090-0000-0000"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}

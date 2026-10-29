@@ -41,9 +41,9 @@ export async function GET(request, props) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!rows?.length) return Response.json([]);
 
-  const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', rows.map(r => r.user_id));
+  const { data: profiles } = await supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', rows.map(r => r.user_id));
   const nameMap = {};
-  (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
+  (profiles || []).forEach(p => { nameMap[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; }); // ニックネームより氏名
 
   return Response.json(rows.map(r => ({ ...r, customer_name: nameMap[r.user_id] || '(名前未設定)' })));
 }

@@ -47,7 +47,7 @@ async function __POST(request) {
     const { data: prov } = await supabase.from('providers').select('id, slug').eq('id', pid).single();
     const ids = [...(await providerCustomerIds(supabase, prov))];
     const [profs, cps, labels, types, tags, resv, mems, manual, links] = await Promise.all([
-      inChunks(ids, part => supabase.from('profiles').select('id, display_name, line_user_id').in('id', part)),
+      inChunks(ids, part => supabase.from('profiles').select('id, display_name, last_name, first_name, line_user_id').in('id', part)),
       all(() => supabase.from('provider_customer_profiles').select('*').eq('provider_id', pid).order('id')),
       all(() => supabase.from('provider_customer_labels').select('user_id, manual_id, member_type_id, tag_ids').eq('provider_id', pid).order('id')),
       supabase.from('provider_member_types').select('id, name').eq('provider_id', pid).then(r => r.data || []),
@@ -80,7 +80,7 @@ async function __POST(request) {
     ];
     const rows = ids.map(uid => {
       const c = cpU[uid]; const s = st[uid] || {};
-      return ['会員', ...line(c, lbU[uid], { name: profOf[uid]?.display_name || '' }), memOf[uid] || '', s.visits || 0, s.last || '', lineStore.has(uid) ? 'お店のLINE' : profOf[uid]?.line_user_id ? 'FinemeのLINE' : '', ''];
+      return ['会員', ...line(c, lbU[uid], { name: [profOf[uid]?.last_name, profOf[uid]?.first_name].filter(Boolean).join(' ') || profOf[uid]?.display_name || '' }), memOf[uid] || '', s.visits || 0, s.last || '', lineStore.has(uid) ? 'お店のLINE' : profOf[uid]?.line_user_id ? 'FinemeのLINE' : '', ''];
     }).concat(manual.filter(m => !m.linked_user_id).map(m => ['非会員', ...line(cpM[m.id], lbM[m.id], { name: m.display_name }), '', 0, '', '', m.memo || '']));
     body = csv(head, rows);
   } else if (b.type === 'reservations') {
@@ -102,10 +102,10 @@ async function __POST(request) {
     const rows = await all(() => supabase.from('provider_checkins').select('user_id, offline_member_name, method, created_at').eq('provider_id', pid).gte('created_at', fromIso).lt('created_at', toIso).order('created_at'));
     const uids = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
     const [profs, cps] = await Promise.all([
-      inChunks(uids, part => supabase.from('profiles').select('id, display_name').in('id', part)),
+      inChunks(uids, part => supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', part)),
       inChunks(uids, part => supabase.from('provider_customer_profiles').select('user_id, last_name, first_name').eq('provider_id', pid).in('user_id', part)),
     ]);
-    const name = {}; profs.forEach(p => { name[p.id] = p.display_name; }); cps.forEach(c => { const n = [c.last_name, c.first_name].filter(Boolean).join(' '); if (n) name[c.user_id] = n; });
+    const name = {}; profs.forEach(p => { name[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; }); cps.forEach(c => { const n = [c.last_name, c.first_name].filter(Boolean).join(' '); if (n) name[c.user_id] = n; });
     body = csv(['日時', 'お名前', '方法'], rows.map(r => [jst(r.created_at), r.user_id ? name[r.user_id] || '' : r.offline_member_name || '', r.method === 'qr' ? 'QR' : '手動']));
   } else {
     return Response.json({ error: '出力する種類を選んでください' }, { status: 400 });

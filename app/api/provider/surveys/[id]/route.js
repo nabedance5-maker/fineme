@@ -25,10 +25,10 @@ export async function GET(request, props) {
   for (let i = 0; i < uids.length; i += 300) {
     const part = uids.slice(i, i + 300);
     const [{ data: prof }, { data: cp }] = await Promise.all([
-      supabase.from('profiles').select('id, display_name').in('id', part),
+      supabase.from('profiles').select('id, display_name, last_name, first_name').in('id', part),
       supabase.from('provider_customer_profiles').select('user_id, last_name, first_name').eq('provider_id', a.provider.id).in('user_id', part),
     ]);
-    (prof || []).forEach(p => { names[p.id] = p.display_name; });
+    (prof || []).forEach(p => { names[p.id] = [p.last_name, p.first_name].filter(Boolean).join(' ') || p.display_name; });
     (cp || []).forEach(p => { const n = [p.last_name, p.first_name].filter(Boolean).join(' '); if (n) names[p.user_id] = n; });
   }
   const responses = (rows || []).map(r => ({ ...r, name: (r.user_id && names[r.user_id]) || r.respondent_name || '（お名前なし）' }));
