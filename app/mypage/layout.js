@@ -1,5 +1,6 @@
 import TrackBadge from './_components/TrackBadge';
 import MemberQrButton from './_components/MemberQrButton';
+import PendingPayments from './_components/PendingPayments';
 
 // /mypage/* は男性トラックとBelleで共用する。
 // トラックごとにページを複製すると片方だけ直し忘れる事故が起きるため、
@@ -8,6 +9,7 @@ export default function MyPageLayout({ children }) {
   return (
     <>
       <TrackBadge />
+      <PendingPayments />
       {children}
       <MemberQrButton />
     </>

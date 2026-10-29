@@ -10,6 +10,7 @@ import { afterMembershipInvoice, syncManagedDiscount } from '@/lib/membership-bi
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
 import { saveCustomerCard } from '@/lib/pos-member-card';
+import { recordLockerCheckout, recordLockerInvoice } from '@/lib/locker-pay';
 import { markInvoicePaid } from '@/lib/invoices';
 import { recordPaymentAndRewards, recordRefund } from '@/lib/collaborator-rewards';
 
@@ -87,6 +88,8 @@ export async function POST(request) {
           try { await afterMembershipInvoice(supabaseAdmin, stripe, invoice, 'succeeded'); } catch (e) { console.error('[webhook] membership invoice check', e?.message); }
           break;
         }
+        // ロッカー代だけの月額（支払いリンクから始まったもの）：売上に記録する（2026-10-29）
+        if (await recordLockerInvoice(supabaseAdmin, invoice)) break;
         const providerId = invoice.subscription_details?.metadata?.fineme_provider_id
           || invoice.metadata?.fineme_provider_id;
         if (!providerId) break;
@@ -153,6 +156,11 @@ export async function POST(request) {
         // オンライン入会のカード登録が終わった（お客様が入会ページに戻らなくても、承認待ちにしてお店に知らせる。2026-10-28）
         if (session.mode === 'setup' && session.metadata?.fineme_membership_enroll) {
           try { await completeEnrollmentSetup(supabaseAdmin, stripe, session.metadata.fineme_membership_enroll, session); } catch (e) { console.error('[webhook] membership enroll error:', e); }
+          break;
+        }
+        // ロッカー代の支払いリンクで、お客様がカードを登録した：契約に月額を記録する（2026-10-29）
+        if (session.mode === 'subscription' && session.metadata?.fineme_locker_contract_id) {
+          try { await recordLockerCheckout(supabaseAdmin, stripe, session); } catch (e) { console.error('[webhook] locker checkout error:', e); }
           break;
         }
         const pendingId = session.metadata?.fineme_pos_pending_id;

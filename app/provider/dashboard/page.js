@@ -5858,10 +5858,11 @@ export default function ProviderDashboardPage() {
         const contractHtml = c ? `
           <div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px">
             <div><strong>${esc(c.contractor_name)}</strong>（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust>会員</span>' : ''}</div>
-            <div style="margin-top:4px;font-size:12px">${c.stripe_subscription_item_id
+            <div style="margin-top:4px;font-size:12px">${c.stripe_subscription_item_id || c.stripe_subscription_id
               ? '<span style="font-weight:700;padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669">自動課金中</span>'
               : c.payment_link_url
-                ? `<span style="font-weight:700;padding:1px 8px;border-radius:99px;background:#fffbeb;color:#92400e">支払いリンク未完了</span> <a href="${esc(c.payment_link_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:700">リンクを開く</a>`
+                ? `<span style="font-weight:700;padding:1px 8px;border-radius:99px;background:#fffbeb;color:#92400e">お客様のカード登録待ち</span> <button type="button" class="btn btn-ghost" data-lkr-copy-link="${esc(c.payment_link_url)}" style="font-size:12px;padding:2px 10px">支払いリンクをコピー</button>
+                  <div style="margin-top:4px;color:#1a1410">${c.payment_notified_at ? 'お客様のLINE・マイページにお知らせ済みです。' : 'Fineme会員と紐づいていないため、リンクをお客様に送ってください。'}</div>`
                 : '<span style="color:#6b7280">手動管理</span>'}</div>
           </div>` : '';
         const root = openModal(`${l.name}（${stateLabel.replace(/<[^>]+>/g, '')}）`, `
@@ -5883,6 +5884,10 @@ export default function ProviderDashboardPage() {
               : (l.active ? '<button type="button" class="btn" style="flex:1" data-lkr-start-contract>契約する</button>' : '')}
             <button type="button" class="btn btn-ghost" style="color:#ef4444" data-lkr-del>削除</button>
           </div>`);
+        root?.querySelector('[data-lkr-copy-link]')?.addEventListener('click', async e => {
+          try { await navigator.clipboard.writeText(e.currentTarget.dataset.lkrCopyLink); showToast('支払いリンクをコピーしました'); }
+          catch { prompt('このリンクをコピーしてお客様に送ってください', e.currentTarget.dataset.lkrCopyLink); }
+        });
         root?.querySelector('[data-lkr-open-cust]')?.addEventListener('click', () => {
           if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
           closeModal();
@@ -5945,7 +5950,7 @@ export default function ProviderDashboardPage() {
           contractCard.style.display = 'none';
           loadLockers();
           if (d.billing_mode === 'auto') showToast('契約しました（既存の月会費サブスクに自動課金を追加しました）');
-          else if (d.billing_mode === 'link') showToast('契約しました。カード未登録のため支払いリンクを発行しました。一覧の「リンクを開く」から確認し、お客様へ送ってください');
+          else if (d.billing_mode === 'link') showToast(d.notified ? '契約しました。お客様のLINE・マイページに、カード登録（支払い）のお知らせを送りました' : '契約しました。支払いリンクを発行しました。ロッカーを開いて「支払いリンクをコピー」からお客様へ送ってください');
           else if (d.billing_mode === 'error') showToast('契約は記録しましたが、自動課金の設定に失敗しました：' + (d.billing_error || '不明なエラー'));
           else showToast('契約しました');
           return;

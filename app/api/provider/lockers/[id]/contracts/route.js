@@ -3,15 +3,14 @@
 // 契約者が既にオンライン入会（入会手続き）で有効な月会費サブスクを持つ会員なら、
 // そのサブスクにロッカー代を追加項目として差し込んで即時自動課金する（カードは
 // 既に登録済みのため本人操作は不要）。それ以外（非会員・オンライン入会未経由で
-// カード未登録）はStripe Checkoutの支払いリンクを発行するところまでで、実際に
-// 本人へ送って完了させるのは店舗側の運用に委ねる（でお判断2026-09-26：「やらない
-// っていう人は店舗側でどうにかしてくれればいい」）。月額未設定のロッカーは
+// カード未登録）は支払いページ（/pay/locker/[契約ID]）を発行し、Fineme会員と紐づいていれば
+// LINE・マイページに自動で届ける（2026-10-29。それまでは店舗が手で送っていた）。月額未設定のロッカーは
 // 従来通り記録のみ（課金対象にしない）。
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
-import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
+import { ensureLockerProduct, lockerPayUrl, notifyLockerPayment } from '@/lib/locker-pay';
 import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -25,13 +24,6 @@ async function getProviderByToken(token) {
   if (error || !user) return null;
   const { data } = await supabase.from('providers').select('id, slug, stripe_connect_id, stripe_connect_status, plan').eq('email', user.email).single();
   return data || null;
-}
-
-async function ensureLockerProduct(stripe, locker) {
-  if (locker.stripe_product_id) return locker.stripe_product_id;
-  const product = await stripe.products.create({ name: `ロッカー：${locker.name}` });
-  await supabase.from('provider_lockers').update({ stripe_product_id: product.id }).eq('id', locker.id);
-  return product.id;
 }
 
 async function __POST(request, { params }) {
@@ -85,7 +77,7 @@ async function __POST(request, { params }) {
 
       if (activeMembership) {
         // 既にカードが登録済みの会員 → 既存サブスクにロッカー代を追加項目として差し込む
-        const productId = await ensureLockerProduct(stripe, locker);
+        const productId = await ensureLockerProduct(supabase, stripe, locker);
         const item = await stripe.subscriptionItems.create({
           subscription: activeMembership.stripe_subscription_id,
           price_data: { currency: 'jpy', product: productId, unit_amount: fee, recurring: { interval: 'month' } },
@@ -93,16 +85,7 @@ async function __POST(request, { params }) {
         insertPayload.stripe_subscription_item_id = item.id;
         billingMode = 'auto';
       } else if (provider.stripe_connect_id && provider.stripe_connect_status === 'active') {
-        // カード未登録 → 支払いリンクを発行するところまで（送るのは店舗側の運用）
-        const productId = await ensureLockerProduct(stripe, locker);
-        const session = await stripe.checkout.sessions.create({
-          mode: 'subscription',
-          line_items: [{ price_data: { currency: 'jpy', product: productId, unit_amount: fee, recurring: { interval: 'month' } }, quantity: 1 }],
-          subscription_data: { transfer_data: { destination: provider.stripe_connect_id }, application_fee_percent: PAYMENT_FEE_PERCENT },
-          success_url: `https://fineme.me/provider/${provider.slug || ''}?locker_payment=success`,
-          cancel_url: `https://fineme.me/provider/${provider.slug || ''}?locker_payment=cancelled`,
-        });
-        insertPayload.payment_link_url = session.url;
+        // カード未登録 → Finemeの支払いページ（/pay/locker/[契約ID]）を発行し、会員ならLINE・マイページに届ける（2026-10-29）
         billingMode = 'link';
       }
     } catch (e) {
@@ -117,7 +100,15 @@ async function __POST(request, { params }) {
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ ...data, billing_mode: billingMode, billing_error: billingError }, { status: 201 });
+  let notified = false;
+  if (billingMode === 'link') {
+    const url = lockerPayUrl(data.id);
+    await supabase.from('provider_locker_contracts').update({ payment_link_url: url }).eq('id', data.id);
+    data.payment_link_url = url;
+    const { data: prov } = await supabase.from('providers').select('name').eq('id', provider.id).single();
+    notified = await notifyLockerPayment(supabase, { contract: data, lockerName: locker.name, providerName: prov?.name || '' });
+  }
+  return Response.json({ ...data, billing_mode: billingMode, billing_error: billingError, notified }, { status: 201 });
 }
 
 export const POST = withAudit(__POST);
