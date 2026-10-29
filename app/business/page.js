@@ -167,7 +167,7 @@ export default function BusinessPage() {
               <li>診断起点のマッチング——単なる検索ではなく、何から始めるべきかの優先軸を提示する</li>
               <li>Mirror⇄Log⇄Map⇄Naviが軸IDで相互接続し、記録・診断・分析が一つの地図としてつながる</li>
               <li>写真を保存しない設計など、心理的安全を前提にした体験づくり</li>
-              <li>でお自身の体験（元・非モテ→現役モデル）を体現したブランドボイス</li>
+              <li>創業者・渡邉自身の体験（元・非モテ→現役モデル）を体現したブランドボイス</li>
             </ul>
 
             <div className={styles.wideCard}>
@@ -238,21 +238,21 @@ export default function BusinessPage() {
               <div className={styles.flowArrow}>→</div>
               <div className={styles.flowStep}><b>ユーザー集客</b><span>ポータルとして集めやすく</span></div>
             </div>
-            <p className={styles.note}>でお個人のSNS発信だけでは消費者への直接リーチが構造的に弱いことが分かったため（2026-06〜09、サブスク継続0人のまま停滞）、再現可能な販売チャネルとして店舗への直接営業を主エンジンに選び直した。</p>
+            <p className={styles.note}>創業者個人のSNS発信だけでは消費者への直接リーチが構造的に弱いことが分かったため（2026-06〜09、サブスク継続0人のまま停滞）、再現可能な販売チャネルとして店舗への直接営業を主エンジンに選び直した。</p>
           </section>
 
           {/* 08. 集客戦略 */}
           <section className={styles.section} id="acquisition">
             <div className={styles.kicker}>Acquisition</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>集客戦略——最初の一滴を増やす</h2>
-            <p className={styles.lead}>ユーザー向けの集客は、今は主エンジンではなく並行運用。ファウンダー「でお」個人を主軸に発信し、実写ショートドラマ「変わる前夜の話。」を縦型プラットフォームへ展開中。</p>
+            <p className={styles.lead}>ユーザー向けの集客は、今は主エンジンではなく並行運用。ファウンダー個人を主軸に発信し、実写ショートドラマ「変わる前夜の話。」を縦型プラットフォームへ展開中。</p>
 
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead><tr><th>チャネル</th><th>役割</th></tr></thead>
                 <tbody>
                   <tr><td><strong>ショートドラマ</strong></td><td>「変わる前夜」を描き、最初にFinemeに触れる入口をつくる。説教せず、等身大の“夜”を敬意をもって描く</td></tr>
-                  <tr><td><strong>X</strong></td><td>でおの変容哲学・思考を日次発信</td></tr>
+                  <tr><td><strong>X</strong></td><td>創業者の変容哲学・思考を日次発信</td></tr>
                   <tr><td><strong>note</strong></td><td>週次記事。後輩目線で失敗と気づきを共有し、診断・Mirrorへ誘導</td></tr>
                   <tr><td><strong>SEO（サイト内記事）</strong></td><td>290本以上の記事。インデックス整備済み、反映を待つストック資産</td></tr>
                 </tbody>
@@ -266,13 +266,13 @@ export default function BusinessPage() {
           {/* 09. 日々の回し方 */}
           <section className={styles.section} id="org">
             <div className={styles.kicker}>How It Runs</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}>日々の回し方——でおは実際何をしているか</h2>
-            <p className={styles.lead}>でお一人のソロ起業に、AIエージェント組織を組み合わせて運営。指揮命令の階層ではなく「権限の種類」で役割を分けている。</p>
+            <h2 className={`${styles.h2} ${styles.serif}`}>日々の回し方——代表は実際何をしているか</h2>
+            <p className={styles.lead}>代表・渡邉英雄一人のソロ起業に、AIエージェント組織を組み合わせて運営。指揮命令の階層ではなく「権限の種類」で役割を分けている。</p>
 
             <div className={styles.orgGrid}>
-              <div className={styles.orgCard}><div className={styles.role}>Propose</div><b>提案</b><span>案を出す。AI／でお。確定はしない</span></div>
+              <div className={styles.orgCard}><div className={styles.role}>Propose</div><b>提案</b><span>案を出す。AI／代表。確定はしない</span></div>
               <div className={styles.orgCard}><div className={styles.role}>Judge</div><b>判断</b><span>案を捌き、可否を下書きする（Hermes等）</span></div>
-              <div className={styles.orgCard}><div className={styles.role}>Approve</div><b>承認</b><span>でおただ一人。最終GOを出す</span></div>
+              <div className={styles.orgCard}><div className={styles.role}>Approve</div><b>承認</b><span>代表ただ一人。最終GOを出す</span></div>
               <div className={styles.orgCard}><div className={styles.role}>Execute</div><b>実行</b><span>Claude Code。ファイル反映の唯一の窓口</span></div>
             </div>
 
@@ -281,35 +281,35 @@ export default function BusinessPage() {
               <p><strong>①発案</strong> — Strategist（自走取締役・cron）が、その時点の実データとゴールから「今一番レバレッジの高い一手」を発案する。</p>
               <p><strong>②審査</strong> — reviewboard（cron）が3つの関門（戦略として妥当か／リスクは現実的か／辛口の反対意見に耐えるか）で審査。粗い案はここで差し戻される。</p>
               <p><strong>③上申</strong> — 通過した案だけをflush-decisionsがSlackにカード形式で1枚流す。</p>
-              <p><strong>④裁定</strong> — でおがそのカードに「GO」「no-go」「修正＋一言」のどれかを返す。これがでおの実務の大半。</p>
+              <p><strong>④裁定</strong> — 代表の渡邉がそのカードに「GO」「no-go」「修正＋一言」のどれかを返す。これが代表の実務の大半。</p>
               <p><strong>⑤記録と振り分け</strong> — inbound-verdicts（LLM不使用の自動処理）がSlackの返信を読み取り、decision-ledgerに記録。文書系の指示はtasks.mdへ、コード変更はclaude-code-inboxへ自動振り分けする。</p>
               <p><strong>⑥実行</strong> — Claude Code（毎時cron）が承認済みタスクを実装し、ファイルに反映する。</p>
               <p><strong>⑦報告</strong> — 翌朝、進捗ダイジェストがSlackに1通届く。進んでいないこと・結果が測れていないことも隠さず書く設計。</p>
             </div>
-            <p className={styles.note}>要するに、でおの日々の仕事は「Slackに来るカードにGO／no-go／修正を一言返す」がほとんど。コードを書く・記事を書く・分析するといった実務のほぼ全てはAIが自走している。</p>
+            <p className={styles.note}>要するに、代表の日々の仕事は「Slackに来るカードにGO／no-go／修正を一言返す」がほとんど。コードを書く・記事を書く・分析するといった実務のほぼ全てはAIが自走している。</p>
           </section>
 
           {/* 10. 判断の実例 */}
           <section className={styles.section} id="cases">
             <div className={styles.kicker}>Judgment In Practice</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}>判断の実例——でおならどう答えるか</h2>
+            <h2 className={`${styles.h2} ${styles.serif}`}>判断の実例——代表ならどう答えるか</h2>
             <p className={styles.lead}>原則は抽象的で分かりにくい。実際にあった裁定を見た方が、判断の勘所は伝わる。</p>
 
             <div className={styles.iconRow}>
               <div className={styles.iconCard}>
                 <span className={styles.ic}>🙅</span>
                 <h4>no-go｜自腹購入を実績にしない</h4>
-                <p>「累計10人のMirror購入者へメッセージを送ろう」という提案に、でおは差し戻した。理由：「10人の購入は全て私自身が試験的に購入したもの」。実ユーザーの検証になっていないデータを、検証できた前提で次の施策に進めない。</p>
+                <p>「累計10人のMirror購入者へメッセージを送ろう」という提案に、代表の渡邉は差し戻した。理由：「10人の購入は全て私自身が試験的に購入したもの」。実ユーザーの検証になっていないデータを、検証できた前提で次の施策に進めない。</p>
               </div>
               <div className={styles.iconCard}>
                 <span className={styles.ic}>🙅</span>
                 <h4>no-go｜弱さの開示と誠実さを混同しない</h4>
-                <p>LPの体験談欄が空だったとき「正直に0件と書こう」という提案が出た。でおの返答：「正直に0だなんて書くな。誰も導いたことのないメンターに誰がお金を払う？」。今を否定せず、静かに自信を保つ——原則4の実践形。</p>
+                <p>LPの体験談欄が空だったとき「正直に0件と書こう」という提案が出た。代表の返答：「正直に0だなんて書くな。誰も導いたことのないメンターに誰がお金を払う？」。今を否定せず、静かに自信を保つ——原則4の実践形。</p>
               </div>
               <div className={styles.iconCard}>
                 <span className={styles.ic}>✅</span>
                 <h4>GO｜悪い数字ほど直視する</h4>
-                <p>既存記事が「28日で20インプレッション・0クリック」という厳しい実測が出たとき、でおは施策変更にGOを出した。都合の悪い数字を隠さず、そこから動く。</p>
+                <p>既存記事が「28日で20インプレッション・0クリック」という厳しい実測が出たとき、代表は施策変更にGOを出した。都合の悪い数字を隠さず、そこから動く。</p>
               </div>
             </div>
             <p className={styles.note}>共通しているのは「自分を騙すデータで安心しない」「弱さを売り文句にはしない」「悪い事実からは逃げない」。この3つの感覚が、原則よりも実際の判断を左右している。</p>
@@ -334,7 +334,7 @@ export default function BusinessPage() {
               <li>すでにGOした承認済みタスク・仕様があるか先に確認する。新しい提案を積み増す前に、決まっていることを終わらせる</li>
               <li>継続価値（New Me Map／Logの質）と新規集客がぶつかったら、継続価値を優先する。穴の空いたバケツに水を注がない</li>
               <li>横展開（他業界・他事業への拡張）はしない。Fineme一本で成功を証明してから</li>
-              <li>判断に迷う・実データが読めない・でおの意図が推測できない時は、進めずに止めて確認する</li>
+              <li>判断に迷う・実データが読めない・代表の意図が推測できない時は、進めずに止めて確認する</li>
             </ul>
           </section>
 
@@ -350,11 +350,11 @@ export default function BusinessPage() {
               <li><strong>決済</strong> — Stripe（Mirror単発・サブスク課金）</li>
               <li><strong>LINE連携</strong> — LINEログイン・通知用に専用サーバーを別プロセスで運用</li>
               <li><strong>画像アップロード</strong> — AWS S3</li>
-              <li><strong>事業のSSoT（唯一の正）</strong> — でおが持つ運営ドキュメント一式。事業の全方針・原則・進行中の判断がここに集約されている</li>
+              <li><strong>事業のSSoT（唯一の正）</strong> — 代表が持つ運営ドキュメント一式。事業の全方針・原則・進行中の判断がここに集約されている</li>
               <li><strong>意思決定ログ</strong> — GO／no-go／修正の全履歴。判断の実例で紹介した2件も、ここから引いている</li>
               <li><strong>AIエージェント組織の定義</strong> — Strategist・reviewboard・Hermes・Claude Codeなど各役割の権限とトリガーを定義したドキュメント</li>
             </ul>
-            <p className={styles.note}>実際のアクセス権限や認証情報はこのページには置かない。関わる範囲が具体化した時点で、必要な分だけでおから渡す。</p>
+            <p className={styles.note}>実際のアクセス権限や認証情報はこのページには置かない。関わる範囲が具体化した時点で、必要な分だけ代表から渡す。</p>
           </section>
 
           {/* 13. なぜ今声をかけたか */}

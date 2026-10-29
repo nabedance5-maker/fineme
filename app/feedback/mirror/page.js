@@ -54,7 +54,7 @@ function FeedbackForm() {
           <span style={{ color: '#c8a45a' }}>声が届きました。</span>
         </h2>
         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.85, marginBottom: '28px' }}>
-          いただいた言葉は、でおが確認のうえ、<br />
+          いただいた言葉は、代表の渡邉が確認のうえ、<br />
           同じ悩みを持つ誰かの背中を押すために使わせていただきます。
         </p>
         <Link href="/mypage/navi" style={{ fontSize: '14px', color: 'rgba(200,164,90,0.8)', textDecoration: 'none', fontWeight: 700 }}>
@@ -88,7 +88,7 @@ function FeedbackForm() {
       />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.25)', lineHeight: 1.6, margin: 0 }}>
-          内容はでおが確認。ご本人の同意なしには公開しません。
+          内容は代表の渡邉が確認。ご本人の同意なしには公開しません。
         </p>
         <button
           type="submit"

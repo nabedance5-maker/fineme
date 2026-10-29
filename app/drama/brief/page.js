@@ -198,7 +198,7 @@ export default async function ActorBriefPage() {
             lineHeight: '1.7',
           }}>
             Fineme — fineme.me<br />
-            プロデューサー：でお（@deo_fineme）<br />
+            プロデューサー：渡邉 英雄（@deo_fineme）<br />
             TikTok：@fineme.drama
           </div>
         </div>

@@ -29,7 +29,7 @@ async function getApprovedVoices() {
 // ※文面はでお本人が確認・調整してよい（D-20260711-2）。
 const FOUNDER_VOICE = {
   text: '昔の自分は、鏡を見るのが嫌いだった。どこをどう直せばいいのかも分からないまま、自信だけがすり減っていった。変われたのは、才能でも生まれつきでもない。「どこから手をつけるか」が分かったからだ。Mirrorは、あのときの自分がいちばん欲しかった地図を、そのまま形にしたもの。',
-  meta: 'Fineme 創業者・でお（元・非モテ → 現役モデル）本人の記録',
+  meta: 'Fineme 創業者・渡邉英雄（元・非モテ → 現役モデル）本人の記録',
 };
 
 export default async function BelleMirrorLpPage() {
@@ -195,7 +195,7 @@ export default async function BelleMirrorLpPage() {
           </div>
         </section>
 
-        {/* ── ③ でおのストーリー（信頼先出し）── */}
+        {/* ── ③ 創業者のストーリー（信頼先出し）── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: '#151b24', borderTop: '1px solid rgba(236,232,223,0.055)', borderBottom: '1px solid rgba(236,232,223,0.055)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0', alignItems: 'center', maxWidth: '700px', margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -213,7 +213,7 @@ export default async function BelleMirrorLpPage() {
                 <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(232,228,220,0.12)', aspectRatio: '3/4', position: 'relative' }}>
                   <img
                     src="/images/deo/before.jpg"
-                    alt="でお 変容前"
+                    alt="渡邉英雄 変容前"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
                   />
                 </div>
@@ -226,7 +226,7 @@ export default async function BelleMirrorLpPage() {
                 <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(236,232,223,0.193)', aspectRatio: '3/4', position: 'relative', boxShadow: '0 0 24px rgba(0,0,0,0.18)' }}>
                   <img
                     src="/images/deo/after-portrait.png"
-                    alt="でお 変容後"
+                    alt="渡邉英雄 変容後"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
                   />
                 </div>
@@ -245,10 +245,10 @@ export default async function BelleMirrorLpPage() {
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '20px', borderTop: '1px solid rgba(236,232,223,0.083)' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(236,232,223,0.22)', flexShrink: 0 }}>
-                  <img src="/images/deo/after-portrait.png" alt="でお" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                  <img src="/images/deo/after-portrait.png" alt="渡邉英雄" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>でお（渡邉 英雄）</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>渡邉 英雄</div>
                   <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ モテなかった頃の自分 → 現役モデル</div>
                 </div>
               </div>
