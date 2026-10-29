@@ -18203,8 +18203,8 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* 売上管理：予約リクエストの「来店確認」時に確定した記録＋手動記録の集計。
-            Finemeは決済を仲介していないため、予約価格やNew Me Logの自己申告costを
-            無条件に売上として自動合算することはしない（でお合意 2026-09-04）。 */}
+            予約価格やNew Me Logの自己申告costは実際に払われた額とは限らないため、
+            無条件に売上として自動合算することはしない（でお合意 2026-09-04。POSの会計は記録時に売上へ入る）。 */}
         <div className="tab-pane" id="tab-sales">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
@@ -18410,13 +18410,13 @@ export default function ProviderDashboardPage() {
 
 
         {/* ロッカー月極管理（でお要望2026-09-14：hacomonoにあるロッカー機能）。
-            決済は仲介せず、契約状況の記録・管理のみ（service_packagesと同じ方針）。 */}
+            月額のあるロッカーはカードで毎月引き落とす（2026-09-26〜。app/api/provider/lockers/[id]/contracts/route.js）。 */}
         <div className="tab-pane" id="tab-lockers">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>ロッカー管理</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ロッカーの配置図を店舗に合わせて作り、空き・契約中を図で確認します。マスをタップして契約・設定できます。</p>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ロッカーの配置図を店舗に合わせて作り、空き・契約中を図で確認します。マスをタップして契約・設定できます。月額を決めたロッカーは、ロッカー代も毎月カードで引き落とします（入会済みの方は月会費と一緒に、カードが未登録の方には支払いリンクを発行して送ってもらいます）。</p>
               </div>
               <button type="button" className="btn" id="lkr-bank-add-btn">＋ ロッカー群を追加</button>
             </div>
