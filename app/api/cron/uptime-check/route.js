@@ -27,13 +27,20 @@ export async function GET(request) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const h = { apikey: key, Authorization: `Bearer ${key}` };
 
-  const results = await Promise.all([
+  const run = () => Promise.all([
     check('ログインの入口（Supabase Auth）', `${base}/auth/v1/health`, { headers: { apikey: key } }),
     check('データの入口（Supabase API）', `${base}/rest/v1/providers?select=id&limit=1`, { headers: h }),
     check('ログイン画面', `${SITE}/login`),
     check('掲載者管理画面', `${SITE}/provider/dashboard`),
     check('マイページ', `${SITE}/mypage`),
   ]);
+  // 1回のつまずきでは知らせない。失敗があれば20秒おいて確かめ直し、2回とも止まっていた所だけ知らせる（2026-10-29）
+  let results = await run();
+  if (results.some(r => !r.ok)) {
+    await new Promise(r => setTimeout(r, 20000));
+    const again = await run();
+    results = results.map((r, i) => (r.ok ? r : again[i]));
+  }
   const down = results.filter(r => !r.ok);
   // ?notify=0 は手元の自動調査（~/fineme/incident-watch.sh）からの確認用。でおへの通知は出さない
   const notify = new URL(request.url).searchParams.get('notify') !== '0';
