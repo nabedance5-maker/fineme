@@ -35,7 +35,9 @@ export async function GET(request) {
     check('マイページ', `${SITE}/mypage`),
   ]);
   const down = results.filter(r => !r.ok);
-  if (down.length) {
+  // ?notify=0 は手元の自動調査（~/fineme/incident-watch.sh）からの確認用。でおへの通知は出さない
+  const notify = new URL(request.url).searchParams.get('notify') !== '0';
+  if (down.length && notify) {
     const jst = new Date(Date.now() + 9 * 3600000).toISOString().slice(5, 16).replace('T', ' ');
     const text = [
       `【Fineme 障害の検知】${jst}`,
