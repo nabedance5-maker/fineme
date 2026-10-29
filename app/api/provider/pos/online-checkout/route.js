@@ -10,7 +10,8 @@ import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { priceItems } from '@/lib/pos-checkout';
-import { applicationFeeAmount } from '@/lib/payment-fee';
+import { isStoreCustomer } from '@/lib/customer-accounts';
+import { createPosCheckoutSession, posLineName } from '@/lib/pos-online-session';
 import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -45,7 +46,6 @@ async function __POST(request) {
   let priced;
   try { priced = await priceItems(supabase, provider.id, items, discount); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
   const totalAmount = priced.totalAmount;
-  const lineItemsForStripe = [{ price_data: { currency: 'jpy', product_data: { name: priced.lineItems.length === 1 ? priced.lineItems[0].name_snapshot : `お会計（${priced.lineItems.length}点${priced.cartOff ? '・割引あり' : ''}）` }, unit_amount: totalAmount }, quantity: 1 }];
 
   const { data: pending, error: pendingError } = await supabase
     .from('provider_pos_pending_checkouts')
@@ -54,19 +54,14 @@ async function __POST(request) {
     .single();
   if (pendingError) return Response.json({ error: pendingError.message }, { status: 500 });
 
+  // 会員証などで誰のお会計か分かっている時は、決済ページの前にFinemeの確認ページを挟み、
+  // お客様が「次回からこのカードで払えるようにする」を選べるようにする（2026-10-29）
+  if (customer?.user_id && await isStoreCustomer(provider.id, customer.user_id)) {
+    return Response.json({ pending_id: pending.id, url: `${BASE_URL}/pos-pay/${pending.id}/start` });
+  }
+
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: lineItemsForStripe,
-      payment_intent_data: {
-        transfer_data: { destination: provider.stripe_connect_id },
-        application_fee_amount: applicationFeeAmount(totalAmount),
-        metadata: { fineme_provider_id: provider.id, fineme_pos_pending_id: pending.id },
-      },
-      metadata: { fineme_provider_id: provider.id, fineme_pos_pending_id: pending.id },
-      success_url: `${BASE_URL}/pos-pay/${pending.id}?paid=1`,
-      cancel_url: `${BASE_URL}/pos-pay/${pending.id}?paid=0`,
-    });
+    const session = await createPosCheckoutSession(stripe, provider, pending, { lineName: posLineName(priced) });
     await supabase.from('provider_pos_pending_checkouts').update({ stripe_checkout_session_id: session.id }).eq('id', pending.id);
     return Response.json({ pending_id: pending.id, url: session.url });
   } catch (e) {

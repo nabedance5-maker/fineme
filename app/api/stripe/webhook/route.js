@@ -9,6 +9,7 @@ import { recordMembershipInvoice, recordMembershipSubscription, applyMembershipC
 import { afterMembershipInvoice, syncManagedDiscount } from '@/lib/membership-billing-sync';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
+import { saveCustomerCard } from '@/lib/pos-member-card';
 import { markInvoicePaid } from '@/lib/invoices';
 import { recordPaymentAndRewards, recordRefund } from '@/lib/collaborator-rewards';
 
@@ -184,6 +185,10 @@ export async function POST(request) {
             await supabaseAdmin.from('provider_pos_pending_checkouts')
               .update({ status: 'paid', transaction_id: result.transaction.id })
               .eq('id', pendingId);
+            // お客様が「次回からこのカードで払えるようにする」を選んだ：このお店のレジで会員証から使えるように記録する（2026-10-29）
+            if (session.metadata?.fineme_save_card === '1' && pending.customer?.user_id && session.customer) {
+              try { await saveCustomerCard(supabaseAdmin, stripe, pending.provider_id, pending.customer.user_id, session); } catch (e) { console.error('[webhook] pos save card error:', e?.message); }
+            }
           } catch (e) {
             console.error('[webhook] pos online-checkout record error:', e);
             await supabaseAdmin.from('provider_pos_pending_checkouts').update({ status: 'failed' }).eq('id', pendingId);

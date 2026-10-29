@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import MypageSideNav from '../_components/MypageSideNav';
+import { freshAccessToken } from '@/lib/browser-auth';
 
 // 店頭でこのQRを店舗にカメラで読み取ってもらうと、来店チェックインが記録される
 // （hacomono/STORES網羅計画 Phase 4）。QRの中身は固定コード（profiles.checkin_code）のみ。
@@ -8,6 +9,21 @@ export default function MypageCheckinPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [cards, setCards] = useState(null);
+
+  // お店のレジで使えるよう保存したカード（スマホで払う時に「次回からこのカードで払えるようにする」を選んだもの。2026-10-29）
+  async function loadCards() {
+    const t = await freshAccessToken();
+    if (!t) return;
+    const r = await fetch('/api/me/saved-cards', { headers: { Authorization: `Bearer ${t}` } });
+    if (r.ok) setCards((await r.json()).cards || []);
+  }
+  async function removeCard(c) {
+    if (!confirm(`${c.store_name}に保存したカード（${c.label}）を外しますか？\n外すと、このお店で会員証を見せてもカードでは払えなくなります（スマホで払うことはできます）。`)) return;
+    const t = await freshAccessToken();
+    await fetch('/api/me/saved-cards', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ provider_id: c.provider_id }) });
+    loadCards();
+  }
 
   useEffect(() => {
     const sbKey = Object.keys(localStorage).find(
@@ -30,6 +46,7 @@ export default function MypageCheckinPage() {
       })
       .catch(() => setError('取得に失敗しました'))
       .finally(() => setLoading(false));
+    loadCards();
   }, []);
 
   return (
@@ -55,6 +72,24 @@ export default function MypageCheckinPage() {
               }}
             >
               {qrDataUrl && <img src={qrDataUrl} alt="チェックインQRコード" style={{ width: '100%', height: 'auto' }} />}
+            </div>
+          )}
+
+          {cards?.length > 0 && (
+            <div style={{ marginTop: '28px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px' }}>お店に保存したカード</h2>
+              <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 10px', lineHeight: 1.7 }}>このお店では、会員証を見せるとこのカードでお会計できます。</p>
+              <div style={{ display: 'grid', gap: '8px', maxWidth: '480px' }}>
+                {cards.map(c => (
+                  <div key={c.provider_id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <b style={{ display: 'block', fontSize: '14px' }}>{c.store_name}</b>
+                      <span style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.75)' }}>{c.label}（有効期限 {c.exp}）</span>
+                    </div>
+                    <button type="button" onClick={() => removeCard(c)} style={{ minHeight: '40px', padding: '0 14px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.3)', background: 'transparent', color: '#e8e4dc', fontWeight: 700, cursor: 'pointer' }}>外す</button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </section>

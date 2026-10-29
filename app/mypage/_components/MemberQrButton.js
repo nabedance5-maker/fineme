@@ -68,7 +68,7 @@ export default function MemberQrButton() {
               {qr ? <img src={qr} alt="会員証QRコード" style={{ width: '100%', height: '100%' }} />
                 : <p style={{ fontSize: '13px', color: '#333', margin: 0 }}>{error || '読み込み中…'}</p>}
             </div>
-            <p style={{ margin: '10px 0 14px', fontSize: '11.5px', color: '#555', lineHeight: 1.6 }}>読み取りにくい時は、画面を明るくしてください。</p>
+            <p style={{ margin: '10px 0 14px', fontSize: '11.5px', color: '#555', lineHeight: 1.6 }}>読み取りにくい時は、画面を明るくしてください。<br /><a href="/mypage/checkin" style={{ color: '#111' }}>お店に保存したカードを見る</a></p>
             <button type="button" autoFocus onClick={() => setOpen(false)}
               style={{ width: '100%', minHeight: '46px', borderRadius: '12px', border: '1.5px solid #111', background: '#fff', color: '#111', fontWeight: 700, fontSize: '15px', cursor: 'pointer' }}>閉じる</button>
           </div>
