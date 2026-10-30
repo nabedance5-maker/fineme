@@ -47,7 +47,7 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('provider_shift_settings')
-    .select('rule_type, request_format, submit_notify, submit_cycle')
+    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm')
     .eq('provider_id', provider.id)
     .maybeSingle();
 
@@ -72,12 +72,19 @@ async function __PATCH(request) {
   if (body.request_format !== undefined) update.request_format = normalizeFormat(body.request_format);
   if (body.submit_notify !== undefined) update.submit_notify = normalizeSubmitNotify(body.submit_notify);
   if (body.submit_cycle !== undefined) update.submit_cycle = normalizeCycle(body.submit_cycle);
-  if (update.rule_type === undefined && update.request_format === undefined && update.submit_notify === undefined && update.submit_cycle === undefined) return Response.json({ error: '更新項目がありません' }, { status: 400 });
+  // ◯日前になったら自動で確定（null＝しない。2026-10-30）
+  if (body.auto_confirm_days_before !== undefined) {
+    const n = body.auto_confirm_days_before === null || body.auto_confirm_days_before === '' ? null : Math.floor(Number(body.auto_confirm_days_before));
+    if (n !== null && !(n >= 1 && n <= 60)) return Response.json({ error: '自動で確定する日数は1〜60日で選んでください' }, { status: 400 });
+    update.auto_confirm_days_before = n;
+  }
+  if (body.auto_generate_before_confirm !== undefined) update.auto_generate_before_confirm = !!body.auto_generate_before_confirm;
+  if (Object.keys(update).length <= 2) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_shift_settings')
     .upsert(update, { onConflict: 'provider_id' })
-    .select('rule_type, request_format, submit_notify, submit_cycle')
+    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm')
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 

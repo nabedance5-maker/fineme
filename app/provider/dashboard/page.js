@@ -643,6 +643,10 @@ const DASHBOARD_CSS = `
       .shift-auto-card .sac-result { background: #fff; color: #1a1410; border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; font-size: 13px; }
       .shift-auto-card .sac-result ul { margin: 0; padding-left: 18px; line-height: 1.7; color: #92400e; }
       .shift-auto-card .sac-result p { margin: 0; color: #047857; }
+      .shift-auto-card .sac-auto { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); font-size: 13px; color: #f4efe2; }
+      .shift-auto-card .sac-auto select { margin-left: 6px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(201,168,76,.6); background: #fff; color: #1a1410; font-size: 13px; font-weight: 700; }
+      .shift-auto-card .sac-check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+      .shift-auto-card .sac-check input { width: 16px; height: 16px; accent-color: #c9a84c; }
       .shift-auto-card .sac-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #555; }
       .pos-cust-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid rgba(26,20,16,0.12); border-radius: 8px; background: #fff; color: #1a1410; cursor: pointer; font-size: 13px; text-align: left; }
       .pos-sum { display: grid; gap: 2px; font-size: 13px; }
@@ -3719,6 +3723,7 @@ export default function ProviderDashboardPage() {
         if (sel) { sel.value = data.rule_type; sel.dispatchEvent(new Event('change')); }
         renderSubmitNotify(data.submit_notify || {});
         renderSubmitCard();
+        renderAutoCard();
       }
 
       // ── 提出の通知（でお要望2026-10-07）：スタッフが提出を完了したら、選んだ先へ知らせる ──
@@ -4504,7 +4509,28 @@ export default function ProviderDashboardPage() {
             <strong>${r.created}件のシフトを作りました</strong>
             ${r.notes.length ? `<ul>${r.notes.slice(0, 20).map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '<p>入れられなかった人・日はありません。</p>'}
             <div class="sac-row"><button type="button" class="sac-btn" data-auto-confirm>この内容で${month}月を確定する</button><span>確定すると、予約の受付（スタッフの空き時間）と勤怠に使われます。</span></div>
-          </div>` : ''}`;
+          </div>` : ''}
+          <div class="sac-auto">
+            <label>未確定のまま当日を迎えないように、
+              <select data-auto-days>
+                <option value="">自動では確定しない</option>
+                ${[1, 2, 3, 5, 7, 10, 14, 21, 30].map(n => `<option value="${n}" ${shiftSettings?.auto_confirm_days_before === n ? 'selected' : ''}>${n}日前になったら自動で確定する</option>`).join('')}
+              </select>
+            </label>
+            <label class="sac-check"><input type="checkbox" data-auto-gen ${shiftSettings?.auto_generate_before_confirm === false ? '' : 'checked'}> シフトがまだ無い日は、先に自動で作ってから確定する</label>
+            <span class="sac-note">毎朝6時に確認し、確定したらお店のメールとLINEに知らせます。</span>
+          </div>`;
+        const saveAuto = async () => {
+          const days = el.querySelector('[data-auto-days]').value;
+          const gen = el.querySelector('[data-auto-gen]').checked;
+          const res = await fetch('/api/provider/shift-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ auto_confirm_days_before: days ? Number(days) : null, auto_generate_before_confirm: gen }) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(d.error || '保存できませんでした'); renderAutoCard(); return; }
+          shiftSettings = { ...(shiftSettings || {}), auto_confirm_days_before: d.auto_confirm_days_before ?? null, auto_generate_before_confirm: d.auto_generate_before_confirm !== false };
+          showToast(days ? `${days}日前になったら自動で確定します` : '自動の確定をやめました');
+        };
+        el.querySelector('[data-auto-days]')?.addEventListener('change', saveAuto);
+        el.querySelector('[data-auto-gen]')?.addEventListener('change', saveAuto);
         el.querySelector('[data-auto-run]')?.addEventListener('click', async e => {
           const btn = e.currentTarget;
           btn.disabled = true; btn.textContent = '作っています…';
