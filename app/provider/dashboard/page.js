@@ -3054,7 +3054,9 @@ export default function ProviderDashboardPage() {
             const mres = await fetch('/api/provider/members', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ email: loginEmail, name: body.name, role: fd.get('login_role'), staff_id: staffId, password: String(fd.get('login_password') || '') || undefined }) }).catch(() => null);
             const md = mres ? await mres.json().catch(() => ({})) : {};
             if (!mres || !mres.ok) { editForm.elements['_staff_id'].value = staffId; editCard.style.display = 'block'; showToast('スタッフは保存しましたが、ログインを作れませんでした：' + (md.error || '通信エラー')); loadStaff(); return; }
-            loginMsg = md.mail_error ? `・ログインを作りました（メールを送れませんでした。初期パスワード：${md.temp_password || 'お店が決めたもの'}）` : fd.get('login_password') ? '・ログインを作りました（パスワードはお店が決めたものをスタッフに伝えてください）' : '・ログインを作り、初期パスワードをスタッフのメールに送りました';
+            loginMsg = md.existing_account ? '・ログインを作りました（このメールはすでにFinemeのアカウントがあるため、スタッフご本人の今のパスワードで入れます）'
+              : md.mail_error ? `・ログインを作りました（メールを送れませんでした。初期パスワード：${md.temp_password || 'お店が決めたもの'}）`
+              : fd.get('login_password') ? '・ログインを作りました（パスワードはお店が決めたものをスタッフに伝えてください）' : '・ログインを作り、初期パスワードをスタッフのメールに送りました';
           }
           editCard.style.display = 'none'; editForm.reset(); loadStaff();
           showToast((condOk ? '保存しました' : 'スタッフは保存しましたが、労働条件の保存に失敗しました。もう一度編集して保存してください') + loginMsg);
@@ -4491,7 +4493,7 @@ export default function ProviderDashboardPage() {
             <button type="button" class="sac-btn" data-auto-run ${allConfirmed || !staffN ? 'disabled' : ''}>${r ? 'もう一度作り直す' : `${month}月のシフトを自動で作る`}</button>
           </div>
           <ul class="sac-uses">
-            <li><b>出勤希望</b>${reqStaff.size ? `${reqStaff.size}人が提出済み。希望どおりに入れます` : 'まだ誰も出していません（出ていなくても作れます）'}</li>
+            <li><b>出勤希望</b>${reqStaff.size ? `${reqStaff.size}人が提出済み。希望の時間帯の中で入れます（8〜22時のような長い希望は「この中ならいつでも」として、その人のいつもの長さで、人が手薄な時間に）` : 'まだ誰も出していません（出ていなくても作れます）'}</li>
             <li><b>いつもの働き方</b>希望を出していない人は、過去8週の曜日・時間・日数に合わせます</li>
             <li><b>労働条件</b>1日・週の上限、休日、連続勤務を超える分は入れません</li>
             <li><b>チームのバランス</b>人が手薄な日・時間帯から埋め、特定の日や人に偏らせません</li>

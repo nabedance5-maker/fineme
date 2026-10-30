@@ -13,7 +13,7 @@ import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 import { generateShift } from '@/lib/shift-generator';
 import { buildAvailability } from '@/lib/shift-implied-requests';
-import { buildHabitWindows, historyRange } from '@/lib/shift-habits';
+import { buildHabitWindows, historyRange, usualMinutesOf } from '@/lib/shift-habits';
 import { createLoadTracker, effectiveLimits, evaluateLabor, workingHours } from '@/lib/shift-labor';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 import { spanOf } from '@/lib/time-span';
@@ -130,6 +130,12 @@ async function __POST(request) {
     for (const r of targets) {
       const { s, e } = spanOf(r.start_time, r.end_time) || { s: 0, e: 0 };
       if ((assigned[`${r.staff_id}|${r.date}`] || []).some(a => a.s < e && a.e > s)) { duplicateCount++; continue; }
+      // 1日の上限より長い希望（例：8〜22時）は「この中ならいつでも」の範囲。そのままは入れず、自動作成で切り出す
+      const dayLimit = (limitsByStaff[r.staff_id] || effectiveLimits(null)).hoursDay;
+      if (dayLimit !== null && workingHours(r.start_time, r.end_time) > dayLimit + 1e-9) {
+        skipped.push({ staff_id: r.staff_id, date: r.date, start_time: r.start_time, end_time: r.end_time, reason: '「この時間の中ならいつでも」という長い希望なので、そのままは入れていません。「自動で作る」で、この中の時間に入ります' });
+        continue;
+      }
       const reason = tracker.check(r.staff_id, r.date, workingHours(r.start_time, r.end_time));
       if (reason) { skipped.push({ staff_id: r.staff_id, date: r.date, start_time: r.start_time, end_time: r.end_time, reason }); continue; }
       rows.push({ provider_id: pid, staff_id: r.staff_id, date: r.date, start_time: r.start_time, end_time: r.end_time, source: 'manual' });
@@ -219,7 +225,7 @@ async function __POST(request) {
     const keep = existing.filter(e => !target.has(e.date) || e.source === 'manual');
     const { entries, warnings, skipped } = generateShift({
       period, requests, availability, ruleType: settings?.rule_type || 'as_requested', dayPatterns, patternsById,
-      priorities: priorities || [], conditions, existingEntries: [...neighborEntries, ...keep],
+      priorities: priorities || [], conditions, existingEntries: [...neighborEntries, ...keep], usualMinutes: usualMinutesOf(pastEntries),
     });
     const autoIds = own.filter(e => e.source === 'auto').map(e => e.id);
     if (autoIds.length) { const { error } = await supabase.from('provider_shift_entries').delete().in('id', autoIds); if (error) return Response.json({ error: error.message }, { status: 500 }); }

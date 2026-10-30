@@ -70,8 +70,8 @@ async function __POST(request) {
   try {
     await sendMemberInviteEmail({ to: email, providerName: a.provider.name, memberName: name, roleLabel: ROLE_LABEL[role], password: newAccount && !storePassword ? password : null, passwordByStore: newAccount && !!storePassword, loginUrl: `${SITE}/login?next=/provider/dashboard` });
   } catch (e) {
-    return Response.json({ ...row, mail_error: true, temp_password: newAccount && !storePassword ? password : null });
+    return Response.json({ ...row, existing_account: !newAccount, mail_error: true, temp_password: newAccount && !storePassword ? password : null });
   }
-  return Response.json(row);
+  return Response.json({ ...row, existing_account: !newAccount });
 }
 export const POST = withAudit(__POST);
