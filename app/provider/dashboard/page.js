@@ -16,6 +16,7 @@ import { membershipReceipt } from '@/lib/membership-receipt';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
 import ContractGate from './ContractGate';
+import DataImport from './DataImport';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
@@ -19238,6 +19239,14 @@ export default function ProviderDashboardPage() {
               </div>
               <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
             </div>
+          </div>
+          {/* 他のサービスからの乗り換え（2026-10-30）：前のサービスのCSVをそのまま取り込む。列の割り振りはAI */}
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>他のサービスからの乗り換え（CSVの取り込み）</h3>
+              <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>前に使っていた予約・顧客管理のサービスから書き出したCSVを、そのまま取り込めます。顧客・予約と来店履歴・回数券の残り・会員プラン・シフト・勤怠に対応しています。</p>
+            </div>
+            <DataImport />
           </div>
         </div>
 
