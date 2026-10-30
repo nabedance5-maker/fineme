@@ -1,5 +1,6 @@
 // GET  /api/provider/members → スタッフのログイン一覧と、役割ごとの権限
-// POST /api/provider/members { email, name, role, staff_id } → スタッフを招待（ログイン情報をメールで送る）
+// POST /api/provider/members { email, name, role, staff_id, password? } → スタッフを招待（ログイン情報をメールで送る）
+// password はお店が決めた初期パスワード（任意・2026-10-30）。決めた時はメールにパスワードを書かない
 // でお要望（2026-10-19）：hacomonoの管理ユーザー・ロールレベル相当。権限はmiddlewareで「アカウント」に限定。
 export const dynamic = 'force-dynamic';
 import { randomBytes } from 'crypto';
@@ -50,8 +51,10 @@ async function __POST(request) {
     staffId = st?.id || null;
   }
 
-  // ログイン用のアカウント。新しい人には初期パスワードを作る。既にアカウントがある人はそのまま使う
-  const password = randomBytes(6).toString('base64').replace(/[^A-Za-z0-9]/g, '').slice(0, 8) + '7a';
+  // ログイン用のアカウント。新しい人には初期パスワードを作る（お店が決めた時はそれを使う）。既にアカウントがある人はそのまま使う
+  const storePassword = typeof body.password === 'string' && body.password ? body.password : null;
+  if (storePassword && (storePassword.length < 8 || !/[A-Za-z]/.test(storePassword) || !/\d/.test(storePassword))) return Response.json({ error: 'パスワードは8文字以上で、英字と数字をまぜてください' }, { status: 400 });
+  const password = storePassword || randomBytes(6).toString('base64').replace(/[^A-Za-z0-9]/g, '').slice(0, 8) + '7a';
   let newAccount = true;
   const { data: created, error: cErr } = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
   let userId = created?.user?.id || null;
@@ -65,9 +68,9 @@ async function __POST(request) {
   }).select().single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   try {
-    await sendMemberInviteEmail({ to: email, providerName: a.provider.name, memberName: name, roleLabel: ROLE_LABEL[role], password: newAccount ? password : null, loginUrl: `${SITE}/login?next=/provider/dashboard` });
+    await sendMemberInviteEmail({ to: email, providerName: a.provider.name, memberName: name, roleLabel: ROLE_LABEL[role], password: newAccount && !storePassword ? password : null, passwordByStore: newAccount && !!storePassword, loginUrl: `${SITE}/login?next=/provider/dashboard` });
   } catch (e) {
-    return Response.json({ ...row, mail_error: true, temp_password: newAccount ? password : null });
+    return Response.json({ ...row, mail_error: true, temp_password: newAccount && !storePassword ? password : null });
   }
   return Response.json(row);
 }

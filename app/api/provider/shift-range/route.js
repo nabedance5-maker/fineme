@@ -12,8 +12,8 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 import { generateShift } from '@/lib/shift-generator';
-import { loadAvailability } from '@/lib/shift-implied-requests';
-import { resolveRule } from '@/lib/shift-request-format';
+import { buildAvailability } from '@/lib/shift-implied-requests';
+import { buildHabitWindows, historyRange } from '@/lib/shift-habits';
 import { createLoadTracker, effectiveLimits, evaluateLabor, workingHours } from '@/lib/shift-labor';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 import { spanOf } from '@/lib/time-span';
@@ -189,9 +189,32 @@ async function __POST(request) {
     ];
     const dayPatterns = Object.fromEntries((dayPatternRows || []).map(r => [r.date, r.pattern_id]));
     const patternsById = Object.fromEntries((patternRows || []).map(p => [p.id, p]));
-    const empOf = Object.fromEntries((conditions || []).map(c => [c.staff_id, c.employment_type]));
-    const availability = (await loadAvailability(supabase, pid, period, requests))
-      .filter(a => resolveRule(settings?.request_format, a.staff_id, empOf[a.staff_id]).mode !== 'work_time');
+
+    // 出勤希望を出していないスタッフ（休み希望だけ・何も出していない）も対象にする（2026-10-30）。
+    // 必要人数のパターンで作る時は、営業時間の中なら入れてよい人として候補に入れる。
+    // 希望をもとに作る時は、本人のいつもの働き方（過去8週）とチームの手薄な日から、入れてよい日と時間帯を決める
+    const hist = historyRange(tFrom);
+    const [{ data: staffRows }, { data: prov }, { data: closedRows }, pastEntries] = await Promise.all([
+      supabase.from('provider_staff').select('id').eq('provider_id', pid),
+      supabase.from('providers').select('business_hours').eq('id', pid).single(),
+      supabase.from('provider_closed_dates').select('date').eq('provider_id', pid).gte('date', tFrom).lte('date', tTo),
+      entriesIn(supabase, pid, hist.from, hist.to, 'staff_id, date, start_time, end_time'),
+    ]);
+    const workStaff = new Set(requests.filter(r => r.type === 'work' && target.has(r.date)).map(r => r.staff_id));
+    const noRequestStaff = (staffRows || []).filter(st => !workStaff.has(st.id));
+    const offKeys = new Set(requests.filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`));
+    const closedDates = (closedRows || []).map(c => c.date);
+    let availability, habitNotes = [];
+    if ((settings?.rule_type || 'as_requested') === 'staffing_target') {
+      availability = buildAvailability({ period, requests, submittedStaffIds: noRequestStaff.map(st => st.id), businessHours: prov?.business_hours, closedDates });
+    } else {
+      const built = buildHabitWindows({
+        dates: targetDates, staff: noRequestStaff, conditions, pastEntries, businessHours: prov?.business_hours, closedDates, offKeys, priorities,
+        busyDates: [...requests.filter(r => r.type === 'work' && target.has(r.date)).map(r => r.date), ...own.filter(e => e.source === 'manual').map(e => e.date)],
+      });
+      availability = built.windows;
+      habitNotes = built.notes;
+    }
     // 選んでいない日・確定した日のコマは「すでにあるもの」として労働時間の計算に入れる
     const keep = existing.filter(e => !target.has(e.date) || e.source === 'manual');
     const { entries, warnings, skipped } = generateShift({
@@ -202,7 +225,7 @@ async function __POST(request) {
     if (autoIds.length) { const { error } = await supabase.from('provider_shift_entries').delete().in('id', autoIds); if (error) return Response.json({ error: error.message }, { status: 500 }); }
     const rows = entries.filter(e => target.has(e.date)).map(e => ({ ...e, provider_id: pid, period_id: null, source: 'auto' }));
     if (rows.length) { const { error } = await supabase.from('provider_shift_entries').insert(rows); if (error) return Response.json({ error: error.message }, { status: 500 }); }
-    return Response.json({ ok: true, createdCount: rows.length, warnings, skipped, skippedConfirmed: dates.length - targetDates.length });
+    return Response.json({ ok: true, createdCount: rows.length, warnings, skipped: [...skipped, ...habitNotes], skippedConfirmed: dates.length - targetDates.length });
   }
 
   return Response.json({ error: '操作が不正です' }, { status: 400 });

@@ -629,6 +629,21 @@ const DASHBOARD_CSS = `
       .pos-disc-form, .pos-done, .pos-picker, .pos-close, .pos-report { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: #f8f6f1; font-size: 13px; }
       .pos-disc-form[hidden], .pos-done[hidden], .pos-picker[hidden], .pos-moves[hidden] { display: none; }
       .pos-picker-list { display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+      .shift-auto-card { background: linear-gradient(135deg, #0f1a2e, #1c2a44); color: #f4efe2; border-radius: 18px; padding: 22px 24px; box-shadow: 0 10px 30px rgba(15,26,46,.25); display: grid; gap: 12px; border: 1px solid rgba(201,168,76,.35); }
+      .shift-auto-card .sac-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+      .shift-auto-card .sac-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #e8cf7e; }
+      .shift-auto-card h2 { margin: 4px 0 0; font-size: 19px; line-height: 1.45; color: #fff; }
+      .shift-auto-card .sac-btn { border: 0; border-radius: 999px; min-height: 48px; padding: 12px 24px; font-weight: 800; font-size: 15px; color: #1a1410; background: linear-gradient(180deg, #f0d98c, #c9a84c); cursor: pointer; box-shadow: 0 4px 14px rgba(201,168,76,.35); }
+      .shift-auto-card .sac-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+      .shift-auto-card .sac-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+      .shift-auto-card .sac-uses { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+      .shift-auto-card .sac-uses li { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.6; color: rgba(244,239,226,.85); }
+      .shift-auto-card .sac-uses b { display: block; color: #fff; font-size: 13px; margin-bottom: 2px; }
+      .shift-auto-card .sac-note { margin: 0; font-size: 12px; line-height: 1.7; color: rgba(244,239,226,.7); }
+      .shift-auto-card .sac-result { background: #fff; color: #1a1410; border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; font-size: 13px; }
+      .shift-auto-card .sac-result ul { margin: 0; padding-left: 18px; line-height: 1.7; color: #92400e; }
+      .shift-auto-card .sac-result p { margin: 0; color: #047857; }
+      .shift-auto-card .sac-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #555; }
       .pos-cust-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid rgba(26,20,16,0.12); border-radius: 8px; background: #fff; color: #1a1410; cursor: pointer; font-size: 13px; text-align: left; }
       .pos-sum { display: grid; gap: 2px; font-size: 13px; }
       .pos-sum .r, .pos-report .r { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
@@ -2896,15 +2911,33 @@ export default function ProviderDashboardPage() {
       }
       editForm?.elements['cond_employment_type']?.addEventListener('change', applyCondPlaceholders);
 
+      // スタッフのログイン（provider_members）。null＝見る権限が無い
+      let staffLogins = null;
+      function fillLoginFields(staffId) {
+        const box = document.getElementById('staff-login-box');
+        if (!box) return;
+        box.style.display = staffLogins ? '' : 'none';
+        if (!staffLogins) return;
+        const m = staffId ? staffLogins.find(x => x.staff_id === staffId && x.status !== 'removed') : null;
+        const linked = document.getElementById('staff-login-linked');
+        linked.style.display = m ? '' : 'none';
+        linked.textContent = m ? `ログインできます（ID：${m.email}・${m.role === 'manager' ? '店長' : 'スタッフ'}）。役割や権限の変更・停止は「ログインと通知」タブから。` : '';
+        document.getElementById('staff-login-fields').style.display = m ? 'none' : '';
+        ['login_email', 'login_password'].forEach(k => { editForm.elements[k].value = ''; });
+        editForm.elements['login_role'].value = 'staff';
+      }
       async function loadStaff() {
         if (!listEl) return;
         const authH = { 'Authorization': `Bearer ${getSupabaseToken()}` };
-        const [res, condRes] = await Promise.all([
+        const [res, condRes, memRes] = await Promise.all([
           fetch('/api/provider/staff', { headers: authH }),
           fetch('/api/provider/shift-staff-conditions', { headers: authH }).catch(() => null),
+          // ログインの一覧はオーナー・アカウント権限のある人だけ取れる。取れない時はログイン欄を出さない
+          fetch('/api/provider/members', { headers: authH }).catch(() => null),
         ]);
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
+        staffLogins = memRes && memRes.ok ? ((await memRes.json()).members || []) : null;
         staffConds = {};
         if (condRes && condRes.ok) (await condRes.json()).forEach(r => { staffConds[r.staff_id] = r; });
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだスタッフが登録されていません。「＋ 追加」から登録してください。</p>'; return; }
@@ -2955,6 +2988,7 @@ export default function ProviderDashboardPage() {
           showGallery(s.id);
           editForm.elements['strong_types_text'].value = (s.strong_types || []).join(', ');
           fillCondFields(staffConds[s.id]);
+          fillLoginFields(s.id);
           document.querySelectorAll('#staff-strong-axes input').forEach(cb => { cb.checked = (s.strong_axes || []).includes(cb.value); });
           const prev = document.getElementById('staff-photo-preview');
           const prevWrap = document.getElementById('staff-photo-preview-wrap');
@@ -2975,6 +3009,7 @@ export default function ProviderDashboardPage() {
         editForm.reset(); editForm.elements['_staff_id'].value = '';
         showGallery('');
         fillCondFields(null);
+        fillLoginFields(null);
         document.getElementById('staff-photo-preview-wrap').style.display = 'none';
         document.getElementById('staff-photo-url').value = '';
         editCard.scrollIntoView({ behavior: 'smooth' });
@@ -3012,8 +3047,17 @@ export default function ProviderDashboardPage() {
             const cres = await fetch('/api/provider/shift-staff-conditions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ items: [cond] }) }).catch(() => null);
             condOk = !!cres && cres.ok;
           }
+          // ログインIDを入れた時は、そのままスタッフのログインを作る
+          let loginMsg = '';
+          const loginEmail = String(fd.get('login_email') || '').trim();
+          if (staffId && loginEmail && document.getElementById('staff-login-fields')?.style.display !== 'none') {
+            const mres = await fetch('/api/provider/members', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ email: loginEmail, name: body.name, role: fd.get('login_role'), staff_id: staffId, password: String(fd.get('login_password') || '') || undefined }) }).catch(() => null);
+            const md = mres ? await mres.json().catch(() => ({})) : {};
+            if (!mres || !mres.ok) { editForm.elements['_staff_id'].value = staffId; editCard.style.display = 'block'; showToast('スタッフは保存しましたが、ログインを作れませんでした：' + (md.error || '通信エラー')); loadStaff(); return; }
+            loginMsg = md.mail_error ? `・ログインを作りました（メールを送れませんでした。初期パスワード：${md.temp_password || 'お店が決めたもの'}）` : fd.get('login_password') ? '・ログインを作りました（パスワードはお店が決めたものをスタッフに伝えてください）' : '・ログインを作り、初期パスワードをスタッフのメールに送りました';
+          }
           editCard.style.display = 'none'; editForm.reset(); loadStaff();
-          showToast(condOk ? '保存しました' : 'スタッフは保存しましたが、労働条件の保存に失敗しました。もう一度編集して保存してください');
+          showToast((condOk ? '保存しました' : 'スタッフは保存しましたが、労働条件の保存に失敗しました。もう一度編集して保存してください') + loginMsg);
         }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
@@ -4217,6 +4261,7 @@ export default function ProviderDashboardPage() {
         dayPatternOf = Object.fromEntries((rg.day_patterns || []).map(r => [r.date, r.pattern_id]));
         renderCalendar();
         renderRangePanel();
+        renderAutoCard();
         renderEasyPanel();
         loadLaborCheck();
       }
@@ -4420,6 +4465,68 @@ export default function ProviderDashboardPage() {
             set_pattern: 'パターンを付けました',
           }[action]));
         }));
+      }
+
+      // ── 自動作成（目玉。2026-10-30）──
+      // 表示中の月をまるごと作る。希望を出した人は希望から、出していない人は本人のいつもの働き方（過去8週）から、
+      // 労働条件（上限・休日）を守り、人が手薄な日・時間帯から埋める。確定した日・手で入れたシフトはそのまま。
+      let autoResult = null;
+      function renderAutoCard() {
+        const el = document.getElementById('shift-auto-card');
+        if (!el) return;
+        const month = calMonth + 1;
+        const dates = monthDates();
+        const open = dates.filter(d => !isShiftClosed(d));
+        const nConf = open.filter(d => confirmedDays.has(d)).length;
+        const reqStaff = new Set(calRequests.filter(r => r.type === 'work').map(r => r.staff_id));
+        const staffN = shiftStaffList.length;
+        const allConfirmed = open.length > 0 && nConf === open.length;
+        const r = autoResult && autoResult.month === `${calYear}-${month}` ? autoResult : null;
+        el.innerHTML = `
+          <div class="sac-head">
+            <div>
+              <div class="sac-eyebrow">シフト自動作成</div>
+              <h2>${month}月のシフトを、ボタン1つで作ります</h2>
+            </div>
+            <button type="button" class="sac-btn" data-auto-run ${allConfirmed || !staffN ? 'disabled' : ''}>${r ? 'もう一度作り直す' : `${month}月のシフトを自動で作る`}</button>
+          </div>
+          <ul class="sac-uses">
+            <li><b>出勤希望</b>${reqStaff.size ? `${reqStaff.size}人が提出済み。希望どおりに入れます` : 'まだ誰も出していません（出ていなくても作れます）'}</li>
+            <li><b>いつもの働き方</b>希望を出していない人は、過去8週の曜日・時間・日数に合わせます</li>
+            <li><b>労働条件</b>1日・週の上限、休日、連続勤務を超える分は入れません</li>
+            <li><b>チームのバランス</b>人が手薄な日・時間帯から埋め、特定の日や人に偏らせません</li>
+          </ul>
+          ${allConfirmed ? `<p class="sac-note">${month}月はすべて確定済みです。作り直す時は、下の「選んだ日をまとめて作る・確定する」で確定を取り消してください。</p>`
+            : `<p class="sac-note">確定した日（${nConf}日）と、手で入れたシフトはそのまま残します。作ったあとはカレンダーのマスから自由に直せます。</p>`}
+          ${r ? `<div class="sac-result">
+            <strong>${r.created}件のシフトを作りました</strong>
+            ${r.notes.length ? `<ul>${r.notes.slice(0, 20).map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '<p>入れられなかった人・日はありません。</p>'}
+            <div class="sac-row"><button type="button" class="sac-btn" data-auto-confirm>この内容で${month}月を確定する</button><span>確定すると、予約の受付（スタッフの空き時間）と勤怠に使われます。</span></div>
+          </div>` : ''}`;
+        el.querySelector('[data-auto-run]')?.addEventListener('click', async e => {
+          const btn = e.currentTarget;
+          btn.disabled = true; btn.textContent = '作っています…';
+          const res = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'generate', dates }) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(d.error || '作れませんでした'); renderAutoCard(); return; }
+          const nameOf = id => shiftStaffList.find(st => st.id === id)?.name || 'スタッフ';
+          const notes = [
+            ...(d.skipped || []).map(x => `${nameOf(x.staff_id)}${x.date ? ` ${mdShort(x.date)}` : ''}：${x.reason || '入れられませんでした'}`),
+            ...(d.warnings || []).map(w => (typeof w === 'string' ? w : w.date ? `${mdShort(w.date)} ${String(w.start_time || '').slice(0, 5)}〜${String(w.end_time || '').slice(0, 5)}：必要${w.required}人に対して${w.filled}人` : w.message || '')).filter(Boolean),
+          ];
+          autoResult = { month: `${calYear}-${month}`, created: d.createdCount || 0, notes };
+          showToast(`${month}月のシフトを${d.createdCount || 0}件作りました`);
+          await loadCalendar();
+        });
+        el.querySelector('[data-auto-confirm]')?.addEventListener('click', async e => {
+          if (!(await pdConfirm({ title: `${month}月のシフトを確定しますか？`, lines: [['対象', `${month}月（確定していない日）`]], okLabel: '確定する', cancelLabel: 'やめる' }))) return;
+          e.currentTarget.disabled = true;
+          const res = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'confirm', dates }) });
+          if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '確定できませんでした'); renderAutoCard(); return; }
+          autoResult = null;
+          showToast(`${month}月のシフトを確定しました`);
+          await loadCalendar();
+        });
       }
 
       // ── かんたん作成（2026-10-30 でお要望：シフト作成が複雑で使いづらい。今の機能は残して、簡単にできる道を足す）──
@@ -16862,6 +16969,20 @@ export default function ProviderDashboardPage() {
                   ))}
                 </div>
               </div>
+              {/* 管理画面のログイン（2026-10-30 渡邉：スタッフを作る所でIDとパスワードも決めれば、そのままスタッフアカウントになるように）。
+                  中身は「ログインと通知」タブのスタッフ招待と同じ（provider_members）。オーナー以外には出さない */}
+              <div id="staff-login-box" style={{ margin: '4px 0 16px', padding: '12px 14px', background: 'rgba(26,20,16,0.03)', border: '1px solid rgba(26,20,16,0.12)', borderRadius: '8px', display: 'none' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '2px' }}>管理画面へのログイン（任意）</div>
+                <p id="staff-login-linked" className="muted" style={{ fontSize: '12px', margin: '0', display: 'none' }}></p>
+                <div id="staff-login-fields">
+                  <p className="muted" style={{ fontSize: '11.5px', margin: '0 0 10px' }}>入れると、このスタッフが自分のIDでログインできるようになります。誰が操作したかが記録され、役割ごとに使えるメニューを分けられます。</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                    <div className="form-field" style={{ margin: 0 }}><label style={{ fontSize: '11.5px' }}>ログインID（メールアドレス）</label><input name="login_email" type="email" autoComplete="off" placeholder="例: staff@example.com" /></div>
+                    <div className="form-field" style={{ margin: 0 }}><label style={{ fontSize: '11.5px' }}>パスワード（任意・8文字以上、英字と数字）</label><input name="login_password" type="text" autoComplete="new-password" placeholder="空なら初期パスワードをメールで送ります" /></div>
+                    <div className="form-field" style={{ margin: 0 }}><label style={{ fontSize: '11.5px' }}>役割</label><select name="login_role" defaultValue="staff"><option value="staff">スタッフ</option><option value="manager">店長</option></select></div>
+                  </div>
+                </div>
+              </div>
               <input type="hidden" name="_staff_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit" className="btn">保存</button>
@@ -16963,6 +17084,10 @@ export default function ProviderDashboardPage() {
             <div id="shift-cal-grid">読み込み中…</div>
             <p className="muted" id="shift-cal-legend" style={{ fontSize: '11px', margin: 0 }}></p>
           </div>
+
+          {/* 自動作成は目玉（渡邉 2026-10-30：Finemeはただのシステムではなく、お店が人と時間を効率よく使うためのサポートツール）。
+              カレンダーのすぐ下に別格で置き、表示中の月をボタン1つで作る */}
+          <div id="shift-auto-card" className="shift-auto-card" style={{ marginBottom: '16px' }}>読み込み中…</div>
 
           {/* 選んだ日をまとめて確定・自動作成する（でお指摘 2026-10-27：期間を作らせず、カレンダーで「ここからここまで」を確定したい／1つずつ確定はだるい） */}
           <div className="card stack" style={{ padding: '20px 24px', gap: '12px' }} id="shift-detail-section">
