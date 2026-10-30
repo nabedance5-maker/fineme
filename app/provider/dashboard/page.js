@@ -15,6 +15,7 @@ import { rangeLabel } from '@/lib/time-span';
 import { membershipReceipt } from '@/lib/membership-receipt';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
+import ContractGate from './ContractGate';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
@@ -15809,6 +15810,7 @@ export default function ProviderDashboardPage() {
     <main className="section pd-page-root">
       <style>{DASHBOARD_CSS}</style>
       <Onboarding />
+      <ContractGate />
 
       {/* 初回読み込み中は画面が何も無いページのように見えるというでお報告（2026-09-28）
           への対応。データ取得が終わり次第（またはタイムアウト時）JSでdisplay:noneにする。 */}

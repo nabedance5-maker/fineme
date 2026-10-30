@@ -5,6 +5,7 @@ import { completeEnrollmentSetup } from '@/lib/membership-enroll';
 import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { getPlanKeyByPriceId, getPlanByPriceId } from '@/lib/stripe-plans';
+import { syncContractVisibility } from '@/lib/provider-contract';
 import { recordMembershipInvoice, recordMembershipSubscription, applyMembershipCardUpdate } from '@/lib/membership-billing';
 import { afterMembershipInvoice, syncManagedDiscount } from '@/lib/membership-billing-sync';
 import { sendReservationCreatedEmails } from '@/lib/email';
@@ -64,6 +65,7 @@ export async function POST(request) {
           billing_status: sub.status,
           plan: planKey,
         }, { onConflict: 'id' });
+        await syncContractVisibility(supabaseAdmin, providerId, sub.status);
 
         console.log(`[webhook] subscription ${sub.status} for provider ${providerId}`);
         break;
@@ -78,6 +80,7 @@ export async function POST(request) {
         await supabaseAdmin.from('providers')
           .update({ billing_status: 'cancelled' })
           .eq('id', providerId);
+        await syncContractVisibility(supabaseAdmin, providerId, 'cancelled');
         break;
       }
 

@@ -1,6 +1,7 @@
 // PATCH /api/admin/providers/[id] - 掲載者情報更新（運営用）
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { getSupabase } from '@/lib/supabase';
+import { contractActive } from '@/lib/provider-contract';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -33,6 +34,21 @@ export async function PATCH(request, props) {
   if (updates.price_from !== undefined) {
     updates.price_from = (updates.price_from === '' || updates.price_from === null)
       ? null : Number(updates.price_from);
+  }
+
+  // 契約まわり（2026-10-30）：特例無料をやめて A/B/C に戻した時は、Stripe の月額が無ければ「未契約」に戻す。
+  // 公開は、契約が有効な（払っている・特例無料の）お店だけ
+  if (updates.plan !== undefined || updates.published === true) {
+    const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id').eq('id', id).maybeSingle();
+    if (!cur) return Response.json({ error: 'お店が見つかりません' }, { status: 404 });
+    if (updates.plan === 'free') updates.plan = 'A';
+    if (['A', 'B', 'C'].includes(updates.plan) && cur.plan === 'special' && !cur.stripe_subscription_id && updates.billing_status === undefined) {
+      updates.billing_status = null;
+    }
+    if (updates.plan === 'special' && updates.billing_status === undefined) updates.billing_status = 'active';
+    if (updates.published === true && !contractActive({ ...cur, ...updates })) {
+      return Response.json({ error: 'このお店はまだ契約（月額プランのお支払い）が済んでいないため、公開できません。特例無料にするか、お店の申し込みを待ってください' }, { status: 400 });
+    }
   }
 
   const { data, error } = await supabase

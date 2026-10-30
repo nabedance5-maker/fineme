@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { contractActive } from '@/lib/provider-contract';
 
 export default function AdminProvidersPage() {
   const initialized = useRef(false);
@@ -46,6 +47,14 @@ export default function AdminProvidersPage() {
 
     function h() { return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY }; }
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    // 契約の状態（2026-10-30）：特例無料／プラン契約中／引き落とし失敗／未契約（お店の申し込み待ち）
+    function contractBadge(p) {
+      const planName = { A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || 'プランA';
+      if (p.plan === 'special') return '<span class="badge badge-green">特例無料</span>';
+      if (p.billing_status === 'past_due') return `<span class="badge badge-red">${planName}・引き落とし失敗</span>`;
+      if (contractActive(p)) return `<span class="badge badge-green">${planName} 契約中</span>`;
+      return `<span class="badge badge-gray">未契約（${planName}を案内中）</span>`;
+    }
     function catLabel(c) { return { gym: 'ジム', eyebrow: '眉毛', hair: 'ヘア', skin: '肌', fashion: 'ファッション', photo: '写真', consulting: 'コンサル', makeup: 'メイク', nail: 'ネイル', hairremoval: '脱毛', whitening: 'ホワイトニング', orthodontics: '矯正', marriage: '婚活' }[c] || c; }
 
     async function load() {
@@ -56,7 +65,7 @@ export default function AdminProvidersPage() {
         providers = await res.json();
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
-        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.billing_status === 'active').length;
+        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.plan !== 'special' && contractActive(p)).length;
         if (!providers.length) { listEl.innerHTML = '<p class="muted">掲載者がいません。「掲載者を登録」から追加してください。</p>'; return; }
         listEl.innerHTML = '';
         providers.forEach(p => {
@@ -71,8 +80,7 @@ export default function AdminProvidersPage() {
                   <strong style="font-size:15px;color:#111">${esc(p.name)}</strong>
                   <span class="badge ${statusClass}">${statusLabel}</span>
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
-                  ${p.plan === 'special' ? '<span class="badge badge-green">特例無料</span>' : p.billing_status === 'active' ? '<span class="badge badge-green">New Me Map掲載中</span>' : '<span class="badge badge-gray">無料掲載</span>'}
-                  ${p.plan && p.billing_status === 'active' && p.plan !== 'special' ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || p.plan}</span>` : ''}
+                  ${contractBadge(p)}
                 </div>
                 <div style="font-size:12px;color:#111;margin-top:4px">
                   ${p.area ? `📍 ${esc(p.area)} ` : ''}${p.price_from ? `¥${Number(p.price_from).toLocaleString()}〜 ` : ''}
@@ -82,6 +90,7 @@ export default function AdminProvidersPage() {
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-edit="${p.id}">編集</button>
+                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-send-login="${p.id}" data-name="${esc(p.name)}" data-email="${esc(p.email || '')}">ログイン案内を送り直す</button>
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-line-channel="${p.id}" data-name="${esc(p.name)}">LINE連携（代行設定）</button>
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-toggle="${p.id}" data-pub="${p.published}" data-hidden="${p.admin_hidden}">
                   ${p.admin_hidden ? '強制非公開解除' : p.published ? '非公開にする' : '公開する'}
@@ -98,7 +107,18 @@ export default function AdminProvidersPage() {
         listEl.querySelectorAll('[data-toggle]').forEach(btn => btn.addEventListener('click', async () => {
           const id = btn.dataset.toggle; const isHidden = btn.dataset.hidden === 'true'; const isPub = btn.dataset.pub === 'true';
           if (isHidden) { alert('強制非公開を解除してから操作してください'); return; }
-          await fetch(`/api/admin/providers/${id}`, { method: 'PATCH', headers: h(), body: JSON.stringify({ published: !isPub }) }); load();
+          const res = await fetch(`/api/admin/providers/${id}`, { method: 'PATCH', headers: h(), body: JSON.stringify({ published: !isPub }) });
+          if (!res.ok) { const err = await res.json().catch(() => ({})); alert(err.error || '更新できませんでした'); }
+          load();
+        }));
+        listEl.querySelectorAll('[data-send-login]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!btn.dataset.email) { alert('メールアドレスが登録されていません。「編集」から入れてください'); return; }
+          if (!confirm(`「${btn.dataset.name}」（${btn.dataset.email}）に、パスワード設定のリンクをメールで送りますか？`)) return;
+          btn.disabled = true;
+          const res = await fetch(`/api/admin/providers/${btn.dataset.sendLogin}/send-login`, { method: 'POST', headers: h() });
+          const data = await res.json().catch(() => ({}));
+          btn.disabled = false;
+          alert(res.ok ? `送りました（${data.email}）` : 'エラー: ' + (data.error || '不明'));
         }));
         listEl.querySelectorAll('[data-force-hide]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('強制非公開にしますか？')) return;
@@ -139,13 +159,7 @@ export default function AdminProvidersPage() {
         // プランセレクトの初期値を billing_status と plan から正しく復元
         const planSel = form.querySelector('select[name="plan"]');
         if (planSel) {
-          if (data.plan === 'special') {
-            planSel.value = 'special';
-          } else if (!data.billing_status || data.billing_status === 'free') {
-            planSel.value = 'free';
-          } else {
-            planSel.value = data.plan || 'A';
-          }
+          planSel.value = ['A', 'B', 'C', 'special'].includes(data.plan) ? data.plan : 'A';
         }
       }
       modal.style.display = 'flex';
@@ -165,21 +179,14 @@ export default function AdminProvidersPage() {
       data.price_from = data.price_from ? Number(data.price_from) : null;
       // plan: select要素から明示的に取得（FormData取りこぼし対策）
       const planEl = form.querySelector('select[name="plan"]');
-      if (planEl) data.plan = planEl.value || 'free';
-      // プラン選択に応じて billing_status を自動設定
-      if (data.plan === 'special') {
-        data.billing_status = 'active'; // 特例無料：有料機能すべて有効
-      } else if (data.plan === 'free') {
-        data.billing_status = 'free';   // 無料掲載：New Me Map非表示
-      }
-      // A/B/C はStripe側が billing_status を管理するため管理画面からは変更しない
+      if (planEl) data.plan = planEl.value || 'A';
+      // billing_status は Stripe（A/B/C）とサーバー（特例無料）が決めるため、ここからは送らない
       const id = data._id; delete data._id;
       const res = await fetch(id ? `/api/admin/providers/${id}` : '/api/admin/providers', { method: id ? 'PATCH' : 'POST', headers: h(), body: JSON.stringify(data) });
       if (res.ok) {
         const result = await res.json();
         modal.style.display = 'none'; load();
-        if (!id && result._init_password) { alert(`登録完了！\n\n初期パスワード：\n${result._init_password}\n\nこのパスワードをメモしておいてください。`); }
-        else if (!id) { alert('登録完了！\nパスワード情報メールが送信されました。'); }
+        if (!id) alert(result.invite_sent ? '登録しました。お店にパスワード設定のメールを送りました' : `登録しました。ただしメールを送れませんでした（${result.invite_error || '不明'}）。一覧の「ログイン案内を送り直す」から送ってください`);
       } else { const err = await res.json(); alert('エラー: ' + (err.error || '不明')); }
     });
 
@@ -257,10 +264,9 @@ export default function AdminProvidersPage() {
               <div className="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
               <div className="form-field"><label>プラン</label>
                 <select name="plan">
-                  <option value="free">無料掲載（検索のみ・New Me Map非表示）</option>
-                  <option value="A">A・ライト（¥5,000/月 / New Me Map掲載）</option>
-                  <option value="B">B・スタンダード（¥7,000/月 / New Me Map掲載）</option>
-                  <option value="C">C・プレミアム（¥10,000/月 / New Me Map掲載）</option>
+                  <option value="A">A・ライト（¥5,000/月）</option>
+                  <option value="B">B・スタンダード（¥7,000/月）</option>
+                  <option value="C">C・プレミアム（¥10,000/月）</option>
                   <option value="special">【特例無料】有料機能すべて使用可（支払いなし）</option>
                 </select>
               </div>

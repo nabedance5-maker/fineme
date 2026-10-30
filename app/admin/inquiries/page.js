@@ -101,8 +101,11 @@ export default function AdminInquiriesPage() {
         td2.innerHTML = `
           <div class="stack" style="gap:6px;padding:8px 0">
             ${it.referral_code ? `<div class="badge" style="width:fit-content">紹介コード: ${esc(it.referral_code)}</div>` : ''}
+            ${it.desired_plan ? `<div class="badge" style="width:fit-content">気になっているプラン: PLAN ${esc(it.desired_plan)}</div>` : ''}
+            ${it.provider_id ? '<div class="badge status-done" style="width:fit-content">アカウント作成済み（掲載者一覧にあります）</div>' : ''}
             <div class="msg">${esc(it.message || '')}</div>
             <div class="cluster" style="gap:8px">
+              ${!it.provider_id && it.category !== 'sales_partner' ? '<button class="btn" data-act="create">アカウントを作る</button>' : ''}
               <button class="btn btn-ghost" data-act="done">${isDone ? '未対応に戻す' : '対応済みにする'}</button>
               <button class="btn btn-ghost" data-act="copy">内容をコピー</button>
               <button class="btn btn-ghost" data-act="delete" style="color:#b91c1c">削除</button>
@@ -114,6 +117,23 @@ export default function AdminInquiriesPage() {
           const newStatus = isDone ? 'new' : 'done';
           await fetch('/api/admin/inquiries', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: it.id, status: newStatus }) });
           it.status = newStatus;
+          render();
+        });
+        // 問い合わせの内容でお店のアカウントを作り、パスワード設定のメールを送る（2026-10-30）。
+        // お店はパスワードを設定したあと、管理画面でプランと利用規約を確認して申し込む
+        td2.querySelector('[data-act="create"]')?.addEventListener('click', async e => {
+          const plan = ['A', 'B', 'C'].includes(it.desired_plan) ? it.desired_plan : 'A';
+          if (!confirm(`この内容でお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\nカテゴリ：${labelCategory(it.category)}\nはじめに選んでおくプラン：PLAN ${plan}\n\n作ると、お店にパスワード設定のメールが届きます。お店が管理画面で申し込む（支払う）まで、機能は使えません。`)) return;
+          const btn = e.currentTarget; btn.disabled = true;
+          const res = await fetch('/api/admin/providers', { method: 'POST', headers: h(), body: JSON.stringify({
+            name: it.biz_name, email: it.email, main_category: it.category || 'other', plan,
+            referred_by: it.referral_code || null, inquiry_id: it.id,
+          }) });
+          const data = await res.json().catch(() => ({}));
+          btn.disabled = false;
+          if (!res.ok) { alert('エラー: ' + (data.error || '不明')); return; }
+          it.provider_id = data.id; it.status = 'done';
+          alert(data.invite_sent ? 'アカウントを作り、お店にパスワード設定のメールを送りました' : `アカウントは作りましたが、メールを送れませんでした（${data.invite_error || '不明'}）。掲載者一覧の「ログイン案内を送り直す」から送ってください`);
           render();
         });
         td2.querySelector('[data-act="copy"]').addEventListener('click', () => {

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { contractActive } from '@/lib/provider-contract';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -32,7 +33,6 @@ export default function BillingPage() {
   const [billingStatus, setBillingStatus] = useState('free');
   const [connectStatus, setConnectStatus] = useState(null);
   const [referralYen, setReferralYen] = useState(0); // 今月の紹介報酬（初月90%＋継続¥500の合計）
-  const [subscribing, setSubscribing] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function BillingPage() {
 
     // URLパラメータ確認（Checkout成功/キャンセル）
     const params = new URLSearchParams(window.location.search);
-    if (params.get('subscribed') === '1') showToast('New Me Mapへの掲載を開始しました！');
+    if (params.get('subscribed') === '1') showToast('お申し込みを受け付けました');
     if (params.get('canceled') === '1') showToast('プランの選択をキャンセルしました');
 
     return () => { try { document.head.removeChild(style); } catch {} };
@@ -136,28 +136,7 @@ export default function BillingPage() {
   }, []);
 
   // 無料→有料：Stripe Checkoutにリダイレクト
-  async function handleSubscribe(plan) {
-    if (subscribing) return;
-    setSubscribing(true);
-    try {
-      const { data: { session } } = await _sb.auth.getSession();
-      const res = await fetch('/api/stripe/provider-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert('エラー: ' + (data.error || '不明なエラー'));
-      }
-    } catch (e) {
-      alert('通信エラー: ' + e.message);
-    } finally {
-      setSubscribing(false);
-    }
-  }
+
 
   // 有料→別プランへ変更（既存サブスク更新）
   async function handleUpgrade(newPlan) {
@@ -209,16 +188,17 @@ export default function BillingPage() {
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 2500);
   }
 
-  const isFree   = billingStatus === 'free' || !billingStatus;
-  const isActive = billingStatus === 'active';
+  // 契約中＝払っている（引き落とし失敗でやり直し中も含む）か特例無料。それ以外は未契約（lib/provider-contract.js）
+  const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus });
+  const isFree   = !isActive;
   const plan     = PLANS[currentPlan] || PLANS.A;
 
   const statusMap = {
     active:   { icon: '', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
-    free:     { icon: '️', cls: 'badge-free',   label: '無料掲載中',       heroClass: 'free',     title: '掲載ページ公開中・検索には表示されています', desc: '有料プランに移行するとユーザーの New Me Map（行動ロードマップ）にも表示されます。' },
+    free:     { icon: '', cls: 'badge-free',   label: '未契約',       heroClass: 'free',     title: 'まだプランのお申し込みがありません', desc: 'プランをお申し込みいただくと、その日から管理画面の機能が使えるようになります。' },
     past_due: { icon: '', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
   };
-  const st = statusMap[billingStatus] || statusMap.free;
+  const st = isActive ? (statusMap[billingStatus] || statusMap.active) : statusMap.free;
 
   return (
     <main className="section">
@@ -299,16 +279,15 @@ export default function BillingPage() {
                     {p.features.map(f => <li key={f}>{f}</li>)}
                   </ul>
 
-                  {/* 無料ティア：全プランに「掲載を始める」ボタン */}
+                  {/* 未契約：申し込み（プラン・利用規約・支払い）は管理画面の契約画面にまとめている */}
                   {isFree && (
-                    <button
+                    <a
                       className="plan-btn subscribe-btn"
-                      style={{ background: p.color }}
-                      disabled={subscribing}
-                      onClick={() => handleSubscribe(key)}
+                      style={{ background: p.color, display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                      href={`/provider/dashboard?plan=${key}`}
                     >
-                      {subscribing ? '処理中...' : 'このプランで掲載を始める'}
-                    </button>
+                      このプランで申し込む
+                    </a>
                   )}
 
                   {/* 有料ティア：現在プランは表示のみ、上位プランは変更ボタン */}

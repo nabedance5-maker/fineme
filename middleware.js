@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server'
 import { permOfApi, normalizePerms, PERM_DEFS } from './lib/member-perms'
+import { contractActive, contractFreeApi } from './lib/provider-contract'
 
 // ── スタッフ個別ログインの権限チェック（でお要望 2026-10-19） ──
 // スタッフのログインで呼ばれた掲載者向けAPIを、役割ごとに許可されたメニュー分類だけに絞る。
 // トークンの署名検証は各APIが行う（ここで偽のトークンを通しても、API側で401になる）。
 const MEMBER_CACHE_MS = 30 * 1000
 const memberCache = new Map()
-function decodeSub(token) {
+function decodeClaims(token) {
   try {
     const part = token.split('.')[1]
     const json = atob(part.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((part.length + 3) % 4))
-    return JSON.parse(json).sub || null
+    return JSON.parse(json) || null
   } catch { return null }
 }
+const decodeSub = token => decodeClaims(token)?.sub || null
 async function memberPerms(sub) {
   const hit = memberCache.get(sub)
   if (hit && Date.now() - hit.at < MEMBER_CACHE_MS) return hit.value
@@ -50,9 +52,50 @@ async function guardMemberApi(request) {
   return NextResponse.json({ error: `この操作（${label}）の権限がありません。店舗のオーナーに権限の変更を依頼してください`, code: 'no_permission', perm }, { status: 403 })
 }
 
+// ── Fineme の利用契約のチェック（2026-10-30） ──
+// 月額プランを申し込んでいない（払っていない）お店は、契約画面に要るAPI以外の /api/provider/* を使えない。
+// 管理画面の表示（ContractGate）だけで隠すと、APIを直接呼べば使えてしまうため、入口で止める。
+// 有効と確かめられた店だけ1分覚える（払った直後に止まり続けないよう、無効は覚えない）。
+// Supabase が応答しない時は止めない（払っているお店を障害で締め出さない。機能の権限チェックとは逆の倒し方）。
+const CONTRACT_CACHE_MS = 60 * 1000
+const contractCache = new Map()
+async function contractOkFor(claims) {
+  const hit = contractCache.get(claims.sub)
+  if (hit && Date.now() - hit < CONTRACT_CACHE_MS) return true
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const h = { apikey: key, Authorization: `Bearer ${key}` }
+  const get = async path => {
+    const r = await fetch(`${base}/rest/v1/${path}`, { headers: h, signal: AbortSignal.timeout(5000) })
+    if (!r.ok) throw new Error(`contract ${r.status}`)
+    return r.json()
+  }
+  let rows = claims.email ? await get(`providers?email=eq.${encodeURIComponent(claims.email)}&select=plan,billing_status&limit=1`) : []
+  if (!rows[0]) {
+    // スタッフ個別ログイン：所属するお店の契約で決める
+    const m = await get(`provider_members?user_id=eq.${claims.sub}&status=eq.active&select=provider_id&limit=1`)
+    if (m[0]) rows = await get(`providers?id=eq.${m[0].provider_id}&select=plan,billing_status&limit=1`)
+  }
+  // お店のアカウントでなければ、ここでは判断しない（各APIが401/404を返す）
+  if (!rows[0]) return true
+  const ok = contractActive(rows[0])
+  if (ok) contractCache.set(claims.sub, Date.now())
+  return ok
+}
+async function guardContract(request) {
+  const path = request.nextUrl.pathname
+  if (!path.startsWith('/api/provider/') || contractFreeApi(path)) return null
+  const auth = request.headers.get('authorization') || ''
+  if (!auth.startsWith('Bearer ')) return null
+  const claims = decodeClaims(auth.slice(7))
+  if (!claims?.sub) return null
+  try { if (await contractOkFor(claims)) return null } catch { return null }
+  return NextResponse.json({ error: 'Finemeの月額プランをお申し込みいただくと使えます。管理画面からお申し込みください', code: 'contract_required' }, { status: 402 })
+}
+
 export async function middleware(request) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return (await guardMemberApi(request)) || NextResponse.next()
+    return (await guardMemberApi(request)) || (await guardContract(request)) || NextResponse.next()
   }
   const host = request.headers.get('host') || ''
   if (host === 'finemenextjs.vercel.app') {

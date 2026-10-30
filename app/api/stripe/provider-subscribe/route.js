@@ -1,9 +1,12 @@
-// POST /api/stripe/provider-subscribe
-// 無料掲載中の掲載者がプランを選択して New Me Map 掲載を開始するための
-// Stripe Checkout セッションを作成して返す
+// POST /api/stripe/provider-subscribe { plan, agree_terms, return_to? }
+// まだ契約していないお店が、プランを選び利用規約に同意して、月額の支払い（Stripe Checkout）に進む。
+// 同意はここで記録する（同意していないと支払いに進めない。2026-10-30）。
+// 払われると webhook が billing_status と plan を書き、管理画面の機能が使えるようになる。
 import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { PLANS } from '@/lib/stripe-plans';
+import { contractActive } from '@/lib/provider-contract';
+import { PROVIDER_TERMS_VERSION } from '@/lib/terms-version';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -24,21 +27,30 @@ export async function POST(request) {
     const { data: { user } } = await db.auth.getUser(token);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { plan = 'A' } = await request.json();
+    const { plan = 'A', agree_terms, return_to } = await request.json();
     const planConfig = PLANS[plan];
     if (!planConfig) return Response.json({ error: '無効なプランです' }, { status: 400 });
 
     // 掲載者情報を取得
     const { data: provider } = await db
       .from('providers')
-      .select('id, stripe_customer_id, billing_status, referral_code')
+      .select('id, plan, stripe_customer_id, billing_status, referral_code')
       .eq('email', user.email)
       .single();
 
     if (!provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });
-    if (provider.billing_status === 'active') {
-      return Response.json({ error: 'すでに有料プランです。プラン変更は「支払い方法」からどうぞ。' }, { status: 409 });
+    if (provider.plan === 'special') {
+      return Response.json({ error: '特例無料のアカウントのため、お支払いは不要です' }, { status: 409 });
     }
+    if (contractActive(provider)) {
+      return Response.json({ error: 'すでに契約中です。プランの変更は「Fineme利用契約」からどうぞ。' }, { status: 409 });
+    }
+    if (agree_terms !== true) {
+      return Response.json({ error: '利用規約をご確認のうえ、「同意する」にチェックを入れてください', code: 'terms_required' }, { status: 400 });
+    }
+    const { error: termsError } = await db.from('provider_terms_agreements')
+      .upsert({ provider_id: provider.id, terms_version: PROVIDER_TERMS_VERSION }, { onConflict: 'provider_id,terms_version', ignoreDuplicates: true });
+    if (termsError) return Response.json({ error: '同意の記録に失敗しました。もう一度お試しください' }, { status: 500 });
 
     let customerId = provider.stripe_customer_id;
 
@@ -52,6 +64,7 @@ export async function POST(request) {
       await db.from('providers').update({ stripe_customer_id: customerId }).eq('id', provider.id);
     }
 
+    const back = return_to === 'dashboard' ? 'dashboard' : 'billing';
     // Stripe Checkout セッション作成（subscription モード・即時課金）
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -60,8 +73,8 @@ export async function POST(request) {
       subscription_data: {
         metadata: { fineme_provider_id: String(provider.id) },
       },
-      success_url: `${BASE_URL}/provider/billing?subscribed=1`,
-      cancel_url:  `${BASE_URL}/provider/billing?canceled=1`,
+      success_url: `${BASE_URL}/provider/${back}?subscribed=1`,
+      cancel_url:  `${BASE_URL}/provider/${back}?canceled=1`,
     });
 
     return Response.json({ url: session.url });

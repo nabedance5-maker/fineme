@@ -159,6 +159,11 @@ export default function ProviderInquiryPage() {
     `;
     document.head.appendChild(style);
 
+    // LPの「このプランで相談する」から来た時は、そのプランを選んでおく
+    const planParam = new URLSearchParams(window.location.search).get('plan');
+    const planSel = document.getElementById('desiredPlan');
+    if (planSel && ['A', 'B', 'C'].includes(planParam)) planSel.value = planParam;
+
     const refCode = new URLSearchParams(window.location.search).get('ref');
     if (refCode) {
       const noteEl = document.getElementById('inqReferralNote');
@@ -200,6 +205,7 @@ export default function ProviderInquiryPage() {
         data.phone ? `【電話】${data.phone}` : '',
         data.category ? `【カテゴリ】${mapCategoryLabel(data.category)}` : '',
         `【連絡希望】${data.contactPref}`,
+        data.desiredPlan ? `【気になっているプラン】PLAN ${data.desiredPlan}` : '',
         data.referralCode ? `【紹介コード】${data.referralCode}` : '',
         `【内容】${(data.message || '').trim()}`
       ].filter(Boolean).join('\n');
@@ -220,6 +226,7 @@ export default function ProviderInquiryPage() {
           phone: fd.get('phone')?.toString().trim(),
           category: fd.get('category')?.toString(),
           contactPref: fd.get('contactPref')?.toString(),
+          desiredPlan: fd.get('desiredPlan')?.toString() || undefined,
           message: fd.get('message')?.toString(),
           referralCode: new URLSearchParams(window.location.search).get('ref') || undefined
         };
@@ -343,6 +350,18 @@ export default function ProviderInquiryPage() {
                   <option value="email">メールでの返信希望</option>
                   <option value="phone">電話での連絡希望</option>
                   <option value="either">どちらでも</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="inq-row">
+              <div className="inq-field">
+                <label className="inq-label" htmlFor="desiredPlan">気になっているプラン（任意）</label>
+                <select className="inq-select" id="desiredPlan" name="desiredPlan" defaultValue="">
+                  <option value="">まだ決めていない</option>
+                  <option value="A">PLAN A ライト（¥5,000/月）</option>
+                  <option value="B">PLAN B スタンダード（¥7,000/月）</option>
+                  <option value="C">PLAN C プレミアム（¥10,000/月）</option>
                 </select>
               </div>
             </div>

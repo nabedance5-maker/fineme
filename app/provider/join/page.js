@@ -1,5 +1,6 @@
 import './join.css';
 import { axisGlyph } from '@/lib/axis-glyph';
+import { PROVIDER_PLANS as PLANS } from '@/lib/provider-plans';
 import { RevealScope, HeroDemo, CountUp, RoiCalculator, StickyCta, IndustryTabs } from './JoinFx';
 
 export const metadata = {
@@ -115,21 +116,6 @@ const CATEGORIES = [
   ['hairremoval', '脱毛サロン', 'メンズ脱毛'],
   ['aga', '薄毛ケア', '薄毛・頭皮ケア'],
   ['photo', '写真撮影・その他', 'プロフィール写真'],
-];
-
-const PLANS = [
-  {
-    name: 'PLAN A', label: 'ライト', price: '5,000', fit: '一人で営業、まず予約と顧客管理をまとめたい',
-    items: ['予約（LINE完結・即時予約・予約ウィジェット・店頭予約ボード）', 'オンライン決済・請求書・予約デポジット', '顧客カルテ・タグ・LINEとメールの配信', '売上管理・月次レポート・CSV出力', '体験→入会の追跡・アンケート・お知らせ', 'スタッフごとのログインと権限', 'AI専属コンサル'],
-  },
-  {
-    name: 'PLAN B', label: 'スタンダード', price: '7,000', badge: 'ジム・サロンにおすすめ', highlight: true, fit: '回数券や会員がいる、スタッフがいる',
-    items: ['Plan Aの内容すべて', 'チケット・回数券・会員プラン・月会費の管理', '休眠の掘り起こし・クチコミ依頼の自動化', 'スタッフ指名・部屋と設備の管理', 'グループレッスン・QRチェックイン', 'シフト管理・勤怠（打刻・有給）'],
-  },
-  {
-    name: 'PLAN C', label: 'プレミアム', price: '10,000', badge: 'すべての機能', fit: '物販がある、お店のLINEから送りたい',
-    items: ['Plan Bの内容すべて', 'お店独自の公式LINEから予約・リマインド・声かけ', 'POS・物販・在庫（レジ締め・仕入・棚卸し）', 'カルテAI分析・姿勢分析・健診アドバイス', 'ロッカー月極管理・操作ログ'],
-  },
 ];
 
 const FAQ = [
@@ -551,7 +537,7 @@ export default async function ProviderJoinPage(props) {
                 <ul>
                   {pl.items.map((it) => <li key={it}>{it}</li>)}
                 </ul>
-                <a className={`pj-btn ${pl.highlight ? 'pj-btn-gold' : 'pj-btn-ghost'} pj-plan-cta`} href={inquiryHref}>このプランで相談する</a>
+                <a className={`pj-btn ${pl.highlight ? 'pj-btn-gold' : 'pj-btn-ghost'} pj-plan-cta`} href={`${inquiryHref}${inquiryHref.includes('?') ? '&' : '?'}plan=${pl.key}`}>このプランで相談する</a>
               </div>
             ))}
           </div>

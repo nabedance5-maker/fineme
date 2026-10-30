@@ -25,6 +25,8 @@ async function __POST(request) {
   try {
     const body = await request.json();
     const { bizName, contactName, email, phone, category, contactPref, message, referralCode } = body;
+    // LPで押したプラン（任意）。アカウントを作る時の初期プランになる
+    const desiredPlan = ['A', 'B', 'C'].includes(body.desiredPlan) ? body.desiredPlan : null;
 
     if (!bizName || !contactName || !email) {
       return NextResponse.json({ error: '必須項目が未入力です' }, { status: 400 });
@@ -42,6 +44,7 @@ async function __POST(request) {
       contact_pref: contactPref || 'email',
       message: message || null,
       referral_code: referralCode || null,
+      desired_plan: desiredPlan,
     });
 
     if (error) throw error;
@@ -70,6 +73,7 @@ async function __POST(request) {
               `カテゴリ: ${categoryLabel}`,
               `希望連絡方法: ${contactPrefLabel}`,
               referralCode ? `紹介コード: ${referralCode}` : '',
+              desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
               '',
               '相談内容:',
               message || '（未記入）',
@@ -98,6 +102,7 @@ async function __POST(request) {
             phone ? `電話: ${phone}` : '',
             `カテゴリ: ${categoryLabel}`,
             `希望連絡方法: ${contactPrefLabel}`,
+            desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
             '',
             '相談内容:',
             message || '（未記入）',
