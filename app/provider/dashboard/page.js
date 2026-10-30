@@ -4487,6 +4487,8 @@ export default function ProviderDashboardPage() {
       // 表示中の月をまるごと作る。希望を出した人は希望から、出していない人は本人のいつもの働き方（過去8週）から、
       // 労働条件（上限・休日）を守り、人が手薄な日・時間帯から埋める。確定した日・手で入れたシフトはそのまま。
       let autoResult = null;
+      const PREP_OPTS = [0, 15, 30, 45, 60, 90, 120, 180];
+      const prepLabel = n => (!n ? '含めない' : n < 60 ? `${n}分` : n % 60 ? `${Math.floor(n / 60)}時間${n % 60}分` : `${n / 60}時間`);
       function renderAutoCardLoading() {
         const el = document.getElementById('shift-auto-card');
         if (!el) return;
@@ -4533,6 +4535,11 @@ export default function ProviderDashboardPage() {
             <div class="sac-row"><button type="button" class="sac-btn" data-auto-confirm>この内容で${month}月を確定する</button><span>確定すると、予約の受付（スタッフの空き時間）と勤怠に使われます。</span></div>
           </div>` : ''}
           <div class="sac-auto">
+            <label>開店前の準備<select data-prep="prep_before_min">${PREP_OPTS.map(n => `<option value="${n}" ${(shiftSettings?.prep_before_min || 0) === n ? 'selected' : ''}>${prepLabel(n)}</option>`).join('')}</select></label>
+            <label>閉店後の片付け<select data-prep="cleanup_after_min">${PREP_OPTS.map(n => `<option value="${n}" ${(shiftSettings?.cleanup_after_min || 0) === n ? 'selected' : ''}>${prepLabel(n)}</option>`).join('')}</select></label>
+            <span class="sac-note">この分だけ営業時間の前後も含めてシフトを作ります（予約を受ける時間は営業時間のまま）。</span>
+          </div>
+          <div class="sac-auto">
             <label>未確定のまま当日を迎えないように、
               <select data-auto-days>
                 <option value="">自動では確定しない</option>
@@ -4552,6 +4559,14 @@ export default function ProviderDashboardPage() {
           showToast(days ? `${days}日前になったら自動で確定します` : '自動の確定をやめました');
         };
         el.querySelector('[data-auto-days]')?.addEventListener('change', saveAuto);
+        el.querySelectorAll('[data-prep]').forEach(sel => sel.addEventListener('change', async () => {
+          const key = sel.dataset.prep, val = Number(sel.value);
+          const res = await fetch('/api/provider/shift-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ [key]: val }) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { showToast(d.error || '保存できませんでした'); renderAutoCard(); return; }
+          shiftSettings = { ...(shiftSettings || {}), [key]: val };
+          showToast(`${key === 'prep_before_min' ? '開店前の準備' : '閉店後の片付け'}を「${prepLabel(val)}」にしました。次に自動で作る時から使います`);
+        }));
         el.querySelector('[data-auto-gen]')?.addEventListener('change', saveAuto);
         el.querySelector('[data-auto-run]')?.addEventListener('click', async e => {
           const btn = e.currentTarget;

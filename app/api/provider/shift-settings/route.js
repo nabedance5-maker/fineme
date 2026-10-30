@@ -47,7 +47,7 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('provider_shift_settings')
-    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm')
+    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm, prep_before_min, cleanup_after_min')
     .eq('provider_id', provider.id)
     .maybeSingle();
 
@@ -79,12 +79,19 @@ async function __PATCH(request) {
     update.auto_confirm_days_before = n;
   }
   if (body.auto_generate_before_confirm !== undefined) update.auto_generate_before_confirm = !!body.auto_generate_before_confirm;
+  // 開店前の準備・閉店後の片付けとしてシフトに含める分（0〜240分）
+  for (const k of ['prep_before_min', 'cleanup_after_min']) {
+    if (body[k] === undefined) continue;
+    const n = Math.floor(Number(body[k]) || 0);
+    if (!(n >= 0 && n <= 240)) return Response.json({ error: '開店前・閉店後の時間は0〜4時間で選んでください' }, { status: 400 });
+    update[k] = n;
+  }
   if (Object.keys(update).length <= 2) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_shift_settings')
     .upsert(update, { onConflict: 'provider_id' })
-    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm')
+    .select('rule_type, request_format, submit_notify, submit_cycle, auto_confirm_days_before, auto_generate_before_confirm, prep_before_min, cleanup_after_min')
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
