@@ -647,6 +647,10 @@ const DASHBOARD_CSS = `
       .shift-auto-card .sac-auto select { margin-left: 6px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(201,168,76,.6); background: #fff; color: #1a1410; font-size: 13px; font-weight: 700; }
       .shift-auto-card .sac-check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
       .shift-auto-card .sac-check input { width: 16px; height: 16px; accent-color: #c9a84c; }
+      .shift-auto-card .sac-loading { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,.06); border: 1px dashed rgba(201,168,76,.5); font-size: 13.5px; font-weight: 700; color: #f4efe2; }
+      .shift-auto-card .sac-spin { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(232,207,126,.3); border-top-color: #e8cf7e; animation: sac-spin .8s linear infinite; flex-shrink: 0; }
+      @keyframes sac-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .shift-auto-card .sac-spin { animation: none; } }
       .shift-auto-card .sac-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #555; }
       .pos-cust-item { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid rgba(26,20,16,0.12); border-radius: 8px; background: #fff; color: #1a1410; cursor: pointer; font-size: 13px; text-align: left; }
       .pos-sum { display: grid; gap: 2px; font-size: 13px; }
@@ -4241,11 +4245,15 @@ export default function ProviderDashboardPage() {
       let confirmedDays = new Set();
       let dayPatternOf = {};
 
+      let calLoadSeq = 0;
       async function loadCalendar() {
         const grid = document.getElementById('shift-cal-grid');
         const title = document.getElementById('shift-cal-title');
         if (!grid) return;
         if (title) title.textContent = `${calYear}年${calMonth + 1}月`;
+        // 月を切り替えた直後から、自動作成カードを新しい月の「読み込み中」にする（前の月のまま見えないように。2026-10-30）
+        const seq = ++calLoadSeq;
+        renderAutoCardLoading();
         const last = new Date(calYear, calMonth + 1, 0).getDate();
         const from = `${calYear}-${pad2(calMonth + 1)}-01`;
         const to = `${calYear}-${pad2(calMonth + 1)}-${pad2(last)}`;
@@ -4259,6 +4267,7 @@ export default function ProviderDashboardPage() {
           !shiftStaffList.length ? loadStaffLinks() : null,
           fetch(`/api/provider/shift-range?from=${from}&to=${to}`, { headers: authHeadersShift() }),
         ]);
+        if (seq !== calLoadSeq) return; // 月を続けて切り替えた時は、最後の月の結果だけ使う
         if (!eRes.ok) { grid.innerHTML = authErrorHtml(eRes); return; }
         calEntries = await eRes.json();
         calRequests = rRes.ok ? await rRes.json() : [];
@@ -4478,6 +4487,19 @@ export default function ProviderDashboardPage() {
       // 表示中の月をまるごと作る。希望を出した人は希望から、出していない人は本人のいつもの働き方（過去8週）から、
       // 労働条件（上限・休日）を守り、人が手薄な日・時間帯から埋める。確定した日・手で入れたシフトはそのまま。
       let autoResult = null;
+      function renderAutoCardLoading() {
+        const el = document.getElementById('shift-auto-card');
+        if (!el) return;
+        el.innerHTML = `
+          <div class="sac-head">
+            <div>
+              <div class="sac-eyebrow">シフト自動作成</div>
+              <h2>${calMonth + 1}月のシフトを、ボタン1つで作ります</h2>
+            </div>
+            <button type="button" class="sac-btn" disabled>読み込み中…</button>
+          </div>
+          <div class="sac-loading" role="status" aria-live="polite"><span class="sac-spin" aria-hidden="true"></span>${calMonth + 1}月の希望・シフト・確定の状況を読み込んでいます…</div>`;
+      }
       function renderAutoCard() {
         const el = document.getElementById('shift-auto-card');
         if (!el) return;
