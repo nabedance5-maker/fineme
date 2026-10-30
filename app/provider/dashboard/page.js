@@ -347,6 +347,16 @@ const DASHBOARD_CSS = `
       .shift-tbl thead .st-name { background: #fafaf8; z-index: 3; }
       .shift-tbl .st-sub td, .shift-tbl .st-sub th { background: #fcfbf7; font-size: 11.5px; color: rgba(26,20,16,0.7); }
       .shift-tbl td.st-cell { cursor: pointer; }
+      /* 確定していない日（今日以降）は列ごと斜線で目立たせる（渡邉要望 2026-10-30）。選択中の黄色はこれより優先 */
+      .shift-tbl th.st-unconf, .shift-tbl td.st-unconf { background-image: repeating-linear-gradient(135deg, rgba(234,88,12,.09) 0 6px, transparent 6px 12px); }
+      .shift-tbl thead th.st-unconf { background-color: #fff7ed; box-shadow: inset 0 3px 0 #ea580c; }
+      .st-pill { display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 99px; font-size: 10.5px; font-weight: 800; line-height: 1.5; }
+      .st-pill-unconf { background: #ea580c; color: #fff; }
+      .st-pill-conf { background: #dcfce7; color: #047857; }
+      .st-pill-past { background: #f3f4f6; color: #6b7280; }
+      .shift-unconf-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 10px; background: #fff7ed; border: 1.5px solid #fdba74; color: #7c2d12; font-size: 13px; font-weight: 700; }
+      .shift-unconf-bar.ok { background: #f0fdf4; border-color: #86efac; color: #14532d; }
+      .shift-unconf-bar button { border: 1px solid #ea580c; background: #fff; color: #c2410c; border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 800; cursor: pointer; }
       .shift-tbl td.st-cell:hover { background: rgba(201,168,76,0.08); }
       .shift-tbl td.st-ok { color: #1a1410; font-weight: 700; }
       .shift-tbl td.st-wish { color: #2563eb; }
@@ -4294,9 +4304,9 @@ export default function ProviderDashboardPage() {
           ? 'スタッフごとの勤務時間を一覧で確認できます。マスをタップすると、その日の希望と確定シフトを確認・編集できます。'
           : '日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。';
         const legend = document.getElementById('shift-cal-legend');
-        if (legend) legend.innerHTML = shiftView === 'table'
+        if (legend) legend.innerHTML = '<span style="display:inline-block;padding:0 6px;border-radius:99px;background:#ea580c;color:#fff;font-weight:800">未確定</span> オレンジの斜線の日は、まだ確定していない今日以降の日です。確定するまで予約の受付と勤怠には使われません。<br>' + (shiftView === 'table'
           ? '各マスの<b>上段＝シフト</b>（<b style="color:#1a1410">黒</b>＝確定・<b style="color:#7c3aed">紫</b>＝作成中）、<b>下段＝スタッフの希望</b>（<span style="color:#2563eb;font-weight:700">青</span>＝出勤希望・休み希望）。<span style="color:#047857;font-weight:700">有給</span>＝承認済みの有給、＊＝コメントあり'
-          : '各日の<b>上段＝シフト</b>（<span style="color:#059669;font-weight:700">確定</span>・<span style="color:#7c3aed;font-weight:700">作成中</span>の人数）、<b>下段＝スタッフの希望</b>（<span style="color:#2563eb;font-weight:700">出勤希望</span>・休み希望の人数）';
+          : '各日の<b>上段＝シフト</b>（<span style="color:#059669;font-weight:700">確定</span>・<span style="color:#7c3aed;font-weight:700">作成中</span>の人数）、<b>下段＝スタッフの希望</b>（<span style="color:#2563eb;font-weight:700">出勤希望</span>・休み希望の人数）');
       }
       document.querySelectorAll('[data-shift-view]').forEach(b => b.addEventListener('click', async () => {
         shiftView = b.dataset.shiftView;
@@ -4306,6 +4316,35 @@ export default function ProviderDashboardPage() {
         renderCalendar();
       }));
       syncShiftViewButtons();
+
+      // 今日以降で、定休日でなく、まだ確定していない日（いちばん気づいてほしい日）
+      function isUnconfUpcoming(d) { return d >= shiftTodayStr() && !isShiftClosed(d) && !confirmedDays.has(d); }
+      function dayStatusPill(d) {
+        if (isShiftClosed(d)) return '';
+        if (confirmedDays.has(d)) return '<span class="st-pill st-pill-conf">確定</span>';
+        return d >= shiftTodayStr() ? '<span class="st-pill st-pill-unconf">未確定</span>' : '<span class="st-pill st-pill-past">未確定</span>';
+      }
+      // カレンダーの上に「これからの未確定の日」をまとめて出す
+      function renderUnconfBar() {
+        const bar = document.getElementById('shift-unconf-bar');
+        if (!bar) return;
+        const days = monthDates().filter(isUnconfUpcoming);
+        if (!days.length) {
+          const anyFuture = monthDates().some(d => d >= shiftTodayStr() && !isShiftClosed(d));
+          bar.className = 'shift-unconf-bar ok';
+          bar.innerHTML = anyFuture ? `${calMonth + 1}月のこれからの日は、すべて確定しています。` : '';
+          bar.style.display = anyFuture ? '' : 'none';
+          return;
+        }
+        bar.className = 'shift-unconf-bar';
+        bar.style.display = '';
+        bar.innerHTML = `<span>${calMonth + 1}月のまだ確定していない日：${days.length}日（${mdShort(days[0])}〜${mdShort(days[days.length - 1])}）</span><button type="button" data-unconf-select>未確定の日をまとめて選ぶ</button>`;
+        bar.querySelector('[data-unconf-select]').addEventListener('click', () => {
+          days.forEach(d => shiftSel.add(d));
+          renderCalendar(); renderRangePanel(); loadLaborCheck();
+          document.getElementById('shift-detail-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
 
       function renderShiftTable() {
         const grid = document.getElementById('shift-cal-grid');
@@ -4323,7 +4362,8 @@ export default function ProviderDashboardPage() {
           const wd = new Date(d + 'T00:00:00Z').getUTCDay();
           const color = wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151';
           const on = shiftSel.has(d);
-          return `<th data-sel-date="${d}" title="押すと選びます（まとめて確定・自動作成の対象）" class="${isShiftClosed(d) ? 'st-closed' : ''}${d === todayStr ? ' st-today' : ''}" style="cursor:pointer;color:${isShiftClosed(d) ? '' : color};${on ? 'background:#fef3c7;box-shadow:inset 0 -3px 0 #c9a84c' : ''}">${Number(d.slice(8))}日（${SHIFT_WEEKDAY_JA[wd]}）${confirmedDays.has(d) ? '<div style="font-size:10px;font-weight:700;color:#047857">確定</div>' : '<div style="font-size:10px;font-weight:400;color:#7c3aed">未確定</div>'}${isShiftClosed(d) ? '<div style="font-size:10px;font-weight:400">定休日</div>' : ''}</th>`;
+          const unconf = isUnconfUpcoming(d);
+          return `<th data-sel-date="${d}" title="押すと選びます（まとめて確定・自動作成の対象）" class="${isShiftClosed(d) ? 'st-closed' : ''}${d === todayStr ? ' st-today' : ''}${unconf && !on ? ' st-unconf' : ''}" style="cursor:pointer;color:${isShiftClosed(d) ? '' : color};${on ? 'background:#fef3c7;box-shadow:inset 0 -3px 0 #c9a84c' : ''}">${Number(d.slice(8))}日（${SHIFT_WEEKDAY_JA[wd]}）<div>${dayStatusPill(d)}</div>${isShiftClosed(d) ? '<div style="font-size:10px;font-weight:400">定休日</div>' : ''}</th>`;
         }).join('');
         const countRow = dates.map(d => `<td class="${isShiftClosed(d) ? 'st-closed' : ''}">${calEntries.filter(e => e.date === d).reduce((set, e) => set.add(e.staff_id), new Set()).size || '—'}${calEntries.some(e => e.date === d) ? '名' : ''}</td>`).join('');
         const rows = shiftStaffList.map(st => `<tr><th class="st-name">${esc(st.name)}</th>${dates.map(d => {
@@ -4341,7 +4381,7 @@ export default function ProviderDashboardPage() {
           if (rq?.note) bottom += '<span style="color:#b45309;font-weight:800">＊</span>';
           if (!top && !bottom && isShiftClosed(d)) cls += ' st-closed';
           const body = `<div class="st-top">${top || '<span class="st-none">—</span>'}</div><div class="st-bottom">${bottom || '&nbsp;'}</div>`;
-          return `<td class="${cls}${d === todayStr ? ' st-today' : ''}" data-cal-date="${d}"${note}>${body}</td>`;
+          return `<td class="${cls}${d === todayStr ? ' st-today' : ''}${isUnconfUpcoming(d) && !shiftSel.has(d) ? ' st-unconf' : ''}" data-cal-date="${d}"${note}>${body}</td>`;
         }).join('')}</tr>`).join('');
         grid.innerHTML = `<div class="shift-tbl-wrap"><table class="shift-tbl">
             <thead><tr><th class="st-name">スタッフ</th>${head}</tr></thead>
@@ -4358,6 +4398,7 @@ export default function ProviderDashboardPage() {
       function renderCalendar() {
         const grid = document.getElementById('shift-cal-grid');
         if (!grid) return;
+        renderUnconfBar();
         if (shiftView === 'table') { renderShiftTable(); return; }
         const firstWd = new Date(calYear, calMonth, 1).getDay();
         const last = new Date(calYear, calMonth + 1, 0).getDate();
@@ -4379,8 +4420,10 @@ export default function ProviderDashboardPage() {
           const offs = calRequests.filter(r => r.date === date && r.type === 'off').length;
           const isToday = date === todayStr;
           const closed = isShiftClosed(date);
-          cells += `<div data-cal-date="${date}" style="min-height:58px;padding:4px 5px;border:${selOn ? '2px solid #c9a84c' : `1px solid ${isToday ? '#c9a84c' : '#e5e7eb'}`};border-radius:8px;cursor:pointer;background:${selOn ? '#fef3c7' : closed ? '#e5e7eb' : isToday ? 'rgba(201,168,76,0.08)' : '#fff'};display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          const unconfDay = isUnconfUpcoming(date);
+          cells += `<div data-cal-date="${date}" style="min-height:58px;padding:4px 5px;border:${selOn ? '2px solid #c9a84c' : unconfDay ? '2px dashed #ea580c' : `1px solid ${isToday ? '#c9a84c' : '#e5e7eb'}`};border-radius:8px;cursor:pointer;background:${selOn ? '#fef3c7' : closed ? '#e5e7eb' : unconfDay ? 'repeating-linear-gradient(135deg, rgba(234,88,12,.08) 0 6px, #fff 6px 12px)' : isToday ? 'rgba(201,168,76,0.08)' : '#fff'};display:flex;flex-direction:column;gap:2px;overflow:hidden">
             <span style="display:flex;align-items:center;justify-content:space-between;gap:4px"><span style="font-size:12px;font-weight:700;color:${closed ? '#9ca3af' : wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151'}">${day}${closed ? '<span style="font-size:10px;font-weight:400;margin-left:4px">定休日</span>' : ''}</span><label data-sel-box="${date}" style="display:inline-flex;align-items:center;gap:2px;font-size:10px;cursor:pointer" title="選ぶ"><input type="checkbox" ${selOn ? 'checked' : ''} style="width:13px;height:13px;margin:0">${confirmedDays.has(date) ? '<b style="color:#047857">確定</b>' : ''}</label></span>
+            <span>${closed ? '' : dayStatusPill(date)}</span>
             <span class="sc-top">${confirmed ? `<b style="color:#059669">確定${confirmed}人</b>` : ''}${drafting ? `<b style="color:#7c3aed">作成中${drafting}人</b>` : ''}</span>
             <span class="sc-bottom">${wishing ? `<b style="color:#2563eb">希望${wishing}人</b>` : ''}${offs ? `<b style="color:#6b7280">休${offs}人</b>` : ''}</span>
           </div>`;
@@ -17146,6 +17189,7 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
             <p className="muted" id="shift-cal-hint" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。</p>
+            <div id="shift-unconf-bar" className="shift-unconf-bar" style={{ display: 'none' }} role="status"></div>
             <div id="shift-cal-grid">読み込み中…</div>
             <p className="muted" id="shift-cal-legend" style={{ fontSize: '11px', margin: 0 }}></p>
           </div>
