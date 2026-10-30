@@ -4198,13 +4198,14 @@ export default function ProviderDashboardPage() {
         const last = new Date(calYear, calMonth + 1, 0).getDate();
         const from = `${calYear}-${pad2(calMonth + 1)}-01`;
         const to = `${calYear}-${pad2(calMonth + 1)}-${pad2(last)}`;
-        const [eRes, rRes, lRes, gRes] = await Promise.all([
+        // 6本を並べて取る。確定した日（shift-range）は6番目（以前は4つしか受けておらず、確定が画面に出なかった。2026-10-30）
+        const [eRes, rRes, lRes, , , gRes] = await Promise.all([
           fetch(`/api/provider/shift-entries?from=${from}&to=${to}`, { headers: authHeadersShift() }),
           fetch(`/api/provider/shift-requests?from=${from}&to=${to}`, { headers: authHeadersShift() }),
           // 承認済みの有給（勤怠機能を使っていない店舗では取れないので、失敗しても表示は続ける）
           fetch(`/api/provider/attendance?from=${from}&to=${to}`, { headers: authHeadersShift() }).catch(() => null),
           loadClosedInfo(),
-          shiftView === 'table' && !shiftStaffList.length ? loadStaffLinks() : null,
+          !shiftStaffList.length ? loadStaffLinks() : null,
           fetch(`/api/provider/shift-range?from=${from}&to=${to}`, { headers: authHeadersShift() }),
         ]);
         if (!eRes.ok) { grid.innerHTML = authErrorHtml(eRes); return; }
@@ -4216,6 +4217,7 @@ export default function ProviderDashboardPage() {
         dayPatternOf = Object.fromEntries((rg.day_patterns || []).map(r => [r.date, r.pattern_id]));
         renderCalendar();
         renderRangePanel();
+        renderEasyPanel();
         loadLaborCheck();
       }
 
@@ -4418,6 +4420,98 @@ export default function ProviderDashboardPage() {
             set_pattern: 'パターンを付けました',
           }[action]));
         }));
+      }
+
+      // ── かんたん作成（2026-10-30 でお要望：シフト作成が複雑で使いづらい。今の機能は残して、簡単にできる道を足す）──
+      // ①スタッフごとに「いつものシフト」（曜日と時間）を一度入れる ②表示中の月をまとめて作る ③確定する、の3つだけ。
+      // 希望の提出・ルール・パターンは使わない。作ったあとはカレンダーのマスから自由に直せる
+      let shiftTemplates = null;
+      const EASY_WEEK = [1, 2, 3, 4, 5, 6, 0];
+      async function renderEasyPanel() {
+        const el = document.getElementById('shift-easy-panel');
+        if (!el) return;
+        if (shiftTemplates === null) {
+          const r = await fetch('/api/provider/shift-templates', { headers: authHeadersShift() }).catch(() => null);
+          shiftTemplates = r && r.ok ? await r.json() : [];
+        }
+        if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'; return; }
+        const tOf = (sid, wd) => shiftTemplates.find(t => t.staff_id === sid && t.weekday === wd);
+        const hm = v => String(v || '').slice(0, 5);
+        const month = calMonth + 1;
+        const head = EASY_WEEK.map(wd => `<th style="padding:6px 4px;font-size:12px;color:${wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151'}">${SHIFT_WEEKDAY_JA[wd]}</th>`).join('');
+        const rows = shiftStaffList.map(st => `<tr><th style="text-align:left;padding:6px 8px;font-size:13px;white-space:nowrap">${esc(st.name)}</th>${EASY_WEEK.map(wd => {
+          const t = tOf(st.id, wd);
+          return `<td style="padding:4px;vertical-align:top"><div style="display:grid;gap:3px"><input type="time" data-easy-s="${st.id}|${wd}" value="${hm(t?.start_time)}" aria-label="${esc(st.name)} ${SHIFT_WEEKDAY_JA[wd]}曜の開始" style="font-size:12px;padding:3px 4px;width:92px"><input type="time" data-easy-e="${st.id}|${wd}" value="${hm(t?.end_time)}" aria-label="${esc(st.name)} ${SHIFT_WEEKDAY_JA[wd]}曜の終了" style="font-size:12px;padding:3px 4px;width:92px"></div></td>`;
+        }).join('')}<td style="padding:4px;vertical-align:top"><button type="button" class="btn btn-ghost" data-easy-copy="${st.id}" style="font-size:11px;padding:4px 8px;white-space:nowrap">月曜を平日にコピー</button></td></tr>`).join('');
+        el.innerHTML = `
+          <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.8">
+            <li>スタッフごとに、いつも働く曜日と時間を入れて保存（休みの曜日は空のまま）</li>
+            <li>「${month}月をいつものシフトで作る」を押す（休み希望・有給・定休日・もう入っている日は飛ばします）</li>
+            <li>カレンダーで確かめて、直したい日はマスを押して直し、「${month}月を確定する」</li>
+          </ol>
+          <details ${shiftTemplates.length ? '' : 'open'} style="margin-top:4px">
+            <summary style="cursor:pointer;font-size:13.5px;font-weight:700;padding:4px 0">いつものシフト（${shiftTemplates.length ? '設定済み・押すと変更' : 'まだありません'}）</summary>
+            <div style="overflow-x:auto;margin-top:8px"><table style="border-collapse:collapse;min-width:100%"><thead><tr><th></th>${head}<th></th></tr></thead><tbody>${rows}</tbody></table></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><button type="button" class="btn" data-easy-save>いつものシフトを保存</button><span class="muted" style="font-size:12px">上が開始、下が終了。両方入れた曜日だけ使います。</span></div>
+          </details>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn" data-easy-apply ${shiftTemplates.length ? '' : 'disabled'}>${month}月をいつものシフトで作る</button>
+            <button type="button" class="btn btn-ghost" data-easy-confirm>${month}月を確定する</button>
+          </div>
+          <div data-easy-result></div>`;
+        el.querySelectorAll('[data-easy-copy]').forEach(b => b.addEventListener('click', () => {
+          const sid = b.dataset.easyCopy;
+          const s0 = el.querySelector(`[data-easy-s="${sid}|1"]`).value, e0 = el.querySelector(`[data-easy-e="${sid}|1"]`).value;
+          [2, 3, 4, 5].forEach(wd => { el.querySelector(`[data-easy-s="${sid}|${wd}"]`).value = s0; el.querySelector(`[data-easy-e="${sid}|${wd}"]`).value = e0; });
+        }));
+        el.querySelector('[data-easy-save]')?.addEventListener('click', async e => {
+          const templates = [];
+          let half = false;
+          el.querySelectorAll('[data-easy-s]').forEach(inp => {
+            const [staff_id, wd] = inp.dataset.easyS.split('|');
+            const end = el.querySelector(`[data-easy-e="${staff_id}|${wd}"]`).value;
+            if (inp.value && end) templates.push({ staff_id, weekday: Number(wd), start_time: inp.value, end_time: end });
+            else if (inp.value || end) half = true;
+          });
+          if (half) { showToast('開始と終了の両方を入れてください（休みの曜日は両方とも空に）'); return; }
+          e.currentTarget.disabled = true;
+          const r = await fetch('/api/provider/shift-templates', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ templates }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '保存できませんでした'); renderEasyPanel(); return; }
+          shiftTemplates = templates.map(t => ({ ...t }));
+          showToast('いつものシフトを保存しました');
+          renderEasyPanel();
+        });
+        const showNotes = (d, lines) => {
+          const out = el.querySelector('[data-easy-result]');
+          const notes = [...lines, ...(d.skipped || []).map(x => `${shiftStaffList.find(s => s.id === x.staff_id)?.name || ''} ${mdShort(x.date)}：${x.reason || '入れられませんでした'}`)].filter(Boolean);
+          if (out) out.innerHTML = notes.length ? `<div style="margin-top:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;font-size:12px;color:#92400e"><ul style="margin:0;padding-left:18px">${notes.slice(0, 30).map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>` : '';
+        };
+        el.querySelector('[data-easy-apply]')?.addEventListener('click', async e => {
+          const dates = monthDates().filter(d => !isShiftClosed(d));
+          if (!dates.length) { showToast('この月は定休日だけです'); return; }
+          e.currentTarget.disabled = true;
+          const r = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'apply_template', dates }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '作れませんでした'); renderEasyPanel(); return; }
+          showToast(`${month}月に${d.appliedCount || 0}件のシフトを入れました`);
+          await loadCalendar();
+          showNotes(d, [
+            d.existedCount ? `もうシフトが入っていた${d.existedCount}件はそのままにしました` : '',
+            d.offCount ? `休み希望・有給の${d.offCount}件は入れませんでした` : '',
+            d.skippedConfirmed ? `確定済みの${d.skippedConfirmed}日は対象外です（作り直す時は確定を取り消してください）` : '',
+          ]);
+        });
+        el.querySelector('[data-easy-confirm]')?.addEventListener('click', async e => {
+          const dates = monthDates();
+          if (!(await pdConfirm({ title: `${month}月のシフトを確定しますか？`, lines: [['対象', `${month}月の全日`]], okLabel: '確定する', cancelLabel: 'やめる' }))) return;
+          e.currentTarget.disabled = true;
+          const r = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'confirm', dates }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showToast(d.error || '確定できませんでした'); renderEasyPanel(); return; }
+          showToast(`${month}月のシフトを確定しました`);
+          await loadCalendar();
+        });
       }
 
       // その日のスタッフ別「希望」と「シフト」を1枚のポップアップで確認・編集する（希望が無くても・確定した日でも自由に入れられる）
@@ -14770,7 +14864,8 @@ export default function ProviderDashboardPage() {
         $('pos-cust-q').value = ''; $('pos-cust-q').focus();
         if (!customerPool) {
           $('pos-cust-results').innerHTML = '<p style="font-size:12.5px;margin:0">読み込み中…</p>';
-          const [r1, r2] = await Promise.all([fetch('/api/provider/customers', { headers: authHeadersPos() }), fetch('/api/provider/customers/manual', { headers: authHeadersPos() })]);
+          // scope=all：ライトプランの「New Me Log連携の表示は30人まで」をレジには掛けない（予約・体験だけの方も選べるように）
+          const [r1, r2] = await Promise.all([fetch('/api/provider/customers?scope=all', { headers: authHeadersPos() }), fetch('/api/provider/customers/manual', { headers: authHeadersPos() })]);
           const mem = r1.ok ? await r1.json() : []; const man = r2.ok ? await r2.json() : [];
           const seen = new Set();
           customerPool = mem.filter(c => c.user_id && !seen.has(c.user_id) && seen.add(c.user_id)).map(c => ({ user_id: c.user_id, name: c.customer_name || 'お客様', phone: c.phone || '', no: c.member_number }))
@@ -14782,7 +14877,27 @@ export default function ProviderDashboardPage() {
         const q = ($('pos-cust-q').value || '').trim().toLowerCase();
         const digits = q.replace(/\D/g, '');
         const list = (customerPool || []).filter(c => !q || c.name.toLowerCase().includes(q) || (digits.length >= 3 && String(c.phone).replace(/\D/g, '').includes(digits)) || (c.no != null && String(c.no) === q)).slice(0, 30);
-        $('pos-cust-results').innerHTML = list.length ? list.map((c, i) => `<button type="button" class="pos-cust-item" data-pick="${i}"><b>${esc(c.name)}</b><span>${c.manual ? '非会員' : '会員'}${c.phone ? `・${esc(c.phone)}` : ''}</span></button>`).join('') : '<p style="font-size:12.5px;margin:0">該当するお客様がいません。</p>';
+        $('pos-cust-results').innerHTML = list.length ? list.map((c, i) => `<button type="button" class="pos-cust-item" data-pick="${i}"><b>${esc(c.name)}</b><span>${c.manual ? 'お店で登録' : 'Finemeアカウント'}${c.phone ? `・${esc(c.phone)}` : ''}</span></button>`).join('') : '<p style="font-size:12.5px;margin:0">該当するお客様がいません。</p>';
+        // 初めての方・体験や単発の方は、その場でお客様として登録して選べる（でお要望 2026-10-30）
+        if (q && !digits.length) {
+          const nb = document.createElement('button');
+          nb.type = 'button'; nb.className = 'pos-cust-item';
+          nb.innerHTML = `<b>「${esc(q.slice(0, 40))}」を新しいお客様として登録</b><span>お店で登録</span>`;
+          nb.addEventListener('click', async () => {
+            nb.disabled = true;
+            const name = ($('pos-cust-q').value || '').trim().slice(0, 40);
+            const r = await fetch('/api/provider/customers/manual', { method: 'POST', headers: authHeadersPos(), body: JSON.stringify({ display_name: name }) });
+            const d = await r.json().catch(() => ({}));
+            nb.disabled = false;
+            if (!r.ok || !d?.id) { showToast(d.error || 'お客様を登録できませんでした'); return; }
+            customerPool = (customerPool || []).concat({ manual_id: d.id, name: d.display_name, phone: '', manual: true });
+            customer = { manual_id: d.id, name: d.display_name };
+            memberCard = null; cardRequestId = null;
+            $('pos-cust-picker').hidden = true; renderCustomer();
+            showToast(`${d.display_name} 様を登録しました`);
+          });
+          $('pos-cust-results').appendChild(nb);
+        }
         $('pos-cust-results').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
           const c = list[+b.dataset.pick];
           customer = c.manual ? { manual_id: c.manual_id, name: c.name } : { user_id: c.user_id, name: c.name };
@@ -16828,6 +16943,13 @@ export default function ProviderDashboardPage() {
               沿っていつでも出してもらい（上の「希望の提出」）、シフトを作る時に作りたい期間を選ぶだけにした。 */}
           <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', marginBottom: '16px' }}>読み込み中…</div>
 
+          {/* かんたん作成（2026-10-30）：いつものシフト（スタッフ×曜日）から1か月分を作って確定するだけの道。下の細かい機能はそのまま */}
+          <div className="card stack" style={{ padding: '20px 24px', gap: '10px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>かんたん作成</h2>
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>毎週だいたい同じ時間で働くスタッフは、「いつものシフト」を一度入れておけば、1か月分をまとめて作れます。希望の提出や細かい設定は要りません。</p>
+            <div id="shift-easy-panel">読み込み中…</div>
+          </div>
+
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -18328,6 +18450,7 @@ export default function ProviderDashboardPage() {
                   <button type="button" className="btn btn-ghost" id="pos-cust-clear" style={{ display: 'none' }}>外す</button>
                 </div>
               </div>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>体験・単発の方も、会員でない方も買えます。お客様を選ばずに会計することもできます。</p>
               <div id="pos-scan-box" hidden style={{ padding: '12px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}>
                 <video id="pos-scan-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '10px', background: '#000' }}></video>
                 <canvas id="pos-scan-canvas" style={{ display: 'none' }}></canvas>
