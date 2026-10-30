@@ -16221,7 +16221,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="membership-billing" data-feature="membership_enrollment">月会費の支払い状況<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="invoices">請求</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="reports">レポート・データ出力</button>
+                  <button className="tab-btn" data-tab="reports">レポート</button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
@@ -16239,6 +16239,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="landing">LP設定</button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="publish">公開設定</button>
+                  <button className="tab-btn" data-tab="data">データの取り込み・書き出し</button>
                 </div>
                 <div className="pd-panel-section" data-panel="labor" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
@@ -19226,27 +19227,33 @@ export default function ProviderDashboardPage() {
             </div>
             <div id="rp-body"></div>
           </div>
+        </div>
+
+        {/* データの取り込み・書き出し（2026-10-30 渡邉指摘：売上タブの中は変。店舗設定に置く）。CSVの出力と、他のサービスからの乗り換えの取り込み */}
+        <div className="tab-pane" id="tab-data">
+          <div className="stack" style={{ gap: '16px' }}>
           <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>データ出力（CSV）</h3>
-              <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>Excelやスプレッドシートで開けるCSVで保存します。お客様の個人情報を含むため、出力した人と日時は操作ログに残ります。保存したファイルの扱いにはご注意ください。</p>
-            </div>
-            <div className="rp-export">
-              <label>出力するデータ<select id="rp-type" className="rp-select"><option value="customers">顧客一覧（基本情報・タイプ・タグ・来店回数）</option><option value="reservations">予約</option><option value="sales">売上</option><option value="memberships">会員プラン（入会・休会・退会）</option><option value="checkins">チェックイン</option></select></label>
-              <div id="rp-range" className="rp-range" style={{ display: 'none' }}>
-                <label>いつから<input type="date" id="rp-from" /></label>
-                <label>いつまで<input type="date" id="rp-to" /></label>
+              <div>
+                <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>データ出力（CSV）</h3>
+                <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>Excelやスプレッドシートで開けるCSVで保存します。お客様の個人情報を含むため、出力した人と日時は操作ログに残ります。保存したファイルの扱いにはご注意ください。</p>
               </div>
-              <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
+              <div className="rp-export">
+                <label>出力するデータ<select id="rp-type" className="rp-select"><option value="customers">顧客一覧（基本情報・タイプ・タグ・来店回数）</option><option value="reservations">予約</option><option value="sales">売上</option><option value="memberships">会員プラン（入会・休会・退会）</option><option value="checkins">チェックイン</option></select></label>
+                <div id="rp-range" className="rp-range" style={{ display: 'none' }}>
+                  <label>いつから<input type="date" id="rp-from" /></label>
+                  <label>いつまで<input type="date" id="rp-to" /></label>
+                </div>
+                <button type="button" className="btn" id="rp-export-btn">CSVで保存</button>
+              </div>
             </div>
-          </div>
-          {/* 他のサービスからの乗り換え（2026-10-30）：前のサービスのCSVをそのまま取り込む。列の割り振りはAI */}
-          <div className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>他のサービスからの乗り換え（CSVの取り込み）</h3>
-              <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>前に使っていた予約・顧客管理のサービスから書き出したCSVを、そのまま取り込めます。顧客・予約と来店履歴・回数券の残り・会員プラン・シフト・勤怠に対応しています。</p>
+            {/* 他のサービスからの乗り換え（2026-10-30）：前のサービスのCSVをそのまま取り込む。列の割り振りはAI */}
+            <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>他のサービスからの乗り換え（CSVの取り込み）</h3>
+                <p style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7, color: '#1a1410' }}>前に使っていた予約・顧客管理のサービスから書き出したCSVを、そのまま取り込めます。顧客・予約と来店履歴・回数券の残り・会員プラン・シフト・勤怠に対応しています。</p>
+              </div>
+              <DataImport />
             </div>
-            <DataImport />
           </div>
         </div>
 
