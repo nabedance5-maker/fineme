@@ -10,6 +10,8 @@ function getSupabaseClient() {
   );
 }
 
+const SIGNUP_URL = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.fineme.me'}/provider/signup`;
+
 const CATEGORY_LABEL = {
   gym: 'ジム・パーソナルトレーニング', makeup: 'メイク・コスメ', hair: 'ヘア・美容院',
   diagnosis: '骨格・パーソナルカラー診断', fashion: 'ファッション・スタイリング',
@@ -27,6 +29,8 @@ async function __POST(request) {
     const { bizName, contactName, email, phone, category, contactPref, message, referralCode } = body;
     // LPで押したプラン（任意）。アカウントを作る時の初期プランになる
     const desiredPlan = ['A', 'B', 'C'].includes(body.desiredPlan) ? body.desiredPlan : null;
+    // オンライン相談のご希望日時（問い合わせの次は、必ずオンラインで話す。2026-10-30）
+    const meetingWish = String(body.meetingWish || '').trim().slice(0, 500) || null;
 
     if (!bizName || !contactName || !email) {
       return NextResponse.json({ error: '必須項目が未入力です' }, { status: 400 });
@@ -45,6 +49,7 @@ async function __POST(request) {
       message: message || null,
       referral_code: referralCode || null,
       desired_plan: desiredPlan,
+      meeting_wish: meetingWish,
     });
 
     if (error) throw error;
@@ -74,6 +79,7 @@ async function __POST(request) {
               `希望連絡方法: ${contactPrefLabel}`,
               referralCode ? `紹介コード: ${referralCode}` : '',
               desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
+              meetingWish ? `オンライン相談の希望日時: ${meetingWish}` : '',
               '',
               '相談内容:',
               message || '（未記入）',
@@ -93,7 +99,7 @@ async function __POST(request) {
             `${contactName} 様`,
             '',
             isPartner ? 'この度はFinemeの営業パートナーにご応募いただき、ありがとうございます。' : 'この度はFinemeへお問い合わせいただき、ありがとうございます。',
-            isPartner ? '以下の内容で受け付けました。内容を拝見し、オンライン面談の日程をご連絡します。' : '以下の内容で受け付けました。担当者より改めてご連絡差し上げます。',
+            isPartner ? '以下の内容で受け付けました。内容を拝見し、オンライン面談の日程をご連絡します。' : '以下の内容で受け付けました。ご希望の日時をもとに、担当者からオンライン相談の日時とURLをご連絡します。',
             '',
             '━━━━━━━━━━━━━━━━━━',
             `会社名・屋号: ${bizName}`,
@@ -103,11 +109,20 @@ async function __POST(request) {
             `カテゴリ: ${categoryLabel}`,
             `希望連絡方法: ${contactPrefLabel}`,
             desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
+            meetingWish ? `オンライン相談のご希望日時: ${meetingWish}` : '',
             '',
             '相談内容:',
             message || '（未記入）',
             '━━━━━━━━━━━━━━━━━━',
             '',
+            ...(isPartner ? [] : [
+              'この先の流れ',
+              '1. オンライン相談（30分ほど）で、お店のご様子を伺い、Finemeの使い方をご説明します',
+              '2. ご利用を決めていただいたら、登録ページからお店の情報をご登録ください',
+              `   ${SIGNUP_URL}`,
+              '3. 届いたメールからパスワードを決め、管理画面でプランを選んでお申し込みいただいた日からご利用いただけます',
+              '',
+            ]),
             'ご不明な点がございましたら、このメールにご返信ください。',
             '',
             '──────────────────',

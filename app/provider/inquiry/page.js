@@ -161,6 +161,15 @@ export default function ProviderInquiryPage() {
 
     // LPの「このプランで相談する」から来た時は、そのプランを選んでおく
     const planParam = new URLSearchParams(window.location.search).get('plan');
+    // 「すぐに始めたい方」の登録ページへも、紹介コード・プランを引き継ぐ
+    const signupLink = document.getElementById('inqSignupLink');
+    if (signupLink) {
+      const sp = new URLSearchParams();
+      const r0 = new URLSearchParams(window.location.search).get('ref');
+      if (r0) sp.set('ref', r0);
+      if (['A', 'B', 'C'].includes(planParam)) sp.set('plan', planParam);
+      if (sp.toString()) signupLink.href = `/provider/signup?${sp}`;
+    }
     const planSel = document.getElementById('desiredPlan');
     if (planSel && ['A', 'B', 'C'].includes(planParam)) planSel.value = planParam;
 
@@ -205,6 +214,7 @@ export default function ProviderInquiryPage() {
         data.phone ? `【電話】${data.phone}` : '',
         data.category ? `【カテゴリ】${mapCategoryLabel(data.category)}` : '',
         `【連絡希望】${data.contactPref}`,
+        data.meetingWish ? `【オンライン相談の希望日時】${data.meetingWish}` : '',
         data.desiredPlan ? `【気になっているプラン】PLAN ${data.desiredPlan}` : '',
         data.referralCode ? `【紹介コード】${data.referralCode}` : '',
         `【内容】${(data.message || '').trim()}`
@@ -227,6 +237,7 @@ export default function ProviderInquiryPage() {
           category: fd.get('category')?.toString(),
           contactPref: fd.get('contactPref')?.toString(),
           desiredPlan: fd.get('desiredPlan')?.toString() || undefined,
+          meetingWish: fd.get('meetingWish')?.toString().trim(),
           message: fd.get('message')?.toString(),
           referralCode: new URLSearchParams(window.location.search).get('ref') || undefined
         };
@@ -234,6 +245,12 @@ export default function ProviderInquiryPage() {
         if (!data.bizName || !data.contactName || !data.email || !consent) {
           statusEl.textContent = '必須項目が未入力です（会社名・担当者・メール・同意）';
           statusEl.style.color = '#b91c1c';
+          return;
+        }
+        if (!data.meetingWish) {
+          statusEl.textContent = 'オンライン相談のご希望日時を入れてください（「平日の夜」などでも大丈夫です）';
+          statusEl.style.color = '#b91c1c';
+          document.getElementById('meetingWish')?.focus();
           return;
         }
         if (!data.category) {
@@ -247,7 +264,7 @@ export default function ProviderInquiryPage() {
         submitBtn.textContent = '送信中…';
         try {
           await saveInquiry(data);
-          statusEl.textContent = '送信を受け付けました。担当よりご連絡します。';
+          statusEl.textContent = 'お申し込みを受け付けました。担当者から、オンライン相談の日時とURLをメールでご連絡します。';
           statusEl.style.color = '#065f46';
           form.reset();
         } catch (err) {
@@ -291,8 +308,8 @@ export default function ProviderInquiryPage() {
     <div className="inq-page">
       <div className="inq-container">
         <p className="inq-eyebrow">Provider Inquiry</p>
-        <h1 className="inq-title">資料請求・掲載についてのご相談</h1>
-        <p className="inq-lead">最短で相談したい方向けの簡易フォームです。2分で完了。</p>
+        <h1 className="inq-title">オンライン相談のお申し込み</h1>
+        <p className="inq-lead">まずはオンライン（30分ほど）で、お店のご様子を伺い、Finemeの使い方をご説明します。ご都合のよい日時をお知らせください。2分で完了します。</p>
         <p className="inq-referral-note" id="inqReferralNote" style={{ display: 'none' }}></p>
 
         <div className="inq-card">
@@ -367,8 +384,13 @@ export default function ProviderInquiryPage() {
             </div>
 
             <div className="inq-row-full inq-field">
+              <label className="inq-label" htmlFor="meetingWish">オンライン相談のご希望日時<span className="inq-req">*</span></label>
+              <textarea className="inq-textarea" id="meetingWish" name="meetingWish" rows={3} required placeholder="例: 11/5（水）14時〜、11/6（木）19時以降、平日の昼ならいつでも"></textarea>
+            </div>
+
+            <div className="inq-row-full inq-field">
               <label className="inq-label" htmlFor="message">ご相談内容（自由記入）</label>
-              <textarea className="inq-textarea" id="message" name="message" rows={5} placeholder="例: 掲載プランの詳細を知りたい / 資料を送付してほしい など"></textarea>
+              <textarea className="inq-textarea" id="message" name="message" rows={5} placeholder="例: 回数券と会員の管理をまとめたい / 今の予約サイトと併用できるか知りたい など"></textarea>
             </div>
 
             <div className="inq-consent">
@@ -379,7 +401,7 @@ export default function ProviderInquiryPage() {
             </div>
 
             <div className="inq-btn-row">
-              <button type="submit" className="inq-btn-primary">問い合わせを送信</button>
+              <button type="submit" className="inq-btn-primary">相談を申し込む</button>
               <button type="button" id="copyInquiry" className="inq-btn-secondary">内容をコピー</button>
             </div>
 
@@ -387,6 +409,7 @@ export default function ProviderInquiryPage() {
           </form>
         </div>
 
+        <p className="inq-lead" style={{ marginTop: '20px', fontSize: '13px' }}>すでに導入を決めていて、すぐに始めたい方は<a id="inqSignupLink" href="/provider/signup" style={{ color: '#c9a84c', fontWeight: 700 }}>こちらから登録</a>できます。</p>
         <a className="inq-back" href="/provider/join">← 掲載者募集ページに戻る</a>
       </div>
     </div>

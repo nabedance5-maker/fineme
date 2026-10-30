@@ -19,6 +19,15 @@ async function syncLocalDiagnosis(accessToken) {
   return syncLocalDiagnosisToServer(accessToken);
 }
 
+// Supabase の英語のエラーを、お店の方に分かる言葉にする
+function passwordErrorText(error) {
+  const code = error?.code || '';
+  const msg = error?.message || '';
+  if (code === 'weak_password' || /weak|at least/i.test(msg)) return 'パスワードが短すぎるか、簡単すぎます。8文字以上で、英字と数字をまぜてください';
+  if (code === 'session_expired' || code === 'session_not_found' || /session|expired|jwt/i.test(msg)) return 'リンクの有効期限が切れました。ログイン画面の「パスワードを忘れた方」から、もう一度メールを受け取ってください';
+  return 'パスワードを設定できませんでした。時間をおいてもう一度お試しください';
+}
+
 // パスワード設定フォーム
 function PasswordForm({ onSubmit, loading, error }) {
   const [pw1, setPw1] = useState('');
@@ -38,7 +47,7 @@ function PasswordForm({ onSubmit, loading, error }) {
     <div>
       <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 6px' }}>パスワードを設定してください</h2>
       <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 20px' }}>
-        掲載者ダッシュボードへのログインに使用します。
+        掲載者ダッシュボードへのログインに使用します。すでにFinemeのアカウントをお持ちの方は、今のパスワードをそのまま入れても大丈夫です。
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
@@ -142,8 +151,14 @@ export default function AuthCallbackPage() {
     setPwLoading(true);
     const { error } = await sb.auth.updateUser({ password: pw });
     setPwLoading(false);
+    // 既に Fineme のアカウントを持っている方が、今と同じパスワードを入れた時（Supabase は「前と同じ」を拒む）。
+    // メールのリンクで本人と確かめられていて、パスワードもそのままなので、そのまま管理画面へ進めてよい（2026-10-30）
+    if (error && (error.code === 'same_password' || /different from the old password/i.test(error.message || ''))) {
+      window.location.href = '/provider/dashboard';
+      return;
+    }
     if (error) {
-      setPwError('エラー: ' + error.message);
+      setPwError(passwordErrorText(error));
       return;
     }
     window.location.href = '/provider/dashboard';

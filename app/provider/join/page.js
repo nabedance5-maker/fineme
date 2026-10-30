@@ -622,6 +622,8 @@ export default async function ProviderJoinPage(props) {
           <h2 className="pj-final-h">まずは、お店の今の困りごとを<br className="pj-br-pc" />聞かせてください。</h2>
           <a className="pj-btn pj-btn-gold pj-btn-xl" href={inquiryHref}>話を聞いてみる（無料）</a>
           <p className="pj-final-note">無理な勧誘は一切ありません。合わない場合は正直にお伝えします。</p>
+          {/* まずはオンラインで話す（渡邉方針 2026-10-30）。もう決めていて、すぐ始めたい方だけ登録ページへ */}
+          <p className="pj-final-note">すでに導入を決めていて、すぐに始めたい方は<a href={ref ? `/provider/signup?ref=${encodeURIComponent(ref)}` : '/provider/signup'} style={{ color: 'inherit', fontWeight: 700 }}>こちらから登録</a>できます。</p>
         </div>
       </section>
     </main>
