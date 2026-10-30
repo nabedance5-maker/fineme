@@ -16941,14 +16941,6 @@ export default function ProviderDashboardPage() {
               時間帯パターン・優先度）の順に並べ替え、初期設定系は折りたたみにした。 */}
           {/* でお指摘（2026-10-16）：最初に期間を作らせるのは不要な手間で分かりづらい。希望はお店の提出ルールに
               沿っていつでも出してもらい（上の「希望の提出」）、シフトを作る時に作りたい期間を選ぶだけにした。 */}
-          <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', marginBottom: '16px' }}>読み込み中…</div>
-
-          {/* かんたん作成（2026-10-30）：いつものシフト（スタッフ×曜日）から1か月分を作って確定するだけの道。下の細かい機能はそのまま */}
-          <div className="card stack" style={{ padding: '20px 24px', gap: '10px', marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px' }}>かんたん作成</h2>
-            <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>毎週だいたい同じ時間で働くスタッフは、「いつものシフト」を一度入れておけば、1か月分をまとめて作れます。希望の提出や細かい設定は要りません。</p>
-            <div id="shift-easy-panel">読み込み中…</div>
-          </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
@@ -16979,6 +16971,8 @@ export default function ProviderDashboardPage() {
             <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>労働条件チェック</h4>
             <div id="shift-labor-panel"></div>
           </div>
+          {/* 渡邉指摘（2026-10-30）：シフト管理の一番上はシフトカレンダー。希望の提出はカレンダーと作成・確定の下へ */}
+          <div className="card" id="shift-submit-card" style={{ padding: '18px 24px', margin: '16px 0 0' }}>読み込み中…</div>
           <h3 style={{ margin: '24px 0 10px', fontSize: '14px' }}>設定</h3>
           <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
             <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>シフト作成ルール</summary>
@@ -17043,6 +17037,15 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-priorities-save-btn">優先度を保存</button>
               <span id="shift-priorities-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
+            </div>
+          </details>
+
+          {/* 固定シフトのお店向け（2026-10-30）。多くのお店は固定シフトではないため、設定のいちばん下に折りたたんで置く */}
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>いつものシフトから作る（固定シフトのお店向け）</summary>
+            <div className="stack" style={{ gap: '10px', marginTop: '14px' }}>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0, lineHeight: 1.7 }}>毎週だいたい同じ曜日・時間で働くスタッフがいるお店向けです。「いつものシフト」を一度入れておけば、カレンダーに表示中の月をまとめて作れます。</p>
+              <div id="shift-easy-panel">読み込み中…</div>
             </div>
           </details>
 
