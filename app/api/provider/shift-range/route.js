@@ -139,6 +139,42 @@ async function __POST(request) {
     return Response.json({ ok: true, appliedCount: rows.length, duplicateCount, skipped, skippedConfirmed: dates.length - targetDates.length });
   }
 
+  // いつものシフト（スタッフ×曜日の決まった勤務時間）をそのまま入れる（かんたん作成。2026-10-30）。
+  // その日にもうシフトがある人・休み希望・有給（全日）の人は飛ばす。労働条件を超える分も入れずに知らせる
+  if (body.action === 'apply_template') {
+    const [{ data: templates }, { data: leaves }] = await Promise.all([
+      supabase.from('provider_shift_templates').select('staff_id, weekday, start_time, end_time').eq('provider_id', pid),
+      supabase.from('provider_paid_leave_requests').select('staff_id, date, unit').eq('provider_id', pid).eq('status', 'approved').gte('date', tFrom).lte('date', tTo),
+    ]);
+    if (!templates?.length) return Response.json({ error: '「いつものシフト」がまだありません。先にスタッフごとの曜日と時間を入れてください' }, { status: 400 });
+    const offKeys = new Set([
+      ...(rawRequests || []).filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`),
+      ...(leaves || []).filter(l => l.unit === 'full').map(l => `${l.staff_id}|${l.date}`),
+    ]);
+    const hasEntry = new Set(own.map(e => `${e.staff_id}|${e.date}`));
+    const limitsByStaff = {};
+    (conditions || []).forEach(c => { limitsByStaff[c.staff_id] = effectiveLimits(c); });
+    const tracker = createLoadTracker(limitsByStaff);
+    [...neighborEntries, ...own].forEach(e => tracker.add(e.staff_id, e.date, workingHours(e.start_time, e.end_time)));
+    const rows = [], skipped = [];
+    let offCount = 0, existedCount = 0;
+    for (const date of targetDates) {
+      const wd = new Date(date + 'T00:00:00Z').getUTCDay();
+      for (const t of templates.filter(x => x.weekday === wd)) {
+        const k = `${t.staff_id}|${date}`;
+        if (hasEntry.has(k)) { existedCount++; continue; }
+        if (offKeys.has(k)) { offCount++; continue; }
+        const hours = workingHours(t.start_time, t.end_time);
+        const reason = tracker.check(t.staff_id, date, hours);
+        if (reason) { skipped.push({ staff_id: t.staff_id, date, reason }); continue; }
+        rows.push({ provider_id: pid, staff_id: t.staff_id, date, start_time: t.start_time, end_time: t.end_time, source: 'manual' });
+        tracker.add(t.staff_id, date, hours);
+      }
+    }
+    if (rows.length) { const { error } = await supabase.from('provider_shift_entries').insert(rows); if (error) return Response.json({ error: error.message }, { status: 500 }); }
+    return Response.json({ ok: true, appliedCount: rows.length, offCount, existedCount, skipped, skippedConfirmed: dates.length - targetDates.length });
+  }
+
   if (body.action === 'generate') {
     const [{ data: priorities }, { data: dayPatternRows }, { data: patternRows }, { data: leaves }] = await Promise.all([
       supabase.from('provider_shift_priorities').select('staff_id, priority_score').eq('provider_id', pid),
