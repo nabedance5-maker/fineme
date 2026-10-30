@@ -66,7 +66,7 @@ export default function AdminProvidersPage() {
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
         const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.plan !== 'special' && contractActive(p)).length;
-        if (!providers.length) { listEl.innerHTML = '<p class="muted">掲載者がいません。「掲載者を登録」から追加してください。</p>'; return; }
+        if (!providers.length) { listEl.innerHTML = '<p class="muted">契約者がいません。「契約者を登録」から追加してください。</p>'; return; }
         listEl.innerHTML = '';
         providers.forEach(p => {
           const row = document.createElement('div'); row.className = 'provider-row';
@@ -149,7 +149,7 @@ export default function AdminProvidersPage() {
 
     function openModal(data) {
       form.reset();
-      const modalTitle = document.getElementById('modal-title'); if (modalTitle) modalTitle.textContent = data ? '掲載者を編集' : '掲載者を登録';
+      const modalTitle = document.getElementById('modal-title'); if (modalTitle) modalTitle.textContent = data ? '契約者を編集' : '契約者を登録';
       const modalSubmit = document.getElementById('modal-submit'); if (modalSubmit) modalSubmit.textContent = data ? '更新する' : '登録する';
       if (data) {
         Object.entries(data).forEach(([k, v]) => { const el = form.elements[k]; if (!el || el.type === 'checkbox') return; el.value = v ?? ''; });
@@ -202,8 +202,8 @@ export default function AdminProvidersPage() {
       <div>
         <section className="stack">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
-            <h1 className="section-title" style={{margin:'0'}}>掲載者管理</h1>
-            <button className="btn" id="btn-new" type="button">＋ 掲載者を登録</button>
+            <h1 className="section-title" style={{margin:'0'}}>契約者管理</h1>
+            <button className="btn" id="btn-new" type="button">＋ 契約者を登録</button>
           </div>
           <div className="kpi-grid">
             <div className="kpi-card"><div className="kpi-value" id="kpi-total">—</div><div className="kpi-label">登録者数</div></div>
@@ -217,7 +217,7 @@ export default function AdminProvidersPage() {
       <div className="modal-overlay" id="modal" style={{display:'none'}}>
         <div className="modal-box">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
-            <h2 style={{margin:'0',fontSize:'18px'}} id="modal-title">掲載者を登録</h2>
+            <h2 style={{margin:'0',fontSize:'18px'}} id="modal-title">契約者を登録</h2>
             <button type="button" id="modal-close" style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer',color:'#111'}}>✕</button>
           </div>
           <form id="pform" className="stack">
@@ -259,7 +259,7 @@ export default function AdminProvidersPage() {
                 </select>
               </div>
               <div className="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
-              <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#111',fontSize:'11px'}}>登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
+              <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#111',fontSize:'11px'}}>登録すると契約者にパスワード設定メールが自動送信されます</small></div>
               <div className="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /></div>
               <div className="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
               <div className="form-field"><label>プラン</label>
@@ -304,7 +304,7 @@ export default function AdminProvidersPage() {
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />関係性の問題</label>
                 </div>
               </div>
-              <div className="form-field"><label>紹介者コード（この掲載者を紹介した人のFN番号）</label><input name="referred_by" placeholder="例: FN001" /></div>
+              <div className="form-field"><label>紹介者コード（この契約者を紹介した人のFN番号）</label><input name="referred_by" placeholder="例: FN001" /></div>
               <input type="hidden" name="referral_code" value="" />
             </div>
             <input type="hidden" name="_id" />

@@ -66,13 +66,13 @@ export default function PartnerPortalPage(props) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', margin: '20px 0' }}>
             <StatCard label="未払いの報酬（合計）" value={yen(collaborator.totals.pending)} accent />
             <StatCard label="支払済の報酬（累計）" value={yen(collaborator.totals.paid)} />
-            <StatCard label="報酬の対象になっている掲載者" value={collaborator.providers.length} />
+            <StatCard label="報酬の対象になっている契約者" value={collaborator.providers.length} />
             <StatCard label="継続報酬の率" value={`${Math.round(collaborator.rate * 100)}%`} />
           </div>
 
           <h2 style={h2}>月別の報酬</h2>
           {collaborator.months.length === 0 ? (
-            <p style={muted}>まだ報酬は発生していません。掲載者の2回目以降の課金から継続報酬が記録されます。</p>
+            <p style={muted}>まだ報酬は発生していません。契約者の2回目以降の課金から継続報酬が記録されます。</p>
           ) : (
             <div style={tableWrap}>
               <table style={table}>
@@ -96,7 +96,7 @@ export default function PartnerPortalPage(props) {
           {collaborator.rewards.length === 0 ? <p style={muted}>内訳はまだありません。</p> : (
             <div style={tableWrap}>
               <table style={table}>
-                <thead><tr><th style={th}>月</th><th style={th}>掲載者</th><th style={th}>種別</th><th style={thR}>受領額(税抜)</th><th style={thR}>報酬</th></tr></thead>
+                <thead><tr><th style={th}>月</th><th style={th}>契約者</th><th style={th}>種別</th><th style={thR}>受領額(税抜)</th><th style={thR}>報酬</th></tr></thead>
                 <tbody>
                   {collaborator.rewards.map(r => (
                     <tr key={r.id} style={r.status === 'void' ? { opacity: 0.45, textDecoration: 'line-through' } : null}>
@@ -112,11 +112,11 @@ export default function PartnerPortalPage(props) {
             </div>
           )}
 
-          <h2 style={h2}>対象の掲載者</h2>
-          {collaborator.providers.length === 0 ? <p style={muted}>課金中の掲載者はまだいません。</p> : (
+          <h2 style={h2}>対象の契約者</h2>
+          {collaborator.providers.length === 0 ? <p style={muted}>課金中の契約者はまだいません。</p> : (
             <div style={tableWrap}>
               <table style={table}>
-                <thead><tr><th style={th}>掲載者</th><th style={th}>プラン</th><th style={thR}>課金月数</th><th style={thR}>直近の受領額(税抜)</th><th style={thR}>累計報酬</th></tr></thead>
+                <thead><tr><th style={th}>契約者</th><th style={th}>プラン</th><th style={thR}>課金月数</th><th style={thR}>直近の受領額(税抜)</th><th style={thR}>累計報酬</th></tr></thead>
                 <tbody>
                   {collaborator.providers.map(p => (
                     <tr key={p.provider_id}>
@@ -131,7 +131,7 @@ export default function PartnerPortalPage(props) {
               </table>
             </div>
           )}
-          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の10%、自分が紹介した掲載者は初月に90%を別途記録します。支払いは月末締め・翌月末払いです。返金があった分は取り消しまたは翌月以降と相殺します。</p>
+          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の10%、自分が紹介した契約者は初月に90%を別途記録します。支払いは月末締め・翌月末払いです。返金があった分は取り消しまたは翌月以降と相殺します。</p>
         </>
       ) : (
         <>

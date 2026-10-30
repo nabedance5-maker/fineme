@@ -222,7 +222,7 @@ export default function StorySubmitPage() {
                 <span style={{ fontSize: '20px' }}></span>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: 0 }}>
-                    {providerName || '掲載者名を入力してください'}
+                    {providerName || '契約者名を入力してください'}
                   </p>
                   <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', margin: 0 }}>
                     {selectedReservation.reserved_date
@@ -241,7 +241,7 @@ export default function StorySubmitPage() {
 
               {/* 掲載者・サービス名 */}
               <div className="form-block">
-                <label className="form-label">掲載者・サービス名</label>
+                <label className="form-label">契約者・サービス名</label>
                 <input
                   type="text"
                   value={providerName}

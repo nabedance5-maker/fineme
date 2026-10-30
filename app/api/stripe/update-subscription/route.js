@@ -31,7 +31,7 @@ export async function POST(request) {
     .eq('email', user.email)
     .single();
 
-  if (provErr || !provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });
+  if (provErr || !provider) return Response.json({ error: '契約者情報が見つかりません' }, { status: 404 });
   if (!provider.stripe_subscription_id) return Response.json({ error: 'Stripe連携がありません' }, { status: 400 });
   if (provider.plan === newPlan) return Response.json({ error: '現在と同じプランです' }, { status: 400 });
 

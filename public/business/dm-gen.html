@@ -232,7 +232,7 @@
     <h3>② ターゲット種別・アカウント情報入力</h3>
     <div class="target-toggle">
       <button class="target-btn active provider" onclick="setTarget('provider', this)">
-        掲載者
+        契約者
         <span class="target-label">集客・掲載の提案</span>
       </button>
       <button class="target-btn partner" onclick="setTarget('partner', this)">
@@ -313,7 +313,7 @@
         <label>ターゲット種別</label>
         <select id="csv-target">
           <option value="interview">インタビュー記事＋掲載打診</option>
-          <option value="provider">掲載者</option>
+          <option value="provider">契約者</option>
           <option value="partner">創業パートナー</option>
         </select>
       </div>
@@ -718,7 +718,7 @@ ${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
 ② プロフィール・投稿から具体的なフレーズや実績を1つ引用し、共鳴した理由を1文で
 ③ 「外見改善に取り組むプロへのインタビュー記事を制作しているのですが、${data.name || 'こちら'}のお仕事・考え方をぜひFinemeで紹介させていただけないかと思い、ご連絡しました。」
 ④ 記事は完全無料・こちらで執筆・公開後にSNSでもシェアする旨を1文で
-⑤ 「また、もし掲載にご興味があれば、Finemeへの掲載者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"トーン）
+⑤ 「また、もし掲載にご興味があれば、Finemeへの契約者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"トーン）
 ⑥ 「よろしければ一言お返事いただけますと嬉しいです！」
 
 条件:
@@ -787,7 +787,7 @@ ${data.bio || '（なし）'}
 ${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━
-【タスク1: 掲載者適合スクリーニング】
+【タスク1: 契約者適合スクリーニング】
 
 以下の基準で1〜5のスコアと理由を2文で評価してください：
 - 男性クライアントの外見変容に関わるサービスか
@@ -801,7 +801,7 @@ ${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
 理由: （2文以内）
 
 ━━━━━━━━━━━━━━━━━━━━━━
-【タスク2: 掲載者向けDM文案】
+【タスク2: 契約者向けDM文案】
 
 以下の構造で、Instagramのダイレクトメッセージを作成してください。
 
@@ -1056,7 +1056,7 @@ function renderPipeline() {
               <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:3px;">${new Date(p.createdAt).toLocaleDateString('ja-JP')}</div>
             </td>
             <td>
-              <span style="font-size:10px;font-weight:800;color:${p.target==='partner'?'rgba(167,139,250,0.8)':'rgba(99,179,237,0.8)'};">${p.target==='partner'?'創業パートナー':'掲載者'}</span><br>
+              <span style="font-size:10px;font-weight:800;color:${p.target==='partner'?'rgba(167,139,250,0.8)':'rgba(99,179,237,0.8)'};">${p.target==='partner'?'創業パートナー':'契約者'}</span><br>
               <span style="font-size:11px;color:rgba(255,255,255,0.4);">${categoryLabel(p.category)}</span>
             </td>
             <td>
@@ -1080,7 +1080,7 @@ function renderPipeline() {
 function showPromptModal(id) {
   const entry = pipeline.find(p => p.id === id);
   if (!entry) return;
-  document.getElementById('modal-title').textContent = `@${entry.name} — ${entry.target === 'partner' ? '創業パートナー' : '掲載者'} プロンプト`;
+  document.getElementById('modal-title').textContent = `@${entry.name} — ${entry.target === 'partner' ? '創業パートナー' : '契約者'} プロンプト`;
   document.getElementById('modal-prompt-text').textContent = entry.prompt;
   document.getElementById('prompt-modal').classList.add('show');
 }

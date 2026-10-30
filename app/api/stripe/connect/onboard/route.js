@@ -26,7 +26,7 @@ export async function POST(request) {
     .eq('email', user.email)
     .single();
 
-  if (provErr || !provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });
+  if (provErr || !provider) return Response.json({ error: '契約者情報が見つかりません' }, { status: 404 });
 
   try {
     let connectId = provider.stripe_connect_id;

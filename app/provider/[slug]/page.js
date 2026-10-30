@@ -2561,7 +2561,7 @@ function ProviderPageContent() {
   if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p></div>;
   if (!provider) return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-      <p style={{ color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontWeight: '700' }}>掲載者が見つかりませんでした。</p>
+      <p style={{ color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontWeight: '700' }}>契約者が見つかりませんでした。</p>
       <a href="/search" style={{ padding: '10px 20px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', textDecoration: 'none' }}>サービスを探す</a>
     </div>
   );

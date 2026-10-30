@@ -8,7 +8,7 @@ export default function TokushoPage() {
     <main className="section">
       <div className="container stack" style={{ maxWidth: 860 }}>
         <h1 className="section-title">特定商取引法に基づく表記</h1>
-        <p className="muted">本表記は、Finemeが掲載者（事業者）に対して提供する有料掲載サービスに関するものです。</p>
+        <p className="muted">本表記は、Finemeが契約者（事業者）に対して提供する有料掲載サービスに関するものです。</p>
 
         <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, lineHeight: 1.8 }}>
@@ -44,7 +44,7 @@ export default function TokushoPage() {
                 <th style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(232,228,220,0.75)', fontWeight: 700, background: '#151b24', whiteSpace: 'nowrap', verticalAlign: 'top' }}>販売サービスの内容</th>
                 <td style={{ padding: '14px 20px' }}>
                   外見磨きサービスの検索・掲載・予約仲介プラットフォーム「Fineme」への掲載権。<br />
-                  掲載者のサービス情報をFinemeのサイト上に公開し、ユーザーからの問い合わせ・予約リクエストを受け取ることができます。
+                  契約者のサービス情報をFinemeのサイト上に公開し、ユーザーからの問い合わせ・予約リクエストを受け取ることができます。
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>

@@ -1485,7 +1485,7 @@ export default function ProviderDashboardPage() {
       if (!el) return;
       const score = calcPageScore(prov, svcs);
       const color = score >= 80 ? '#059669' : score >= 50 ? '#d97706' : '#ef4444';
-      const msg = score >= 80 ? '掲載者として誇れるページです' : score >= 50 ? 'もう少しで魅力的なページになります' : 'まだ掲載者の魅力が伝わりにくい状態です';
+      const msg = score >= 80 ? '契約者として誇れるページです' : score >= 50 ? 'もう少しで魅力的なページになります' : 'まだ契約者の魅力が伝わりにくい状態です';
       el.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:12px;font-weight:700;color:rgba(26,20,16,0.9)">ページ完成度</span>
@@ -2201,7 +2201,7 @@ export default function ProviderDashboardPage() {
     } else {
       document.getElementById('tab-stats').innerHTML = `
         <div class="card" style="padding:20px;text-align:center">
-          <p class="muted">掲載者データが見つかりません。</p>
+          <p class="muted">契約者データが見つかりません。</p>
           <p style="font-size:13px;color:#6b7280">運営側より登録が完了次第、こちらに情報が表示されます。</p>
         </div>
       `;
@@ -11726,7 +11726,7 @@ export default function ProviderDashboardPage() {
 
     async function loadRequests() {
       const providerId = provider?.id || loadProviderData()?.id;
-      if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
+      if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">契約者IDが見つかりません。</p>'; return; }
       const _reqToken = getSupabaseToken();
       const [res] = await Promise.all([
         fetch(`/api/reservations?providerId=${providerId}`, { headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {} }),
@@ -11914,7 +11914,7 @@ export default function ProviderDashboardPage() {
           ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">${esc(menuText)}</p>` : ''}
           <div style="margin-bottom:8px">${choicesHtml}</div>
           ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
-          ${r.provider_comment ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>` : ''}
+          ${r.provider_comment ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">契約者コメント: ${esc(r.provider_comment)}</div>` : ''}
           ${r.counter_date ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px;margin-top:6px">代替提案日時: ${r.counter_date} ${r.counter_time || ''}</div>` : ''}
           ${r.status === 'pending' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
@@ -12399,7 +12399,7 @@ export default function ProviderDashboardPage() {
       async function loadReferrals() {
         const pid = provider?.id || loadProviderData()?.id;
         const listEl = document.getElementById('referral-list');
-        if (!pid) { if (listEl) listEl.innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
+        if (!pid) { if (listEl) listEl.innerHTML = '<p class="muted">契約者IDが見つかりません。</p>'; return; }
 
         try {
           const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
@@ -12417,7 +12417,7 @@ export default function ProviderDashboardPage() {
 
           if (!listEl) return;
           if (!referrals.length) {
-            listEl.innerHTML = '<p class="muted">まだ紹介した掲載者がいません。紹介URLを共有して報酬を獲得しましょう。</p>';
+            listEl.innerHTML = '<p class="muted">まだ紹介した契約者がいません。紹介URLを共有して報酬を獲得しましょう。</p>';
             return;
           }
           listEl.innerHTML = '';
@@ -14573,7 +14573,7 @@ export default function ProviderDashboardPage() {
         const el = document.getElementById('today-requests-list');
         if (!el) return;
         const providerId = provider?.id || loadProviderData()?.id;
-        if (!providerId) { el.innerHTML = '<p class="muted" style="font-size:13px">掲載者情報が見つかりません。</p>'; return; }
+        if (!providerId) { el.innerHTML = '<p class="muted" style="font-size:13px">契約者情報が見つかりません。</p>'; return; }
         const res = await fetch(`/api/reservations?providerId=${providerId}`, { headers: authHeadersToday() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
@@ -16276,7 +16276,7 @@ export default function ProviderDashboardPage() {
                 段階的に縮小してきたが、最終的に「文字が薄すぎて読めないのに空間だけ
                 占有している」状態になっていた（でお指摘2026-09-14：スマホ画面の写真で
                 上部の空白を指摘。ヘッダー全体を撤去し、各タブの中身をtopbarのすぐ下から
-                始まるようにした。店舗名・掲載者番号を確認したい時は「使い方」タブの
+                始まるようにした。店舗名・契約者番号を確認したい時は「使い方」タブの
                 「公開ページを確認」から辿れる）。 */}
 
             {/* 初回チュートリアル（タブごとに初回のみ表示） */}
@@ -16771,7 +16771,7 @@ export default function ProviderDashboardPage() {
                 <input type="hidden" name="cover_image_url" />
               </div>
               {/* ── 掲載者情報・信頼シグナル ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>掲載者情報・信頼シグナル</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>契約者情報・信頼シグナル</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>ページ上部の「クイックファクト」として横一列で表示されます。同じカテゴリの他ガイドとの比較に直結します。</small>
               {/* ── 所在地 ── */}
               <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>所在地・アクセス</h3>
@@ -16872,7 +16872,7 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>こんな方に向いています（1行ずつ書くと番号リストで表示されます）</label>
                 <textarea name="target_desc" placeholder={"マッチングアプリの写真を改善したい\n何度も挫折したが今度こそ変わりたい\n自分が何をすべきかわからない"} style={{ minHeight: '100px' }}></textarea>
-                <small className="muted">改行で区切ると①②③のカードとして掲載者ページに表示されます</small>
+                <small className="muted">改行で区切ると①②③のカードとして契約者ページに表示されます</small>
               </div>
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
@@ -16977,7 +16977,7 @@ export default function ProviderDashboardPage() {
                 <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>スタッフ管理</h2>
                 <p className="muted" style={{ margin: '0', fontSize: '12px', lineHeight: '1.6' }}>
                   個人でやっている方は、ご自身を「スタッフ」として登録してください。<br />
-                  掲載者公開ページの「スタッフ紹介」欄に表示されます。
+                  契約者公開ページの「スタッフ紹介」欄に表示されます。
                 </p>
               </div>
               <button type="button" className="btn" id="btn-add-staff" style={{ fontSize: '13px', padding: '7px 14px', flexShrink: '0' }}>＋ 追加</button>
@@ -17661,7 +17661,7 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>変容の約束（一言キャッチコピー）</label>
                 <input name="transformation_promise" placeholder="例: 骨格から計算した眉で、顔の印象が一変します" />
-                <small className="muted">掲載者ページのプログラムカードで「」に囲まれて表示されます</small>
+                <small className="muted">契約者ページのプログラムカードで「」に囲まれて表示されます</small>
               </div>
 
               {/* Before / After（新） */}
@@ -17704,7 +17704,7 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>このプログラムで変わること（1行1項目）</label>
                 <textarea name="benefit_list_text" placeholder={"例:\n自分に似合う眉の形が客観的にわかる\n毎朝5分で再現できるセルフケア手順を習得できる\nマッチングアプリの写真で印象が変わる"} style={{ minHeight: '120px' }}></textarea>
-                <small className="muted">1行につき1項目。掲載者ページで✓リストとして表示されます（最大5項目）</small>
+                <small className="muted">1行につき1項目。契約者ページで✓リストとして表示されます（最大5項目）</small>
               </div>
               <div className="form-field">
                 <label>サービス画像</label>
@@ -17718,7 +17718,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field">
                 <label>このプログラムが向いている来た道の類型（任意・複数選択可）</label>
-                <small className="muted" style={{ marginBottom: '8px', display: 'block' }}>選択すると掲載者公開ページでバッジとして表示されます</small>
+                <small className="muted" style={{ marginBottom: '8px', display: 'block' }}>選択すると契約者公開ページでバッジとして表示されます</small>
                 <div className="checkbox-group">
                   <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="virgin" />初めてタイプ</label>
                   <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="quit" />続かなかったタイプ</label>
@@ -19476,7 +19476,7 @@ export default function ProviderDashboardPage() {
               <span id="terms-agreement-text" className="muted">利用規約への同意状況を確認中…</span>
               <button type="button" className="btn" id="terms-agreement-btn" style={{ display: 'none', marginTop: '8px', fontSize: '13px', padding: '6px 14px' }}>最新の利用規約に同意する</button>
             </div>
-            <a href="/terms-provider" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>掲載者向け利用規約（ご契約の内容）</a>
+            <a href="/terms-provider" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>契約者向け利用規約（ご契約の内容）</a>
             <a href="/tokusho" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>特定商取引法に基づく表記</a>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プライバシーポリシー</a>
             <a href="/provider/billing" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プラン比較・変更</a>
@@ -19666,13 +19666,13 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* タブ⑦：紹介報酬（でお方針2026-10-02：掲載者＝営業パートナーの自動一体化を廃止。
-            掲載者も「希望すれば」別途sales_partnersへ登録するopt-in方式に変更。
-            登録していない掲載者には紹介コードを出さず、登録導線のみ出す） */}
+            契約者も「希望すれば」別途sales_partnersへ登録するopt-in方式に変更。
+            登録していない契約者には紹介コードを出さず、登録導線のみ出す） */}
         <div className="tab-pane" id="tab-referral">
           <div id="referral-optin-prompt" className="card stack" style={{ padding: '24px', gap: '14px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬（営業パートナー）</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
-              Finemeを他の店舗・事業者にご紹介いただくと、直接ご紹介いただいた掲載者が月額課金を継続している間、継続的な紹介報酬が発生します。
+              Finemeを他の店舗・事業者にご紹介いただくと、直接ご紹介いただいた契約者が月額課金を継続している間、継続的な紹介報酬が発生します。
               これは掲載契約とは別の、任意の登録です。登録しなくても掲載のご利用に影響はありません。
             </p>
             <button className="btn" style={{ alignSelf: 'flex-start' }} id="referral-optin-btn">営業パートナーとして登録する</button>
@@ -19681,7 +19681,7 @@ export default function ProviderDashboardPage() {
           <div id="referral-registered-content" className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
-              あなたの紹介コードを使ってFinemeに登録した掲載者が課金を始めた月は初回課金額（税抜）の90%、その後は月額課金を継続している間、毎月¥500の報酬が発生します。
+              あなたの紹介コードを使ってFinemeに登録した契約者が課金を始めた月は初回課金額（税抜）の90%、その後は月額課金を継続している間、毎月¥500の報酬が発生します。
             </p>
 
             {/* 自分の紹介コード */}
@@ -19712,7 +19712,7 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* 友達紹介プログラム（B2C・会員が友達を紹介する仕組み。でお要望2026-09-14。
-            上の「紹介報酬」はFineme→掲載者のB2B紹介で別物）。hacomonoのクチコプレミアム
+            上の「紹介報酬」はFineme→契約者のB2B紹介で別物）。hacomonoのクチコプレミアム
             連携相当機能をFineme内製で実装。特典の実際の付与は店舗の運用に委ねる。 */}
         <div className="tab-pane" id="tab-member-referral">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>

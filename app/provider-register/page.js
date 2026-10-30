@@ -520,7 +520,7 @@ export default function ProviderRegisterPage() {
             </div>
             <div className="step-item">
               <div className="step-body">
-                <h4>Finemeが掲載者を審査・追加</h4>
+                <h4>Finemeが契約者を審査・追加</h4>
                 <p>相性主導の審査を通過した事業者のみが掲載されます。</p>
               </div>
             </div>

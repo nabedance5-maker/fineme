@@ -103,7 +103,7 @@ export default function AdminInquiriesPage() {
             ${it.referral_code ? `<div class="badge" style="width:fit-content">紹介コード: ${esc(it.referral_code)}</div>` : ''}
             ${it.desired_plan ? `<div class="badge" style="width:fit-content">気になっているプラン: PLAN ${esc(it.desired_plan)}</div>` : ''}
             ${it.meeting_wish ? `<div style="font-size:13px"><b>オンライン相談の希望日時：</b>${esc(it.meeting_wish)}</div>` : ''}
-            ${it.provider_id ? '<div class="badge status-done" style="width:fit-content">アカウント作成済み（掲載者一覧にあります）</div>' : ''}
+            ${it.provider_id ? '<div class="badge status-done" style="width:fit-content">アカウント作成済み（契約者一覧にあります）</div>' : ''}
             <div class="msg">${esc(it.message || '')}</div>
             <div class="cluster" style="gap:8px">
               ${!it.provider_id && it.category !== 'sales_partner' ? '<button class="btn btn-ghost" data-act="signup-url">登録ページのURLをコピー</button><button class="btn btn-ghost" data-act="create">お店の代わりに登録する</button>' : ''}
@@ -142,7 +142,7 @@ export default function AdminInquiriesPage() {
           btn.disabled = false;
           if (!res.ok) { alert('エラー: ' + (data.error || '不明')); return; }
           it.provider_id = data.id; it.status = 'done';
-          alert(data.invite_sent ? 'アカウントを作り、お店にパスワード設定のメールを送りました' : `アカウントは作りましたが、メールを送れませんでした（${data.invite_error || '不明'}）。掲載者一覧の「ログイン案内を送り直す」から送ってください`);
+          alert(data.invite_sent ? 'アカウントを作り、お店にパスワード設定のメールを送りました' : `アカウントは作りましたが、メールを送れませんでした（${data.invite_error || '不明'}）。契約者一覧の「ログイン案内を送り直す」から送ってください`);
           render();
         });
         td2.querySelector('[data-act="copy"]').addEventListener('click', () => {

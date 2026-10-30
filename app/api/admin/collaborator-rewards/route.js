@@ -36,7 +36,7 @@ export async function GET(request) {
   const nameOf = Object.fromEntries((partners || []).map(p => [p.id, p.name]));
 
   if (url.searchParams.get('format') === 'csv') {
-    const head = ['月', '協業者', '掲載者', '種別', '受領額(税抜)', '率', '報酬', '状況', '支払日', '備考'];
+    const head = ['月', '協業者', '契約者', '種別', '受領額(税抜)', '率', '報酬', '状況', '支払日', '備考'];
     const lines = [head.join(',')].concat((rows || []).map(r => [
       r.reward_month, nameOf[r.partner_id] || r.partner_id, r.providers?.name || '',
       r.kind === 'override' ? '継続10%' : '紹介初月90%', r.basis_amount, r.rate, r.amount,

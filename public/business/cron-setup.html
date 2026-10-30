@@ -168,7 +168,7 @@ const JOBS = [
     authValue: `Bearer ${CRON_SECRET}`,
   },
   {
-    name: '月次レポート（掲載者向け）',
+    name: '月次レポート（契約者向け）',
     path: '/api/cron/monthly-report',
     cron: '0 0 1 * *',
     jst: '毎月1日 9:00',
@@ -342,7 +342,7 @@ const JOBS = [
     authValue: `Bearer ${CRON_SECRET}`,
   },
   {
-    name: '掲載者へNew Me Log紹介案内',
+    name: '契約者へNew Me Log紹介案内',
     path: '/api/cron/provider-log-toolkit-announce',
     cron: '0 1 * * *',
     jst: '毎日 10:00',

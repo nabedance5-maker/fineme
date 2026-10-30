@@ -39,7 +39,7 @@ const STEPS = [
   {
     id: 'photo',
     title: '写真を追加する',
-    desc: '顔写真・施術写真・ビフォーアフターを追加します。写真がある掲載者はCTRが3倍以上になります。',
+    desc: '顔写真・施術写真・ビフォーアフターを追加します。写真がある契約者はCTRが3倍以上になります。',
     action: '写真を追加',
     href: '/provider/dashboard?tab=photos',
     check: (p) => !!(p.photo_url || (p.facility_photos && p.facility_photos.length > 0)),
@@ -108,7 +108,7 @@ export default function ProviderOnboardingPage() {
     <main className="section">
       <div className="container" style={{ maxWidth: '720px' }}>
         <div style={{ marginBottom: '32px' }}>
-          <h1 className="section-title" style={{ marginBottom: '8px' }}>掲載者オンボーディング</h1>
+          <h1 className="section-title" style={{ marginBottom: '8px' }}>契約者オンボーディング</h1>
           <p className="muted" style={{ fontSize: '14px' }}>6つのステップを完了すると、マッチング精度と掲載順位が最大化されます。</p>
         </div>
 

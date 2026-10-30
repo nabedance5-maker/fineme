@@ -67,7 +67,7 @@ export async function POST(request) {
       await resend.emails.send({
         from: 'Fineme <noreply@fineme.me>',
         to: process.env.ADMIN_EMAIL,
-        subject: `【掲載者からの意見】${provider.name || '店舗'}（${CATEGORY_LABEL[category]}）`,
+        subject: `【契約者からの意見】${provider.name || '店舗'}（${CATEGORY_LABEL[category]}）`,
         text: [
           `${provider.name || '店舗'}（${provider.slug || '-'}）からFinemeへの意見が届きました。`,
           '',

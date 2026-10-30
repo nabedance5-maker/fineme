@@ -23,7 +23,7 @@ export default function ProviderReferralPage() {
         <div className="container stack">
           <h2 className="section-title">仕組み</h2>
           <div className="referral-grid-3">
-            <div className="referral-card"><span className="referral-badge">相互紹介</span><p className="referral-muted">あなたのユーザーに対して「この分野ならこの人が良い」と紹介できる掲載者を選び、紹介リンクを発行します。</p></div>
+            <div className="referral-card"><span className="referral-badge">相互紹介</span><p className="referral-muted">あなたのユーザーに対して「この分野ならこの人が良い」と紹介できる契約者を選び、紹介リンクを発行します。</p></div>
             <div className="referral-card"><span className="referral-badge">紹介トラッキング</span><p className="referral-muted">紹介リンク経由の閲覧・予約はトラッキングされ、月次で集計されます。</p></div>
             <div className="referral-card"><span className="referral-badge">月次報酬</span><p className="referral-muted">紹介実績に応じた報酬を毎月お支払いします。報酬が掲載料を上回ることで、実質無料以上になるケースもあります。</p></div>
           </div>

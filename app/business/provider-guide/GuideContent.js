@@ -22,10 +22,10 @@ export default function ProviderGuideContent() {
 
       <div className="container stack" style={{ maxWidth: 780, margin: '0 auto' }}>
         <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <h1 className="section-title" style={{ margin: 0 }}>掲載者ダッシュボード 使い方説明書</h1>
+          <h1 className="section-title" style={{ margin: 0 }}>管理画面 使い方説明書</h1>
           <button className="btn" onClick={() => window.print()}>PDFを保存 / 印刷する</button>
         </div>
-        <p className="muted">対象：Fineme掲載者様</p>
+        <p className="muted">対象：Fineme契約者様</p>
         <p>
           ダッシュボード（<a href="/provider/dashboard">/provider/dashboard</a>）には「📘 チュートリアル」タブがあり、
           この説明書と同じ内容をいつでも画面内で確認できます。各タブを初めて開いた時にも、同じ内容の要点が

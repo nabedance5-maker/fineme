@@ -80,7 +80,7 @@ export async function POST(request) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const systemPrompt = `あなたは外見磨きサービスのマッチングシステムのアナリストです。
-掲載者（美容院、ジム、エステ、骨格診断等のサービス提供者）のプロフィールテキストを読み、
+契約者（美容院、ジム、エステ、骨格診断等のサービス提供者）のプロフィールテキストを読み、
 どんなユーザーとマッチするかを構造化データとして抽出してください。
 
 以下のJSON形式で返してください（コードブロックなし、JSONのみ）：

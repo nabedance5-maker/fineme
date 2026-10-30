@@ -203,7 +203,7 @@ export default function ContractGate() {
               </ul>
               <label className="pcg-agree">
                 <input type="checkbox" checked={agree} onChange={e => { setAgree(e.target.checked); setError(''); }} />
-                <span><a href="/terms-provider" target="_blank" rel="noopener noreferrer">掲載者利用規約</a>を読み、同意します（<a href="/tokusho" target="_blank" rel="noopener noreferrer">特定商取引法に基づく表記</a>）</span>
+                <span><a href="/terms-provider" target="_blank" rel="noopener noreferrer">契約者利用規約</a>を読み、同意します（<a href="/tokusho" target="_blank" rel="noopener noreferrer">特定商取引法に基づく表記</a>）</span>
               </label>
               {error && <p className="pcg-err" role="alert">{error}</p>}
               <button type="button" className="pcg-btn" onClick={subscribe} disabled={busy || !agree}>

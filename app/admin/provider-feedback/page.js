@@ -63,9 +63,9 @@ export default function AdminProviderFeedbackPage() {
 
   return (
     <main>
-      <h1 style={{ fontSize: 22, margin: '0 0 4px', color: '#1a1410' }}>掲載者からの意見</h1>
+      <h1 style={{ fontSize: 22, margin: '0 0 4px', color: '#1a1410' }}>契約者からの意見</h1>
       <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>
-        掲載者ダッシュボードの「使い方 &gt; Finemeへのご意見」から届いた声です。返信を書くと掲載者側の送信履歴に表示されます。
+        管理画面の「使い方 &gt; Finemeへのご意見」から届いた声です。返信を書くと契約者側の送信履歴に表示されます。
       </p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -113,7 +113,7 @@ export default function AdminProviderFeedbackPage() {
                 <textarea
                   value={draft}
                   onChange={e => setDrafts(d => ({ ...d, [r.id]: e.target.value }))}
-                  placeholder="返信・対応メモ（掲載者に表示されます）"
+                  placeholder="返信・対応メモ（契約者に表示されます）"
                   rows={2}
                   style={{ flex: '1 1 240px', minWidth: 0, padding: '8px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, color: '#111', background: '#fff', resize: 'vertical' }}
                 />

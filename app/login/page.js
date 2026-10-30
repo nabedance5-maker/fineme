@@ -51,7 +51,7 @@ async function checkIsProviderAccount(accessToken, attempts = 2) {
         try { localStorage.setItem('fineme:provider:current', JSON.stringify(await res.json())); } catch {}
         return true;
       }
-      if (res.status === 404) return false; // 明確に「掲載者ではない」
+      if (res.status === 404) return false; // 明確に「契約者ではない」
     } catch {}
     if (i < attempts - 1) await new Promise(resolve => setTimeout(resolve, 600));
   }
@@ -246,8 +246,8 @@ export default function LoginPage() {
   return (
     <div style={{ maxWidth: '420px', margin: '60px auto', padding: '0 20px' }}>
       {/* サイト全体の「深海ネイビーに沈む羊皮紙」演出（body::before/::after）は
-          グローバルCSSで、inline styleでは打ち消せない。掲載者ログイン中だけ
-          掲載者管理画面と同じ明るい背景に切り替える。 */}
+          グローバルCSSで、inline styleでは打ち消せない。契約者ログイン中だけ
+          管理画面と同じ明るい背景に切り替える。 */}
       <style>{`
         body.provider-login-theme::before { display: none; }
         body.provider-login-theme::after { background: var(--color-bg); }

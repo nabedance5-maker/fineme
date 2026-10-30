@@ -12,12 +12,12 @@ const CATEGORIES = [
   { key: 'home', label: 'ホーム', items: [
     { href: '/admin', label: 'ダッシュボード' },
   ] },
-  { key: 'people', label: '掲載者\n・顧客', items: [
-    { href: '/admin/providers', label: '掲載者管理' },
+  { key: 'people', label: '契約者\n・顧客', items: [
+    { href: '/admin/providers', label: '契約者管理' },
     { href: '/admin/customers', label: '顧客管理' },
     { href: '/admin/inquiries', label: 'お問い合わせ' },
     { href: '/admin/feedback', label: 'フィードバック' },
-    { href: '/admin/provider-feedback', label: '掲載者からの意見' },
+    { href: '/admin/provider-feedback', label: '契約者からの意見' },
   ] },
   { key: 'money', label: '収益', items: [
     { href: '/admin/payments', label: '支払い管理' },

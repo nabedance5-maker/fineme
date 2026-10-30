@@ -10,7 +10,7 @@ export default function TermsPage() {
         <h1 className="section-title">利用規約</h1>
         <p className="muted">
           本規約は、Fineme（以下「当サービス」）を利用する一般ユーザー向けの利用条件を定めるものです。サービスを利用することで本規約に同意したものとみなします。<br />
-          掲載者（サービスを提供する事業者）の方は、別途 <a href="/terms-provider">掲載者向け利用規約</a> をご確認ください。
+          契約者（サービスを提供する事業者）の方は、別途 <a href="/terms-provider">契約者向け利用規約</a> をご確認ください。
         </p>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
@@ -40,8 +40,8 @@ export default function TermsPage() {
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>第4条（予約・問い合わせ）</h2>
           <ul className="stack" style={{ gap: 6 }}>
-            <li>予約・問い合わせは各掲載者との直接のやり取りとなります。当サービスは仲介プラットフォームであり、サービスの内容・品質について保証するものではありません。</li>
-            <li>キャンセルポリシーは各掲載者の定める方針に従います。予約前に必ずご確認ください。</li>
+            <li>予約・問い合わせは各契約者との直接のやり取りとなります。当サービスは仲介プラットフォームであり、サービスの内容・品質について保証するものではありません。</li>
+            <li>キャンセルポリシーは各契約者の定める方針に従います。予約前に必ずご確認ください。</li>
             <li>虚偽の情報による予約・無断キャンセルの繰り返しが確認された場合、利用を制限することがあります。</li>
           </ul>
         </section>
@@ -58,7 +58,7 @@ export default function TermsPage() {
           <h2 style={{ margin: 0, fontSize: 18 }}>第5条（禁止事項）</h2>
           <ul className="stack" style={{ gap: 6 }}>
             <li>法令または公序良俗に反する行為</li>
-            <li>掲載者または他のユーザーへの迷惑行為・嫌がらせ</li>
+            <li>契約者または他のユーザーへの迷惑行為・嫌がらせ</li>
             <li>不正アクセス・システムへの過度な負荷・スパム行為</li>
             <li>虚偽情報の登録・当サービスの運営を妨げる行為</li>
             <li>当サービスを通じた営業・勧誘・宣伝目的での利用</li>
@@ -75,8 +75,8 @@ export default function TermsPage() {
           <h2 style={{ margin: 0, fontSize: 18 }}>第7条（免責事項）</h2>
           <ul className="stack" style={{ gap: 6 }}>
             <li>当サービスは、掲載内容の正確性・有用性・最新性について保証しません。</li>
-            <li>ユーザーと掲載者間のトラブルについて、当サービスは責任を負いません。</li>
-            <li>掲載者のサービス品質・施術結果について、当サービスは保証・責任を負いません。</li>
+            <li>ユーザーと契約者間のトラブルについて、当サービスは責任を負いません。</li>
+            <li>契約者のサービス品質・施術結果について、当サービスは保証・責任を負いません。</li>
             <li>やむを得ない理由によりサービスの全部または一部を変更・中断・終了することがあります。</li>
           </ul>
         </section>

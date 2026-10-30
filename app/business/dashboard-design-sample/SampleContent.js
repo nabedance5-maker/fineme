@@ -534,7 +534,7 @@ export default function DashboardDesignSample() {
 
       <main className="dds-main" style={{ flex: 1, minWidth: 0, padding: '24px 32px 60px' }}>
         <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 10, padding: '10px 16px', fontSize: 12, color: GOLD, marginBottom: 20 }}>
-          これはビジュアルデザインのサンプルです（全20タブ反映）。実データ・実機能とは連動していません。本番の掲載者ダッシュボードはまだ変更していません。
+          これはビジュアルデザインのサンプルです（全20タブ反映）。実データ・実機能とは連動していません。本番の管理画面はまだ変更していません。
         </div>
         <h1 style={{ fontFamily: 'var(--font-serif-ja)', fontSize: 22, margin: '0 0 20px', color: '#e8e4dc' }}>{activeLabel}</h1>
         <div className="dds-fade"><ActiveView /></div>

@@ -31,7 +31,7 @@ export async function GET(request) {
     check('ログインの入口（Supabase Auth）', `${base}/auth/v1/health`, { headers: { apikey: key } }),
     check('データの入口（Supabase API）', `${base}/rest/v1/providers?select=id&limit=1`, { headers: h }),
     check('ログイン画面', `${SITE}/login`),
-    check('掲載者管理画面', `${SITE}/provider/dashboard`),
+    check('管理画面', `${SITE}/provider/dashboard`),
     check('マイページ', `${SITE}/mypage`),
   ]);
   // 1回のつまずきでは知らせない。失敗があれば20秒おいて確かめ直し、2回とも止まっていた所だけ知らせる（2026-10-29）

@@ -122,7 +122,7 @@ export default function ProviderSignupPage() {
             {ref && <p className="su-note">紹介コード「{ref}」が適用されます。</p>}
             {error && <p className="su-err" role="alert">{error}</p>}
             <button type="submit" className="su-btn" disabled={busy}>{busy ? '登録しています…' : '登録して、パスワード設定のメールを受け取る'}</button>
-            <p className="su-note">登録しただけでは料金はかかりません。月額は、管理画面でプランをお申し込みいただいた日からです。<a href="/terms-provider" target="_blank" rel="noopener noreferrer">掲載者利用規約</a>・<a href="/privacy" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a></p>
+            <p className="su-note">登録しただけでは料金はかかりません。月額は、管理画面でプランをお申し込みいただいた日からです。<a href="/terms-provider" target="_blank" rel="noopener noreferrer">契約者利用規約</a>・<a href="/privacy" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a></p>
           </form>
         )}
       </div>

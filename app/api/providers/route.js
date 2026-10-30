@@ -166,7 +166,7 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
 export async function GET(request) {
   try {
   const { searchParams } = new URL(request.url);
-  const naviMode      = searchParams.get('navi') === 'true'; // New Me Map専用：有料掲載者のみ
+  const naviMode      = searchParams.get('navi') === 'true'; // New Me Map専用：有料契約者のみ
   const category      = searchParams.get('category');
   const area          = searchParams.get('area');
   const axis          = searchParams.get('axis');          // 軸ハードフィルター（検索ページ）

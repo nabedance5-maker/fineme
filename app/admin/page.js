@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
               <span class="db-cat-count">${count}</span>`;
             catEl.appendChild(row);
           });
-          if (!entries.length) catEl.innerHTML = '<p class="db-loading">掲載者がいません</p>';
+          if (!entries.length) catEl.innerHTML = '<p class="db-loading">契約者がいません</p>';
         }
 
       } catch (e) {
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
               <div className="db-kpi-sub"><span id="kpi-scan-month">—</span>　<span id="kpi-scan-rate" style={{color:'#1d4ed8'}}></span></div>
             </div>
             <div className="db-kpi-card">
-              <div className="db-kpi-label">🏢 掲載者登録数</div>
+              <div className="db-kpi-label">🏢 契約者登録数</div>
               <div className="db-kpi-main" id="kpi-prov-total">—</div>
               <div className="db-kpi-sub"><span id="kpi-prov-month">—</span>　<span id="kpi-prov-detail" style={{color:'#111'}}></span></div>
             </div>
@@ -223,14 +223,14 @@ export default function AdminDashboardPage() {
           {/* カテゴリ別 */}
           <div className="db-two-col">
             <div className="db-section">
-              <p className="db-section-title">📊 カテゴリ別掲載者数（通常）</p>
+              <p className="db-section-title">📊 カテゴリ別契約者数（通常）</p>
               <div id="db-by-category"><p className="db-loading">読み込み中...</p></div>
             </div>
             <div className="db-section">
               <p className="db-section-title">🔗 クイックリンク</p>
               <div style={{display:'flex', flexDirection:'column', gap:'8px'}}>
                 {[
-                  ['/admin/providers',  '🏢 掲載者管理'],
+                  ['/admin/providers',  '🏢 契約者管理'],
                   ['/admin/affiliates', '🔗 アフィリエイト管理'],
                   ['/admin/stories',    '💬 体験談管理'],
                   ['/admin/inquiries',  '📩 問い合わせ'],

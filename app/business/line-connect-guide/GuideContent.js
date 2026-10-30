@@ -40,7 +40,7 @@ export default function LineConnectGuideContent() {
           <h1 className="section-title" style={{ margin: 0 }}>店舗の公式LINE連携ガイド</h1>
           <button className="btn" onClick={() => window.print()}>PDFを保存 / 印刷する</button>
         </div>
-        <p className="muted">対象：Fineme掲載者様（プレミアムプランでご利用いただけます）</p>
+        <p className="muted">対象：Fineme契約者様（プレミアムプランでご利用いただけます）</p>
 
         <section className="card stack" style={{ padding: 20, gap: 10 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>この機能でできること</h2>
@@ -86,9 +86,9 @@ export default function LineConnectGuideContent() {
           </div>
 
           <div className="lcg-step">
-            <p style={{ marginTop: 0 }}><span className="lcg-step-num">3</span><strong>Finemeの掲載者ダッシュボードに登録する</strong></p>
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">3</span><strong>Finemeの管理画面に登録する</strong></p>
             <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
-              <li><a href="/provider/dashboard?tab=line-channel">掲載者ダッシュボード</a> にログインし、「💬 LINE連携」タブを開きます。</li>
+              <li><a href="/provider/dashboard?tab=line-channel">管理画面</a> にログインし、「💬 LINE連携」タブを開きます。</li>
               <li>コピーしたチャネルアクセストークンを貼り付け、「保存して確認する」を押します。</li>
               <li>「✅ 連携済み」と表示されれば設定は完了です。</li>
             </ol>
@@ -115,7 +115,7 @@ export default function LineConnectGuideContent() {
                     <code className="lcg-code">https://www.fineme.me/l/【貴店のスラッグ】</code>
                     <br />
                     <span className="muted" style={{ fontSize: 13 }}>
-                      上の<code className="lcg-code" style={{ fontSize: 12 }}>https://www.fineme.me/l/</code>に続けて、貴店のスラッグを入力してください（末尾に貴店の公開ページのURLをそのまま貼らないでください）。スラッグの調べ方：掲載者ダッシュボードを開くと、店舗の公開ページのアドレスが「fineme.me/provider/◯◯◯」の形で表示されています。この◯◯◯の部分だけをコピーして使ってください。
+                      上の<code className="lcg-code" style={{ fontSize: 12 }}>https://www.fineme.me/l/</code>に続けて、貴店のスラッグを入力してください（末尾に貴店の公開ページのURLをそのまま貼らないでください）。スラッグの調べ方：管理画面を開くと、店舗の公開ページのアドレスが「fineme.me/provider/◯◯◯」の形で表示されています。この◯◯◯の部分だけをコピーして使ってください。
                     </span>
                   </li>
                   <li><strong>Scope：</strong>「profile」にチェック（chat_message.write・openidも合わせてチェックして問題ありません）</li>
@@ -140,9 +140,9 @@ export default function LineConnectGuideContent() {
             </p>
             <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
               <li>ご自身のスマホで、貴店の公式LINEを友だち追加します。</li>
-              <li>掲載者ダッシュボードにログインした状態のブラウザで「💬 LINE連携」タブを開くと、「ちゃんと届くかテストする」という欄にリンク（<code className="lcg-code">fineme.me/l/【貴店のスラッグ】</code>）が表示されます。これを開きます。</li>
+              <li>管理画面にログインした状態のブラウザで「💬 LINE連携」タブを開くと、「ちゃんと届くかテストする」という欄にリンク（<code className="lcg-code">fineme.me/l/【貴店のスラッグ】</code>）が表示されます。これを開きます。</li>
               <li>画面の案内に従い、Finemeへログインした上で連携を完了させます。「貴店名の公式LINEと連携しました」と表示されれば成功です。</li>
-              <li>掲載者ダッシュボードの「LINE連携」タブに戻り、「テスト送信する」ボタンを押します。数秒以内に、ステップ①で友だち追加したご自身のLINEにテストメッセージが届けば、お客様への通知も問題なく届きます。</li>
+              <li>管理画面の「LINE連携」タブに戻り、「テスト送信する」ボタンを押します。数秒以内に、ステップ①で友だち追加したご自身のLINEにテストメッセージが届けば、お客様への通知も問題なく届きます。</li>
             </ol>
             <p className="muted" style={{ fontSize: 13, marginLeft: 18 }}>
               テスト送信が失敗する場合は、画面に表示されるメッセージが原因を示しています（例：「まだ友だち追加していない」「まだ連携が完了していない」等）。案内に従ってやり直してください。
@@ -160,7 +160,7 @@ export default function LineConnectGuideContent() {
           <div className="lcg-step">
             <p style={{ marginTop: 0 }}><span className="lcg-step-num">7</span><strong>（任意）予約前日の来店確認（ノーショー対策）を有効にする</strong></p>
             <p style={{ marginLeft: 18 }}>
-              有効にすると、予約前日リマインドに「行きます」「予定が変わりそう」のボタンが付き、お客様がその場で回答できるようになります。設定はステップ3完了後、掲載者ダッシュボードの「LINE連携」タブに表示される専用のURLをコピーし、LINE Official Account Managerの「応答設定」の中にあるWebhook欄に貼り付けて有効化するだけです。
+              有効にすると、予約前日リマインドに「行きます」「予定が変わりそう」のボタンが付き、お客様がその場で回答できるようになります。設定はステップ3完了後、管理画面の「LINE連携」タブに表示される専用のURLをコピーし、LINE Official Account Managerの「応答設定」の中にあるWebhook欄に貼り付けて有効化するだけです。
             </p>
           </div>
         </section>

@@ -41,7 +41,7 @@ export async function POST(request) {
     // slugが未入力なら空文字（トリガーで自動生成）
     const resolvedSlug = (slug || '').trim() || null;
     if (!email) {
-      return Response.json({ error: 'メールアドレスは必須です（掲載者ログインに使用します）' }, { status: 400 });
+      return Response.json({ error: 'メールアドレスは必須です（契約者ログインに使用します）' }, { status: 400 });
     }
 
     // providersテーブルに登録

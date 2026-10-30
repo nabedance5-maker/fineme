@@ -47,7 +47,7 @@ function PasswordForm({ onSubmit, loading, error }) {
     <div>
       <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 6px' }}>パスワードを設定してください</h2>
       <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 20px' }}>
-        掲載者ダッシュボードへのログインに使用します。すでにFinemeのアカウントをお持ちの方は、今のパスワードをそのまま入れても大丈夫です。
+        管理画面へのログインに使用します。すでにFinemeのアカウントをお持ちの方は、今のパスワードをそのまま入れても大丈夫です。
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>

@@ -1,7 +1,7 @@
 import styles from '../business.module.css';
 
 export const metadata = {
-  title: 'Fineme 掲載者向けご案内',
+  title: 'Fineme 契約者向けご案内',
   description: 'Fineme に店舗として掲載する意義・仕組み・収益モデルをまとめた資料。',
   robots: { index: false, follow: false },
 };
@@ -87,7 +87,7 @@ export default function ProvidersBriefPage() {
           {/* 04. 収益モデル */}
           <section className={styles.section}>
             <div className={styles.kicker}>Business Model</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}>収益モデル（掲載者側）</h2>
+            <h2 className={`${styles.h2} ${styles.serif}`}>収益モデル（契約者側）</h2>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead><tr><th>項目</th><th>内容</th><th>価格</th></tr></thead>

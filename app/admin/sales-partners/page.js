@@ -42,13 +42,13 @@ export default function AdminSalesPartnersPage() {
       <div class="sp-wrap">
         <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;">営業パートナー管理</h1>
         <p style="font-size:13px;color:#111;margin-bottom:20px;">
-          掲載者とは別の役割です。Finemeに掲載していない人も、ここから「掲載者を紐付けない」状態で登録できます。
-          掲載者本人が希望して登録する場合は、本人のダッシュボード「紹介報酬」タブから行います。
+          契約者とは別の役割です。Finemeに掲載していない人も、ここから「契約者を紐付けない」状態で登録できます。
+          契約者本人が希望して登録する場合は、本人のダッシュボード「紹介報酬」タブから行います。
         </p>
         <div class="sp-form">
           <input id="sp-new-name" placeholder="氏名・屋号" style="flex:1;min-width:140px;" />
           <input id="sp-new-email" placeholder="メール（任意）" style="flex:1;min-width:140px;" />
-          <input id="sp-new-provider" placeholder="掲載者ID（任意・空欄なら未掲載の営業パートナー）" style="flex:1;min-width:220px;" />
+          <input id="sp-new-provider" placeholder="契約者ID（任意・空欄なら未掲載の営業パートナー）" style="flex:1;min-width:220px;" />
           <button id="sp-new-submit">新規登録</button>
         </div>
         <div id="sp-list"><p style="color:#111;">読み込み中…</p></div>
@@ -67,7 +67,7 @@ export default function AdminSalesPartnersPage() {
 
         listEl.innerHTML = data.map(p => {
           const providerLabel = p.provider_id
-            ? `<span class="sp-meta">掲載者：${esc(p.providers?.name || p.provider_id)}</span>`
+            ? `<span class="sp-meta">契約者：${esc(p.providers?.name || p.provider_id)}</span>`
             : `<span class="sp-meta">未掲載の営業パートナー</span>`;
           const collabBadge = p.is_collaborator ? ' <span class="badge" style="background:#e0e7ff;color:#3730a3;">協業者</span>' : '';
           const badge = p.status === 'active'
@@ -101,7 +101,7 @@ export default function AdminSalesPartnersPage() {
         listEl.querySelectorAll('[data-collab]').forEach(btn => {
           btn.addEventListener('click', async () => {
             const on = btn.dataset.on !== '1';
-            if (!confirm(on ? '協業者にします。掲載2ヶ月目以降の全掲載者の受領額(税抜)の10%が、毎月この人の報酬として記録されます。よろしいですか？' : '協業者を解除します。以降の受領分から10%の記録は止まります（記録済みの分は残ります）。')) return;
+            if (!confirm(on ? '協業者にします。掲載2ヶ月目以降の全契約者の受領額(税抜)の10%が、毎月この人の報酬として記録されます。よろしいですか？' : '協業者を解除します。以降の受領分から10%の記録は止まります（記録済みの分は残ります）。')) return;
             await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: btn.dataset.collab, is_collaborator: on }) });
             load();
           });

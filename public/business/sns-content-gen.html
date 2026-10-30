@@ -80,7 +80,7 @@
     <button class="tab" onclick="switchTab('note')">note / ブログ</button>
     <button class="tab" onclick="switchTab('mirror')" id="tab-mirror">🪞 Mirror</button>
     <button class="tab" onclick="switchTab('press')">プレスリリース</button>
-    <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
+    <button class="tab" onclick="switchTab('dm')">契約者獲得DM</button>
     <button class="tab" onclick="switchTab('dm-bulk')" id="tab-dm-bulk">📋 DM一括生成</button>
   </div>
 
@@ -292,7 +292,7 @@ Fineme は「体型・眉・ヘア・肌・脱毛・服・歯・爪」の8軸で
     完了状態はクラウド保存されデバイス間で同期。
 
   ◆ サービス検索・比較
-    掲載者ページと診断結果をAIがマッチングし最適な専門家を提示。
+    契約者ページと診断結果をAIがマッチングし最適な専門家を提示。
 
 ■ 創業者コメント
 「外見を整えることで生まれる小さな自信が、人に優しくなれる余白を
@@ -300,7 +300,7 @@ Fineme は「体型・眉・ヘア・肌・脱毛・服・歯・爪」の8軸で
 Fineme は外見変容の旅における地図と羅針盤を提供するサービスです。」
                               代表　渡邉 英雄
 
-■ 掲載者募集
+■ 導入のご案内
 パーソナルジム・眉毛サロン・骨格診断・プロ写真撮影など、
 男性の外見変容を支援するサービス事業者の掲載申請を受け付けています。
 掲載申請：https://www.fineme.me/provider/join
@@ -345,7 +345,7 @@ URL     ：https://www.fineme.me/
         <select id="dm-ai-purpose" onchange="updatePurposeNote()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
           <option value="interview">📰 インタビュー記事＋掲載打診（新規接点向け）</option>
           <option value="partner">🤝 創業パートナー募集（永年無料・一緒に作る）</option>
-          <option value="provider">📋 通常掲載者獲得（月¥5,000・紹介報酬あり）</option>
+          <option value="provider">📋 通常契約者獲得（月¥5,000・紹介報酬あり）</option>
         </select>
         <p id="dm-purpose-note" style="font-size:11px;color:rgba(100,200,255,0.7);margin-top:6px;line-height:1.6;">
           創業パートナー：掲載料永年無料。「変容の旅のインフラを一緒に作る仲間」として声をかける。関係性ファーストのDM。
@@ -409,7 +409,7 @@ URL     ：https://www.fineme.me/
       <select id="bulk-purpose" style="width:100%;max-width:420px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
         <option value="interview">📰 インタビュー記事＋掲載打診（新規接点向け）</option>
         <option value="partner">🤝 創業パートナー募集（永年無料・一緒に作る）</option>
-        <option value="provider">📋 通常掲載者獲得（月¥5,000・紹介報酬あり）</option>
+        <option value="provider">📋 通常契約者獲得（月¥5,000・紹介報酬あり）</option>
       </select>
     </div>
 
@@ -1001,7 +1001,7 @@ const DM_TEMPLATES = [
 
 [お名前]さんのようにマンツーマンで男性の体型変容に向き合っているトレーナーと、まさにそれを求めているユーザーが繋がれる導線を作っています。
 
-月¥5,000の掲載ですが、他の掲載者を紹介していただくと月¥500の報酬がずっと入る仕組みもあります。外見磨きの同業者とのネットワークにもなります。
+月¥5,000の掲載ですが、他の契約者を紹介していただくと月¥500の報酬がずっと入る仕組みもあります。外見磨きの同業者とのネットワークにもなります。
 
 https://www.fineme.me/provider/join
 
@@ -1028,7 +1028,7 @@ Fineme（ファインミ）の渡邉と申します。
 
 診断結果で「服装・コーディネート」の改善が必要と判定されたユーザーを、[お名前]さんのようなプロに繋ぐ導線を作っています。
 
-月¥5,000の掲載で、診断経由のユーザーが自動的に届く仕組みです。また掲載者紹介制度（月¥500/社）で紹介数次第で掲載費以上の報酬になるケースもあります。
+月¥5,000の掲載で、診断経由のユーザーが自動的に届く仕組みです。また契約者紹介制度（月¥500/社）で紹介数次第で掲載費以上の報酬になるケースもあります。
 
 https://www.fineme.me/provider/join
 
@@ -1042,7 +1042,7 @@ https://www.fineme.me/provider/join
 
 予約サイトで探されていない層——「彼女に振られた」「自分を変えたい」と思い立った男性が診断を通じて[お名前]さんのところに辿り着く、という導線を作っています。
 
-月¥5,000・掲載者紹介制度（月¥500/社）あり。
+月¥5,000・契約者紹介制度（月¥500/社）あり。
 詳細：https://www.fineme.me/provider/join
 
 渡邉 英雄`,
@@ -1055,7 +1055,7 @@ https://www.fineme.me/provider/join
 
 [お名前]さんのように男性クライアントの実績がある方に掲載いただけると、診断結果で「骨格・カラー」が課題と判定されたユーザーが優先的に表示されます。
 
-月¥5,000・他の掲載者を紹介するたびに月¥500の報酬が入る紹介制度あり。
+月¥5,000・他の契約者を紹介するたびに月¥500の報酬が入る紹介制度あり。
 
 https://www.fineme.me/provider/join
 
@@ -1069,7 +1069,7 @@ Finemeは外見を変えて自信をつけた男性が「次のステージ（�
 
 [サービス名]さんは外見磨きを終えた男性にとって非常に相性が良いと感じご連絡しました。
 
-月¥5,000・掲載者紹介制度（月¥500/社）あり。
+月¥5,000・契約者紹介制度（月¥500/社）あり。
 https://www.fineme.me/provider/join
 
 渡邉 英雄`,
@@ -1254,7 +1254,7 @@ function updatePurposeNote() {
     note.textContent = '創業パートナー：掲載料永年無料。「変容の旅のインフラを一緒に作る仲間」として声をかける。関係性ファーストのDM。';
     note.style.color = 'rgba(100,200,255,0.7)';
   } else {
-    note.textContent = '通常掲載者：月¥5,000の掲載料・紹介報酬制度が条件。診断導線から意欲的な男性ユーザーが届くことをメインフックにする。';
+    note.textContent = '通常契約者：月¥5,000の掲載料・紹介報酬制度が条件。診断導線から意欲的な男性ユーザーが届くことをメインフックにする。';
     note.style.color = 'rgba(160,220,120,0.7)';
   }
 }
@@ -1262,7 +1262,7 @@ function updatePurposeNote() {
 function buildDMPrompt(purpose, categoryLabel, name, profile) {
   if (purpose === 'interview') {
     return `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
-以下の方に「インタビュー記事掲載＋掲載者紹介」のDMをXまたはInstagramで送ります。
+以下の方に「インタビュー記事掲載＋契約者紹介」のDMをXまたはInstagramで送ります。
 
 【業種】${categoryLabel}
 【名前・店名】${name || '（未入力）'}
@@ -1279,7 +1279,7 @@ Finemeとは：
 2. 相手のプロフィール・投稿から具体的なフレーズや実績を1つ引用し、それに共鳴した理由を1文で
 3. 「外見改善に取り組む方へのインタビュー記事を制作しているのですが、${name || 'こちら'}のお仕事・考え方をぜひFinemeで紹介させていただけないかと思いご連絡しました。」
 4. 記事は完全無料・こちらで執筆・公開後にSNSでもシェアします、という旨を1文で
-5. 「また、もし掲載に興味を持っていただけるようであれば、Fineme への掲載者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"というトーン）
+5. 「また、もし掲載に興味を持っていただけるようであれば、Fineme への契約者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"というトーン）
 6. 「よろしければ一言お返事いただけますと嬉しいです！」
 
 制約：
@@ -1332,7 +1332,7 @@ Finemeとは：
 - 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
 - 「診断→個別マッチング→来店」という導線。既に外見を変えたい意欲がある男性ユーザーが届く
 - 掲載料：月¥5,000
-- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500（10社紹介で掲載費が実質ゼロ）
+- 紹介報酬制度：自分が紹介した契約者が在籍し続ける限り毎月¥500（10社紹介で掲載費が実質ゼロ）
 
 生成するDMの構成（この順番・このトーンで280〜320字に収める）：
 1. 「突然のDMすみません🙏」で始める

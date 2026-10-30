@@ -38,7 +38,7 @@ export async function POST(request) {
       .eq('email', user.email)
       .single();
 
-    if (!provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });
+    if (!provider) return Response.json({ error: '契約者情報が見つかりません' }, { status: 404 });
     if (provider.plan === 'special') {
       return Response.json({ error: '特例無料のアカウントのため、お支払いは不要です' }, { status: 409 });
     }

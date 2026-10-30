@@ -84,7 +84,7 @@ export default function AdminPaymentsPage() {
       });
       const tbody = document.getElementById('subscriptions-tbody');
       if (!tbody) return;
-      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">該当する掲載者がいません</td></tr>'; return; }
+      if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">該当する契約者がいません</td></tr>'; return; }
       tbody.innerHTML = filtered.map(p => `
         <tr>
           <td><div style="font-weight:600">${esc(p.displayName || '-')}</div><div style="font-size:11px;color:#111">${esc(p.email || '')}</div></td>
@@ -204,13 +204,13 @@ export default function AdminPaymentsPage() {
       <div>
         <section className="stack">
           <h1 className="section-title">課金・サブスク管理</h1>
-          <p className="muted">掲載者の課金状況・決済履歴・紹介報酬を管理します。</p>
+          <p className="muted">契約者の課金状況・決済履歴・紹介報酬を管理します。</p>
 
           <div className="kpi-grid">
-            <div className="kpi-card"><div className="kpi-label">MRR（月次収益）</div><div id="kpi-mrr" className="kpi-value">¥0</div><div className="kpi-sub">アクティブ掲載者合計</div></div>
-            <div className="kpi-card"><div className="kpi-label">アクティブ掲載者</div><div id="kpi-active" className="kpi-value">0</div><div className="kpi-sub">課金中</div></div>
+            <div className="kpi-card"><div className="kpi-label">MRR（月次収益）</div><div id="kpi-mrr" className="kpi-value">¥0</div><div className="kpi-sub">アクティブ契約者合計</div></div>
+            <div className="kpi-card"><div className="kpi-label">アクティブ契約者</div><div id="kpi-active" className="kpi-value">0</div><div className="kpi-sub">課金中</div></div>
             <div className="kpi-card"><div className="kpi-label">未課金</div><div id="kpi-trialing" className="kpi-value">0</div><div className="kpi-sub">登録済・プラン未申込</div></div>
-            <div className="kpi-card"><div className="kpi-label">掲載者合計</div><div id="kpi-total" className="kpi-value">0</div><div className="kpi-sub">全ステータス</div></div>
+            <div className="kpi-card"><div className="kpi-label">契約者合計</div><div id="kpi-total" className="kpi-value">0</div><div className="kpi-sub">全ステータス</div></div>
             <div className="kpi-card"><div className="kpi-label">未払い紹介報酬</div><div id="kpi-referral-pending" className="kpi-value">¥0</div><div className="kpi-sub">当月以前の未払い分</div></div>
           </div>
 
@@ -223,7 +223,7 @@ export default function AdminPaymentsPage() {
 
             <div id="tab-subscriptions" className="tab-panel active">
               <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px',flexWrap:'wrap'}}>
-                <input id="sub-search" type="text" placeholder="掲載者名・メールで検索" style={{flex:'1',minWidth:'200px'}} />
+                <input id="sub-search" type="text" placeholder="契約者名・メールで検索" style={{flex:'1',minWidth:'200px'}} />
                 <select id="sub-status-filter">
                   <option value="">全ステータス</option>
                   <option value="active">アクティブ（課金中）</option>
@@ -236,22 +236,22 @@ export default function AdminPaymentsPage() {
               </div>
               <div className="table-responsive">
                 <table className="table">
-                  <thead><tr><th>掲載者名</th><th>カテゴリ</th><th>ステータス</th><th>月額</th><th>課金開始</th><th>紹介者</th><th>登録日</th><th>操作</th></tr></thead>
+                  <thead><tr><th>契約者名</th><th>カテゴリ</th><th>ステータス</th><th>月額</th><th>課金開始</th><th>紹介者</th><th>登録日</th><th>操作</th></tr></thead>
                   <tbody id="subscriptions-tbody"><tr><td colSpan={8} className="muted" style={{textAlign:'center',padding:'32px'}}>読み込み中...</td></tr></tbody>
                 </table>
               </div>
               <div id="sub-empty" className="muted" style={{textAlign:'center',padding:'32px',display:'none'}}>
-                掲載者データがありません。Express server（:3001）が起動しているか確認してください。
+                契約者データがありません。Express server（:3001）が起動しているか確認してください。
               </div>
             </div>
 
             <div id="tab-payments" className="tab-panel">
               <div style={{marginBottom:'12px'}}>
-                <input id="pay-search" type="text" placeholder="掲載者名・Invoice IDで検索" style={{minWidth:'260px'}} />
+                <input id="pay-search" type="text" placeholder="契約者名・Invoice IDで検索" style={{minWidth:'260px'}} />
               </div>
               <div className="table-responsive">
                 <table className="table">
-                  <thead><tr><th>掲載者名</th><th>金額</th><th>ステータス</th><th>Invoice ID</th><th>決済日</th><th>登録日</th></tr></thead>
+                  <thead><tr><th>契約者名</th><th>金額</th><th>ステータス</th><th>Invoice ID</th><th>決済日</th><th>登録日</th></tr></thead>
                   <tbody id="payments-tbody"><tr><td colSpan={6} className="muted" style={{textAlign:'center',padding:'32px'}}>タブをクリックして読み込む</td></tr></tbody>
                 </table>
               </div>
@@ -268,7 +268,7 @@ export default function AdminPaymentsPage() {
                 <button className="btn btn-ghost" id="ref-mark-paid">選択済みを支払い済みにする</button>
               </div>
               <p className="muted" style={{fontSize:'12px',marginBottom:'8px'}}>
-                紹介者がFinemeに掲載者を紹介し、被紹介者の課金が発生した月に¥500/月が積み上がります。
+                紹介者がFinemeに契約者を紹介し、被紹介者の課金が発生した月に¥500/月が積み上がります。
               </p>
               <div className="table-responsive">
                 <table className="table">

@@ -45,7 +45,7 @@ export default function ProviderProfilePage() {
       const res = await fetch('/api/provider/me', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (!res.ok) { setError('掲載者情報の取得に失敗しました'); setLoading(false); return; }
+      if (!res.ok) { setError('契約者情報の取得に失敗しました'); setLoading(false); return; }
       const me = await res.json();
 
       setForm({

@@ -57,7 +57,7 @@ export default function AdminCollaboratorRewardsPage() {
     <div style={{ maxWidth: '980px', margin: '0 auto', padding: '32px 20px', color: '#111' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>協業者の報酬</h1>
       <p style={{ fontSize: '13px', color: '#111', margin: '0 0 20px' }}>
-        掲載2ヶ月目以降の全掲載者の受領額(税抜)の10%と、協業者本人が紹介した掲載者の初月90%。月末締め・翌月末払い（手動振込）。
+        掲載2ヶ月目以降の全契約者の受領額(税抜)の10%と、協業者本人が紹介した契約者の初月90%。月末締め・翌月末払い（手動振込）。
         協業者は「営業パートナー」画面で指定します。
       </p>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -85,7 +85,7 @@ export default function AdminCollaboratorRewardsPage() {
           {p.rows.length > 0 && (
             <div style={{ overflowX: 'auto', marginTop: '12px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}>
-                <thead><tr>{['掲載者', '種別', '受領額(税抜)', '報酬', '状況'].map(h => <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#111', fontSize: '11px', borderBottom: '1px solid #e5e7eb' }}>{h}</th>)}</tr></thead>
+                <thead><tr>{['契約者', '種別', '受領額(税抜)', '報酬', '状況'].map(h => <th key={h} style={{ textAlign: 'left', padding: '6px 8px', color: '#111', fontSize: '11px', borderBottom: '1px solid #e5e7eb' }}>{h}</th>)}</tr></thead>
                 <tbody>
                   {p.rows.map(r => (
                     <tr key={r.id} style={r.status === 'void' ? { opacity: 0.45, textDecoration: 'line-through' } : null}>

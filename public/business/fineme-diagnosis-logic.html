@@ -191,7 +191,7 @@
     <div class="cover-badge">Internal Document — Fineme</div>
     <h1>Me Scan 診断ロジック解説<br><em>なぜこの設計なのか、どう動くのか</em></h1>
     <p class="cover-lead">
-      PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。男性トラック（Fineme）・女性トラック（Fineme Belle）共通の仕組みです。
+      PTおよび契約者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。男性トラック（Fineme）・女性トラック（Fineme Belle）共通の仕組みです。
     </p>
     <p class="cover-meta">Version: v14_8axis_growing-map　／　2026-08-07　／　Fineme</p>
   </div>
@@ -212,7 +212,7 @@
       <h3>診断データが担う3つの役割</h3>
       <p>① <strong>New Me Navi（地図）の生成</strong> — 現在地・理想・ギャップを8軸で可視化</p>
       <p>② <strong>Fineme Compass（羅針盤）の決定</strong> — 最初に動かすべき軸を1つ示す</p>
-      <p>③ <strong>掲載者マッチングのスコアリング</strong> — ユーザーの文脈と掲載者のプロフィールを照合</p>
+      <p>③ <strong>契約者マッチングのスコアリング</strong> — ユーザーの文脈と契約者のプロフィールを照合</p>
     </div>
 
     <div class="insight">
@@ -446,7 +446,7 @@
     <div class="path-grid">
       <div class="path-card" style="grid-column: 1 / -1">
         <div class="phase-label" style="color:rgba(201,168,76,.7);margin-bottom:8px">Q3の行動選択から自動判定される4パターン（path_type）</div>
-        <p style="font-size:13px;color:#c0bab2;line-height:1.8">その軸とこれまでどんな経緯で関わってきたかを4分類で自動判定します。これは<strong>掲載者との照合に使われる最重要データ</strong>です。「初めての人（virgin）」と「挫折経験者（quit）」では、必要なガイドの種類が根本的に違います。</p>
+        <p style="font-size:13px;color:#c0bab2;line-height:1.8">その軸とこれまでどんな経緯で関わってきたかを4分類で自動判定します。これは<strong>契約者との照合に使われる最重要データ</strong>です。「初めての人（virgin）」と「挫折経験者（quit）」では、必要なガイドの種類が根本的に違います。</p>
       </div>
       <div class="path-card">
         <div class="path-key">virgin</div>
@@ -520,17 +520,17 @@
   <!-- 06: AIマッチング -->
   <div class="section">
     <div class="sec-num">06</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">AI Matching — 掲載者とユーザーの相性判定</div></div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">AI Matching — 契約者とユーザーの相性判定</div></div>
     <p class="lead">「チェックボックス」ではなく<br>「文章をAIが読み取る」マッチング</p>
 
     <div class="card-gold">
       <h3>なぜチェックボックスではないのか</h3>
-      <p>「得意なきっかけ」を選ぶ方式では、掲載者は全項目にチェックを入れることができてしまいます。これでは「誰にでも合います」という状態になり、ユーザーにとって意味のある相性判定になりません。</p>
-      <p style="margin-top:8px">Finemeは、掲載者が実際の顧客について文章で書いた内容をClaudeが読み取ることで、<strong>本当に合う人を精度高く判定</strong>する設計を採用しています。文章を丁寧に書けば書くほど、ターゲットに近いユーザーに届きやすくなります。</p>
+      <p>「得意なきっかけ」を選ぶ方式では、契約者は全項目にチェックを入れることができてしまいます。これでは「誰にでも合います」という状態になり、ユーザーにとって意味のある相性判定になりません。</p>
+      <p style="margin-top:8px">Finemeは、契約者が実際の顧客について文章で書いた内容をClaudeが読み取ることで、<strong>本当に合う人を精度高く判定</strong>する設計を採用しています。文章を丁寧に書けば書くほど、ターゲットに近いユーザーに届きやすくなります。</p>
     </div>
 
     <div class="card" style="margin-top:12px">
-      <h3>掲載者が書く6つのフィールド</h3>
+      <h3>契約者が書く6つのフィールド</h3>
       <p>ダッシュボード「サービス設定」タブの「AIマッチングプロフィール」欄に以下を記述します。</p>
     </div>
 
@@ -604,18 +604,18 @@
         <tr>
           <td>personality_tags</td>
           <td>向いているユーザーの特徴（自由語）</td>
-          <td>掲載者公開ページに「こんな方に向いています」として表示</td>
+          <td>契約者公開ページに「こんな方に向いています」として表示</td>
         </tr>
         <tr>
           <td>summary</td>
           <td>誰に向いているかの1〜2文</td>
-          <td>掲載者公開ページに「来る方のリアルなストーリー」として表示</td>
+          <td>契約者公開ページに「来る方のリアルなストーリー」として表示</td>
         </tr>
       </tbody>
     </table>
 
     <div class="insight" style="margin-top:16px">
-      <p>AI分析済みの掲載者はスコアにボーナスが加算されます。分析後にプロフィールを更新した場合、再度「AIで分析する」ボタンを押すことで最新の内容に更新されます。チェックボックスの設定は、AI未分析の場合のフォールバックとして機能します。</p>
+      <p>AI分析済みの契約者はスコアにボーナスが加算されます。分析後にプロフィールを更新した場合、再度「AIで分析する」ボタンを押すことで最新の内容に更新されます。チェックボックスの設定は、AI未分析の場合のフォールバックとして機能します。</p>
     </div>
   </div>
 
@@ -629,7 +629,7 @@
 
     <div class="card-gold">
       <h3>なぜ距離マッチングが必要なのか</h3>
-      <p>外見磨きサービスは「通い続けられる距離にあること」が継続率に直結します。Me Scanの診断結果との相性が高くても、遠距離では予約に至りません。エリアマッチングはユーザーと掲載者の物理的な距離をスコアに組み込み、「合う × 通える」という条件を両立させます。</p>
+      <p>外見磨きサービスは「通い続けられる距離にあること」が継続率に直結します。Me Scanの診断結果との相性が高くても、遠距離では予約に至りません。エリアマッチングはユーザーと契約者の物理的な距離をスコアに組み込み、「合う × 通える」という条件を両立させます。</p>
     </div>
 
     <div class="card" style="margin-top:12px">
@@ -674,7 +674,7 @@
 
     <div class="card" style="margin-top:16px">
       <h3>Haversine距離スコアリング（/api/providers）</h3>
-      <p>APIリクエスト時にユーザーのlat/lonが添付されている場合、掲載者のlat/lonとのHaversine距離を計算し、距離に応じたボーナスをスコアに加算します。</p>
+      <p>APIリクエスト時にユーザーのlat/lonが添付されている場合、契約者のlat/lonとのHaversine距離を計算し、距離に応じたボーナスをスコアに加算します。</p>
     </div>
 
     <div class="formula-box" style="margin-top:10px">
@@ -691,12 +691,12 @@
     </div>
 
     <div class="insight" style="margin-top:16px">
-      <p><strong>アフィリエイト掲載者は距離ボーナス対象外</strong>です。オンライン完結・全国対応のサービスとして扱われるため、エリアに関わらず均等にスコアリングされます。</p>
+      <p><strong>アフィリエイト契約者は距離ボーナス対象外</strong>です。オンライン完結・全国対応のサービスとして扱われるため、エリアに関わらず均等にスコアリングされます。</p>
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h3>掲載者の住所とジオコーディング</h3>
-      <p>掲載者ダッシュボード「プロフィール設定」タブで都道府県 → 市区町村 → 番地以下の3段階で住所を入力します。保存時にNominatimが自動でジオコーディングを実行し、lat/lonをprovidersテーブルに保存します。<strong>番地以下はユーザーには非公開</strong>（マッチング精度向上のみに使用）。最寄り駅・アクセスは別途テキストで入力し公開されます。</p>
+      <h3>契約者の住所とジオコーディング</h3>
+      <p>管理画面「プロフィール設定」タブで都道府県 → 市区町村 → 番地以下の3段階で住所を入力します。保存時にNominatimが自動でジオコーディングを実行し、lat/lonをprovidersテーブルに保存します。<strong>番地以下はユーザーには非公開</strong>（マッチング精度向上のみに使用）。最寄り駅・アクセスは別途テキストで入力し公開されます。</p>
     </div>
 
     <table class="data-table" style="margin-top:10px">
@@ -719,27 +719,27 @@
           <td>市区町村（手動選択時に保存）</td>
         </tr>
         <tr>
-          <td>providers（掲載者）</td>
+          <td>providers（契約者）</td>
           <td>prefecture</td>
           <td>都道府県（セレクト入力）</td>
         </tr>
         <tr>
-          <td>providers（掲載者）</td>
+          <td>providers（契約者）</td>
           <td>city</td>
           <td>市区町村（セレクト入力）</td>
         </tr>
         <tr>
-          <td>providers（掲載者）</td>
+          <td>providers（契約者）</td>
           <td>address</td>
           <td>番地以下の詳細住所（非公開）</td>
         </tr>
         <tr>
-          <td>providers（掲載者）</td>
+          <td>providers（契約者）</td>
           <td>lat</td>
           <td>緯度（Nominatim自動取得）</td>
         </tr>
         <tr>
-          <td>providers（掲載者）</td>
+          <td>providers（契約者）</td>
           <td>lon</td>
           <td>経度（Nominatim自動取得）</td>
         </tr>
@@ -747,13 +747,13 @@
     </table>
 
     <div class="insight" style="margin-top:16px">
-      <p>ユーザーのlat/lonはlocalStorageにのみ保存されます（DBには保存しない）。これはプライバシーを守りつつ、「現在地に近い掲載者を優先表示」という体験を実現するための設計です。座標情報はマッチングAPIへのリクエスト時にのみ利用され、セッション終了後も端末内に保持されます（引越し時にマイページから更新可）。</p>
+      <p>ユーザーのlat/lonはlocalStorageにのみ保存されます（DBには保存しない）。これはプライバシーを守りつつ、「現在地に近い契約者を優先表示」という体験を実現するための設計です。座標情報はマッチングAPIへのリクエスト時にのみ利用され、セッション終了後も端末内に保持されます（引越し時にマイページから更新可）。</p>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <p>Fineme Internal Document — Me Scan v14 Diagnostic Logic（8軸・育つ地図構造）+ AI Matching + Area Matching　／　配布先：PT・掲載者（ガイド）・掲載検討者</p>
+    <p>Fineme Internal Document — Me Scan v14 Diagnostic Logic（8軸・育つ地図構造）+ AI Matching + Area Matching　／　配布先：PT・契約者（ガイド）・掲載検討者</p>
     <p style="margin-top:4px">Fineme（ファインミ）　<a href="https://www.fineme.me" target="_blank" style="color:inherit">www.fineme.me</a></p>
   </div>
 

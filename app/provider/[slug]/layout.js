@@ -19,7 +19,7 @@ export async function generateMetadata(props) {
       .eq('slug', params.slug)
       .single();
 
-    if (!provider) return { title: '掲載者ページ | Fineme' };
+    if (!provider) return { title: '契約者ページ | Fineme' };
 
     const catLabel = CATEGORY_LABELS[provider.main_category] || 'サービス';
     const title = `${provider.name} — ${catLabel} | Fineme`;
@@ -50,7 +50,7 @@ export async function generateMetadata(props) {
       },
     };
   } catch {
-    return { title: '掲載者ページ | Fineme' };
+    return { title: '契約者ページ | Fineme' };
   }
 }
 

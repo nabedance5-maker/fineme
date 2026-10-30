@@ -410,7 +410,7 @@ export default function ProviderInquiryPage() {
         </div>
 
         <p className="inq-lead" style={{ marginTop: '20px', fontSize: '13px' }}>すでに導入を決めていて、すぐに始めたい方は<a id="inqSignupLink" href="/provider/signup" style={{ color: '#c9a84c', fontWeight: 700 }}>こちらから登録</a>できます。</p>
-        <a className="inq-back" href="/provider/join">← 掲載者募集ページに戻る</a>
+        <a className="inq-back" href="/provider/join">← 導入のご案内ページに戻る</a>
       </div>
     </div>
   );

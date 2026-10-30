@@ -192,10 +192,10 @@ export default function BusinessPage() {
               <table className={styles.table}>
                 <thead><tr><th>対象</th><th>商品</th><th>価格</th></tr></thead>
                 <tbody>
-                  <tr><td>掲載者</td><td>登録料</td><td>当面無料</td></tr>
-                  <tr><td>掲載者</td><td>ライト（¥5,000）／スタンダード（¥7,000）／プレミアム（¥10,000）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
-                  <tr><td>掲載者</td><td>紹介報酬（初月）</td><td>紹介した掲載店舗の初回課金額の<span className={styles.yen}>90%</span></td></tr>
-                  <tr><td>掲載者</td><td>紹介報酬（継続）</td><td>その店舗が掲載を続ける限り<span className={styles.yen}>¥500</span> / 月</td></tr>
+                  <tr><td>契約者</td><td>登録料</td><td>当面無料</td></tr>
+                  <tr><td>契約者</td><td>ライト（¥5,000）／スタンダード（¥7,000）／プレミアム（¥10,000）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
+                  <tr><td>契約者</td><td>紹介報酬（初月）</td><td>紹介した掲載店舗の初回課金額の<span className={styles.yen}>90%</span></td></tr>
+                  <tr><td>契約者</td><td>紹介報酬（継続）</td><td>その店舗が掲載を続ける限り<span className={styles.yen}>¥500</span> / 月</td></tr>
                   <tr><td>ユーザー</td><td>Mirror 単発分析</td><td><span className={styles.yen}>¥500</span></td></tr>
                   <tr><td>ユーザー</td><td>Mirror サブスク（月3回相当）</td><td><span className={styles.yen}>¥780</span> / 月</td></tr>
                 </tbody>
@@ -215,7 +215,7 @@ export default function BusinessPage() {
               <div className={styles.stat}><b>67店舗</b><span>月商50万円に必要な有料契約数</span></div>
               <div className={styles.stat}><b>290本+</b><span>記事資産（男性251＋Belle39）</span></div>
             </div>
-            <p className={styles.note}>店舗SaaS導入店舗が増える→掲載者が増える→ポータルサイトとしてユーザーも集めやすくなる、という二面市場の好循環を狙っている。ユーザーに見せる「顔」（Me Scan・Compass・New Me Map・Mirror）は変えず、販売チャネルだけを直接営業に振り直した形。</p>
+            <p className={styles.note}>店舗SaaS導入店舗が増える→契約者が増える→ポータルサイトとしてユーザーも集めやすくなる、という二面市場の好循環を狙っている。ユーザーに見せる「顔」（Me Scan・Compass・New Me Map・Mirror）は変えず、販売チャネルだけを直接営業に振り直した形。</p>
           </section>
 
           {/* 07. 目標・フェーズ戦略 */}
@@ -234,7 +234,7 @@ export default function BusinessPage() {
               <div className={styles.flowArrow}>→</div>
               <div className={styles.flowStep}><b>店舗営業 ◉現在地</b><span>既存21社の有料転換＋新規開拓</span></div>
               <div className={styles.flowArrow}>→</div>
-              <div className={styles.flowStep}><b>掲載者増加</b><span>選べる店舗が増える</span></div>
+              <div className={styles.flowStep}><b>契約者増加</b><span>選べる店舗が増える</span></div>
               <div className={styles.flowArrow}>→</div>
               <div className={styles.flowStep}><b>ユーザー集客</b><span>ポータルとして集めやすく</span></div>
             </div>
@@ -386,8 +386,8 @@ export default function BusinessPage() {
                     <p>Xは現在ノーコードで自動生成しているが「男性向け・モテ」寄りに偏り、サイトの思想とズレてきている。男女どちらにも向く発信へ改善したい。Instagramはほぼ未稼働、少しずつ立ち上げ。</p>
                   </div>
                   <div className={styles.phaseCard}>
-                    <h4>掲載者集めのDM送付</h4>
-                    <p>美容室・ジムなど掲載候補への打診DM送付。掲載者を増やす、優先度の高い実務。</p>
+                    <h4>契約者集めのDM送付</h4>
+                    <p>美容室・ジムなど掲載候補への打診DM送付。契約者を増やす、優先度の高い実務。</p>
                   </div>
                   <div className={styles.phaseCard}>
                     <h4>記事のクオリティチェック</h4>
@@ -440,13 +440,13 @@ export default function BusinessPage() {
           <section className={styles.section} id="reward">
             <div className={styles.kicker}>For Collaborators</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>協業者への還元</h2>
-            <p className={styles.lead}>経営陣格として関わってくれる人には、一般の掲載者・外部紹介者向けの紹介報酬（初月90%＋紹介した店舗ごとに継続¥500/月）とは別枠の還元を用意している。</p>
+            <p className={styles.lead}>経営陣格として関わってくれる人には、一般の契約者・外部紹介者向けの紹介報酬（初月90%＋紹介した店舗ごとに継続¥500/月）とは別枠の還元を用意している。</p>
             <div className={styles.callout}>
               <div className={styles.kicker}>還元の仕組み</div>
-              <p className={styles.big}>掲載2ヶ月目以降：掲載者数 × 掲載料の10%を毎月</p>
-              <p>自分が紹介したかどうかに関係なく、全体の掲載者数に対して。＋自分が紹介した掲載者が入った場合は、初月分の90%バックも別途受け取れる。</p>
+              <p className={styles.big}>掲載2ヶ月目以降：契約者数 × 掲載料の10%を毎月</p>
+              <p>自分が紹介したかどうかに関係なく、全体の契約者数に対して。＋自分が紹介した契約者が入った場合は、初月分の90%バックも別途受け取れる。</p>
             </div>
-            <p className={styles.note}>掲載者が増えるほど積み上がっていく設計。詳細は個別にすり合わせる。</p>
+            <p className={styles.note}>契約者が増えるほど積み上がっていく設計。詳細は個別にすり合わせる。</p>
           </section>
 
           {/* 13. 進め方 */}

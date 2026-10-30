@@ -346,7 +346,7 @@ export default function MypageProfilePage() {
               {/* 予約者情報 */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>予約者情報</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。お店がお客様を確認するため、必ず入力してください。</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>予約が成立した際に契約者へ公開されます。お店がお客様を確認するため、必ず入力してください。</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>姓（必須）</label>
@@ -619,8 +619,8 @@ export default function MypageProfilePage() {
 
               {/* 掲載者への公開設定 */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 12px' }}>掲載者への公開設定</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>オンにした項目は、予約が承認された掲載者に公開されます。</p>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 12px' }}>契約者への公開設定</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>オンにした項目は、予約が承認された契約者に公開されます。</p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginBottom: '12px' }}>
                   <input
                     type="checkbox"
