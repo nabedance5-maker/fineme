@@ -19736,7 +19736,7 @@ export default function ProviderDashboardPage() {
           <div id="referral-registered-content" className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
-              あなたの紹介コードを使ってFinemeに登録した契約者が課金を始めた月は初回課金額（税抜）の90%、その後は月額課金を継続している間、毎月¥500の報酬が発生します。
+              あなたの紹介コードを使ってFinemeに登録した契約者が課金を始めた月は初回課金額（税込）の90%、その後は月額課金を継続している間、毎月¥500の報酬が発生します。
             </p>
 
             {/* 自分の紹介コード */}
