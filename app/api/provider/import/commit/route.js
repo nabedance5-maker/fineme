@@ -9,7 +9,7 @@ import { memberAuth } from '@/lib/provider-members';
 import { withAudit } from '@/lib/activity-log';
 import { planAllows } from '@/lib/feature-flags';
 import { ensureManualLinked } from '@/lib/customer-accounts';
-import { IMPORT_TYPES, IMPORT_CHUNK, missingRequired, pick, normDate, normTime, normDateTime, normPhone, normEmail, normInt, normGender, splitName, normStatus } from '@/lib/import-schema';
+import { IMPORT_TYPES, IMPORT_CHUNK, missingRequired, pick, normDate, normTime, normDateTime, normPhone, normEmail, normInt, normGender, splitName, resolveName, normStatus } from '@/lib/import-schema';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const BY = 'CSVの取り込み';
@@ -42,10 +42,9 @@ async function customerIndex(pid) {
 }
 
 async function createCustomer(pid, idx, c) {
-  const name = c.name || [c.last_name, c.first_name].filter(Boolean).join(' ');
+  const { last: ln, first: fn, full: name } = resolveName({ name: c.name, last: c.last_name, first: c.first_name });
   const { data: mc, error } = await supabase.from('provider_manual_customers').insert({ provider_id: pid, display_name: name.slice(0, 60), memo: c.memo || null }).select('id').single();
   if (error) throw new Error(error.message);
-  const [ln, fn] = c.last_name || c.first_name ? [c.last_name, c.first_name] : splitName(name);
   const prof = Object.fromEntries(Object.entries({
     last_name: ln, first_name: fn, last_name_kana: c.last_name_kana, first_name_kana: c.first_name_kana,
     phone: normPhone(c.phone), email: normEmail(c.email), gender: c.gender ? normGender(c.gender) : null, birthday: c.birthday ? normDate(c.birthday) : null,
@@ -56,6 +55,12 @@ async function createCustomer(pid, idx, c) {
   const ref = { manual_id: mc.id, key: `m:${mc.id}` };
   idx.remember(ref, { phone: c.phone, email: c.email, name });
   return ref;
+}
+
+// 予約・回数券・会員プランの行の「お客様」（名前が姓と名の列に分かれていてもよい）
+function customerOf(x) {
+  const n = resolveName({ name: x.customer_name, last: x.customer_last_name, first: x.customer_first_name });
+  return { name: n.full || '名前なし', last_name: n.last, first_name: n.first, phone: x.customer_phone, email: x.customer_email };
 }
 
 async function resolveCustomer(pid, idx, c, counts) {
@@ -107,9 +112,9 @@ async function __POST(request) {
     for (const [i, row] of rows.entries()) {
       const c = pick(row, body.mapping);
       if (c.kana && !c.last_name_kana) [c.last_name_kana, c.first_name_kana] = splitName(c.kana);
-      if (!c.name && !c.last_name) { fail(i, '名前がありません'); continue; }
+      if (!c.name && !c.last_name && !c.first_name) { fail(i, '名前がありません'); continue; }
       c.memo = [c.memo, c.member_number && `前のサービスの会員番号：${c.member_number}`, c.registered_at && `前のサービスでの登録日：${normDate(c.registered_at) || c.registered_at}`].filter(Boolean).join('\n');
-      const name = c.name || [c.last_name, c.first_name].filter(Boolean).join(' ');
+      const { last: ln, first: fn, full: name } = resolveName({ name: c.name, last: c.last_name, first: c.first_name });
       const hit = idx.find({ phone: c.phone, email: c.email, name });
       try {
         if (!hit) { await createCustomer(pid, idx, c); counts.created++; continue; }
@@ -117,7 +122,6 @@ async function __POST(request) {
         const col = hit.manual_id && !hit.user_id ? 'manual_customer_id' : 'user_id';
         const id = col === 'manual_customer_id' ? hit.manual_id : hit.user_id;
         const { data: cur } = await supabase.from('provider_customer_profiles').select('*').eq('provider_id', pid).eq(col, id).maybeSingle();
-        const [ln, fn] = c.last_name || c.first_name ? [c.last_name, c.first_name] : splitName(name);
         const next = Object.fromEntries(Object.entries({ last_name: ln, first_name: fn, last_name_kana: c.last_name_kana, first_name_kana: c.first_name_kana, phone: normPhone(c.phone), email: normEmail(c.email), gender: c.gender ? normGender(c.gender) : null, birthday: c.birthday ? normDate(c.birthday) : null, postal_code: c.postal_code, prefecture: c.prefecture, city: c.city, address1: c.address1, address2: c.address2, emergency_name: c.emergency_name, emergency_phone: c.emergency_phone }).filter(([k, v]) => v && !cur?.[k]));
         if (cur && Object.keys(next).length) await supabase.from('provider_customer_profiles').update({ ...next, updated_by: BY, updated_at: new Date().toISOString() }).eq('id', cur.id);
         else if (!cur) await supabase.from('provider_customer_profiles').insert({ provider_id: pid, [col]: id, ...next, updated_by: BY });
@@ -140,9 +144,10 @@ async function __POST(request) {
       if (!date) { fail(i, '日付が読めません'); continue; }
       const st = normStatus(r.status);
       if (st === 'cancelled') { counts.skipped++; continue; } // キャンセルは取り込まない
-      const name = r.customer_name || r.customer_phone || r.customer_email;
+      const who = customerOf(r);
+      const name = who.name !== '名前なし' ? who.name : (r.customer_phone || r.customer_email);
       try {
-        const cust = await resolveCustomer(pid, idx, { name: r.customer_name || '名前なし', phone: r.customer_phone, email: r.customer_email }, counts);
+        const cust = await resolveCustomer(pid, idx, who, counts);
         let q = supabase.from('reservations').select('id').eq('provider_id', pid).eq('reserved_date', date).eq('user_name', String(name).slice(0, 60)).limit(1);
         q = time ? q.eq('start_time', time) : q.is('start_time', null);
         const { data: dup } = await q;
@@ -175,7 +180,7 @@ async function __POST(request) {
       const remaining = normInt(t.remaining) ?? (total != null ? total - (used || 0) : null);
       if (!remaining || remaining <= 0) { counts.skipped++; continue; } // 残りが無いものは取り込まない
       try {
-        const cust = await resolveCustomer(pid, idx, { name: t.customer_name || '名前なし', phone: t.customer_phone, email: t.customer_email }, counts);
+        const cust = await resolveCustomer(pid, idx, customerOf(t), counts);
         let userId = cust.user_id;
         if (!userId) { const linked = await ensureManualLinked(pid, cust.manual_id, normEmail(t.customer_email)); userId = linked.userId; if (!userId) { fail(i, linked.error || 'お客様を準備できませんでした'); continue; } cust.user_id = userId; }
         const name = (t.ticket_name || '前のサービスの回数券').slice(0, 60);
@@ -201,7 +206,7 @@ async function __POST(request) {
       const m = pick(row, body.mapping);
       if (/退会|解約|cancel/i.test(m.status || '')) { counts.skipped++; continue; }
       try {
-        const cust = await resolveCustomer(pid, idx, { name: m.customer_name || '名前なし', phone: m.customer_phone, email: m.customer_email }, counts);
+        const cust = await resolveCustomer(pid, idx, customerOf(m), counts);
         const line = `前のサービスの会員プラン：${m.plan_name}${m.monthly_fee ? `（月額¥${(normInt(m.monthly_fee) || 0).toLocaleString()}）` : ''}${m.started_at ? `・開始 ${normDate(m.started_at) || m.started_at}` : ''}${m.status ? `・${m.status}` : ''}${m.memo ? `・${m.memo}` : ''}`;
         if (cust.manual_id) {
           const { data: cur } = await supabase.from('provider_manual_customers').select('memo').eq('id', cust.manual_id).single();

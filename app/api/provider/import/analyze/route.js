@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 import Anthropic from '@anthropic-ai/sdk';
 import { memberAuth } from '@/lib/provider-members';
-import { IMPORT_TYPES, missingRequired } from '@/lib/import-schema';
+import { IMPORT_TYPES, missingRequired, guessNameColumns } from '@/lib/import-schema';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -39,6 +39,8 @@ ${schemaText()}
 1. このCSVがどの種類か、上の種類名（英字）から1つ選ぶ。
 2. その種類の各項目に、対応する列の番号を割り当てる。対応する列が無い項目は null。1つの列を2つの項目に使わない（氏名とフリガナを両方に使う等はしない）。
    - 姓と名が別の列なら last_name / first_name、ひとつの列なら name を使う（フリガナも同様）。
+     「氏」「姓」の列は last_name、「名」の列は first_name。「氏」「名」の2列を name と last_name に割り振らない。
+     予約・回数券・会員プランでも、お客様の姓と名が別の列なら customer_last_name / customer_first_name を使う。
    - 日付と時刻が1つの列なら datetime、別々なら date / start_time。
    - 見出しの言葉だけでなく、見本の値の形（電話番号・日付・メールなど）も見て判断する。
 3. 割り振れなかった重要そうな列があれば、notes に短く日本語で書く。
@@ -49,13 +51,16 @@ ${schemaText()}
     parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
   } catch (e) {
     console.error('[import analyze]', e?.message);
-    return Response.json({ error: '自動の割り振りに失敗しました。種類と列を手で選んでください', fallback: true }, { status: 200 });
+    return Response.json({ error: '自動の割り振りに失敗しました。種類と列を手で選んでください', fallback: true, type: 'customers', mapping: guessNameColumns(headers, 'customers') }, { status: 200 });
   }
   const type = IMPORT_TYPES[parsed?.type] ? parsed.type : 'customers';
   const allowed = new Set(IMPORT_TYPES[type].fields.map(f => f[0]));
-  const used = new Set();
-  const mapping = {};
+  // 「氏」「名」「セイ」「メイ」のように見出しで確実に分かる姓・名の列は、AIより見出しを優先する
+  const byHeader = guessNameColumns(headers, type);
+  const mapping = { ...byHeader };
+  const used = new Set(Object.values(byHeader));
   Object.entries(parsed?.mapping || {}).forEach(([k, v]) => {
+    if (k in byHeader) return;
     const i = Number.isInteger(v) ? v : null;
     if (allowed.has(k) && i !== null && i >= 0 && i < headers.length && !used.has(i)) { mapping[k] = i; used.add(i); }
   });
