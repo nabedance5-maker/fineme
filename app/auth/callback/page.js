@@ -130,13 +130,19 @@ export default function AuthCallbackPage() {
         setStatus('invalid');
         return;
       }
-      // 掲載者かチェック
-      const res = await fetch('/api/provider/me', {
-        headers: { 'Authorization': `Bearer ${sess.access_token}` },
-      });
-      if (res.ok) {
+      // 契約者かチェック。404（はっきり契約者ではない）の時だけ一般のお客様として進める。
+      // 一時的な失敗で一般のマイページへ送らない（渡邉指摘 2026-10-31）
+      let res = null;
+      for (let i = 0; i < 4; i++) {
+        res = await fetch('/api/provider/me', { headers: { 'Authorization': `Bearer ${sess.access_token}` }, cache: 'no-store' }).catch(() => null);
+        if (res && (res.ok || res.status === 404)) break;
+        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+      }
+      if (res?.ok) {
         setSession(sess);
         setStatus('password-form');
+      } else if (!res || res.status !== 404) {
+        setStatus('error');
       } else {
         // 一般ユーザー → 診断データがあれば同期してからナビへ
         const synced = await syncLocalDiagnosis(sess.access_token);
@@ -185,6 +191,16 @@ export default function AuthCallbackPage() {
             loading={pwLoading}
             error={pwError}
           />
+        )}
+
+        {status === 'error' && (
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 8px' }}>確認できませんでした</h2>
+            <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 20px' }}>
+              通信が不安定なため、アカウントを確認できませんでした。少し時間をおいて、このページを開き直してください。
+            </p>
+            <button type="button" onClick={() => window.location.reload()} style={{ display: 'block', width: '100%', padding: '12px', background: '#111', color: '#fff', borderRadius: '12px', border: 'none', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}>もう一度試す</button>
+          </div>
         )}
 
         {status === 'invalid' && (

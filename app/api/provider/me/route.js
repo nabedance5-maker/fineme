@@ -24,9 +24,15 @@ export async function GET(request) {
     .from('providers')
     .select('*')
     .eq('email', user.email)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  // 404 は「契約者ではない」とはっきり分かった時だけ。DBの一時的な失敗まで404にすると、契約者がログインした時に
+  // 一般のマイページへ飛ばされてしまう（渡邉指摘 2026-10-31：絶対に起きてはならない）
+  if (error) {
+    console.error('[provider/me] lookup failed', error.message);
+    return Response.json({ error: 'temporarily unavailable' }, { status: 503 });
+  }
+  if (!data) {
     return Response.json({ error: 'Provider not found' }, { status: 404 });
   }
 

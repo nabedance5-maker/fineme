@@ -40,22 +40,24 @@ async function maybeStoreCredential(email, password) {
 // 失敗（ログイン直後の一瞬のネットワーク不調・サーバーレス関数のコールドスタート等）
 // を「掲載者ではない」と誤判定しないよう、明確に「掲載者ではない」と分かる404以外は
 // 少し待って再試行する。
-async function checkIsProviderAccount(accessToken, attempts = 2) {
+// 返り値：'yes'（契約者）| 'no'（契約者ではないとはっきり分かった＝404）| 'unknown'（確かめられなかった）
+async function checkProviderAccount(accessToken, attempts = 2) {
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch('/api/provider/me', {
         headers: { 'Authorization': `Bearer ${accessToken}` },
+        cache: 'no-store',
       });
       if (res.ok) {
         // ダッシュボード初回表示で「キャッシュ無し→取得→再読み込み」の二度読みを避けるため先に保存する
         try { localStorage.setItem('fineme:provider:current', JSON.stringify(await res.json())); } catch {}
-        return true;
+        return 'yes';
       }
-      if (res.status === 404) return false; // 明確に「契約者ではない」
+      if (res.status === 404) return 'no'; // 明確に「契約者ではない」
     } catch {}
-    if (i < attempts - 1) await new Promise(resolve => setTimeout(resolve, 600));
+    if (i < attempts - 1) await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
   }
-  return false;
+  return 'unknown';
 }
 
 async function syncLocalDiagnosis(accessToken) {
@@ -91,6 +93,8 @@ export default function LoginPage() {
   const [resetError, setResetError] = useState('');
   const [resetOk, setResetOk] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  // 契約者ログインで、契約者として登録されていないアカウントだった時（自動でマイページへは移らない）
+  const [notProvider, setNotProvider] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -172,13 +176,29 @@ export default function LoginPage() {
     // いた（でお報告2026-09-14：「何故かユーザーマイページに飛ばされた」）。両対応する。
     const params = new URLSearchParams(window.location.search);
     const next = params.get('next') || params.get('redirect');
+
+    // 契約者ログイン（?type=provider）からは、一般のお客様のマイページへは絶対に移らない（渡邉指摘 2026-10-31・2回目）。
+    // 同じメール・パスワードで一般のお客様としても使っている契約者がいるため、判定に失敗しても管理画面へ進め、
+    // 「契約者ではない」とはっきり分かった時だけ、ここでお知らせする。
+    if (params.get('type') === 'provider' || isProvider) {
+      const r = await checkProviderAccount(data.session.access_token, 5);
+      if (r === 'no') {
+        setNotProvider(true);
+        setLoginError('このメールアドレスは、契約者（お店）のアカウントとして登録されていません。メールアドレスをお確かめください。');
+        setLoginLoading(false);
+        return;
+      }
+      window.location.href = next && next.startsWith('/provider') ? next : '/provider/dashboard';
+      return;
+    }
+
     if (next) {
       window.location.href = next;
       return;
     }
-    // 掲載者かチェック（直接 /login アクセス時は掲載者ダッシュボードへ）
-    const isProviderAccount = await checkIsProviderAccount(data.session.access_token);
-    window.location.href = isProviderAccount ? '/provider/dashboard' : '/mypage';
+    // 契約者かチェック（直接 /login アクセス時は契約者の管理画面へ）
+    const r = await checkProviderAccount(data.session.access_token, 3);
+    window.location.href = r === 'yes' ? '/provider/dashboard' : '/mypage';
     setLoginLoading(false);
   }
 
@@ -339,6 +359,9 @@ export default function LoginPage() {
 
               {loginError && (
                 <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{loginError}</p>
+              )}
+              {notProvider && (
+                <p style={{ fontSize: '12.5px', margin: '0 0 8px', color: T.muted }}>一般のお客様としてお使いの方は <a href="/mypage" style={{ color: 'inherit', fontWeight: 700 }}>マイページを開く</a></p>
               )}
 
               <button
