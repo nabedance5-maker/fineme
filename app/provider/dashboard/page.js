@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
-import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
+import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST } from '@/lib/dashboard-tutorial';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
@@ -1200,7 +1200,20 @@ export default function ProviderDashboardPage() {
         const panel = document.querySelector(`.pd-panel-section[data-panel="${key}"]`);
         if (panel) btn.style.display = panel.querySelector('.tab-btn') ? '' : 'none';
       });
+      syncFeatureList();
     };
+    // 使い方タブの機能一覧：権限で消えたタブは一覧からも消し、機能設定でオフのタブには「オフ」を付ける
+    function syncFeatureList() {
+      document.querySelectorAll('#feature-list [data-feature-item]').forEach(li => {
+        const btn = document.querySelector(`.tab-btn[data-tab="${li.dataset.featureItem}"]`);
+        li.style.display = btn ? '' : 'none';
+        const off = li.querySelector('[data-feature-off]');
+        if (off) off.style.display = btn?.classList.contains('tab-feature-off') ? '' : 'none';
+      });
+      document.querySelectorAll('#feature-list [data-feature-group]').forEach(g => {
+        g.style.display = [...g.querySelectorAll('[data-feature-item]')].some(li => li.style.display !== 'none') ? '' : 'none';
+      });
+    }
 
     function applyTabLayout(prefs) {
       syncCustomCategoryRail(prefs);
@@ -16307,6 +16320,32 @@ export default function ProviderDashboardPage() {
 
         {/* タブ：チュートリアル一覧（全タブの使い方まとめ） */}
         <div className="tab-pane" id="tab-tutorial">
+          {/* 機能一覧（渡邉要望 2026-10-31）：全機能を1枚に。押すとそのタブへ（data-goto-tab）。
+              権限で使えないタブは消し、機能設定でオフのタブには「オフ」を付ける（syncFeatureList） */}
+          <div className="card" id="feature-list" style={{ padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>機能一覧</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 16px', lineHeight: '1.6' }}>
+              Finemeでできることの一覧です。名前を押すと、その画面に移動します。
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '18px 28px' }}>
+              {FEATURE_LIST.map(group => (
+                <div key={group.heading} data-feature-group>
+                  <h3 style={{ fontSize: '13px', margin: '0 0 6px', color: '#c9a84c', letterSpacing: '0.04em' }}>{group.heading}</h3>
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {group.items.map(item => (
+                      <li key={item.key} data-feature-item={item.key} style={{ borderTop: '1px solid rgba(26,20,16,0.08)' }}>
+                        <button type="button" data-goto-tab={item.key} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '8px 2px', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
+                          <span style={{ fontWeight: 700, fontSize: '13.5px', textDecoration: 'underline', textDecorationColor: 'rgba(201,168,76,0.6)', textUnderlineOffset: '3px' }}>{item.label}</span>
+                          <span data-feature-off style={{ display: 'none', marginLeft: '6px', fontSize: '11px', color: '#8a7d70', border: '1px solid rgba(26,20,16,0.2)', borderRadius: '99px', padding: '0 6px' }}>オフ</span>
+                          <span className="muted" style={{ display: 'block', fontSize: '12px', lineHeight: '1.6', marginTop: '2px' }}>{item.desc}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
               <div>
