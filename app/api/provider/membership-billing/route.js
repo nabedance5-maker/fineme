@@ -9,6 +9,7 @@ import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
 import { sendLinePushWithAction } from '@/lib/line-push';
 import { resolveLineTarget } from '@/lib/line-channel';
+import { recordMembershipInvoice } from '@/lib/membership-billing';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me';
@@ -23,8 +24,8 @@ export async function GET(request) {
   const list = ms || [];
   const ids = list.map(m => m.id);
   const planIds = [...new Set(list.map(m => m.plan_id).filter(Boolean))];
-  const [{ data: pays }, { data: plans }] = await Promise.all([
-    ids.length ? supabase.from('provider_membership_payments').select('id, membership_id, amount, status, period_start, failure_message, attempt_count, next_attempt_at, paid_at, created_at').in('membership_id', ids).order('created_at', { ascending: false }).limit(1000) : { data: [] },
+  let [{ data: pays }, { data: plans }] = await Promise.all([
+    ids.length ? supabase.from('provider_membership_payments').select('id, membership_id, stripe_invoice_id, amount, status, period_start, failure_message, attempt_count, next_attempt_at, paid_at, created_at').in('membership_id', ids).order('created_at', { ascending: false }).limit(1000) : { data: [] },
     planIds.length ? supabase.from('provider_membership_plans').select('id, name, monthly_price').in('id', planIds) : { data: [] },
   ]);
   const planOf = Object.fromEntries((plans || []).map(p => [p.id, p]));
@@ -39,6 +40,14 @@ export async function GET(request) {
         const end = sub.current_period_end || sub.items?.data?.[0]?.current_period_end;
         out.next_charge_date = end ? new Date(end * 1000 + 9 * 3600000).toISOString().slice(0, 10) : null;
         out.sub_status = sub.status;
+        // webhookが届かなかった請求も、ここで取りこぼさず記録する（2026-11-01：引き落とされたのに支払いの記録が無かった）
+        const known = new Set((pays || []).filter(p => p.membership_id === m.id).map(p => p.stripe_invoice_id));
+        const { data: invs } = await s.invoices.list({ subscription: m.stripe_subscription_id, limit: 3 });
+        for (const inv of invs || []) {
+          if (known.has(inv.id)) continue;
+          const kind = inv.status === 'paid' ? 'succeeded' : inv.status === 'void' ? 'void' : inv.status === 'open' && inv.attempt_count > 0 ? 'failed' : null;
+          if (kind && await recordMembershipInvoice(supabase, inv, kind)) out.recorded = true;
+        }
       }
       if (m.stripe_payment_method_id) {
         const pm = await s.paymentMethods.retrieve(m.stripe_payment_method_id);
@@ -47,6 +56,9 @@ export async function GET(request) {
     } catch { /* Stripeに繋がらない時は表示だけ省く */ }
     return out;
   }));
+  if (live.some(x => x.recorded)) {
+    ({ data: pays } = await supabase.from('provider_membership_payments').select('id, membership_id, stripe_invoice_id, amount, status, period_start, failure_message, attempt_count, next_attempt_at, paid_at, created_at').in('membership_id', ids).order('created_at', { ascending: false }).limit(1000));
+  }
   return Response.json({
     members: list.map((m, i) => ({
       id: m.id, user_id: m.user_id, name: [m.last_name, m.first_name].filter(Boolean).join(' '), phone: m.phone,

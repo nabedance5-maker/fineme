@@ -12,6 +12,12 @@ import { isOwnerTestEmail } from '@/lib/is-owner-email';
 
 export const runtime = 'nodejs';
 
+// 新しいStripe APIでは期間の終わりがサブスク本体ではなく明細（items）側に入る。どちらでも読めるように
+function periodEndIso(sub) {
+  const sec = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end;
+  return Number.isFinite(sec) ? new Date(sec * 1000).toISOString() : null;
+}
+
 export async function POST(request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const webhookSecret = process.env.STRIPE_SUBSCRIPTION_WEBHOOK_SECRET;
@@ -33,6 +39,8 @@ export async function POST(request) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
       const sub = event.data.object;
+      // お店の会員プラン（月会費）・Finemeの契約のサブスクはここでは扱わない（/api/stripe/webhook 側）
+      if (sub.metadata?.fineme_membership_id || sub.metadata?.fineme_provider_id) break;
 
       // 既にこのsubscription_idを記録済みか（Stripeの再送・updated連発による二重通知を防ぐ）
       const { data: prevProfile } = await sb
@@ -50,7 +58,7 @@ export async function POST(request) {
         .update({
           subscription_id:         sub.id,
           subscription_status:     sub.status,          // active / past_due / canceled 等
-          subscription_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          subscription_period_end: periodEndIso(sub),
         })
         .eq('stripe_customer_id', sub.customer);
 
@@ -73,11 +81,12 @@ export async function POST(request) {
 
     case 'customer.subscription.deleted': {
       const sub = event.data.object;
+      if (sub.metadata?.fineme_membership_id || sub.metadata?.fineme_provider_id) break;
       await sb
         .from('profiles')
         .update({
           subscription_status:        'canceled',
-          subscription_period_end:    new Date(sub.current_period_end * 1000).toISOString(),
+          subscription_period_end:    periodEndIso(sub),
           subscription_cancelled_at:  new Date().toISOString(),
         })
         .eq('stripe_customer_id', sub.customer);
@@ -86,7 +95,9 @@ export async function POST(request) {
 
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
-      if (invoice.subscription) {
+      const meta = invoice.parent?.subscription_details?.metadata || invoice.subscription_details?.metadata || {};
+      if (meta.fineme_membership_id || meta.fineme_provider_id) break;
+      if (invoice.subscription || invoice.parent?.subscription_details) {
         await sb
           .from('profiles')
           .update({ subscription_status: 'past_due' })
