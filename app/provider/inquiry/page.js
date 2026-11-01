@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { readRef } from '@/lib/referral-ref';
 
 export default function ProviderInquiryPage() {
   const initialized = useRef(false);
@@ -165,7 +166,7 @@ export default function ProviderInquiryPage() {
     const signupLink = document.getElementById('inqSignupLink');
     if (signupLink) {
       const sp = new URLSearchParams();
-      const r0 = new URLSearchParams(window.location.search).get('ref');
+      const r0 = readRef();
       if (r0) sp.set('ref', r0);
       if (['A', 'B', 'C'].includes(planParam)) sp.set('plan', planParam);
       if (sp.toString()) signupLink.href = `/provider/signup?${sp}`;
@@ -173,7 +174,7 @@ export default function ProviderInquiryPage() {
     const planSel = document.getElementById('desiredPlan');
     if (planSel && ['A', 'B', 'C'].includes(planParam)) planSel.value = planParam;
 
-    const refCode = new URLSearchParams(window.location.search).get('ref');
+    const refCode = readRef();
     if (refCode) {
       const noteEl = document.getElementById('inqReferralNote');
       if (noteEl) {
@@ -239,7 +240,7 @@ export default function ProviderInquiryPage() {
           desiredPlan: fd.get('desiredPlan')?.toString() || undefined,
           meetingWish: fd.get('meetingWish')?.toString().trim(),
           message: fd.get('message')?.toString(),
-          referralCode: new URLSearchParams(window.location.search).get('ref') || undefined
+          referralCode: refCode || undefined
         };
         const consent = document.getElementById('consent')?.checked;
         if (!data.bizName || !data.contactName || !data.email || !consent) {

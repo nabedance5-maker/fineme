@@ -36,7 +36,7 @@ export default function PartnerPortalPage(props) {
   const { partner, referrals, summary, collaborator } = state.data;
   const yen = n => `¥${(n || 0).toLocaleString()}`;
   const KIND = { override: '継続報酬（10%）', first_month: '紹介・初月（90%）' };
-  const referralUrl = `https://www.fineme.me/provider/join?ref=${encodeURIComponent(partner.referral_code)}`;
+  const referralUrl = `https://www.fineme.me/join/${encodeURIComponent(partner.referral_code)}`;
 
   return (
     <div style={{ ...wrap, maxWidth: collaborator ? '760px' : wrap.maxWidth }}>
@@ -53,11 +53,11 @@ export default function PartnerPortalPage(props) {
       <div style={card}>
         <div style={label}>あなたの紹介コード</div>
         <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '.04em', margin: '2px 0 14px', color: '#e8e4dc' }}>{partner.referral_code}</div>
-        <div style={label}>紹介URL（この紹介コード経由で掲載申込した店舗が、あなたの紹介として記録されます）</div>
+        <div style={label}>あなた専用の申込ページ（このページから相談・登録したお店が、あなたの紹介として記録されます。お店が他のページを見てから申し込んでも、90日間は引き継がれます）</div>
         <div style={{ fontSize: '13px', color: '#9ca3af', wordBreak: 'break-all', margin: '4px 0 14px' }}>{referralUrl}</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button style={btn} onClick={() => copy(partner.referral_code, 'code')}>{copied === 'code' ? 'コピーしました' : 'コードをコピー'}</button>
-          <button style={btn} onClick={() => copy(referralUrl, 'url')}>{copied === 'url' ? 'コピーしました' : 'URLをコピー'}</button>
+          <button style={btn} onClick={() => copy(referralUrl, 'url')}>{copied === 'url' ? 'コピーしました' : '申込ページのURLをコピー'}</button>
         </div>
       </div>
 

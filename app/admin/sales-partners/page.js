@@ -51,6 +51,7 @@ export default function AdminSalesPartnersPage() {
           <input id="sp-new-provider" placeholder="契約者ID（任意・空欄なら未掲載の営業パートナー）" style="flex:1;min-width:220px;" />
           <button id="sp-new-submit">新規登録</button>
         </div>
+        <div id="sp-issued"></div>
         <div id="sp-list"><p style="color:#111;">読み込み中…</p></div>
       </div>
     `;
@@ -74,6 +75,7 @@ export default function AdminSalesPartnersPage() {
             ? '<span class="badge badge-green">有効</span>'
             : '<span class="badge badge-gray">停止中</span>';
           const portalUrl = `${location.origin}/partner/${p.access_token}`;
+          const joinUrl = `${location.origin}/join/${encodeURIComponent(p.referral_code)}`;
           return `
             <div class="sp-row" data-id="${p.id}">
               <div style="flex:1;min-width:160px;">
@@ -82,6 +84,7 @@ export default function AdminSalesPartnersPage() {
               </div>
               ${badge}
               <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
+              <button class="sp-btn-ghost" data-copy-portal="${joinUrl}">申込ページURLをコピー</button>
               <button class="sp-btn-ghost" data-collab="${p.id}" data-on="${p.is_collaborator ? '1' : '0'}">${p.is_collaborator ? '協業者（解除する）' : '協業者にする'}</button>
               <button class="sp-btn-ghost" data-toggle="${p.id}" data-status="${p.status}">${p.status === 'active' ? '停止する' : '再開する'}</button>
             </div>
@@ -130,6 +133,37 @@ export default function AdminSalesPartnersPage() {
         body: JSON.stringify({ name, email: email || null, provider_id: provider_id || null }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); alert('登録失敗：' + (e.error || res.status)); return; }
+      // 管理画面と専用申込ページは、登録と同時に発行される。本人へ送る案内文をそのまま出す。
+      const created = await res.json().catch(() => null);
+      if (created?.access_token) {
+        const portal = `${location.origin}/partner/${created.access_token}`;
+        const join = `${location.origin}/join/${encodeURIComponent(created.referral_code)}`;
+        const text = [
+          `${created.name} 様`,
+          '',
+          'Fineme営業パートナーのご登録が完了しました。',
+          '',
+          `紹介コード：${created.referral_code}`,
+          '',
+          '■ あなた専用の申込ページ（お店にはこちらをご案内ください）',
+          join,
+          'このページからご相談・ご登録いただいたお店が、あなたの紹介として記録されます。',
+          '',
+          '■ あなた専用の管理画面（紹介の状況・報酬はこちらで確認できます）',
+          portal,
+          '管理画面のURLは、ご本人以外には共有しないでください。',
+        ].join('\n');
+        document.getElementById('sp-issued').innerHTML = `
+          <div class="sp-row" style="display:block;border-color:#111;">
+            <div class="sp-name" style="margin-bottom:6px;">${esc(created.name)} さんの管理画面と申込ページを発行しました</div>
+            <p class="sp-meta" style="margin:0 0 8px;">下の案内文をコピーして、本人にメールで送ってください。</p>
+            <textarea id="sp-issued-text" readonly style="width:100%;min-height:220px;font-size:13px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;">${esc(text)}</textarea>
+            <button class="sp-btn-ghost" id="sp-issued-copy" style="margin-top:8px;">案内文をコピー</button>
+          </div>`;
+        document.getElementById('sp-issued-copy').addEventListener('click', e => {
+          navigator.clipboard.writeText(text).then(() => { e.target.textContent = 'コピーしました'; }).catch(() => {});
+        });
+      }
       document.getElementById('sp-new-name').value = '';
       document.getElementById('sp-new-email').value = '';
       document.getElementById('sp-new-provider').value = '';

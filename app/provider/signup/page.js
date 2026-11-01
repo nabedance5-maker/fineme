@@ -3,6 +3,7 @@
 // 「すでに決めていて、すぐに始めたい」お店が使う。登録すると、パスワード設定のメールが届き、
 // 管理画面でプランを申し込んだ日から使える。オンライン相談をしたい方は /provider/inquiry へ。
 import { useEffect, useState } from 'react';
+import { readRef } from '@/lib/referral-ref';
 
 const CATEGORIES = [
   ['gym', 'ジム・パーソナルトレーニング'], ['makeup', 'メイク・コスメ'], ['hair', 'ヘア・美容院'],
@@ -52,7 +53,7 @@ export default function ProviderSignupPage() {
     const sp = new URLSearchParams(location.search);
     const plan = sp.get('plan');
     if (['A', 'B', 'C'].includes(plan)) setForm(f => ({ ...f, desiredPlan: plan }));
-    setRef(sp.get('ref') || '');
+    setRef(readRef());
   }, []);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));

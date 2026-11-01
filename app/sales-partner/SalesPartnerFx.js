@@ -24,7 +24,7 @@ export function PartnerPageMock() {
         <span className="sp-mock-label">あなたの紹介コード</span>
         <span className="sp-mock-code">FN031</span>
         <span className="sp-mock-label">紹介URL</span>
-        <span className="sp-mock-url">fineme.me/provider/join?ref=FN031</span>
+        <span className="sp-mock-url">fineme.me/join/FN031</span>
       </div>
       <div className="sp-mock-stats">
         <div><b>12</b><span>紹介人数（合計）</span></div>

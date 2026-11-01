@@ -2,6 +2,7 @@ import './join.css';
 import { axisGlyph } from '@/lib/axis-glyph';
 import { PROVIDER_PLANS as PLANS } from '@/lib/provider-plans';
 import { RevealScope, HeroDemo, CountUp, RoiCalculator, StickyCta, IndustryTabs } from './JoinFx';
+import RefCapture from './RefCapture';
 
 export const metadata = {
   title: 'いま通っているお客様を、離さない：Fineme 店舗向けのご案内',
@@ -151,6 +152,7 @@ export default async function ProviderJoinPage(props) {
   return (
     <main className="pj">
       <RevealScope />
+      {ref && <RefCapture code={ref} />}
       <StickyCta href={inquiryHref} />
 
       {/* ① ヘッドライン */}
