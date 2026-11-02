@@ -8,6 +8,7 @@ const SITE = 'https://www.fineme.me';
 
 export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
   const url = `${SITE}${base}/${article.slug}`;
+  const updated = article.updated || GUIDE_UPDATED;
   const related = (article.related || []).map((s) => all.find((a) => a.slug === s)).filter(Boolean);
   const jsonLd = [
     {
@@ -15,8 +16,8 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
       '@type': 'Article',
       headline: article.title,
       description: article.description,
-      datePublished: GUIDE_UPDATED,
-      dateModified: GUIDE_UPDATED,
+      datePublished: updated,
+      dateModified: updated,
       inLanguage: 'ja',
       mainEntityOfPage: url,
       author: { '@type': 'Organization', name: 'Fineme', url: SITE },
@@ -46,7 +47,7 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
           <p className="bg-crumb"><Link href="/">Fineme</Link> / <Link href={base}>{hubLabel}</Link></p>
           <p className="bg-eyebrow">{hubLabel}</p>
           <h1 className="bg-h1">{article.title}</h1>
-          <p className="bg-meta">更新日 {GUIDE_UPDATED.replace(/-/g, '.')}・Fineme 編集部</p>
+          <p className="bg-meta">更新日 {updated.replace(/-/g, '.')}・Fineme 編集部</p>
         </div>
       </header>
       <div className="bg-body">
@@ -55,8 +56,9 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
           {article.sections.map((s) => (
             <section key={s.h} className="bg-sec">
               <h2>{s.h}</h2>
-              {s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
+              {s.listFirst && s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
               {(s.p || []).map((x) => <p key={x}>{x}</p>)}
+              {!s.listFirst && s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
             </section>
           ))}
           <aside className="bg-fineme">
