@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { INQUIRY_SOURCES } from '@/lib/inquiry-source';
+
+const SOURCE_LABEL = Object.fromEntries(INQUIRY_SOURCES);
 
 export default function AdminInquiriesPage() {
   const initialized = useRef(false);
@@ -102,6 +105,7 @@ export default function AdminInquiriesPage() {
           <div class="stack" style="gap:6px;padding:8px 0">
             ${it.referral_code ? `<div class="badge" style="width:fit-content">紹介コード: ${esc(it.referral_code)}</div>` : ''}
             ${it.desired_plan ? `<div class="badge" style="width:fit-content">気になっているプラン: PLAN ${esc(it.desired_plan)}</div>` : ''}
+            ${it.source ? `<div class="badge" style="width:fit-content">知ったきっかけ: ${esc(SOURCE_LABEL[it.source] || it.source)}</div>` : ''}
             ${it.meeting_wish ? `<div style="font-size:13px"><b>オンライン相談の希望日時：</b>${esc(it.meeting_wish)}</div>` : ''}
             ${it.provider_id ? '<div class="badge status-done" style="width:fit-content">アカウント作成済み（契約者一覧にあります）</div>' : ''}
             <div class="msg">${esc(it.message || '')}</div>
@@ -169,7 +173,7 @@ export default function AdminInquiriesPage() {
 
     function exportCSV() {
       const arr = filterData(allData);
-      const headers = ['id','created_at','status','biz_name','contact_name','email','phone','category','contact_pref','referral_code','message'];
+      const headers = ['id','created_at','status','biz_name','contact_name','email','phone','category','contact_pref','referral_code','source','message'];
       const esc2 = v => '"' + String(v||'').replace(/"/g,'""') + '"';
       const lines = [headers.join(','), ...arr.map(it => headers.map(h => esc2(it[h])).join(','))];
       const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });

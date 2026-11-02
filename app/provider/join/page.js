@@ -120,6 +120,8 @@ const CATEGORIES = [
 ];
 
 const FAQ = [
+  ['どんなお店で使えますか？', 'パーソナルジム・眉毛サロン・美容室・エステ・ネイル・外見コンサルなど、予約制でお客様に繰り返し通っていただく個人〜小規模の店舗向けです。'],
+  ['AI専属コンサルとは何ですか？', '管理画面のどこにいても、AIがお店の数字を見て次の一手を提案する機能です。提案は助言で終わらず、お客様へのLINE送信などまでワンタップで実行できます。'],
   ['初期費用はかかりますか？', 'かかりません。登録料は当面の間無料で、お支払いは月額プランの料金だけです。'],
   ['月額料金はいつから発生しますか？', 'プランをお申し込みいただいた日からです。Finemeは新規のお客様を取ってくる広告ではなく、予約・決済・顧客管理・リピートのための店舗運営ツールなので、お使いいただく期間に応じて月額をいただいています。'],
   ['決済手数料はどんなときにかかりますか？', 'お客様がFineme経由でオンライン決済したときだけ、決済額の4.5%（カード会社の手数料込み）がかかり、入金額から差し引かれます。予約そのものの手数料はありません。'],
@@ -129,6 +131,30 @@ const FAQ = [
   ['店舗の公式LINEを持っていなくても使えますか？', '使えます。Plan A・Bでは予約やリマインドがFineme公式LINEから届きます。Plan Cではお店独自の公式LINEから送れます。メールでの配信は全プランで使えます。'],
   ['機能が多くて、画面が複雑になりませんか？', '最初の質問に答えると、お店に合う機能だけがONの状態で始まります。使わない機能はいつでもOFFにでき、必要になったらあとから足せます。'],
   ['プランの変更や解約はできますか？', 'プランはいつでも切り替えられます。解約は月末までにお手続きいただくと、翌月から課金が停止します（当月分の返金はありません）。'],
+];
+
+// AI検索・検索エンジン向けにFAQと料金を構造化データでも出す（2026-11-02）
+const JSON_LD = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Fineme 店舗向け',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.fineme.me/provider/join',
+    description: metadata.description,
+    offers: PLANS.map((pl) => ({
+      '@type': 'Offer',
+      name: `${pl.name} ${pl.label}`,
+      price: pl.price.replace(/,/g, ''),
+      priceCurrency: 'JPY',
+    })),
+  },
 ];
 
 function Seal({ children, size }) {
@@ -151,6 +177,7 @@ export default async function ProviderJoinPage(props) {
 
   return (
     <main className="pj">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <RevealScope />
       {ref && <RefCapture code={ref} />}
       <StickyCta href={inquiryHref} />

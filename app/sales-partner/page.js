@@ -54,11 +54,21 @@ const FAQ = [
   ['紹介した店舗が解約したらどうなりますか？', 'その店舗の継続報酬は、契約が続いている月の分だけ発生します。解約した月の後は発生しません。'],
   ['副業でも大丈夫ですか？', '大丈夫です。時間と場所の指定はありません。お勤め先の副業の規定はご自身でご確認ください。'],
   ['確定申告は必要ですか？', '業務委託の報酬になるため、収入の額によってはご自身での申告が必要です。'],
+  ['応募の条件はありますか？', '日本国籍の個人、日本の法人、日本で開業届を出している個人事業主の方が対象です。'],
+  ['営業資料や営業リストはもらえますか？', 'お渡しします。店舗向けの紹介ページ・営業資料と、随時更新する営業リストを紹介に使えます。'],
 ];
+
+// AI検索・検索エンジン向けにFAQを構造化データでも出す（ChatGPT経由の応募が実際に来ている・2026-11-02）
+const FAQ_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+};
 
 export default function SalesPartnerPage() {
   return (
     <main className="pj sp">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_LD) }} />
       <RevealScope />
       <StickyCta href="#apply" text="完全歩合｜毎月の報酬が積み上がる" label="応募する" />
 

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { normalizeSource, sourceLabel } from '@/lib/inquiry-source';
 import { NextResponse } from 'next/server';
 import { withAudit } from '@/lib/activity-log';
 
@@ -31,6 +32,8 @@ async function __POST(request) {
     const desiredPlan = ['A', 'B', 'C'].includes(body.desiredPlan) ? body.desiredPlan : null;
     // オンライン相談のご希望日時（問い合わせの次は、必ずオンラインで話す。2026-10-30）
     const meetingWish = String(body.meetingWish || '').trim().slice(0, 500) || null;
+    // このページを知ったきっかけ（任意。AI経由の応募を数える）
+    const source = normalizeSource(body.source);
 
     if (!bizName || !contactName || !email) {
       return NextResponse.json({ error: '必須項目が未入力です' }, { status: 400 });
@@ -50,6 +53,7 @@ async function __POST(request) {
       referral_code: referralCode || null,
       desired_plan: desiredPlan,
       meeting_wish: meetingWish,
+      source,
     });
 
     if (error) throw error;
@@ -80,6 +84,7 @@ async function __POST(request) {
               referralCode ? `紹介コード: ${referralCode}` : '',
               desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
               meetingWish ? `オンライン相談の希望日時: ${meetingWish}` : '',
+              source ? `知ったきっかけ: ${sourceLabel(source)}` : '',
               '',
               '相談内容:',
               message || '（未記入）',

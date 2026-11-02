@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { PLANS, FIRST_RATE, STOCK_PER_STORE } from './reward';
+import { INQUIRY_SOURCES } from '@/lib/inquiry-source';
 
 const yen = (n) => `¥${Math.round(n).toLocaleString()}`;
 
@@ -164,6 +165,7 @@ export function ApplyForm() {
           bizName: name, contactName: name, email,
           phone: String(fd.get('phone') || '').trim(),
           category: 'sales_partner', contactPref: 'email', message,
+          source: String(fd.get('source') || ''),
         }),
       });
       if (!res.ok) {
@@ -196,6 +198,12 @@ export function ApplyForm() {
           <select name="experience" defaultValue="">
             <option value="" disabled>選択してください</option>
             {EXPERIENCE.map((x) => <option key={x} value={x}>{x}</option>)}
+          </select>
+        </label>
+        <label className="sp-input"><span>このページを知ったきっかけ<i>任意</i></span>
+          <select name="source" defaultValue="">
+            <option value="">選択してください</option>
+            {INQUIRY_SOURCES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
         </label>
         <label className="sp-input sp-input-wide"><span>紹介できそうな店舗・業種<i>任意</i></span><input name="targets" placeholder="例：知人の美容室、地元のパーソナルジム" /></label>

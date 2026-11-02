@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { readRef } from '@/lib/referral-ref';
+import { INQUIRY_SOURCES } from '@/lib/inquiry-source';
 
 export default function ProviderInquiryPage() {
   const initialized = useRef(false);
@@ -240,6 +241,7 @@ export default function ProviderInquiryPage() {
           desiredPlan: fd.get('desiredPlan')?.toString() || undefined,
           meetingWish: fd.get('meetingWish')?.toString().trim(),
           message: fd.get('message')?.toString(),
+          source: fd.get('source')?.toString() || undefined,
           referralCode: refCode || undefined
         };
         const consent = document.getElementById('consent')?.checked;
@@ -380,6 +382,13 @@ export default function ProviderInquiryPage() {
                   <option value="A">PLAN A ライト（¥5,000/月）</option>
                   <option value="B">PLAN B スタンダード（¥7,000/月）</option>
                   <option value="C">PLAN C プレミアム（¥10,000/月）</option>
+                </select>
+              </div>
+              <div className="inq-field">
+                <label className="inq-label" htmlFor="source">Finemeを知ったきっかけ（任意）</label>
+                <select className="inq-select" id="source" name="source" defaultValue="">
+                  <option value="">選択してください</option>
+                  {INQUIRY_SOURCES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                 </select>
               </div>
             </div>
