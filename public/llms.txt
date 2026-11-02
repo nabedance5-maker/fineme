@@ -64,6 +64,24 @@ Fineme 店舗向けを店舗に紹介する営業パートナーを募集して�
 - Fineme Mirror（AI写真分析）: https://www.fineme.me/belle/lp/mirror
 - Belle Journal（特集記事一覧）: https://www.fineme.me/belle/journal
 
+### 店舗運営ガイド（サロン・ジム・美容室の運営者向け）
+- 一覧: https://www.fineme.me/shop-guide
+- 新規のお客様が2回目に来ない理由と、リピートにつなげる5つの方法: https://www.fineme.me/shop-guide/second-visit
+- 小規模店舗の売上を伸ばす考え方：新規集客の前に「来店頻度」を見る: https://www.fineme.me/shop-guide/sales-formula
+- 来なくなったお客様（休眠顧客）を呼び戻す方法とLINE文面の例: https://www.fineme.me/shop-guide/dormant-customers
+- パーソナルジムの集客と退会防止：体験から入会、入会から継続まで: https://www.fineme.me/shop-guide/personal-gym-retention
+- 眉毛サロンのリピート率を上げる方法：次回予約と来店周期の伝え方: https://www.fineme.me/shop-guide/eyebrow-salon-repeat
+- 回数券・月会費の管理方法：紙とスプレッドシートから移るタイミング: https://www.fineme.me/shop-guide/ticket-membership
+- 予約サイト頼みの集客から抜け出す：2回目以降を自店の予約とLINEで受ける方法: https://www.fineme.me/shop-guide/own-booking-line
+- 個人サロン・ジムの顧客カルテの付け方: https://www.fineme.me/shop-guide/customer-karte
+- 小規模店舗の集客・売上アップにAIを使う方法: https://www.fineme.me/shop-guide/ai-for-shop
+
+### 営業パートナーガイド（営業代行・紹介の副業を探している方向け）
+- 一覧: https://www.fineme.me/sales-partner/guide
+- 初期費用なしの営業代行・紹介の副業の選び方：避けたい案件の見分け方: https://www.fineme.me/sales-partner/guide/no-initial-cost
+- ストック型報酬の営業副業とは：単発報酬との違いと計算例: https://www.fineme.me/sales-partner/guide/stock-commission
+- 未経験から店舗向けサービスの紹介営業を始める手順: https://www.fineme.me/sales-partner/guide/beginner-saas-referral
+
 ## 外見改善の8軸・優先順位
 - Tier 1（即効性高）：体型・眉毛・服・髪
 - Tier 2：肌・脱毛

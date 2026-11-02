@@ -1,6 +1,7 @@
 export const revalidate = 86400;
 
 import { getSupabase } from '@/lib/supabase';
+import { SHOP_GUIDES, PARTNER_GUIDES, SHOP_GUIDE_BASE, PARTNER_GUIDE_BASE } from '@/lib/biz-guide';
 
 const BASE_URL = 'https://www.fineme.me';
 
@@ -13,6 +14,11 @@ const STATIC_PAGES = [
   { url: '/feature', priority: 0.8, changeFrequency: 'daily' },
   { url: '/provider/join', priority: 0.8, changeFrequency: 'monthly' },
   { url: '/sales-partner', priority: 0.7, changeFrequency: 'monthly' },
+  // 店舗運営者・営業パートナー候補向けのガイド（AI検索で拾われる受け皿・2026-11-02）
+  { url: SHOP_GUIDE_BASE, priority: 0.7, changeFrequency: 'monthly' },
+  ...SHOP_GUIDES.map((a) => ({ url: `${SHOP_GUIDE_BASE}/${a.slug}`, priority: 0.7, changeFrequency: 'monthly' })),
+  { url: PARTNER_GUIDE_BASE, priority: 0.6, changeFrequency: 'monthly' },
+  ...PARTNER_GUIDES.map((a) => ({ url: `${PARTNER_GUIDE_BASE}/${a.slug}`, priority: 0.6, changeFrequency: 'monthly' })),
   { url: '/about', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/terms', priority: 0.4, changeFrequency: 'monthly' },
   { url: '/privacy', priority: 0.4, changeFrequency: 'monthly' },

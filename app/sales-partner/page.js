@@ -266,6 +266,7 @@ export default function SalesPartnerPage() {
               </details>
             ))}
           </div>
+            <p className="pj-sec-lead" style={{ marginTop: 20 }}>始める前に読んでおきたいこと：<a href="/sales-partner/guide">営業パートナーガイド</a>（避けたい案件の見分け方・ストック型報酬の計算例・未経験からの始め方）</p>
         </div>
       </section>
 

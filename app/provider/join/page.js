@@ -606,6 +606,7 @@ export default async function ProviderJoinPage(props) {
               </details>
             ))}
           </div>
+            <p className="pj-sec-lead" style={{ marginTop: 20 }}>リピート・集客・売上の考え方は<a href="/shop-guide">店舗運営ガイド</a>にまとめています。</p>
         </div>
       </section>
 
