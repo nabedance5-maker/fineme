@@ -19497,7 +19497,7 @@ export default function ProviderDashboardPage() {
             </div>
             <p id="connect-card-text" className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.8 }}>設定状況を確認しています…</p>
             <button type="button" className="btn" id="connect-card-btn" data-stripe-connect-start style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>カード決済の受け取りを設定する（Stripe）</button>
-            <button type="button" className="btn btn-ghost" id="connect-dashboard-btn" style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>入金・口座を確認する（Stripe）</button>
+            <button type="button" className="btn btn-ghost" id="connect-dashboard-btn" style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>入金の確認・振込先口座の変更（Stripe）</button>
             <a href="/provider/money-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: '#2f4f8f' }}>お客様の代金がいつ・どこへ入るか（お金の流れを図で見る）</a>
           </div>
           <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '14px' }}>
