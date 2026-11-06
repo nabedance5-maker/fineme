@@ -4,7 +4,7 @@
 // - 直近14日の threads_posts の各投稿インサイト(views/likes/replies/reposts/quotes)を更新
 // - 日曜：実データから「効いた切り口/外れた切り口」を分析→ threads_strategy に保存（threads-draftが翌週読む）＋週次ダイジェストをメール
 // env gated：THREADS_ACCESS_TOKEN/THREADS_USER_ID が無ければ何もしない
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { threadsConfigured, getMediaInsights, getUserInsights } from '@/lib/threads-api';
 
@@ -92,7 +92,7 @@ export async function GET(request) {
   // AIに"来週の方針"を作らせて threads_strategy に保存（threads-draftが読む）
   let strategyText = '';
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const msg = await client.messages.create({
       model: 'claude-sonnet-4-6', max_tokens: 500, temperature: 0.4,
       messages: [{ role: 'user', content: `Threads「AI経営」アカウントの先週の実データ。エンゲージ率(eng%)が高い＝刺さった投稿。

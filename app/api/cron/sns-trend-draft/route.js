@@ -2,7 +2,7 @@
 // 毎週日曜9時JST（0時UTC日曜）にAIが最新SNSトレンドを調査し、
 // 最適化したX投稿ドラフト等をオーナーへメール提案する（ハイブリッド：人が承認して投稿）
 // Schedule: "0 0 * * 0"
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { computeMirrorStats } from '@/app/api/admin/mirror-stats/route';
 
@@ -70,7 +70,7 @@ async function runRetrospective(client) {
 }
 
 async function generateDrafts() {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   // まずWeb検索ツールでトレンド調査込み生成を試行
   try {
     const msg = await client.messages.create({
@@ -105,7 +105,7 @@ export async function GET(request) {
   }
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     // Check/Act：先に先週の振り返り→来週の方針を生成・保存（日次生成が参照する）
     const guidance = await runRetrospective(client);
 

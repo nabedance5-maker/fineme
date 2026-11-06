@@ -6,7 +6,8 @@ import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide, STAGE_KEYS } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
 
-const MODEL = 'claude-sonnet-4-6';
+// 店舗の管理画面の機能は Claude Haiku（渡邉判断 2026-11-06：APIの消費を抑える。振り分けの考え方は lib/ai.js）
+const MODEL = 'claude-haiku-4-5-20251001';
 
 const PLAN_TOOL = {
   name: 'submit_plan',

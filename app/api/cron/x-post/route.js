@@ -7,7 +7,7 @@
 // リプ欄末尾は月曜のみリンクCTA（コスト抑制）
 
 import crypto from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
@@ -320,7 +320,7 @@ const X_SYSTEM = `あなたは「でお」＝元・非モテ→現役モデル�
 // 返り値: { main: string, reply: string | null } | null
 async function generateThreadPost(postType, context = {}, dayOfYear = 0, system = X_SYSTEM) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
 
   const stratLine = context.strategy ? `\n\n【今週の方針（参考）】\n${context.strategy}` : '';
   const recentLine = (context.recentTexts?.length)

@@ -3,7 +3,7 @@
 // タイトル/メタ/内部リンク/追記を自動改善して Supabase features を更新（SEOのAct自動化）。
 // 既定は「提案モード」（メールのみ・DB未変更）。?apply=1 または SEO_AUTO_APPLY=1 で本適用。
 // Schedule: "30 0 * * 1"（月曜 JST9:30。2026-10-19 でお指示で日次→週次に戻した）
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
@@ -119,7 +119,7 @@ export async function GET(request) {
       .select('slug,title,category,track').eq('status', 'published').limit(240);
     const allLinkable = (allArticles || []).filter(a => a.slug);
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const results = [];
 
     for (const c of candidates) {

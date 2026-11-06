@@ -4,7 +4,7 @@
 // ⚠️ Threadsは投稿APIを持たない → 生成のみ自動・投稿は手動（でおがコピペ）
 // コンセプト「AI会社の経営日誌」。ターゲット=AI中級者。1パッケージ=本文+リプ①+リプ②+編集長メモ。
 // 仕様SSoT：business/threads-ai-keiei-spec.md ／ 一次情報：data/threads-facts.json
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
@@ -283,7 +283,7 @@ export async function GET(request) {
     return Response.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const memory = await fetchAgentMemory();
   const system = withMemory(THREADS_SYSTEM, memory);
 

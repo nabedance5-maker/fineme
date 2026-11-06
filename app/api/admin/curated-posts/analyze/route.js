@@ -9,7 +9,7 @@
 // - Instagram: 2025-11-03以降oEmbedのthumbnail_urlが廃止されたため、投稿ページ自体の
 //   og:image / og:description メタタグを読む（Meta公式の代替手段として案内されている方法）
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 
 const AXIS_CONCERNS = {
   skin: ['乾燥肌','脂性肌（オイリー）','混合肌','普通肌','敏感肌','肌タイプがわからない','毛穴','ニキビ・吹き出物','くすみ','赤み','乾燥・カサつき','テカリ','シミ・そばかす','ハリ・弾力不足','色ムラ'],
@@ -110,7 +110,7 @@ ${CONCERN_VOCABULARY.join('、')}`;
 
   let parsed = {};
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,

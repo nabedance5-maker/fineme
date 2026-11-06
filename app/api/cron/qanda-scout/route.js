@@ -8,7 +8,7 @@
 //     生きていそうな質問を検索し、候補ごとにAIが回答案を書いた状態ででおへメール
 //   - 未設定（でおがAPI契約するかどうかはGO制・§8参照）→ テーマ別の回答ストックを
 //     メールするフォールバックのみ（note-draftと同じ「コピペ用ストック」方式）
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { getSupabase } from '@/lib/supabase';
 
@@ -57,7 +57,7 @@ const STOCK_ANSWERS = [
 async function generateAnswer(query, snippet) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const memory = await fetchAgentMemory();
     const system = withMemory(
       `あなたは「でお」（元・非モテ→現役モデル）。掲示板の質問に、専門家ぶらず対等な立場で答える。

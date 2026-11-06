@@ -1,7 +1,7 @@
 // GET /api/cron/feature-article
 // 毎日3時JST（毎日）に /feature SEO記事を1本生成してSupabaseに自動公開
 // Schedule: "0 3 * * *"
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
@@ -200,7 +200,7 @@ function injectImages(html, axis, seedStr = '', usedIds = new Set()) {
 }
 
 async function generateArticle(theme, existing = [], linkPool = []) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
 
   const existingList = existing.length > 0
     ? `\n\n【カバー済みテーマ（重複禁止）】\n以下と同じ切り口・タイトルの記事は書かないこと：\n${

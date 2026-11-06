@@ -2,7 +2,7 @@
 // 毎日、直近の自動生成物（記事・X投稿）を「年商10億を狙うCMO」として辛口批評し、
 // 定型化・金太郎飴・目的不一致を自分で見つけて自動改善する。＝受け身をやめる自己批評ループ。
 // Schedule: "0 21 * * *"（JST 6:00 / 日報の前）
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 
@@ -30,7 +30,7 @@ export async function GET(request) {
   if (articles.length === 0) return Response.json({ skipped: 'no articles' });
 
   // ── Claudeに辛口批評させる（構造化JSON） ──
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const trackLabel = a => (a.track === 'belle' ? 'Belle/女性向け' : 'Fineme/男性向け');
   const artList = articles.map((a, i) => `${i}: [${trackLabel(a)}][${a.category}] ${a.title}｜${(a.description || '').slice(0, 50)}`).join('\n');
   const xList = (xposts || []).map((p, i) => `${i}: ${(p.text || '').replace(/\n/g, ' ').slice(0, 60)}`).join('\n');

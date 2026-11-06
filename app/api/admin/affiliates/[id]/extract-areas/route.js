@@ -1,6 +1,6 @@
 // POST /api/admin/affiliates/[id]/extract-areas
 // アフィリエイトのサービス情報からエリア候補をAIで自動抽出
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -62,7 +62,7 @@ export async function POST(request, props) {
     pageContent ? `サイト内容（抜粋）:\n${pageContent}` : '',
   ].filter(Boolean).join('\n\n');
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
 
   const message = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',

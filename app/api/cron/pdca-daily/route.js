@@ -1,7 +1,7 @@
 // GET /api/cron/pdca-daily
 // 週1回、事業全体（集客/販売/商品）のCheck指標を直近7日で集約し、週報メールで届ける。
 // 毎日だと内容がほぼ同じになるため週次に変更（でお指示 2026-10-19）。Schedule: "0 22 * * 0"（=月曜 JST 7:00）
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 
@@ -104,7 +104,7 @@ export async function GET(request) {
   const wow = (t) => t ? `${t.now}（先週${t.prev}）` : '—';
   let board = '';
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001', max_tokens: 1000, temperature: 0.6,
       messages: [{ role: 'user', content: `Finemeの週次事業レポートの「分析」部分を書く。単なる数字報告ではなく、数字を根拠に過去→現状→これからを語る。

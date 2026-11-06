@@ -1,6 +1,6 @@
 // POST /api/admin/affiliates/auto-fill
 // サービス名（＋任意でサービスURL）からAIがFinemeの各フィールドを自動生成
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || '';
 
@@ -173,7 +173,7 @@ lost_direction / no_continuation / no_result / cost / awkward
 price_from:
 最低価格（円・整数）。不明ならnull。無料体験があっても本来の最低価格を入れる。`;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   try {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',

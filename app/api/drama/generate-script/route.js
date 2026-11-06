@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { DRAMA_PHILOSOPHY } from '@/lib/brand-philosophy';
@@ -91,7 +91,7 @@ export async function POST(request) {
 
 上記の条件で台本を書いてください。`;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
 
   let message;
   try {

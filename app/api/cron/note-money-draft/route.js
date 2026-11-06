@@ -5,7 +5,7 @@
 // mode: front（既定・中級者向け「AIを"経営させる側"へ」＝フロントは公開済み）
 //       main （?mode=main・「AI×外見磨き(=Fineme)で収益化した方法」＝実績が出たら手動で）
 // 設計：business/note-threads-strategy.md / note-front-draft.md / note-main-draft.md
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
@@ -190,7 +190,7 @@ ${BRAND_PHILOSOPHY}
 }
 
 async function generateNote(mode, topic) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const memory = await fetchAgentMemory();
   const system = withMemory(buildSystem(mode), memory);
 

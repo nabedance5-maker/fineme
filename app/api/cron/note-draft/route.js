@@ -2,7 +2,7 @@
 // 毎週水曜9時JST（0時UTC水曜）にAIがnote記事ドラフトを1本書いてオーナーへメール
 // Schedule: "0 0 * * 3"
 // メールにHTML整形済み記事 + アイキャッチ画像を添付 → コピペですぐ投稿できる
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
@@ -25,7 +25,7 @@ const TOPICS = [
 ];
 
 async function generateNote(topic) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const baseSystem = `あなたはFineme代表「でお」（note名義「抜けアドバイザー」）。元・非モテ→現役モデル。一人称は「僕」。
 
 【この文章の根本的な立場（最重要）】

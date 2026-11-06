@@ -8,7 +8,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { memberAuth } from '@/lib/provider-members';
 import { IMPORT_TYPES, missingRequired, guessNameColumns } from '@/lib/import-schema';
 
-const MODEL = 'claude-sonnet-4-6';
+// 店舗の管理画面の機能は Claude Haiku（渡邉判断 2026-11-06：APIの消費を抑える。振り分けの考え方は lib/ai.js）
+const MODEL = 'claude-haiku-4-5-20251001';
 
 function schemaText() {
   return Object.entries(IMPORT_TYPES).map(([k, t]) => `■ ${k}（${t.label}：${t.help}）\n${t.fields.map(([f, l]) => `  - ${f}: ${l}`).join('\n')}`).join('\n');

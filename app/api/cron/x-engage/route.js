@@ -7,7 +7,7 @@
 // Schedule: "0 0 * * *"
 
 import crypto from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { loadMonth, addUsage, allowedReads, estCost, MONTHLY_CAP, ALERT_AT } from '../_x-budget';
 import { getSupabase } from '@/lib/supabase';
 
@@ -250,7 +250,7 @@ export async function GET(request) {
   targets = targets.slice(0, MAX_DRAFTS);
 
   // ── 下書き生成（投稿はしない）。並列生成で60秒制限に収める ──
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const results = await Promise.all(targets.map(async (t) => {
     const reply = await draftReply(client, t.text);
     return reply === 'SKIP' ? null : { ...t, reply };

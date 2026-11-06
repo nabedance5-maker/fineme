@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { YoutubeTranscript } from 'youtube-transcript';
 import { NextResponse } from 'next/server';
 import { DRAMA_PHILOSOPHY } from '@/lib/brand-philosophy';
@@ -9,7 +9,7 @@ function checkAdminKey(request) {
 }
 
 function getClient() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return aiClient('free');
 }
 
 async function fetchTranscript(videoId) {

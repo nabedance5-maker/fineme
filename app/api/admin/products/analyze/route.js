@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 
 const AXIS_CONCERNS = {
   skin: ['乾燥肌','脂性肌（オイリー）','混合肌','普通肌','敏感肌','肌タイプがわからない','毛穴','ニキビ・吹き出物','くすみ','赤み','乾燥・カサつき','テカリ','シミ・そばかす','ハリ・弾力不足','色ムラ','ひげが薄い（青みがほとんど残らない）','ひげが濃い（翌日に青みが残る）','肌をプロに診断してもらったことがない'],
@@ -58,7 +58,7 @@ ${searchSnippets ? `\n参考情報:\n${searchSnippets}\n` : ''}
 target_concernsは以下の語彙リストから最大5個選んでください（リスト外の文字列は使わない）:
 ${axisVocab}`;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 300,

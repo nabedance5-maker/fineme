@@ -4,7 +4,7 @@
 // 答えとして Fineme が拾われる受け皿を広げるため（2026-11-02）。
 // お客様向けの記事（features テーブル・/feature・/belle/journal）とは別のテーブル（biz_guides）で管理し、混ぜない。
 // ?dry=1 で生成だけして保存しない（確認用）。?audience=shop|partner で対象を固定できる。
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { slugify, uniqueSlug } from '@/lib/slugify';
@@ -182,7 +182,7 @@ export async function GET(request) {
   const usedKeys = new Set(rows.map((r) => r.topic_key).filter(Boolean));
   const topic = (audience === 'shop' ? SHOP_TOPICS : PARTNER_TOPICS).find(([k]) => !usedKeys.has(k)) || null;
 
-  const client = new Anthropic();
+  const client = aiClient('free');
   const { article, error: genError } = await generate(client, { audience, topic, existing });
   if (genError) return Response.json({ error: genError, audience, topic: topic?.[0] || null }, { status: 500 });
 

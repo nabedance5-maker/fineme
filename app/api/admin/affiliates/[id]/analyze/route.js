@@ -1,6 +1,6 @@
 // POST /api/admin/affiliates/[id]/analyze
 // アフィリエイトプロフィールのAI分析（運営管理キーで認証）
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -111,7 +111,7 @@ personality_tags（このサービスに向いているユーザーの特徴 —
 summary（このサービスが誰に向いているかを1〜2文で。ユーザーに見せるための文章）:
 例: "マッチングアプリを始めたばかりで外見に自信がない30代男性に向いています。過去に挫折経験があっても、一から一緒に取り組むスタイルなので安心して始められます。"`;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = aiClient('free');
   let aiResult;
   try {
     const message = await client.messages.create({

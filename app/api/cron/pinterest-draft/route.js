@@ -6,7 +6,7 @@
 // PINTEREST_ACCESS_TOKEN / PINTEREST_BOARD_ID が未設定の間は、note-draftと同じ
 // 「メール下書き→でおが手動でPinterest Businessアカウントへコピペ投稿」方式にフォールバックする。
 // でおの手動作業は「Pinterest Businessアカウント作成＋APIトークン発行」の初回1回のみ。
-import Anthropic from '@anthropic-ai/sdk';
+import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -51,7 +51,7 @@ function weekOfYear(d = new Date()) {
 async function generateCopy(source) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = aiClient('free');
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 250,
