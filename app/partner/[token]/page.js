@@ -11,6 +11,8 @@ export default function PartnerPortalPage(props) {
   const params = use(props.params);
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const [copied, setCopied] = useState('');
+  const [payout, setPayout] = useState(null); // 報酬の受け取り口座
+  const [payoutBusy, setPayoutBusy] = useState(false);
 
   useEffect(() => {
     fetch(`/api/partner/${params.token}`)
@@ -18,6 +20,18 @@ export default function PartnerPortalPage(props) {
       .then(data => setState({ loading: false, error: null, data }))
       .catch(() => setState({ loading: false, error: true, data: null }));
   }, [params.token]);
+
+  useEffect(() => {
+    fetch(`/api/partner/${params.token}/payout-account`).then(r => (r.ok ? r.json() : null)).then(setPayout).catch(() => {});
+  }, [params.token]);
+
+  const openPayoutSetup = async () => {
+    setPayoutBusy(true);
+    const r = await fetch(`/api/partner/${params.token}/payout-account`, { method: 'POST' }).then(x => x.json()).catch(() => null);
+    if (r?.url) { location.href = r.url; return; }
+    setPayoutBusy(false);
+    alert(r?.error || '通信に失敗しました');
+  };
 
   const copy = (text, label) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -59,6 +73,27 @@ export default function PartnerPortalPage(props) {
           <button style={btn} onClick={() => copy(partner.referral_code, 'code')}>{copied === 'code' ? 'コピーしました' : 'コードをコピー'}</button>
           <button style={btn} onClick={() => copy(referralUrl, 'url')}>{copied === 'url' ? 'コピーしました' : '申込ページのURLをコピー'}</button>
         </div>
+      </div>
+
+      {/* 報酬の受け取り口座（毎月25日に自動で送金・2026-11-06） */}
+      <div style={{ ...card, marginTop: '16px' }}>
+        <div style={label}>報酬の受け取り口座</div>
+        {!payout ? <p style={{ ...muted, margin: '6px 0 0' }}>確認しています…</p> : payout.account === 'partner' || payout.account === 'store' ? (
+          <>
+            <div style={{ fontSize: '15px', fontWeight: 800, margin: '4px 0 6px', color: '#34d399' }}>登録済み</div>
+            <p style={{ ...muted, margin: 0, lineHeight: 1.7 }}>
+              {payout.account === 'store' ? 'あなたのお店の受け取り口座（Finemeの管理画面で登録した口座）へ送金します。' : ''}
+              毎月25日に、前月までの報酬をまとめて自動で送金します。銀行口座への入金は、Stripeの入金予定に沿って自動で行われます。
+            </p>
+            {payout.account === 'partner' && <button style={{ ...btn, marginTop: '10px', flex: 'none' }} disabled={payoutBusy} onClick={openPayoutSetup}>{payoutBusy ? '開いています…' : '登録内容を確認・変更する'}</button>}
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: '15px', fontWeight: 800, margin: '4px 0 6px', color: '#fbbf24' }}>{payout.account === 'pending' ? '登録の途中です' : 'まだ登録されていません'}</div>
+            <p style={{ ...muted, margin: 0, lineHeight: 1.7 }}>報酬は、ここで登録した口座へ毎月25日に自動で送金します。登録までの報酬は保留され、登録後の送金日にまとめてお送りします。登録は決済サービスのStripeの画面で行います（本人確認と銀行口座の入力・5分ほど）。</p>
+            <button style={{ ...btn, marginTop: '10px', flex: 'none', background: '#818cf8', color: '#0d1117', borderColor: '#818cf8' }} disabled={payoutBusy} onClick={openPayoutSetup}>{payoutBusy ? '開いています…' : payout.account === 'pending' ? '登録を続ける' : '受け取り口座を登録する'}</button>
+          </>
+        )}
       </div>
 
       {collaborator ? (
@@ -131,7 +166,7 @@ export default function PartnerPortalPage(props) {
               </table>
             </div>
           )}
-          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の10%、自分が紹介した契約者は初月に90%を別途記録します。支払いは月末締め・翌月末払いです。返金があった分は取り消しまたは翌月以降と相殺します。</p>
+          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の10%、自分が紹介した契約者は初月に90%を別途記録します。支払いは月末締めで、翌月25日に受け取り口座へ自動で送金します。返金があった分は取り消しまたは翌月以降と相殺します。</p>
         </>
       ) : (
         <>

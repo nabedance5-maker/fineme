@@ -57,7 +57,7 @@ export default function AdminCollaboratorRewardsPage() {
     <div style={{ maxWidth: '980px', margin: '0 auto', padding: '32px 20px', color: '#111' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>協業者の報酬</h1>
       <p style={{ fontSize: '13px', color: '#111', margin: '0 0 20px' }}>
-        掲載2ヶ月目以降の全契約者の受領額(税抜)の10%と、協業者本人が紹介した契約者の初月90%。月末締め・翌月末払い（手動振込）。
+        掲載2ヶ月目以降の全契約者の受領額(税抜)の10%と、協業者本人が紹介した契約者の初月90%。月末締め・翌月25日に受け取り口座へ自動送金（失敗した時は「営業パートナー」の画面から送り直す）。
         協業者は「営業パートナー」画面で指定します。
       </p>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>

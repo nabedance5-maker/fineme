@@ -52,6 +52,11 @@ export default function AdminSalesPartnersPage() {
           <button id="sp-new-submit">新規登録</button>
         </div>
         <div id="sp-issued"></div>
+        <div class="sp-row" style="display:block;">
+          <div class="sp-name" style="margin-bottom:4px;">報酬の自動送金</div>
+          <p class="sp-meta" style="margin:0 0 8px;">毎月25日に、前月までの未払いの報酬を各パートナーの受け取り口座へ自動で送金します（結果は運営にメールで届きます）。口座が未登録の人の分は保留され、登録後の送金日にまとめて送られます。自動送金が失敗した時だけ、下のボタンで送り直してください。</p>
+          <button class="sp-btn-ghost" id="sp-payout-now">前月までの未払いを今すぐ送金</button>
+        </div>
         <div id="sp-list"><p style="color:#111;">読み込み中…</p></div>
       </div>
     `;
@@ -64,6 +69,8 @@ export default function AdminSalesPartnersPage() {
         const res = await fetch('/api/admin/sales-partners', { headers: h() });
         if (!res.ok) { listEl.innerHTML = `<p style="color:#b91c1c;">読み込み失敗（${res.status}）。管理APIキーを確認してください。</p>`; return; }
         const data = await res.json();
+        // 報酬の受け取り口座・未払い額（毎月25日に自動送金。2026-11-06）
+        const pay = await fetch('/api/admin/partner-payouts', { headers: h() }).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
         if (!Array.isArray(data) || data.length === 0) { listEl.innerHTML = '<p style="color:#111;">まだ営業パートナーが登録されていません。</p>'; return; }
 
         listEl.innerHTML = data.map(p => {
@@ -74,6 +81,9 @@ export default function AdminSalesPartnersPage() {
           const badge = p.status === 'active'
             ? '<span class="badge badge-green">有効</span>'
             : '<span class="badge badge-gray">停止中</span>';
+          const ps = pay[p.id] || {};
+          const ACCOUNT = { partner: '受け取り口座：登録済み', store: '受け取り口座：お店の口座へ送金', pending: '受け取り口座：登録の途中', none: '受け取り口座：未登録' };
+          const payLine = `<span class="sp-meta">${ACCOUNT[ps.account] || ACCOUNT.none}${ps.pending ? `・未払い ¥${ps.pending.toLocaleString()}` : ''}${ps.last ? `・直近の送金 ${esc(ps.last.payout_month)} ¥${ps.last.amount.toLocaleString()}${ps.last.status === 'failed' ? `（失敗：${esc(ps.last.error || '')}）` : ''}` : ''}</span>`;
           const portalUrl = `${location.origin}/partner/${p.access_token}`;
           const joinUrl = `${location.origin}/join/${encodeURIComponent(p.referral_code)}`;
           return `
@@ -81,6 +91,7 @@ export default function AdminSalesPartnersPage() {
               <div style="flex:1;min-width:160px;">
                 <div class="sp-name">${esc(p.name)} <span class="sp-code">${esc(p.referral_code)}</span>${collabBadge}</div>
                 <div style="margin-top:2px;">${providerLabel}${p.email ? ` <span class="sp-meta">・${esc(p.email)}</span>` : ''}</div>
+                <div style="margin-top:2px;">${payLine}</div>
               </div>
               ${badge}
               <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
@@ -122,6 +133,17 @@ export default function AdminSalesPartnersPage() {
         listEl.innerHTML = `<p style="color:#b91c1c;">読み込みエラー：${esc(e.message)}</p>`;
       }
     }
+
+    document.getElementById('sp-payout-now').addEventListener('click', async e => {
+      if (!confirm('前月までの未払いの報酬を、受け取り口座が登録済みのパートナーへ今すぐ送金します。よろしいですか？')) return;
+      e.target.disabled = true;
+      const r = await fetch('/api/admin/partner-payouts', { method: 'POST', headers: h() }).then(x => x.json()).catch(() => null);
+      e.target.disabled = false;
+      if (!r || r.error) { alert('送金できませんでした：' + (r?.error || '通信エラー')); return; }
+      const yen = n => `¥${n.toLocaleString()}`;
+      alert([`送金済み ${r.paid.length}件${r.paid.length ? '：' + r.paid.map(x => `${x.name} ${yen(x.amount)}`).join('、') : ''}`, `保留（口座未登録） ${r.held.length}件${r.held.length ? '：' + r.held.map(x => `${x.name} ${yen(x.amount)}`).join('、') : ''}`, `失敗 ${r.failed.length}件${r.failed.length ? '：' + r.failed.map(x => `${x.name}（${x.error}）`).join('、') : ''}`].join('\n'));
+      load();
+    });
 
     document.getElementById('sp-new-submit').addEventListener('click', async () => {
       const name = document.getElementById('sp-new-name').value.trim();

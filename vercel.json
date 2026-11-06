@@ -30,6 +30,7 @@
     { "path": "/api/cron/grant-subscription-tickets", "schedule": "0 5 * * *" },
     { "path": "/api/cron/shift-deadline", "schedule": "0 0 * * *" },
     { "path": "/api/cron/shift-auto-confirm", "schedule": "0 21 * * *" },
+    { "path": "/api/cron/partner-payouts", "schedule": "0 1 25 * *" },
     { "path": "/api/cron/uptime-check", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/broadcasts", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/biz-guide", "schedule": "30 18 * * 2" }
