@@ -176,7 +176,9 @@ export default function ProviderInquiryPage() {
     if (planSel && ['A', 'B', 'C'].includes(planParam)) planSel.value = planParam;
 
     const refCode = readRef();
+    const refInput = document.getElementById('referralCode');
     if (refCode) {
+      if (refInput) refInput.value = refCode;
       const noteEl = document.getElementById('inqReferralNote');
       if (noteEl) {
         noteEl.textContent = `紹介コード「${refCode}」が適用されます。`;
@@ -192,7 +194,9 @@ export default function ProviderInquiryPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'サーバーエラー');
+        const e = new Error(err.error || 'サーバーエラー');
+        e.field = err.field;
+        throw e;
       }
     }
 
@@ -242,7 +246,7 @@ export default function ProviderInquiryPage() {
           meetingWish: fd.get('meetingWish')?.toString().trim(),
           message: fd.get('message')?.toString(),
           source: fd.get('source')?.toString() || undefined,
-          referralCode: refCode || undefined
+          referralCode: fd.get('referralCode')?.toString().trim() || undefined
         };
         const consent = document.getElementById('consent')?.checked;
         if (!data.bizName || !data.contactName || !data.email || !consent) {
@@ -271,6 +275,12 @@ export default function ProviderInquiryPage() {
           statusEl.style.color = '#065f46';
           form.reset();
         } catch (err) {
+          if (err.field === 'referralCode') {
+            statusEl.textContent = err.message;
+            statusEl.style.color = '#b91c1c';
+            document.getElementById('referralCode')?.focus();
+            return;
+          }
           statusEl.textContent = '送信に失敗しました。時間をおいて再度お試しください。';
           statusEl.style.color = '#b91c1c';
         } finally {
@@ -291,7 +301,7 @@ export default function ProviderInquiryPage() {
           category: fd.get('category')?.toString() || '',
           contactPref: fd.get('contactPref')?.toString() || '',
           message: fd.get('message')?.toString() || '',
-          referralCode: refCode || ''
+          referralCode: fd.get('referralCode')?.toString().trim() || ''
         };
         const text = summarize(data);
         navigator.clipboard.writeText(text).then(() => {
@@ -391,6 +401,11 @@ export default function ProviderInquiryPage() {
                   {INQUIRY_SOURCES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                 </select>
               </div>
+            </div>
+
+            <div className="inq-row-full inq-field">
+              <label className="inq-label" htmlFor="referralCode">紹介コード（紹介を受けた方のみ・任意）</label>
+              <input className="inq-input" id="referralCode" name="referralCode" autoComplete="off" maxLength={40} placeholder="例: FN001" />
             </div>
 
             <div className="inq-row-full inq-field">

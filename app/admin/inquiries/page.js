@@ -112,12 +112,24 @@ export default function AdminInquiriesPage() {
             <div class="cluster" style="gap:8px">
               ${!it.provider_id && it.category !== 'sales_partner' ? '<button class="btn btn-ghost" data-act="signup-url">登録ページのURLをコピー</button><button class="btn btn-ghost" data-act="create">お店の代わりに登録する</button>' : ''}
               <button class="btn btn-ghost" data-act="done">${isDone ? '未対応に戻す' : '対応済みにする'}</button>
+              <button class="btn btn-ghost" data-act="ref">${it.referral_code ? '紹介コードを直す' : '紹介コードを入れる'}</button>
               <button class="btn btn-ghost" data-act="copy">内容をコピー</button>
               <button class="btn btn-ghost" data-act="delete" style="color:#b91c1c">削除</button>
             </div>
           </div>`;
         tr2.appendChild(td2);
 
+        // 紹介コードの入れ忘れ・入れ間違いを直す（2026-11-06）。アカウント作成済みならお店の紹介者も直り、過去の報酬も記録し直す
+        td2.querySelector('[data-act="ref"]').addEventListener('click', async () => {
+          const v = prompt('紹介コード（例：FN001）。空にすると紹介なしになります', it.referral_code || '');
+          if (v === null) return;
+          const res = await fetch('/api/admin/inquiries', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: it.id, referral_code: v }) });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(d.error || '直せませんでした'); return; }
+          it.referral_code = d.referral_code;
+          if (d.note) alert(d.note);
+          render();
+        });
         td2.querySelector('[data-act="done"]').addEventListener('click', async () => {
           const newStatus = isDone ? 'new' : 'done';
           await fetch('/api/admin/inquiries', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: it.id, status: newStatus }) });

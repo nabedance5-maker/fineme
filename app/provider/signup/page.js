@@ -45,6 +45,7 @@ const CSS = `
 export default function ProviderSignupPage() {
   const [form, setForm] = useState({ bizName: '', contactName: '', email: '', phone: '', category: '', desiredPlan: 'B', website: '' });
   const [ref, setRef] = useState('');
+  const [refErr, setRefErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
@@ -60,13 +61,13 @@ export default function ProviderSignupPage() {
 
   async function submit(e) {
     e.preventDefault();
-    setError('');
+    setError(''); setRefErr('');
     if (!form.bizName.trim() || !form.contactName.trim() || !form.email.trim() || !form.phone.trim() || !form.category) { setError('必須の項目を入れてください'); return; }
     setBusy(true);
     try {
-      const res = await fetch('/api/provider/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, ref: ref || undefined }) });
+      const res = await fetch('/api/provider/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, ref: ref.trim() || undefined }) });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(d.error || '登録できませんでした'); setBusy(false); return; }
+      if (!res.ok) { if (d.field === 'ref') setRefErr(d.error); else setError(d.error || '登録できませんでした'); setBusy(false); return; }
       setDone({ email: form.email.trim(), warn: d.invite_sent ? '' : d.error });
     } catch {
       setError('通信に失敗しました。電波のよい場所でもう一度お試しください');
@@ -80,7 +81,7 @@ export default function ProviderSignupPage() {
       <div className="su-wrap">
         <p className="su-eyebrow">STORE SIGN UP</p>
         <h1 className="su-title">お店の登録</h1>
-        <p className="su-lead">すでにFinemeの導入を決めているお店向けの登録ページです。まずは話を聞いてみたい方は、<a href={ref ? `/provider/inquiry?ref=${encodeURIComponent(ref)}` : '/provider/inquiry'}>オンライン相談</a>からお申し込みください。</p>
+        <p className="su-lead">すでにFinemeの導入を決めているお店向けの登録ページです。まずは話を聞いてみたい方は、<a href={ref.trim() ? `/provider/inquiry?ref=${encodeURIComponent(ref.trim())}` : '/provider/inquiry'}>オンライン相談</a>からお申し込みください。</p>
 
         {done ? (
           <div className="su-card su-done" role="status">
@@ -120,7 +121,10 @@ export default function ProviderSignupPage() {
               </label>
             </div>
             <label className="su-hp" aria-hidden="true">ウェブサイト<input tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} /></label>
-            {ref && <p className="su-note">紹介コード「{ref}」が適用されます。</p>}
+            <label className="su-field"><span className="su-label">紹介コード（紹介を受けた方のみ・任意）</span>
+              <input className="su-input" value={ref} onChange={e => { setRef(e.target.value); setRefErr(''); }} autoComplete="off" maxLength={40} placeholder="例：FN001" aria-invalid={!!refErr} />
+              {refErr && <span className="su-err" role="alert">{refErr}</span>}
+            </label>
             {error && <p className="su-err" role="alert">{error}</p>}
             <button type="submit" className="su-btn" disabled={busy}>{busy ? '登録しています…' : '登録して、パスワード設定のメールを受け取る'}</button>
             <p className="su-note">登録しただけでは料金はかかりません。月額は、管理画面でプランをお申し込みいただいた日からです。<a href="/terms-provider" target="_blank" rel="noopener noreferrer">契約者利用規約</a>・<a href="/privacy" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a></p>

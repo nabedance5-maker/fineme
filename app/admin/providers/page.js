@@ -186,6 +186,7 @@ export default function AdminProvidersPage() {
       if (res.ok) {
         const result = await res.json();
         modal.style.display = 'none'; load();
+        if (id && result.referrer_note) alert(result.referrer_note);
         if (!id) alert(result.invite_sent ? '登録しました。お店にパスワード設定のメールを送りました' : `登録しました。ただしメールを送れませんでした（${result.invite_error || '不明'}）。一覧の「ログイン案内を送り直す」から送ってください`);
       } else { const err = await res.json(); alert('エラー: ' + (err.error || '不明')); }
     });
@@ -304,7 +305,7 @@ export default function AdminProvidersPage() {
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />関係性の問題</label>
                 </div>
               </div>
-              <div className="form-field"><label>紹介者コード（この契約者を紹介した人のFN番号）</label><input name="referred_by" placeholder="例: FN001" /></div>
+              <div className="form-field"><label>紹介者コード（この契約者を紹介した人のFN番号。あとから入れても、これまでのお支払いから紹介報酬が記録されます）</label><input name="referred_by" placeholder="例: FN001" /></div>
               <input type="hidden" name="referral_code" value="" />
             </div>
             <input type="hidden" name="_id" />

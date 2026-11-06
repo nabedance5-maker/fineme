@@ -2,6 +2,7 @@
 // POST /api/admin/providers - 掲載者新規登録（パスワード設定リンクのメールを自動送信。inquiry_id があれば、その問い合わせと結びつける）
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
+import { checkReferralCode } from '@/lib/referral-code';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -44,6 +45,10 @@ export async function POST(request) {
       return Response.json({ error: 'メールアドレスは必須です（契約者ログインに使用します）' }, { status: 400 });
     }
 
+    // 紹介者コードは登録済みの営業パートナーのものか確かめる（2026-11-06）
+    const rc = await checkReferralCode(supabase, referred_by);
+    if (rc.error) return Response.json({ error: rc.error }, { status: 400 });
+
     // providersテーブルに登録
     const { data, error } = await supabase
       .from('providers')
@@ -58,7 +63,7 @@ export async function POST(request) {
         billing_status: plan === 'special' ? 'active' : null,
         published: false,
         referral_code: referral_code || null, // nullならトリガーで自動生成
-        referred_by: referred_by || null,
+        referred_by: rc.code,
         suitable_triggers: suitable_triggers || [],
         handles_failure_patterns: handles_failure_patterns || [],
         provider_style: provider_style || null,

@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { checkReferralCode } from '@/lib/referral-code';
+import { setProviderReferrer } from '@/lib/collaborator-rewards';
 
 function getSupabase() {
   return createClient(
@@ -34,7 +36,21 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const supabase = getSupabase();
-  const { id, status } = await request.json();
+  const body = await request.json();
+  const { id, status } = body;
+  // 紹介コードを直す（2026-11-06）。アカウント作成済みなら、お店の紹介者（providers.referred_by）も直す
+  if (id && body.referral_code !== undefined) {
+    const rc = await checkReferralCode(supabase, body.referral_code);
+    if (rc.error) return NextResponse.json({ error: rc.error }, { status: 400 });
+    const { data: inq, error: e1 } = await supabase.from('provider_inquiries').update({ referral_code: rc.code }).eq('id', id).select('provider_id').single();
+    if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
+    let note = '';
+    if (inq?.provider_id) {
+      const r = await setProviderReferrer(supabase, inq.provider_id, rc.code);
+      note = r.note;
+    }
+    return NextResponse.json({ ok: true, referral_code: rc.code, note });
+  }
   if (!id || !status) return NextResponse.json({ error: 'id and status required' }, { status: 400 });
 
   const { error } = await supabase

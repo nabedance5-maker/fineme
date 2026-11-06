@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { normalizeSource, sourceLabel } from '@/lib/inquiry-source';
 import { NextResponse } from 'next/server';
 import { withAudit } from '@/lib/activity-log';
+import { checkReferralCode } from '@/lib/referral-code';
 
 function getSupabaseClient() {
   return createClient(
@@ -41,6 +42,9 @@ async function __POST(request) {
     if (!category) {
       return NextResponse.json({ error: 'カテゴリを選択してください（当てはまらない場合は「その他」）' }, { status: 400 });
     }
+    // 紹介コード：専用ページ・クッキーから入ったもの、またはお店が手で入れたもの（2026-11-06）
+    const rc = await checkReferralCode(supabase, referralCode);
+    if (rc.error) return NextResponse.json({ error: rc.error, field: 'referralCode' }, { status: 400 });
 
     const { error } = await supabase.from('provider_inquiries').insert({
       biz_name: bizName,
@@ -50,7 +54,7 @@ async function __POST(request) {
       category: category || null,
       contact_pref: contactPref || 'email',
       message: message || null,
-      referral_code: referralCode || null,
+      referral_code: rc.code,
       desired_plan: desiredPlan,
       meeting_wish: meetingWish,
       source,
@@ -81,7 +85,7 @@ async function __POST(request) {
               phone ? `電話: ${phone}` : '',
               `カテゴリ: ${categoryLabel}`,
               `希望連絡方法: ${contactPrefLabel}`,
-              referralCode ? `紹介コード: ${referralCode}` : '',
+              rc.code ? `紹介コード: ${rc.code}` : '',
               desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
               meetingWish ? `オンライン相談の希望日時: ${meetingWish}` : '',
               source ? `知ったきっかけ: ${sourceLabel(source)}` : '',

@@ -6,6 +6,7 @@ import { Resend } from 'resend';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
+import { checkReferralCode } from '@/lib/referral-code';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -20,10 +21,16 @@ async function __POST(request) {
   const email = str(body.email, 120).toLowerCase();
   const category = CATEGORIES.includes(body.category) ? body.category : null;
   const plan = ['A', 'B', 'C'].includes(body.desiredPlan) ? body.desiredPlan : 'A';
-  const ref = /^[A-Za-z0-9_-]{1,40}$/.test(body.ref || '') ? body.ref : null;
   if (!bizName || !contactName || !email || !phone || !category) return Response.json({ error: '必須の項目を入れてください' }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: 'メールアドレスの形を確かめてください' }, { status: 400 });
   if (phone.replace(/\D/g, '').length < 10) return Response.json({ error: '電話番号は10桁以上の数字で入れてください' }, { status: 400 });
+
+  // 紹介コード：URL・クッキーから入ったもの、またはお店が手で入れたもの（2026-11-06）
+  const rc = await checkReferralCode(supabase, body.ref);
+  if (rc.error) return Response.json({ error: rc.error, field: 'ref' }, { status: 400 });
+  // 先にオンライン相談を申し込んでいたお店は、その時の紹介コードを引き継ぐ（相談のあと別の端末・ページから登録しても消えない）
+  const { data: inq } = await supabase.from('provider_inquiries').select('id, referral_code').ilike('email', email).is('provider_id', null).order('created_at', { ascending: false }).limit(1);
+  const ref = rc.code || inq?.[0]?.referral_code || null;
 
   const { data: dup } = await supabase.from('providers').select('id').ilike('email', email).limit(1);
   if (dup?.length) return Response.json({ error: 'このメールアドレスは、すでにお店として登録されています。ログイン画面からお入りください（パスワードを忘れた時は「パスワードを忘れた方」から設定し直せます）', code: 'exists' }, { status: 409 });
@@ -36,9 +43,8 @@ async function __POST(request) {
   if (error) return Response.json({ error: '登録できませんでした。時間をおいてもう一度お試しください' }, { status: 500 });
 
   // 担当者の連絡先を問い合わせに残す（オンライン相談を申し込んでいた方は、その問い合わせに結びつける）
-  const { data: inq } = await supabase.from('provider_inquiries').select('id').ilike('email', email).is('provider_id', null).order('created_at', { ascending: false }).limit(1);
   if (inq?.length) {
-    await supabase.from('provider_inquiries').update({ provider_id: provider.id, status: 'done' }).eq('id', inq[0].id);
+    await supabase.from('provider_inquiries').update({ provider_id: provider.id, status: 'done', referral_code: ref }).eq('id', inq[0].id);
   } else {
     await supabase.from('provider_inquiries').insert({
       biz_name: bizName, contact_name: contactName, email, phone, category, contact_pref: 'email',

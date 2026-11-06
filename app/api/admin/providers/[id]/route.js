@@ -2,6 +2,8 @@
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { getSupabase } from '@/lib/supabase';
 import { contractActive } from '@/lib/provider-contract';
+import { checkReferralCode } from '@/lib/referral-code';
+import { setProviderReferrer } from '@/lib/collaborator-rewards';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -25,6 +27,18 @@ export async function PATCH(request, props) {
     'published','admin_hidden','plan','billing_status','billing_started',
     'stripe_customer_id','stripe_subscription_id',
     'suitable_triggers','handles_failure_patterns','provider_style'];
+
+  // 紹介者（紹介コード）の入れ忘れ・入れ間違いを直す（2026-11-06）。過去のお支払いから紹介報酬も記録し直す
+  let referrerNote = '';
+  if (body.referred_by !== undefined) {
+    const { data: cur } = await supabase.from('providers').select('referred_by').eq('id', id).maybeSingle();
+    const rc = await checkReferralCode(supabase, body.referred_by);
+    if (rc.error) return Response.json({ error: rc.error }, { status: 400 });
+    if ((cur?.referred_by || null) !== rc.code) {
+      referrerNote = (await setProviderReferrer(supabase, id, rc.code)).note;
+      await supabase.from('provider_inquiries').update({ referral_code: rc.code }).eq('provider_id', id);
+    }
+  }
 
   const updates = {};
   for (const key of allowed) {
@@ -59,7 +73,7 @@ export async function PATCH(request, props) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data);
+  return Response.json({ ...data, referrer_note: referrerNote });
 }
 
 export async function DELETE(request, props) {
