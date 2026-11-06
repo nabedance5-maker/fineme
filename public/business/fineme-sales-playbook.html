@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fineme 契約者獲得 営業プレイブック</title>
+<title>Fineme 営業の進め方</title>
+<meta name="robots" content="noindex,nofollow">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;background:#060c1a;color:#e8e2d4;line-height:1.8;font-size:15px}
@@ -75,404 +76,348 @@
   #toast{position:fixed;bottom:24px;right:24px;background:#111;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-family:sans-serif;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
 
   @media(max-width:640px){.obj-item{grid-template-columns:1fr}.obj-q{border-right:none;border-bottom:1px solid rgba(232,228,220,0.08)}}
+  .list{list-style:none;display:flex;flex-direction:column;gap:8px;font-family:sans-serif;font-size:14px}
+  .list li{padding-left:16px;position:relative;line-height:1.7}
+  .list li::before{content:'';position:absolute;left:0;top:.75em;width:6px;height:6px;border-radius:50%;background:#c9a84c}
+  .list.ng li::before{background:#f87171}
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .url{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#c9a84c;word-break:break-all}
+  .url a{color:inherit}
+  .note{font-size:13px;color:#b0aaa2;font-family:sans-serif;line-height:1.8;margin-top:10px}
+  .num{font-variant-numeric:tabular-nums}
+  .table-wrap{overflow-x:auto}
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- HERO -->
   <div class="hero">
-    <div class="hero-badge">INTERNAL / SALES PLAYBOOK</div>
-    <h1>Fineme 契約者獲得<br><em>営業プレイブック</em></h1>
-    <div class="hero-sub">誰に・どこで・何を言って・どう動くか。初めての契約者から1,000社へのロードマップ。</div>
+    <div class="hero-badge">FOR SALES PARTNERS</div>
+    <h1>Fineme 営業の進め方<br><em>来たお客様を、常連に変える仕組み</em>を届ける</h1>
+    <p class="hero-sub">営業パートナーの方が、どんなお店に・何を・どう伝えて・申し込みまで進めるか。料金・報酬・やってはいけないことまで、この1ページにまとめています。</p>
     <div class="hero-meta">
-      <span>更新日: 2026-08-07</span>
-      <span>対象フェーズ: Phase1（契約者は補完チャネル・目標10社）</span>
+      <span>更新日: 2026-11-06</span>
+      <span>対象: 営業パートナー・協業者</span>
       <span>作成: 渡邉 英雄</span>
     </div>
   </div>
 
-  <!-- 1. 戦略方針 -->
+  <!-- 1 -->
   <div class="section">
-    <div class="section-title">1. 戦略方針
-      <div class="section-subtitle">なぜ「個人PT・フリーランス特化」から始めるのか</div>
-    </div>
+    <div class="section-title">1. 何を届けるのか</div>
     <div class="card">
-      <p style="line-height:2;margin-bottom:16px">Finemeが最初に狙うべき契約者は<strong style="color:#c9a84c">「大手予約サイトに掲載できない、埋もれた才能」</strong>だ。チェーン店・大手ジムは意思決定が遅く、本部承認が必要で、すでに集客が安定している。動く理由がない。</p>
-      <p style="line-height:2;margin-bottom:16px">一方、個人PTやフリーランス美容師・骨格診断士は：</p>
-      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-family:sans-serif;font-size:14px">
-        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>意思決定が本人1人。「いいね」と思ったら即日登録できる</span></li>
-        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>大手予約サイトに掲載できない（固定店舗なし、個人事業）</span></li>
-        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>集客に常に困っている。新しい流入を求めている</span></li>
-        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>SNSで見つけやすい（Instagram・X・TikTokで発信している）</span></li>
-        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>「変わりたい男性を応援する」思想に共感しやすい</span></li>
-      </ul>
+      <div class="card-title">Fineme は「リピーターを作る」ための店舗運営ツール</div>
+      <p>予約・決済・回数券と会員・顧客カルテ・LINEとメールの配信・売上・スタッフのシフトまでを1か所にまとめ、<strong>AI専属コンサル</strong>が「いま誰に声をかけるべきか」を提案し、そのままLINE送信まで実行できます。</p>
+      <p class="note">伝える軸は「新しいお客様を呼ぶ」ではなく「<strong>一度来たお客様が戻ってこない</strong>」という困りごと。新規の集客はいま使っている予約サイトのままで構いません（併用できます）。Fineme は来たお客様を常連に変える側です。</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="card" style="border-color:rgba(248,113,113,.2)">
-        <div class="card-title" style="color:#f87171">❌ 最初に狙わない層</div>
-        <ul style="list-style:none;font-family:sans-serif;font-size:13px;color:#9ca3af;display:flex;flex-direction:column;gap:6px">
-          <li>チェーン店・フランチャイズジム</li>
-          <li>大手ヘアサロン（大手予約サイト加盟）</li>
-          <li>医療クリニック（医療広告規制が複雑）</li>
-          <li>固定費が高く集客に困っていない店舗</li>
+    <div class="two">
+      <div class="card">
+        <div class="card-title">伝える強み</div>
+        <ul class="list">
+          <li>AIが数字を読んで次の一手を出し、ワンタップで実行まで進む</li>
+          <li>前日の確認連絡・リマインド・誕生日メッセージは自動</li>
+          <li>来店の目安を過ぎたお客様を一覧にして、予約ボタン付きで声かけ</li>
+          <li>回数券も会員プランもチケットでまとめて管理。月会費は自動引き落とし</li>
+          <li>最初の質問に答えると、お店に合う機能だけがONで始まる</li>
+          <li>いまのシステムの顧客データ（CSV）をそのまま取り込める</li>
         </ul>
       </div>
-      <div class="card" style="border-color:rgba(201,168,76,.4)">
-        <div class="card-title">✅ 最初に狙う層</div>
-        <ul style="list-style:none;font-family:sans-serif;font-size:13px;color:#9ca3af;display:flex;flex-direction:column;gap:6px">
-          <li>個人パーソナルトレーナー（業務委託・独立）</li>
-          <li>フリーランス美容師・スタイリスト</li>
-          <li>パーソナルカラー・骨格診断士</li>
-          <li>メンズ眉毛サロン（個人経営）</li>
-          <li>メンズメイクレッスン提供者</li>
-          <li>婚活コーチ・外見改善コンサル</li>
+      <div class="card">
+        <div class="card-title">約束しないこと</div>
+        <ul class="list ng">
+          <li>新しいお客様の送客。Finemeのユーザー基盤はまだ育てている段階</li>
+          <li>売上やリピート率が「必ず上がる」という成果</li>
+          <li>決まっていない機能や値下げ</li>
         </ul>
+        <p class="note">Me Scan（外見の診断）から相性の良いお店にユーザーがつながる仕組みはあります。ただし「伸びしろ」として話し、元が取れる理由は今のお客様のための機能で説明します。</p>
       </div>
     </div>
   </div>
 
-  <!-- 2. ターゲット詳細 -->
+  <!-- 2 -->
   <div class="section">
-    <div class="section-title">2. ターゲット別アプローチ詳細</div>
+    <div class="section-title">2. どんなお店に行くか</div>
     <div class="target-grid">
       <div class="target-card priority-1">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">個人パーソナルトレーナー</div>
-          <span class="tag tag-gold">最優先</span>
-        </div>
-        <div class="target-why">レンタルスペース・出張型で大手予約サイト掲載不可。SNS経由の集客に依存しており、安定した新規流入を切実に求めている。ヒアリング済みで親和性が高い。</div>
-        <div class="target-where">📍 Instagram #パーソナルトレーナー #PT独立 / Xで集客発信 / ジムのレンタルスペース掲示板</div>
+        <div class="target-name">パーソナルジム</div>
+        <div class="target-why">回数券・月会費・体験からの入会・トレーナーのシフトと、使う機能が最も多い。Plan B が合いやすい。</div>
+        <div class="target-where">おすすめ: スタンダード（Plan B）</div>
       </div>
       <div class="target-card priority-1">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">パーソナルカラー・骨格診断士</div>
-          <span class="tag tag-gold">最優先</span>
-        </div>
-        <div class="target-why">Finemeの診断と直結するカテゴリ。診断結果から「骨格診断を受ける」への導線が最も自然。個人運営が多く意思決定が早い。</div>
-        <div class="target-where">📍 Instagram #パーソナルカラー診断 #骨格診断 / ストアカ・タイムチケット出品者 / minne・Creema</div>
+        <div class="target-name">眉毛・ネイル・まつげ・エステ</div>
+        <div class="target-why">来店の間隔がはっきりしていて、休眠の声かけと次回予約が効く。個人〜数人の店舗は決めるのが早い。</div>
+        <div class="target-where">おすすめ: ライト（Plan A）〜 B</div>
       </div>
       <div class="target-card priority-1">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">フリーランス美容師</div>
-          <span class="tag tag-gold">最優先</span>
-        </div>
-        <div class="target-why">面貸し・シェアサロン利用の美容師は大手予約サイト掲載不可。Instagram集客依存でFinemeからの流入に価値を感じやすい。男性カット特化型が特に相性よし。</div>
-        <div class="target-where">📍 Instagram #フリーランス美容師 #面貸し / シェアサロンの掲示板 / Xでの集客投稿</div>
+        <div class="target-name">美容室・メンズサロン</div>
+        <div class="target-why">スタッフ指名・カルテの引き継ぎ・物販がある。物販や自店の公式LINEを使うなら Plan C。</div>
+        <div class="target-where">おすすめ: B 〜 プレミアム（Plan C）</div>
       </div>
       <div class="target-card priority-2">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">メンズ眉毛サロン（個人）</div>
-          <span class="tag tag-blue">高優先</span>
-        </div>
-        <div class="target-why">男性外見改善の入門として需要が急増中。個人経営が多く集客力に課題。Finemeのターゲット層（恋愛に悩む男性）と完全一致。</div>
-        <div class="target-where">📍 Instagram #メンズ眉毛サロン / 予約サイト掲載の小規模店 / 地域ポータル</div>
+        <div class="target-name">外見コンサル・診断・パーソナルカラー</div>
+        <div class="target-why">一人で営業していて、予約と顧客管理をまとめたい方。Finemeの外見診断と分野が近い。</div>
+        <div class="target-where">おすすめ: ライト（Plan A）</div>
       </div>
-      <div class="target-card priority-2">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">メンズメイクレッスン</div>
-          <span class="tag tag-blue">高優先</span>
-        </div>
-        <div class="target-why">需要があるが検索で見つかりにくいサービス。Finemeで「第一印象改善」として掲載することでターゲット層に届く。個人・少人数レッスンが中心。</div>
-        <div class="target-where">📍 ストアカ・タイムチケット / Instagram #メンズメイク / YouTube発信者</div>
+    </div>
+    <div class="two" style="margin-top:14px">
+      <div class="card">
+        <div class="card-title">向いているお店</div>
+        <ul class="list">
+          <li>今のお客様との関係をもっと大事にしたい</li>
+          <li>回数券・会員・次の予約で、通い続けてもらう商売をしている</li>
+          <li>予約・お金・顧客・スタッフの管理を1か所にまとめたい</li>
+          <li>オーナーが自分で決められる（個人〜小規模）</li>
+        </ul>
       </div>
-      <div class="target-card priority-2">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="target-name">婚活・外見改善コンサル</div>
-          <span class="tag tag-blue">高優先</span>
-        </div>
-        <div class="target-why">Finemeの「発揮ステージ」（変容後の活用フェーズ）と直結。変容旅の終盤でサジェストできる。高単価。</div>
-        <div class="target-where">📍 婚活コーチ系X・note / ストアカ / 婚活ポータルサイト出品者</div>
+      <div class="card">
+        <div class="card-title">無理に勧めないお店</div>
+        <ul class="list ng">
+          <li>値引きでの集客だけをしたい</li>
+          <li>新規のお客様の送客だけを期待している</li>
+          <li>本部の承認が必要なチェーン・フランチャイズ</li>
+          <li>医療機関（広告の規制が別にある）</li>
+        </ul>
       </div>
     </div>
   </div>
 
-  <!-- 3. 営業フロー -->
+  <!-- 3 -->
   <div class="section">
-    <div class="section-title">3. 営業フロー（Discovery → 登録完了）</div>
-    <div class="card">
-      <div class="flow">
-        <div class="flow-item">
-          <div class="flow-num">1</div>
-          <div>
-            <div class="flow-title">ターゲット発見</div>
-            <div class="flow-desc">Instagram・X・ストアカ等で「#パーソナルトレーナー 集客」「#骨格診断 男性」等で検索。個人運営・男性向けの発信をしているアカウントをリスト化。</div>
-            <div class="flow-action">→ 1日10〜20件をスプレッドシートに追加。氏名・URL・カテゴリ・フォロワー数・直近投稿を記録</div>
-          </div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-num">2</div>
-          <div>
-            <div class="flow-title">ウォームアップ（任意・効果大）</div>
-            <div class="flow-desc">DM送信前に投稿にいいね・コメント（本物の感想）を2〜3日行う。「突然のDM」より「知っている人からの連絡」に変える。</div>
-            <div class="flow-action">→ コメント例:「この投稿すごく共感しました。男性の外見改善をサポートされてるんですね」</div>
-          </div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-num">3</div>
-          <div>
-            <div class="flow-title">初回DM送信</div>
-            <div class="flow-desc">「返信率を上げるDM」の鉄則: 短く・具体的に・相手目線で。自分の紹介より「相手にどんな価値があるか」を先に言う。</div>
-            <div class="flow-action">→ 下記「DM文面テンプレート」参照</div>
-          </div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-num">4</div>
-          <div>
-            <div class="flow-title">返信・ヒアリング</div>
-            <div class="flow-desc">返信があったら「詳しく聞きたい」という反応が多い。資料URLを送りつつ、簡単なヒアリングを行う（どんな客層・今の集客課題・単価帯）。</div>
-            <div class="flow-action">→ ご提案資料のURLを共有: https://www.fineme.me/business/store-saas-pitch-deck.html（営業担当が商談で見せるときは末尾に ?sales=1 を付けると営業メモが出る。店舗に送るURLには付けない）</div>
-          </div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-num">5</div>
-          <div>
-            <div class="flow-title">登録誘導</div>
-            <div class="flow-desc">「予約が来たら払う保険」ではなく「プロフィール管理・顧客カルテ・リマインド等が揃ったSaaSツール」として伝える。登録料¥1,100は当面無料、月額（ライト¥5,000／プレミアム¥10,000）は登録した月から課金される点を先に伝えて誠実に。難しい設定は一緒に行うオファーも有効。</div>
-            <div class="flow-action">→ https://www.fineme.me/provider/join に誘導</div>
-          </div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-num">6</div>
-          <div>
-            <div class="flow-title">登録後フォロー</div>
-            <div class="flow-desc">登録完了後24時間以内にDMで「登録ありがとうございます！プロフィールを充実させると掲載順位が上がります」とフォロー。AIプロフィール生成ボタンを案内。</div>
-            <div class="flow-action">→ オンボーディングページ（/provider/onboarding）に自動誘導されているはず</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. DM文面テンプレート -->
-  <div class="section">
-    <div class="section-title">4. DM文面テンプレート
-      <div class="section-subtitle">各プラットフォーム・ターゲット別。コピーしてそのまま使える</div>
-    </div>
-
-    <!-- Instagram DM: PT向け -->
-    <div class="script-block">
-      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
-      <div class="script-label">Instagram DM ／ パーソナルトレーナー向け（初回）</div>
-      <div class="script-text">はじめまして、Finemeというサービスを運営している渡邉と申します。
-
-突然のDMで失礼します。○○さんのトレーニング投稿を拝見して、男性の変容にすごく真剣に向き合われているのが伝わってご連絡しました。
-
-Finemeは「恋愛や外見に悩む男性」が診断を受けてサービスを探すプラットフォームで、今まさに個人PTさんとのマッチングを強化しています。
-
-大手予約サイトには掲載できないPTさんでも、Fineme経由でFinemeに興味を持った男性ユーザーに見てもらえる仕組みです。登録料は当面無料でご案内しています。
-
-もしよければ、詳細をご覧いただけますか？（3分で読める資料があります）
-https://www.fineme.me/provider/join
-
-ご検討の程よろしくお願いします！</div>
-      <div class="script-note">※「○○さんの〜投稿を拝見して」の部分は必ず具体的に（「昨日のスクワット投稿」等）。コピペそのままはNG。</div>
-    </div>
-
-    <!-- Instagram DM: 骨格診断士向け -->
-    <div class="script-block">
-      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
-      <div class="script-label">Instagram DM ／ パーソナルカラー・骨格診断士向け</div>
-      <div class="script-text">はじめまして、Finemeというサービスを運営している渡邉と申します。
-
-○○さんの骨格診断の投稿、いつも参考にしています。男性向けにも対応されているんですね！
-
-Finemeは「第一印象を変えたい男性」が骨格・顔型診断を受けてサービスを探すプラットフォームです。診断結果に合わせて○○さんのサービスをサジェストできる仕組みなので、他サービスとは違う層のユーザーに届けられます。
-
-登録料は当面無料でご案内しています。よろしければ詳細をご覧ください。
-https://www.fineme.me/provider/join</div>
-      <div class="script-note">※「診断結果に合わせてサジェスト」は骨格診断士には強い訴求ポイント。Finemeの診断と契約者が繋がっていることを強調。</div>
-    </div>
-
-    <!-- X(Twitter) DM -->
-    <div class="script-block">
-      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
-      <div class="script-label">X（旧Twitter）DM ／ 集客に困っている発信者向け</div>
-      <div class="script-text">はじめまして。Finemeというプラットフォームを運営しています。
-
-○○さんの「男性の外見改善」発信、すごく刺さりました。
-
-Finemeは外見に悩む男性が診断→サービス予約まで完結するサービスで、現在○○さんのような専門家を探しているユーザーが増えています。
-
-登録料は当面無料でご案内しています。もしよければ5分だけ話せませんか？</div>
-      <div class="script-note">※X DMは文字数制限あり（280字）。短く・価値提案を先に。「5分だけ話せませんか」は返信率が上がる。</div>
-    </div>
-
-    <!-- フォローアップ（未返信2〜3日後） -->
-    <div class="script-block">
-      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
-      <div class="script-label">フォローアップ DM ／ 初回DM後2〜3日後（未返信の場合）</div>
-      <div class="script-text">先日ご連絡させていただいた渡邉です。
-
-もしタイミングが合わなかったようでしたら全然大丈夫です！
-
-一点だけお伝えすると、登録料¥1,100は当面無料でご案内しているので、「まず使ってみる」という形でも歓迎しています。
-
-もし気が向いたときにでもご覧いただければ嬉しいです。
-https://www.fineme.me/provider/join</div>
-      <div class="script-note">※フォローアップは1回まで。2回目以降はしつこくなる。「登録料は当面無料」が返信誘引になりやすい。</div>
-    </div>
-
-    <!-- 紹介依頼（掲載者向け） -->
-    <div class="script-block">
-      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
-      <div class="script-label">紹介依頼 DM ／ 既存契約者への同業者紹介お願い</div>
-      <div class="script-text">○○さん、いつもご掲載ありがとうございます！
-
-一つお願いがあるのですが、もし同業や知り合いで「Finemeに向いてそうな方」がいれば、ご紹介いただけませんか？
-
-ご紹介いただいた方が掲載して課金が始まると、○○さんに月¥500の紹介報酬が毎月入り続けます（紹介者が課金している限り継続）。
-
-こちらに専用の紹介リンクがあります：[紹介リンクURL]
-
-よろしくお願いします！</div>
-      <div class="script-note">※既存契約者への紹介依頼は最も低コスト・高効率。特に「気に入ってくれている契約者」に真っ先に送る。</div>
-    </div>
-  </div>
-
-  <!-- 5. 反論対処法 -->
-  <div class="section">
-    <div class="section-title">5. よくある反論と切り返し</div>
-
-    <div class="obj-item">
-      <div class="obj-q">
-        <div class="obj-label q">反論</div>
-        <div class="obj-text">「大手予約サイトで十分です」</div>
-      </div>
-      <div class="obj-a">
-        <div class="obj-label a">切り返し</div>
-        <div class="obj-text">「大手予約サイトは"サービスを探している人"に届きます。Finemeは"変わりたいのにどこから始めれば分からない人"に届きます。客層がまったく違うので、補完関係として考えていただけます。」</div>
-      </div>
-    </div>
-
-    <div class="obj-item">
-      <div class="obj-q">
-        <div class="obj-label q">反論</div>
-        <div class="obj-text">「今は集客に困っていないので」</div>
-      </div>
-      <div class="obj-a">
-        <div class="obj-label a">切り返し</div>
-        <div class="obj-text">「それは素晴らしいですね！月額プランは登録月から課金が始まるツールなので、今すぐ使う予定がないなら無理にはお勧めしません。困りごとが出てきたタイミングでまたお声がけください。」</div>
-      </div>
-    </div>
-
-    <div class="obj-item">
-      <div class="obj-q">
-        <div class="obj-label q">反論</div>
-        <div class="obj-text">「月¥5,000の費用が発生するのは怖い」</div>
-      </div>
-      <div class="obj-a">
-        <div class="obj-label a">切り返し</div>
-        <div class="obj-text">「月額プランは登録月から課金されるので、正直にお伝えします。ただプロフィール管理・顧客カルテ・リマインド配信までまとめて使えるツールとして見ていただくと、月1件の予約で¥5,000は十分回収できる試算です。予約だけが価値ではなく、日々の顧客管理が楽になる分もぜひ見てみてください。」</div>
-      </div>
-    </div>
-
-    <div class="obj-item">
-      <div class="obj-q">
-        <div class="obj-label q">反論</div>
-        <div class="obj-text">「知名度がないサービスは信用できない」</div>
-      </div>
-      <div class="obj-a">
-        <div class="obj-label a">切り返し</div>
-        <div class="obj-text">「おっしゃる通り、まだ始まったばかりです。だから早く登録した契約者さんが最初から露出できる、という機会でもあります。ローンチ直後の予約サイトを早めに使い始めた方が先行優位を取れたのと同じです。」</div>
-      </div>
-    </div>
-
-    <div class="obj-item">
-      <div class="obj-q">
-        <div class="obj-label q">反論</div>
-        <div class="obj-text">「男性のお客さんはあまり来ていない」</div>
-      </div>
-      <div class="obj-a">
-        <div class="obj-label a">切り返し</div>
-        <div class="obj-text">「それがFinemeの強みです。男性ユーザーが"外見を変えたい"という意識がある状態で来るので、サービスへの抵抗感が低く成約率が高い傾向があります。また男性向けの実績を作ることで、口コミで男性客が増えやすい構造にもなります。」</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. KPI・管理 -->
-  <div class="section">
-    <div class="section-title">6. 週次KPIと管理方法</div>
-    <div class="card">
-      <table class="kpi-table">
-        <thead>
-          <tr>
-            <th>指標</th>
-            <th>目標値（フェーズ2初期）</th>
-            <th>計測方法</th>
-          </tr>
-        </thead>
+    <div class="section-title">3. 料金（そのまま説明して大丈夫な数字）</div>
+    <div class="card table-wrap">
+      <table class="kpi-table num">
+        <thead><tr><th>プラン</th><th>月額（税込）</th><th>合うお店</th></tr></thead>
         <tbody>
-          <tr>
-            <td>週間DM送信数</td>
-            <td>30〜50件/週</td>
-            <td>スプレッドシートで記録</td>
-          </tr>
-          <tr>
-            <td>DM返信率</td>
-            <td>10〜20%（5〜10件/週）</td>
-            <td>返信数÷送信数</td>
-          </tr>
-          <tr>
-            <td>資料閲覧率</td>
-            <td>返信者の50%以上</td>
-            <td>provider-pitch PV数（GA4）</td>
-          </tr>
-          <tr>
-            <td>登録転換率</td>
-            <td>資料閲覧者の20〜30%</td>
-            <td>/provider/join へのGA4コンバージョン</td>
-          </tr>
-          <tr>
-            <td>累計契約者数</td>
-            <td>Phase1末で10社（契約者は補完チャネル・主エンジンはMirrorサブスク）</td>
-            <td>Supabase providers テーブル</td>
-          </tr>
-          <tr>
-            <td>初回予約発生率</td>
-            <td>契約者の30%以上が90日以内に初回予約</td>
-            <td>reservations テーブル</td>
-          </tr>
+          <tr><td>PLAN A ライト</td><td>¥5,000</td><td>一人で営業、まず予約と顧客管理をまとめたい</td></tr>
+          <tr><td>PLAN B スタンダード</td><td>¥7,000</td><td>回数券や会員がいる、スタッフがいる</td></tr>
+          <tr><td>PLAN C プレミアム</td><td>¥10,000</td><td>物販がある、お店の公式LINEから送りたい</td></tr>
         </tbody>
       </table>
-    </div>
-    <div class="card" style="margin-top:0">
-      <div class="card-title">管理ツール（シンプルに）</div>
-      <ul style="list-style:none;font-family:sans-serif;font-size:14px;display:flex;flex-direction:column;gap:10px;color:#9ca3af">
-        <li><strong style="color:#e8e2d4">Googleスプレッドシート</strong> — ターゲットリスト管理（氏名・URL・DM日・返信・登録有無・備考）</li>
-        <li><strong style="color:#e8e2d4">Notionまたはメモ</strong> — DM文面のバリエーション管理・反応の良かったパターン記録</li>
-        <li><strong style="color:#e8e2d4">GA4</strong> — /provider/join のCVR・provider-pitchのPV数</li>
-        <li><strong style="color:#e8e2d4">Supabase</strong> — 実際の契約者数・初回予約発生数の確認</li>
+      <ul class="list" style="margin-top:16px">
+        <li>登録料は当面無料。予約の手数料もなし</li>
+        <li>月額は<strong>申し込んだ日から</strong>かかる（無料期間はない）。最初から正直に伝える</li>
+        <li>お客様がオンラインで払ったときだけ、決済手数料4.5%（カード会社の手数料込み）。入金額から差し引かれる</li>
+        <li>プランはいつでも切り替えられる。解約は月末までの手続きで翌月から止まる（当月分の返金はなし）</li>
       </ul>
+      <p class="note">お金の流れを聞かれたら、図で説明したページを見せてください：<span class="url"><a href="https://www.fineme.me/provider/money-flow" target="_blank" rel="noopener">fineme.me/provider/money-flow</a></span></p>
     </div>
   </div>
 
-  <!-- 7. 発信フライホイール（長期） -->
+  <!-- 4 -->
   <div class="section">
-    <div class="section-title">7. 発信フライホイール（契約者が契約者を呼ぶ）</div>
-    <div class="card">
-      <p style="line-height:2;margin-bottom:16px;font-family:sans-serif;font-size:14px;color:#9ca3af">渡邉さんが1人でDMを送り続けることは最初の突破口に過ぎない。目指すのは<strong style="color:#c9a84c">「仕組みで契約者が増える状態」</strong>。以下の3つのフライホイールが回り始めると、アウトバウンド営業の依存度が下がる。</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-        <div style="padding:16px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px">
-          <div style="font-weight:700;color:#c9a84c;margin-bottom:8px;font-family:sans-serif">① 紹介フライホイール</div>
-          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">契約者が契約者を紹介→¥500/月の報酬→もっと紹介したくなる。最低10社が紹介し始めると雪だるまになる。</div>
-        </div>
-        <div style="padding:16px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.2);border-radius:10px">
-          <div style="font-weight:700;color:#60a5fa;margin-bottom:8px;font-family:sans-serif">② SEOフライホイール</div>
-          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">記事290本以上（男性251＋Belle39）→流入増→契約者への送客増→契約者が「効果ある」と口コミ→新規契約者増。記事投入が加速する。</div>
-        </div>
-        <div style="padding:16px;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.2);border-radius:10px">
-          <div style="font-weight:700;color:#4ade80;margin-bottom:8px;font-family:sans-serif">③ SNSフライホイール</div>
-          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">Finemeを紹介したSNS投稿→新規ユーザー流入→契約者への予約増→契約者がFinemeをSNSで紹介→さらに広がる。</div>
+    <div class="section-title">4. 申し込みまでの流れ</div>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-num">1</div>
+        <div>
+          <div class="flow-title">候補を探す</div>
+          <div class="flow-desc">お渡しする営業リストか、ご自身の知り合い・地域のお店から。予約制で、繰り返し通うお客様がいるお店を選びます。</div>
         </div>
       </div>
+      <div class="flow-item">
+        <div class="flow-num">2</div>
+        <div>
+          <div class="flow-title">最初の連絡</div>
+          <div class="flow-desc">短く、相手のお店のことから入る。自分がFinemeの社員ではなく「紹介している立場」であることもはっきり書きます。文面は下の「5. 連絡の文面」をそのお店に合わせて直して使ってください。</div>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">3</div>
+        <div>
+          <div class="flow-title">困りごとを聞く</div>
+          <div class="flow-desc">売り込む前に聞く。「2回目の来店につながらないお客様はいますか」「前日の確認連絡は誰がしていますか」「回数券や月会費はどう管理していますか」「スタッフのシフトはどう組んでいますか」。</div>
+          <div class="flow-action">答えに合う機能だけを紹介する。全部を説明しない</div>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">4</div>
+        <div>
+          <div class="flow-title">資料を見せる</div>
+          <div class="flow-desc">商談用の資料はこちら。末尾に <span class="url">?sales=1</span> を付けて開くと、自分用の営業メモが出ます（お店に送るURLには付けない）。</div>
+          <div class="flow-action url"><a href="https://www.fineme.me/business/store-saas-pitch-deck.html" target="_blank" rel="noopener">fineme.me/business/store-saas-pitch-deck.html</a></div>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">5</div>
+        <div>
+          <div class="flow-title">専用の申込ページを送る</div>
+          <div class="flow-desc">ご自身の管理画面にある「申込ページのURL」（<span class="url">fineme.me/join/あなたの紹介コード</span>）を送ります。ここから相談・登録したお店は、あなたの紹介として記録されます（90日間はほかのページを回ってから申し込んでも引き継がれます）。</div>
+          <div class="flow-action">お店が自分で検索して申し込む場合も、相談フォーム・登録画面の「紹介コード」欄にコードを入れてもらえば紹介になります。入れ忘れても運営で後から直せるので、連絡してください</div>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-num">6</div>
+        <div>
+          <div class="flow-title">申し込みのあと</div>
+          <div class="flow-desc">お店の登録・プランの申し込み・お金のやり取りは、お店と Fineme が直接行います。設定に迷っていたら、管理画面の AI専属コンサルや「Finemeへのご意見」、運営への連絡を案内してください。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="section">
+    <div class="section-title">5. 連絡の文面</div>
+    <p class="muted" style="margin-bottom:16px">【】の中は必ずそのお店に合わせて書き換えてください。コピペのままでは送らない。</p>
+
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">最初の連絡 ／ パーソナルジム向け</div>
+      <div class="script-text">はじめまして、【お名前】と申します。
+【お店の名前】さんの【具体的な投稿・ページの内容】を拝見してご連絡しました。
+
+私はお店向けの運営ツール「Fineme」を紹介する営業パートナーをしています（Finemeの社員ではありません）。
+Finemeは、回数券・月会費・予約・顧客カルテ・LINEでの声かけを1か所にまとめて、AIが「いま声をかけるべきお客様」を教えてくれるツールです。
+
+体験に来た方の入会や、しばらく来ていない会員さんへの声かけで困っていることがあれば、5分ほどお話を聞かせていただけませんか。
+資料はこちらです：https://www.fineme.me/business/store-saas-pitch-deck.html</div>
+      <div class="script-note">ジムは「体験から入会」「休眠会員」「回数券・月会費の管理」が刺さりやすい。</div>
+    </div>
+
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">最初の連絡 ／ 眉毛・ネイル・美容室などのサロン向け</div>
+      <div class="script-text">はじめまして、【お名前】と申します。
+【お店の名前】さんの【具体的な投稿・ページの内容】を拝見してご連絡しました。
+
+お店向けの運営ツール「Fineme」の紹介をしています（営業パートナーとして紹介しており、Finemeの社員ではありません）。
+来店の目安を過ぎたお客様を自動で一覧にして、予約ボタン付きのLINEで声をかけられる、リピーター作りのためのツールです。新規の集客は今の予約サイトのままで併用できます。
+
+「一度来たお客様が次につながらない」と感じることがあれば、一度お話を聞かせていただけますと幸いです。
+資料：https://www.fineme.me/business/store-saas-pitch-deck.html</div>
+      <div class="script-note">サロンは「来店の間隔」「次回予約」「カルテの引き継ぎ」が刺さりやすい。</div>
+    </div>
+
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">話を聞いたあと ／ 申込ページを送る</div>
+      <div class="script-text">本日はお時間をいただきありがとうございました。
+お話に出た【困りごと】は、Finemeの【合う機能】で対応できると思います。
+
+お申し込み・ご相談はこちらのページからできます：
+【あなたの申込ページのURL】
+
+月額は【合うプラン】の¥【金額】（税込）で、お申し込みの日からかかります。登録料は当面無料です。
+お金の流れはこちらに図でまとまっています：https://www.fineme.me/provider/money-flow
+ご確認よろしくお願いいたします。</div>
+      <div class="script-note">料金と「申込日から課金」は必ず書く。あとから知って驚かせない。</div>
+    </div>
+
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">返信がないとき（1回だけ）</div>
+      <div class="script-text">先日ご連絡した【お名前】です。
+お忙しいところ失礼しました。タイミングが合わなければ、このままで大丈夫です。
+
+もし「しばらく来ていないお客様への声かけ」や「予約・回数券の管理」で困ることが出てきたら、いつでもご連絡ください。
+資料だけ置いておきます：https://www.fineme.me/business/store-saas-pitch-deck.html</div>
+      <div class="script-note">追いかけるのは1回まで。断られた後にもう一度連絡しない（禁止事項）。</div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="section">
+    <div class="section-title">6. よく聞かれることと答え方</div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「今の予約サイトで十分です」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「新規の集客はそのまま使ってください。Finemeは来たお客様を常連にする側で、併用できます。他から入った予約もFinemeのカレンダーに入れて、記録を1か所にまとめられます。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「Finemeから新しいお客様は来ますか」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「正直、送客は約束していません。ユーザーはまだ育てている段階です。今のお客様のための機能だけで元が取れるように作っていて、出会いはその上に乗る伸びしろです。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「月額がかかるのが不安」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「申し込んだ日から月額がかかります。その上で、しばらく来ていないお客様が1人戻れば、多くのお店で月額分になります。前日の確認連絡や集計にかけていた時間も減ります。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「機能が多くて使いこなせなさそう」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「最初の質問に答えると、お店に合う機能だけがONで始まります。使わないものはOFFのままでよく、迷ったら画面の端のAIに聞けます。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「今のシステムから移すのが面倒」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「今のシステムから出した顧客・予約・回数券・会員のCSVを、そのまま取り込めます。列の名前が違っても（氏・名が分かれていても）読み取ります。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「お客様が払ったお金はいつ入りますか」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「決済手数料4.5%を差し引いた額が、お店のStripeの受け取り口座に自動で入り、そこから登録した銀行口座へ振り込まれます。返金したときはFinemeの手数料も戻ります。図のページ（/provider/money-flow）で説明できます。」</div></div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q"><div class="obj-label q">聞かれること</div><div class="obj-text">「お店の公式LINEを持っていない」</div></div>
+      <div class="obj-a"><div class="obj-label a">答え方</div><div class="obj-text">「Plan A・Bでは予約やリマインドがFinemeの公式LINEから届くので、なくても使えます。お店独自の公式LINEから送りたい場合はPlan Cです。」</div></div>
+    </div>
+
+    <p class="note">分からない質問には、その場で答えを作らず「確認して折り返します」と伝えて、運営に聞いてください。</p>
+  </div>
+
+  <!-- 7 -->
+  <div class="section">
+    <div class="section-title">7. やってはいけないこと</div>
+    <div class="card">
+      <p class="muted" style="margin-bottom:12px">業務委託契約書 第13条の要約です。違反すると報酬の取り消しや契約の解除の対象になります。</p>
+      <ul class="list ng">
+        <li>内容・料金・効果について、事実と違う説明や大げさな説明をする</li>
+        <li>売上・集客・新規のお客様の送客を保証する、約束する</li>
+        <li>「すぐ解約すればいい」「返金されるから」と申し込ませる</li>
+        <li>強引な勧誘、断られた後の繰り返しの連絡</li>
+        <li>許可なくメール・SNSのメッセージを大量に送る</li>
+        <li>Finemeの名前で契約する、お店からお金を受け取る</li>
+        <li>Finemeの社員・代理人のふりをする。他社や他のお店を悪く言う</li>
+        <li>ほかの人を営業パートナーに誘い、その人の成果から報酬を受け取る</li>
+        <li>この活動に関して、第三者からお金を受け取る</li>
+      </ul>
+      <p class="note">他社のサービス名を出して比べる説明もしないでください。「今お使いの予約サイト」「今のシステム」と言い換えます。</p>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="section">
+    <div class="section-title">8. 報酬</div>
+    <div class="card table-wrap">
+      <table class="kpi-table num">
+        <thead><tr><th>紹介したお店のプラン</th><th>初月（月額の90%）</th><th>2か月目から</th></tr></thead>
+        <tbody>
+          <tr><td>ライト ¥5,000</td><td>¥4,500</td><td>1店舗につき毎月 ¥500</td></tr>
+          <tr><td>スタンダード ¥7,000</td><td>¥6,300</td><td>1店舗につき毎月 ¥500</td></tr>
+          <tr><td>プレミアム ¥10,000</td><td>¥9,000</td><td>1店舗につき毎月 ¥500</td></tr>
+        </tbody>
+      </table>
+      <ul class="list" style="margin-top:16px">
+        <li>毎月25日に、前月までの報酬をまとめて自動で送金します（月末締め）</li>
+        <li>受け取りには、ご自身の管理画面の「報酬の受け取り口座」でStripeへの登録が必要です。登録前の報酬は保留され、登録後の送金日にまとめて送られます</li>
+        <li>お店があとで解約・返金しても、支払い済みの報酬を返す必要はありません。ただし、事実と違う説明・返金を前提にした勧誘・不正な申込みで成立した紹介は報酬の対象外です（契約書 第9条）</li>
+        <li>継続の報酬は、お店の契約が続いている間ずっと続きます</li>
+      </ul>
+      <p class="note">紹介の実績・報酬額・送金の状況は、管理画面（運営からお送りした専用のURL）でいつでも確認できます。協業者の方の報酬は別の契約の条件です。</p>
+    </div>
+  </div>
+
+  <!-- 9 -->
+  <div class="section">
+    <div class="section-title">9. よく使うページ</div>
+    <div class="card table-wrap">
+      <table class="kpi-table">
+        <thead><tr><th>ページ</th><th>使う場面</th></tr></thead>
+        <tbody>
+          <tr><td class="url"><a href="https://www.fineme.me/business/store-saas-pitch-deck.html" target="_blank" rel="noopener">店舗SaaSご案内資料</a></td><td>商談で見せる・送る（自分用の営業メモは ?sales=1）</td></tr>
+          <tr><td class="url">fineme.me/join/あなたの紹介コード</td><td>お店に送る申込ページ。紹介として記録される</td></tr>
+          <tr><td class="url"><a href="https://www.fineme.me/provider/join" target="_blank" rel="noopener">fineme.me/provider/join</a></td><td>お店向けの紹介ページ（申込ページと同じ中身・紹介コードなし）</td></tr>
+          <tr><td class="url"><a href="https://www.fineme.me/provider/money-flow" target="_blank" rel="noopener">fineme.me/provider/money-flow</a></td><td>お客様が払ったお金の流れ・返金・入金時期の説明</td></tr>
+          <tr><td class="url"><a href="https://www.fineme.me/sales-partner" target="_blank" rel="noopener">fineme.me/sales-partner</a></td><td>営業パートナー制度の説明（知り合いに聞かれたとき）</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
 </div>
-
 <div id="toast"></div>
-
 <script>
 function copyScript(btn) {
   const block = btn.closest('.script-block');
