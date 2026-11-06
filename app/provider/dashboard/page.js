@@ -15398,7 +15398,7 @@ export default function ProviderDashboardPage() {
           const host = b.closest('.pos-tx');
           if (host.querySelector('.pos-ref-form')) { host.querySelector('.pos-ref-form').remove(); return; }
           const t = txRows.find(x => x.id === b.dataset.refund);
-          host.insertAdjacentHTML('beforeend', `<div class="pos-ref-form"><span>${yen(t.total_amount)}を取り消します。商品の在庫は戻り、売上からも差し引かれます。${t.payment_method === 'オンライン決済' ? 'オンライン決済（カード）のお金の返金は、Stripeの管理画面で行ってください。' : ''}</span><input placeholder="理由（例：返品・打ち間違い）" maxlength="100"><button type="button" class="btn">取り消す</button></div>`);
+          host.insertAdjacentHTML('beforeend', `<div class="pos-ref-form"><span>${yen(t.total_amount)}を取り消します。商品の在庫は戻り、売上からも差し引かれます。${t.stripe_payment_intent_id ? 'カードで払われた会計なので、お客様のカードへも返金されます（Finemeの決済手数料も戻ります）。' : ''}</span><input placeholder="理由（例：返品・打ち間違い）" maxlength="100"><button type="button" class="btn">取り消す</button></div>`);
           const f = host.querySelector('.pos-ref-form');
           f.querySelector('button').addEventListener('click', async () => {
             const r = await fetch(`/api/provider/pos/transactions/${t.id}`, { method: 'POST', headers: authHeadersPos(), body: JSON.stringify({ action: 'refund', reason: f.querySelector('input').value.trim() }) });
@@ -19498,6 +19498,7 @@ export default function ProviderDashboardPage() {
             <p id="connect-card-text" className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.8 }}>設定状況を確認しています…</p>
             <button type="button" className="btn" id="connect-card-btn" data-stripe-connect-start style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>カード決済の受け取りを設定する（Stripe）</button>
             <button type="button" className="btn btn-ghost" id="connect-dashboard-btn" style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>入金・口座を確認する（Stripe）</button>
+            <a href="/provider/money-flow" target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', fontWeight: 700, color: '#2f4f8f' }}>お客様の代金がいつ・どこへ入るか（お金の流れを図で見る）</a>
           </div>
           <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '14px' }}>
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px' }}>Finemeとのご契約</p>

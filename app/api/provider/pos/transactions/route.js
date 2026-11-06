@@ -21,7 +21,7 @@ export async function GET(request) {
 
   const { data: txs, error } = await supabase
     .from('provider_pos_transactions')
-    .select('id, staff_id, payment_method, payment_key, total_amount, subtotal_amount, discount_amount, discount_label, customer_user_id, customer_manual_id, customer_name, cash_received, status, refunded_at, refund_reason, receipt_no, operator, memo, created_at')
+    .select('id, staff_id, payment_method, payment_key, total_amount, subtotal_amount, discount_amount, discount_label, customer_user_id, customer_manual_id, customer_name, cash_received, status, refunded_at, refund_reason, stripe_payment_intent_id, receipt_no, operator, memo, created_at')
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false })
     .limit(100);
