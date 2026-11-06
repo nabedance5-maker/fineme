@@ -39,7 +39,7 @@ export async function GET(request) {
     const head = ['月', '協業者', '契約者', '種別', '受領額(税抜)', '率', '報酬', '状況', '支払日', '備考'];
     const lines = [head.join(',')].concat((rows || []).map(r => [
       r.reward_month, nameOf[r.partner_id] || r.partner_id, r.providers?.name || '',
-      r.kind === 'override' ? '継続10%' : '紹介初月90%', r.basis_amount, r.rate, r.amount,
+      r.kind === 'override' ? `継続${Math.round(Number(r.rate) * 1000) / 10}%` : '紹介初月90%', r.basis_amount, r.rate, r.amount,
       r.status, r.paid_at ? r.paid_at.slice(0, 10) : '', r.note || '',
     ].map(csvCell).join(',')));
     return new Response('﻿' + lines.join('\n'), {

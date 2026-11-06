@@ -49,7 +49,9 @@ export default function PartnerPortalPage(props) {
 
   const { partner, referrals, summary, collaborator } = state.data;
   const yen = n => `¥${(n || 0).toLocaleString()}`;
-  const KIND = { override: '継続報酬（10%）', first_month: '紹介・初月（90%）' };
+  // 協業者の継続報酬の率は人ごと（2026-11-06）。記録ごとの率（r.rate）も出す
+  const ratePct = v => `${Math.round(Number(v || 0) * 1000) / 10}%`;
+  const KIND = { override: `継続報酬（${ratePct(collaborator?.rate || 0.1)}）`, first_month: '紹介・初月（90%）' };
   const referralUrl = `https://www.fineme.me/join/${encodeURIComponent(partner.referral_code)}`;
 
   return (
@@ -111,7 +113,7 @@ export default function PartnerPortalPage(props) {
           ) : (
             <div style={tableWrap}>
               <table style={table}>
-                <thead><tr><th style={th}>月</th><th style={thR}>継続(10%)</th><th style={thR}>紹介・初月</th><th style={thR}>合計</th><th style={thR}>状況</th></tr></thead>
+                <thead><tr><th style={th}>月</th><th style={thR}>継続({ratePct(collaborator.rate || 0.1)})</th><th style={thR}>紹介・初月</th><th style={thR}>合計</th><th style={thR}>状況</th></tr></thead>
                 <tbody>
                   {collaborator.months.map(m => (
                     <tr key={m.month}>
@@ -166,7 +168,7 @@ export default function PartnerPortalPage(props) {
               </table>
             </div>
           )}
-          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の10%、自分が紹介した契約者は初月に90%を別途記録します。支払いは月末締めで、翌月25日に受け取り口座へ自動で送金します。返金があった分は取り消しまたは翌月以降と相殺します。</p>
+          <p style={{ ...muted, marginTop: '14px' }}>報酬は掲載2ヶ月目以降の受領額(税抜)の{ratePct(collaborator.rate || 0.1)}、自分が紹介した契約者は初月に90%を別途記録します。支払いは月末締めで、翌月25日に受け取り口座へ自動で送金します。返金があった分は取り消しまたは翌月以降と相殺します。</p>
         </>
       ) : (
         <>

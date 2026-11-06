@@ -171,6 +171,7 @@ export default function PrivacyPage() {
           <h2 style={h2}>6. Cookie・ローカルストレージ・計測ツールの利用</h2>
           <p>ログイン状態の維持・診断結果の保持・利便性向上のため、Cookie およびブラウザのローカルストレージを利用します。ブラウザ設定で無効化できますが、一部機能に影響することがあります。</p>
           <p>また、サイトの利用状況を把握するために Google Analytics を、サイトの閲覧（ページビュー）と Fineme Mirror の紹介ページの閲覧・購入完了の計測に Meta ピクセルを利用しています。これらのツールは Cookie 等を使って、閲覧したページや購入の有無などの情報を収集します。診断の回答・結果や写真の内容は送信しません。Google Analytics の収集は<a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">オプトアウトアドオン</a>で、Meta の広告表示は Meta の<a href="https://www.facebook.com/adpreferences/" target="_blank" rel="noopener">広告設定</a>で、それぞれ停止・変更できます。</p>
+          <p>当サービス自身も、サイトの改善のため、閲覧したページ・どのサイトから来たか・端末の種類（スマホ／パソコン）を、ブラウザごとに作る乱数の識別子とともに記録します。お名前・メールアドレスなど個人を特定する情報や、診断・写真の内容は含みません。</p>
           <p>店舗からお送りするメールでは、メール内の画像が読み込まれた時刻（開いた時刻）と、本文のリンクを押した時刻を記録します。</p>
         </section>
 
@@ -199,7 +200,7 @@ export default function PrivacyPage() {
           <p>本ポリシーに関するお問い合わせ：<a href="mailto:contact@fineme.me">contact@fineme.me</a></p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09 / 改定日: 2026-08-12（Mirror写真保存に関する条項を追加） / 改定日: 2026-10-10（店舗運営機能・AIの利用・営業パートナー・計測ツールに関する条項を追加） / 改定日: 2026-10-26（事業者へのご案内、店舗からのメッセージ配信・アンケート、出退勤の記録、プッシュ通知に関する記載を追加）</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09 / 改定日: 2026-08-12（Mirror写真保存に関する条項を追加） / 改定日: 2026-10-10（店舗運営機能・AIの利用・営業パートナー・計測ツールに関する条項を追加） / 改定日: 2026-10-26（事業者へのご案内、店舗からのメッセージ配信・アンケート、出退勤の記録、プッシュ通知に関する記載を追加） / 改定日: 2026-11-06（当サービス自身による閲覧の記録を追記）</p>
       </div>
     </main>
   );

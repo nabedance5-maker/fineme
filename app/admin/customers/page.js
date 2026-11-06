@@ -32,6 +32,9 @@ export default function AdminCustomersPage() {
   const [truncated, setTruncated] = useState(false);
   const [providerId, setProviderId] = useState('');
   const [q, setQ] = useState('');
+  // 種類の絞り込みと並べ替え（渡邉要望 2026-11-06）
+  const [kind, setKind] = useState('');
+  const [sort, setSort] = useState('number');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [linkTarget, setLinkTarget] = useState(null);
@@ -67,6 +70,24 @@ export default function AdminCustomersPage() {
     const t = setTimeout(load, q ? 250 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+
+  const shown = useMemo(() => {
+    const list = customers.filter(c => {
+      if (kind === 'member') return c.kind === 'member';
+      if (kind === 'manual') return c.kind === 'manual' && !c.linked_user_id;
+      if (kind === 'linked') return c.kind === 'manual' && !!c.linked_user_id;
+      return true;
+    });
+    const num = v => (v == null ? Infinity : Number(v));
+    const by = {
+      number: (a, b) => (a.provider_name || '').localeCompare(b.provider_name || '', 'ja') || num(a.member_number) - num(b.member_number),
+      name: (a, b) => (a.name || '').localeCompare(b.name || '', 'ja'),
+      visit_new: (a, b) => String(b.last_visit || '').localeCompare(String(a.last_visit || '')),
+      visit_old: (a, b) => String(a.last_visit || '9999').localeCompare(String(b.last_visit || '9999')),
+      store: (a, b) => (a.provider_name || '').localeCompare(b.provider_name || '', 'ja') || (a.name || '').localeCompare(b.name || '', 'ja'),
+    }[sort];
+    return by ? [...list].sort(by) : list;
+  }, [customers, kind, sort]);
 
   const linkCandidates = useMemo(() => {
     if (!linkTarget) return [];
@@ -109,7 +130,7 @@ export default function AdminCustomersPage() {
       <section className="stack">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <h1 className="section-title" style={{ margin: 0 }}>顧客管理</h1>
-          <span style={{ fontSize: 13 }}>{loading ? '読み込み中…' : `${total}件`}</span>
+          <span style={{ fontSize: 13 }}>{loading ? '読み込み中…' : `${shown.length}件 / 全${total}件`}</span>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -118,14 +139,27 @@ export default function AdminCustomersPage() {
             {providers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="お客様の名前・会員番号・店舗名で検索" style={{ ...input, flex: '2 1 240px' }} />
+          <select value={kind} onChange={e => setKind(e.target.value)} style={{ ...input, flex: '0 1 170px' }}>
+            <option value="">種類：すべて</option>
+            <option value="member">会員</option>
+            <option value="manual">非会員</option>
+            <option value="linked">会員に紐付け済み</option>
+          </select>
+          <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...input, flex: '0 1 190px' }}>
+            <option value="number">店舗・会員番号順</option>
+            <option value="name">名前順</option>
+            <option value="visit_new">前回来店が新しい順</option>
+            <option value="visit_old">前回来店が古い順</option>
+            <option value="store">店舗順</option>
+          </select>
         </div>
 
         {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
-        {!error && !loading && !customers.length && <p className="muted">該当するお客様はいません。</p>}
+        {!error && !loading && !shown.length && <p className="muted">該当するお客様はいません。</p>}
         {truncated && <p style={{ fontSize: 12 }}>表示は先頭1000件までです。店舗や検索で絞り込んでください。</p>}
 
         <div>
-          {customers.map(c => (
+          {shown.map(c => (
             <div key={c.key} style={{ ...card, padding: '12px 16px', marginBottom: 8, display: 'grid', gridTemplateColumns: '64px minmax(0,1.4fr) minmax(0,1fr) auto', gap: 12, alignItems: 'center', fontSize: 14 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#111', fontVariantNumeric: 'tabular-nums' }}>{c.member_number != null ? `No.${fmtNo(c.member_number)}` : '—'}</span>
               <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -26,15 +26,15 @@ const CATEGORIES = [
     { href: '/admin/sales-partners', label: '営業パートナー' },
     { href: '/admin/collaborator-rewards', label: '協業者の報酬' },
   ] },
+  // 投稿キュレーション・集客施策はメニューから外した（渡邉 2026-11-06：もういらない）。画面は /admin/curated-posts・/admin/acquisition に残す
+  // （キュレーション済みの投稿は New Me Navi の生成と Mirror の分析で今も使っている）
   { key: 'content', label: '記事', items: [
     { href: '/admin/features', label: '特集管理' },
     { href: '/admin/stories', label: '体験談管理' },
-    { href: '/admin/curated-posts', label: '投稿キュレーション' },
   ] },
   { key: 'analytics', label: '分析\n・集客', items: [
     { href: '/admin/analytics', label: 'アナリティクス' },
     { href: '/admin/mirror', label: 'Mirror計測' },
-    { href: '/admin/acquisition', label: '集客施策' },
   ] },
 ];
 

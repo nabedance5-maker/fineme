@@ -57,11 +57,122 @@ export default function AdminSalesPartnersPage() {
           <p class="sp-meta" style="margin:0 0 8px;">毎月25日に、前月までの未払いの報酬を各パートナーの受け取り口座へ自動で送金します（結果は運営にメールで届きます）。口座が未登録の人の分は保留され、登録後の送金日にまとめて送られます。自動送金が失敗した時だけ、下のボタンで送り直してください。</p>
           <button class="sp-btn-ghost" id="sp-payout-now">前月までの未払いを今すぐ送金</button>
         </div>
+        <div class="sp-form" style="margin-bottom:12px;align-items:center;">
+          <input id="sp-q" type="search" placeholder="名前・紹介コード・メール・契約者名で探す" style="flex:1;min-width:200px;" />
+          <select id="sp-status"><option value="">状態：すべて</option><option value="active">有効</option><option value="inactive">停止中</option></select>
+          <select id="sp-kind"><option value="">種類：すべて</option><option value="collaborator">協業者</option><option value="general">一般の営業パートナー</option><option value="provider">契約者が兼ねている</option><option value="outside">未掲載の人</option></select>
+          <select id="sp-account"><option value="">口座：すべて</option><option value="partner">登録済み</option><option value="store">お店の口座へ送金</option><option value="pending">登録の途中</option><option value="none">未登録</option></select>
+          <select id="sp-sort"><option value="new">新しい順</option><option value="old">古い順</option><option value="name">名前順</option><option value="code">紹介コード順</option><option value="pending">未払いが多い順</option></select>
+          <span id="sp-count" class="sp-meta"></span>
+        </div>
         <div id="sp-list"><p style="color:#111;">読み込み中…</p></div>
       </div>
     `;
 
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // 一覧（検索・絞り込み・並べ替え。渡邉要望 2026-11-06）
+    let rows = [];
+    let pay = {};
+    const ACCOUNT = { partner: '受け取り口座：登録済み', store: '受け取り口座：お店の口座へ送金', pending: '受け取り口座：登録の途中', none: '受け取り口座：未登録' };
+    const pct = r => `${Math.round(Number(r || 0.1) * 1000) / 10}%`;
+    const fv = id => document.getElementById(id)?.value || '';
+    const norm = v => String(v || '').toLowerCase().replace(/\s+/g, '');
+    function filtered() {
+      const q = norm(fv('sp-q')); const st = fv('sp-status'); const kind = fv('sp-kind'); const acc = fv('sp-account'); const sort = fv('sp-sort') || 'new';
+      const out = rows.filter(p => {
+        if (q && ![p.name, p.referral_code, p.email, p.providers?.name].some(x => norm(x).includes(q))) return false;
+        if (st && p.status !== st) return false;
+        if (kind === 'collaborator' && !p.is_collaborator) return false;
+        if (kind === 'general' && p.is_collaborator) return false;
+        if (kind === 'provider' && !p.provider_id) return false;
+        if (kind === 'outside' && p.provider_id) return false;
+        if (acc && (pay[p.id]?.account || 'none') !== acc) return false;
+        return true;
+      });
+      const by = {
+        new: (a, b) => String(b.created_at).localeCompare(String(a.created_at)),
+        old: (a, b) => String(a.created_at).localeCompare(String(b.created_at)),
+        name: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ja'),
+        code: (a, b) => String(a.referral_code || '').localeCompare(String(b.referral_code || '')),
+        pending: (a, b) => (pay[b.id]?.pending || 0) - (pay[a.id]?.pending || 0),
+      }[sort];
+      return by ? out.sort(by) : out;
+    }
+
+    function render() {
+      const listEl = document.getElementById('sp-list');
+      const shown = filtered();
+      const cnt = document.getElementById('sp-count'); if (cnt) cnt.textContent = `${shown.length}件 / 全${rows.length}件`;
+      if (!rows.length) { listEl.innerHTML = '<p style="color:#111;">まだ営業パートナーが登録されていません。</p>'; return; }
+      if (!shown.length) { listEl.innerHTML = '<p style="color:#111;">条件に合う営業パートナーはいません。</p>'; return; }
+      listEl.innerHTML = shown.map(p => {
+        const providerLabel = p.provider_id
+          ? `<span class="sp-meta">契約者：${esc(p.providers?.name || p.provider_id)}</span>`
+          : `<span class="sp-meta">未掲載の営業パートナー</span>`;
+        const collabBadge = p.is_collaborator ? ` <span class="badge" style="background:#e0e7ff;color:#3730a3;">協業者・継続${pct(p.collaborator_rate)}</span>` : '';
+        const badge = p.status === 'active' ? '<span class="badge badge-green">有効</span>' : '<span class="badge badge-gray">停止中</span>';
+        const ps = pay[p.id] || {};
+        const payLine = `<span class="sp-meta">${ACCOUNT[ps.account] || ACCOUNT.none}${ps.pending ? `・未払い ¥${ps.pending.toLocaleString()}` : ''}${ps.last ? `・直近の送金 ${esc(ps.last.payout_month)} ¥${ps.last.amount.toLocaleString()}${ps.last.status === 'failed' ? `（失敗：${esc(ps.last.error || '')}）` : ''}` : ''}</span>`;
+        const portalUrl = `${location.origin}/partner/${p.access_token}`;
+        const joinUrl = `${location.origin}/join/${encodeURIComponent(p.referral_code)}`;
+        return `
+          <div class="sp-row" data-id="${p.id}">
+            <div style="flex:1;min-width:160px;">
+              <div class="sp-name">${esc(p.name)} <span class="sp-code">${esc(p.referral_code)}</span>${collabBadge}</div>
+              <div style="margin-top:2px;">${providerLabel}${p.email ? ` <span class="sp-meta">・${esc(p.email)}</span>` : ''}</div>
+              <div style="margin-top:2px;">${payLine}</div>
+            </div>
+            ${badge}
+            <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
+            <button class="sp-btn-ghost" data-copy-portal="${joinUrl}">申込ページURLをコピー</button>
+            <button class="sp-btn-ghost" data-collab="${p.id}" data-on="${p.is_collaborator ? '1' : '0'}" data-rate="${p.collaborator_rate || 0.1}">${p.is_collaborator ? '協業者（解除する）' : '協業者にする'}</button>
+            ${p.is_collaborator ? `<button class="sp-btn-ghost" data-rate-edit="${p.id}" data-rate="${p.collaborator_rate || 0.1}" data-name="${esc(p.name)}">継続報酬の率を変える</button>` : ''}
+            <button class="sp-btn-ghost" data-toggle="${p.id}" data-status="${p.status}">${p.status === 'active' ? '停止する' : '再開する'}</button>
+          </div>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('[data-copy-portal]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.copyPortal).then(() => {
+            const orig = btn.textContent;
+            btn.textContent = 'コピーしました';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+          }).catch(() => {});
+        });
+      });
+      listEl.querySelectorAll('[data-collab]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const on = btn.dataset.on !== '1';
+          const r = pct(btn.dataset.rate);
+          if (!confirm(on ? `協業者にします。掲載2ヶ月目以降の全契約者の受領額(税抜)の${r}が、毎月この人の報酬として記録されます（率はあとで変えられます）。よろしいですか？` : `協業者を解除します。以降の受領分から${r}の記録は止まります（記録済みの分は残ります）。`)) return;
+          await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: btn.dataset.collab, is_collaborator: on }) });
+          load();
+        });
+      });
+      listEl.querySelectorAll('[data-rate-edit]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cur = Math.round(Number(btn.dataset.rate) * 1000) / 10;
+          const v = prompt(`${btn.dataset.name} さんの継続報酬の率（全契約者の月額料の◯%）を入れてください（1〜50）`, String(cur));
+          if (v === null) return;
+          const n = Number(String(v).replace(/[%％\s]/g, ''));
+          if (!(n >= 1 && n <= 50)) { alert('1〜50の数で入れてください'); return; }
+          if (!confirm(`${btn.dataset.name} さんの継続報酬を ${cur}% → ${n}% に変えます。次に受け取る月額料の分から、この率で記録されます（記録済みの分は変わりません）。よろしいですか？`)) return;
+          const res = await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: btn.dataset.rateEdit, collaborator_rate: n / 100 }) });
+          if (!res.ok) { const e = await res.json().catch(() => ({})); alert('変更できませんでした：' + (e.error || res.status)); return; }
+          load();
+        });
+      });
+      listEl.querySelectorAll('[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.toggle;
+          const next = btn.dataset.status === 'active' ? 'inactive' : 'active';
+          await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id, status: next }) });
+          load();
+        });
+      });
+    }
 
     async function load() {
       const listEl = document.getElementById('sp-list');
@@ -70,69 +181,14 @@ export default function AdminSalesPartnersPage() {
         if (!res.ok) { listEl.innerHTML = `<p style="color:#b91c1c;">読み込み失敗（${res.status}）。管理APIキーを確認してください。</p>`; return; }
         const data = await res.json();
         // 報酬の受け取り口座・未払い額（毎月25日に自動送金。2026-11-06）
-        const pay = await fetch('/api/admin/partner-payouts', { headers: h() }).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
-        if (!Array.isArray(data) || data.length === 0) { listEl.innerHTML = '<p style="color:#111;">まだ営業パートナーが登録されていません。</p>'; return; }
-
-        listEl.innerHTML = data.map(p => {
-          const providerLabel = p.provider_id
-            ? `<span class="sp-meta">契約者：${esc(p.providers?.name || p.provider_id)}</span>`
-            : `<span class="sp-meta">未掲載の営業パートナー</span>`;
-          const collabBadge = p.is_collaborator ? ' <span class="badge" style="background:#e0e7ff;color:#3730a3;">協業者</span>' : '';
-          const badge = p.status === 'active'
-            ? '<span class="badge badge-green">有効</span>'
-            : '<span class="badge badge-gray">停止中</span>';
-          const ps = pay[p.id] || {};
-          const ACCOUNT = { partner: '受け取り口座：登録済み', store: '受け取り口座：お店の口座へ送金', pending: '受け取り口座：登録の途中', none: '受け取り口座：未登録' };
-          const payLine = `<span class="sp-meta">${ACCOUNT[ps.account] || ACCOUNT.none}${ps.pending ? `・未払い ¥${ps.pending.toLocaleString()}` : ''}${ps.last ? `・直近の送金 ${esc(ps.last.payout_month)} ¥${ps.last.amount.toLocaleString()}${ps.last.status === 'failed' ? `（失敗：${esc(ps.last.error || '')}）` : ''}` : ''}</span>`;
-          const portalUrl = `${location.origin}/partner/${p.access_token}`;
-          const joinUrl = `${location.origin}/join/${encodeURIComponent(p.referral_code)}`;
-          return `
-            <div class="sp-row" data-id="${p.id}">
-              <div style="flex:1;min-width:160px;">
-                <div class="sp-name">${esc(p.name)} <span class="sp-code">${esc(p.referral_code)}</span>${collabBadge}</div>
-                <div style="margin-top:2px;">${providerLabel}${p.email ? ` <span class="sp-meta">・${esc(p.email)}</span>` : ''}</div>
-                <div style="margin-top:2px;">${payLine}</div>
-              </div>
-              ${badge}
-              <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
-              <button class="sp-btn-ghost" data-copy-portal="${joinUrl}">申込ページURLをコピー</button>
-              <button class="sp-btn-ghost" data-collab="${p.id}" data-on="${p.is_collaborator ? '1' : '0'}">${p.is_collaborator ? '協業者（解除する）' : '協業者にする'}</button>
-              <button class="sp-btn-ghost" data-toggle="${p.id}" data-status="${p.status}">${p.status === 'active' ? '停止する' : '再開する'}</button>
-            </div>
-          `;
-        }).join('');
-
-        listEl.querySelectorAll('[data-copy-portal]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            navigator.clipboard.writeText(btn.dataset.copyPortal).then(() => {
-              const orig = btn.textContent;
-              btn.textContent = 'コピーしました';
-              setTimeout(() => { btn.textContent = orig; }, 1500);
-            }).catch(() => {});
-          });
-        });
-
-        listEl.querySelectorAll('[data-collab]').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const on = btn.dataset.on !== '1';
-            if (!confirm(on ? '協業者にします。掲載2ヶ月目以降の全契約者の受領額(税抜)の10%が、毎月この人の報酬として記録されます。よろしいですか？' : '協業者を解除します。以降の受領分から10%の記録は止まります（記録済みの分は残ります）。')) return;
-            await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id: btn.dataset.collab, is_collaborator: on }) });
-            load();
-          });
-        });
-
-        listEl.querySelectorAll('[data-toggle]').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const id = btn.dataset.toggle;
-            const next = btn.dataset.status === 'active' ? 'inactive' : 'active';
-            await fetch('/api/admin/sales-partners', { method: 'PATCH', headers: h(), body: JSON.stringify({ id, status: next }) });
-            load();
-          });
-        });
+        pay = await fetch('/api/admin/partner-payouts', { headers: h() }).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
+        rows = Array.isArray(data) ? data : [];
+        render();
       } catch (e) {
         listEl.innerHTML = `<p style="color:#b91c1c;">読み込みエラー：${esc(e.message)}</p>`;
       }
     }
+    ['sp-q', 'sp-status', 'sp-kind', 'sp-account', 'sp-sort'].forEach(id => document.getElementById(id)?.addEventListener(id === 'sp-q' ? 'input' : 'change', render));
 
     document.getElementById('sp-payout-now').addEventListener('click', async e => {
       if (!confirm('前月までの未払いの報酬を、受け取り口座が登録済みのパートナーへ今すぐ送金します。よろしいですか？')) return;

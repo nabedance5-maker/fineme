@@ -46,6 +46,7 @@ import Footer from './_components/Footer';
 import ServiceWorkerRegister from './_components/ServiceWorkerRegister';
 import ConnectionBanner from './_components/ConnectionBanner';
 import GoogleAnalytics from './_components/GoogleAnalytics';
+import PageViewTracker from './_components/PageViewTracker';
 import SiteFaqJsonLd from './_components/SiteFaqJsonLd';
 import Script from 'next/script';
 
@@ -115,6 +116,7 @@ export default function RootLayout({ children }) {
       <body>
         <ConnectionBanner />
         <GoogleAnalytics />
+        <PageViewTracker />
         {pixelId && (
           <>
             <Script id="meta-pixel" strategy="afterInteractive">{`

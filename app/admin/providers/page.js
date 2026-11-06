@@ -57,18 +57,58 @@ export default function AdminProvidersPage() {
     }
     function catLabel(c) { return { gym: 'ジム', eyebrow: '眉毛', hair: 'ヘア', skin: '肌', fashion: 'ファッション', photo: '写真', consulting: 'コンサル', makeup: 'メイク', nail: 'ネイル', hairremoval: '脱毛', whitening: 'ホワイトニング', orthodontics: '矯正', marriage: '婚活' }[c] || c; }
 
-    async function load() {
-      listEl.innerHTML = '<p class="muted">読み込み中…</p>';
+    // 一覧の検索・絞り込み・並べ替え（渡邉要望 2026-11-06）
+    const fv = id => document.getElementById(id)?.value || '';
+    const norm = v => String(v || '').toLowerCase().replace(/\s+/g, '');
+    function contractState(p) {
+      if (p.plan === 'special') return 'special';
+      if (p.billing_status === 'past_due') return 'past_due';
+      return contractActive(p) ? 'active' : 'none';
+    }
+    function applyProviderFilters(list) {
+      const q = norm(fv('pv-q'));
+      const pub = fv('pv-pub'); const con = fv('pv-contract'); const kind = fv('pv-kind'); const cat = fv('pv-cat'); const sort = fv('pv-sort') || 'new';
+      const out = list.filter(p => {
+        if (q && ![p.name, p.email, p.slug, p.referral_code, p.referred_by, p.area].some(x => norm(x).includes(q))) return false;
+        if (pub === 'published' && !(p.published && !p.admin_hidden)) return false;
+        if (pub === 'unpublished' && (p.published || p.admin_hidden)) return false;
+        if (pub === 'hidden' && !p.admin_hidden) return false;
+        if (con && contractState(p) !== con) return false;
+        if (kind && (p.entity_type || 'provider') !== kind) return false;
+        if (cat && p.main_category !== cat) return false;
+        return true;
+      });
+      const by = {
+        new: (a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')),
+        old: (a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')),
+        name: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ja'),
+        code: (a, b) => String(a.referral_code || '~').localeCompare(String(b.referral_code || '~')),
+      }[sort];
+      return by ? out.sort(by) : out;
+    }
+
+    ['pv-q', 'pv-pub', 'pv-contract', 'pv-kind', 'pv-cat', 'pv-sort'].forEach(id => document.getElementById(id)?.addEventListener(id === 'pv-q' ? 'input' : 'change', () => load(false)));
+
+    async function load(refetch = true) {
+      if (refetch) listEl.innerHTML = '<p class="muted">読み込み中…</p>';
       try {
-        const res = await fetch('/api/admin/providers', { headers: h() });
-        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#b91c1c">取得エラー。APIキーを確認してください。</p>'; return; }
-        providers = await res.json();
+        if (refetch) {
+          const res = await fetch('/api/admin/providers', { headers: h() });
+          if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#b91c1c">取得エラー。APIキーを確認してください。</p>'; return; }
+          providers = await res.json();
+          const cats = [...new Set(providers.map(p => p.main_category).filter(Boolean))];
+          const catSel = document.getElementById('pv-cat');
+          if (catSel && catSel.options.length <= 1) cats.forEach(c => catSel.insertAdjacentHTML('beforeend', `<option value="${esc(c)}">${esc(catLabel(c))}</option>`));
+        }
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
         const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.plan !== 'special' && contractActive(p)).length;
         if (!providers.length) { listEl.innerHTML = '<p class="muted">契約者がいません。「契約者を登録」から追加してください。</p>'; return; }
+        const shown = applyProviderFilters(providers);
+        const cnt = document.getElementById('pv-count'); if (cnt) cnt.textContent = `${shown.length}件 / 全${providers.length}件`;
+        if (!shown.length) { listEl.innerHTML = '<p class="muted">条件に合う契約者がいません。</p>'; return; }
         listEl.innerHTML = '';
-        providers.forEach(p => {
+        shown.forEach(p => {
           const row = document.createElement('div'); row.className = 'provider-row';
           const statusLabel = p.admin_hidden ? '強制非公開' : p.published ? '公開中' : '非公開';
           const statusClass = p.admin_hidden ? 'badge-red' : p.published ? 'badge-green' : 'badge-gray';
@@ -210,6 +250,15 @@ export default function AdminProvidersPage() {
             <div className="kpi-card"><div className="kpi-value" id="kpi-total">—</div><div className="kpi-label">登録者数</div></div>
             <div className="kpi-card"><div className="kpi-value" id="kpi-pub">—</div><div className="kpi-label">公開中</div></div>
             <div className="kpi-card"><div className="kpi-value" id="kpi-billing">—</div><div className="kpi-label">課金中</div></div>
+          </div>
+          <div className="ad-toolbar" style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
+            <input id="pv-q" type="search" placeholder="掲載名・メール・URL・紹介コード・エリアで探す" style={{flex:'1 1 260px',padding:'8px 10px',border:'1.5px solid #ddd',borderRadius:'8px',fontSize:'14px'}} />
+            <select id="pv-pub" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">公開：すべて</option><option value="published">公開中</option><option value="unpublished">非公開</option><option value="hidden">強制非公開</option></select>
+            <select id="pv-contract" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">契約：すべて</option><option value="active">契約中</option><option value="none">未契約</option><option value="past_due">引き落とし失敗</option><option value="special">特例無料</option></select>
+            <select id="pv-kind" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">種類：すべて</option><option value="provider">契約者</option><option value="affiliate">アフィリエイト掲載</option></select>
+            <select id="pv-cat" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">カテゴリ：すべて</option></select>
+            <select id="pv-sort" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="new">新しい順</option><option value="old">古い順</option><option value="name">名前順</option><option value="code">紹介コード順</option></select>
+            <span id="pv-count" className="muted" style={{fontSize:'12px'}}></span>
           </div>
           <div id="list"><p className="muted">読み込み中…</p></div>
         </section>

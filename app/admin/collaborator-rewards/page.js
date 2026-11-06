@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 
 // 協業者（瀧口・今野など）の月次報酬の確認と、月末締め・翌月末払いの支払い管理（admin専用）。
 // 支払いは手動振込。ここでは「支払済」の記録とCSV出力を行う。仕様：lib/collaborator-rewards.js
-const KIND = { override: '継続報酬(10%)', first_month: '紹介・初月(90%)' };
+const KIND = { override: '継続報酬', first_month: '紹介・初月(90%)' };
 const yen = n => `¥${(n || 0).toLocaleString()}`;
 
 function thisMonth() {
@@ -57,7 +57,7 @@ export default function AdminCollaboratorRewardsPage() {
     <div style={{ maxWidth: '980px', margin: '0 auto', padding: '32px 20px', color: '#111' }}>
       <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 4px' }}>協業者の報酬</h1>
       <p style={{ fontSize: '13px', color: '#111', margin: '0 0 20px' }}>
-        掲載2ヶ月目以降の全契約者の受領額(税抜)の10%と、協業者本人が紹介した契約者の初月90%。月末締め・翌月25日に受け取り口座へ自動送金（失敗した時は「営業パートナー」の画面から送り直す）。
+        掲載2ヶ月目以降の全契約者の受領額(税抜)の◯%（協業者ごとに決めた率。営業パートナー管理で変更）と、協業者本人が紹介した契約者の初月90%。月末締め・翌月25日に受け取り口座へ自動送金（失敗した時は「営業パートナー」の画面から送り直す）。
         協業者は「営業パートナー」画面で指定します。
       </p>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -90,7 +90,7 @@ export default function AdminCollaboratorRewardsPage() {
                   {p.rows.map(r => (
                     <tr key={r.id} style={r.status === 'void' ? { opacity: 0.45, textDecoration: 'line-through' } : null}>
                       <td style={cell}>{r.provider_name}</td>
-                      <td style={cell}>{KIND[r.kind]}</td>
+                      <td style={cell}>{KIND[r.kind]}{r.kind === 'override' && r.rate ? `(${Math.round(Number(r.rate) * 1000) / 10}%)` : ''}</td>
                       <td style={cell}>{yen(r.basis)}</td>
                       <td style={{ ...cell, fontWeight: 700 }}>{yen(r.amount)}</td>
                       <td style={cell}>{r.status === 'paid' ? `支払済 ${String(r.paid_at || '').slice(0, 10)}` : r.status === 'void' ? '無効' : '未払い'}{r.note ? `（${r.note}）` : ''}</td>
