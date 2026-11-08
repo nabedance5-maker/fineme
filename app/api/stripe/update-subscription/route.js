@@ -3,6 +3,7 @@
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { PLANS } from '@/lib/stripe-plans';
+import { recordUpsellReward } from '@/lib/collaborator-rewards';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -52,6 +53,13 @@ export async function POST(request) {
       .from('providers')
       .update({ plan: newPlan })
       .eq('id', provider.id);
+
+    // 上位プランへの変更なら、紹介した営業パートナーへアップセル報酬を記録（2026-11-08 渡邉決定）
+    try {
+      await recordUpsellReward(supabase, provider.id, provider.plan, newPlan);
+    } catch (e) {
+      console.error('[update-subscription] recordUpsellReward failed', e);
+    }
 
     return Response.json({
       success: true,

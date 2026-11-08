@@ -12454,7 +12454,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-size:13px;font-weight:700;color:${r.status === 'active' ? '#6366f1' : '#9ca3af'}">今月 ¥${(r.this_month_reward || 0).toLocaleString()}${r.status === 'active' && !r.this_month_recorded ? '（見込み）' : ''}</div>
-                <div style="font-size:11px;color:#6b7280">累計: ¥${(r.total_earned || 0).toLocaleString()}${r.first_month_reward > 0 ? '（初月分 ¥' + r.first_month_reward.toLocaleString() + ' を含む）' : ''}</div>
+                <div style="font-size:11px;color:#6b7280">累計: ¥${(r.total_earned || 0).toLocaleString()}${r.first_month_reward > 0 ? '（初月分 ¥' + r.first_month_reward.toLocaleString() + ' を含む）' : ''}${r.upsell_reward > 0 ? '（プラン変更分 ¥' + r.upsell_reward.toLocaleString() + ' を含む）' : ''}</div>
               </div>
             `;
             listEl.appendChild(row);
