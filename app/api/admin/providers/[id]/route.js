@@ -3,7 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { contractActive } from '@/lib/provider-contract';
 import { checkReferralCode } from '@/lib/referral-code';
-import { setProviderReferrer } from '@/lib/collaborator-rewards';
+import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -52,9 +52,11 @@ export async function PATCH(request, props) {
 
   // 契約まわり（2026-10-30）：特例無料をやめて A/B/C に戻した時は、Stripe の月額が無ければ「未契約」に戻す。
   // 公開は、契約が有効な（払っている・特例無料の）お店だけ
+  let oldPlanForUpsell;
   if (updates.plan !== undefined || updates.published === true) {
     const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id').eq('id', id).maybeSingle();
     if (!cur) return Response.json({ error: 'お店が見つかりません' }, { status: 404 });
+    oldPlanForUpsell = cur.plan;
     if (updates.plan === 'free') updates.plan = 'A';
     if (['A', 'B', 'C'].includes(updates.plan) && cur.plan === 'special' && !cur.stripe_subscription_id && updates.billing_status === undefined) {
       updates.billing_status = null;
@@ -73,6 +75,16 @@ export async function PATCH(request, props) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // 運営が代理でプラン変更した時も、紹介した営業パートナーへアップセル報酬を発生させる（渡邉確認2026-11-09）
+  if (updates.plan !== undefined && oldPlanForUpsell && oldPlanForUpsell !== updates.plan) {
+    try {
+      await recordUpsellReward(supabase, id, oldPlanForUpsell, updates.plan);
+    } catch (e) {
+      console.warn('[admin plan change upsell reward]', e);
+    }
+  }
+
   return Response.json({ ...data, referrer_note: referrerNote });
 }
 
