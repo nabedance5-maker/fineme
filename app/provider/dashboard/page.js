@@ -4822,7 +4822,13 @@ export default function ProviderDashboardPage() {
           overlay.querySelector('#shift-day-close')?.addEventListener('click', () => overlay.remove());
           overlay.querySelector('#shift-day-confirm')?.addEventListener('click', () => setConfirm(isConf ? 'unconfirm' : 'confirm'));
           overlay.querySelectorAll('[data-day-del]').forEach(btn => btn.addEventListener('click', async () => {
-            const res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
+            let res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
+            // 担当の予約が勤務時間の外になる時は、内容を見せて確かめる（2026-11-09 渡邉報告）
+            if (res.status === 409) {
+              const d = await res.json().catch(() => ({}));
+              if (!confirm(`${d.error || 'この時間に担当の予約があります。'}\n\nそれでもシフトを外しますか？（予約は残り、担当のスタッフが勤務していない状態になります）`)) return;
+              res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}?force=1`, { method: 'DELETE', headers: authHeadersShift() });
+            }
             if (res.ok) await refresh(); else showToast('外せませんでした');
           }));
           overlay.querySelectorAll('[data-day-adopt]').forEach(btn => btn.addEventListener('click', () => post({ staff_id: btn.dataset.dayAdopt, start_time: btn.dataset.start, end_time: btn.dataset.end })));
@@ -7445,6 +7451,7 @@ export default function ProviderDashboardPage() {
         if ((cur === 'staff' || cur === 'both') && buState.shift_management) notes.push('シフト管理を使っているため、確定したシフトの時間だけ予約を受けます。');
         notes.push('どのスタッフが担当できるか・どの部屋を使うかは、メニューごとに決められます（決めなければ全員・どの部屋でも）。');
         const n = document.getElementById('bu-note'); if (n) n.textContent = notes.join(' ');
+        const ms = document.getElementById('bu-mescan'); if (ms) ms.checked = buState.show_mescan_on_booking !== false;
       }
       async function loadBookingUnit() {
         const r = await fetch('/api/provider/booking-settings', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
@@ -7456,7 +7463,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('bu-save')?.addEventListener('click', async () => {
         if (!buState) return;
         const unit = buState.booking_unit || buState.effective_unit;
-        const body = { booking_unit: unit, booking_interval_minutes: Number(document.getElementById('bu-interval').value) };
+        const body = { booking_unit: unit, booking_interval_minutes: Number(document.getElementById('bu-interval').value), show_mescan_on_booking: !!document.getElementById('bu-mescan')?.checked };
         if (unit === 'capacity') body.store_capacity = Number(document.getElementById('bu-capacity').value) || 1;
         const r = await fetch('/api/provider/booking-settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         const d = await r.json().catch(() => ({}));
@@ -13537,6 +13544,8 @@ export default function ProviderDashboardPage() {
         const columns = currentColumns().filter(col => {
           if (col.groupKey !== 'staff_id' || col.id == null) return true;
           if (!isStaffOffThisDay(col.id, selectedDate)) return true;
+          // お休みでも担当の予約がある人は隠さない（2026-11-09 渡邉報告：シフトを外したら予約が人のいない状態に見えた）
+          if (items.some(it => !it._isClassSession && String(it.staff_id) === String(col.id))) return true;
           offStaffColumns.push(col);
           return false;
         });
@@ -17493,6 +17502,9 @@ export default function ProviderDashboardPage() {
             </div>
             <div className="bu-row">
               <label>予約の開始時刻の刻み<select id="bu-interval"><option value="10">10分ごと</option><option value="15">15分ごと</option><option value="20">20分ごと</option><option value="30">30分ごと</option><option value="60">1時間ごと</option></select></label>
+            </div>
+            <div className="bu-row">
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontWeight: 400 }}><input type="checkbox" id="bu-mescan" style={{ marginTop: '4px' }} /><span><b>予約の時に、お客様の外見の診断結果（Me Scan）を表示する</b><br /><span style={{ fontSize: '12.5px' }}>オンにすると、診断を受けたお客様が予約する時に結果を見て、お店に送るか選べます。送られた結果は予約のメモに入ります。</span></span></label>
             </div>
             <p id="bu-note" className="bu-note"></p>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

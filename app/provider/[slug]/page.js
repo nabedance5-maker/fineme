@@ -211,6 +211,14 @@ function buildNarrative(diagnosis, matchData) {
 }
 
 /** 相談フォームに添付するMe Scanサマリー */
+// 診断の「何が変わってほしいか」の選択肢（app/diagnosis/result の CHANGE_MAP と同じ）。生のキーを見せない（2026-11-09）
+const GOAL_CHANGE_LABELS = {
+  others_perception: '他の人からの見られ方・評価が変わる',
+  self_confidence: '自分の気持ち・自己肯定感が変わる',
+  action_ease: '行動のしやすさ・動けるようになること',
+  life_options: '外見を理由に諦めることが減ること',
+};
+
 function buildMeScanSummary(diagnosis, matchData) {
   if (!diagnosis?.transform_vectors || !matchData?.detail?.coveredAxes?.length) return null;
   const topAxis = matchData.detail.coveredAxes[0];
@@ -218,7 +226,7 @@ function buildMeScanSummary(diagnosis, matchData) {
   const lines = [`最優先トラック: ${AXIS_LABELS[topAxis.id]}（ギャップ +${topAxis.gap}）`];
   if (topAxis.path_type) lines.push(`来た道: ${PATH_LABELS[topAxis.path_type]}`);
   if (diagnosis.goal_change) {
-    const g = String(diagnosis.goal_change);
+    const g = GOAL_CHANGE_LABELS[diagnosis.goal_change] || String(diagnosis.goal_change);
     lines.push(`ゴール: ${g.length > 40 ? g.slice(0, 40) + '…' : g}`);
   }
   return lines;
@@ -1938,7 +1946,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // mode==='closed'（即時予約・予約リクエストどちらも店舗側でOFF）の時だけフォーム自体を出さない。
   const canBookAnything = mode !== 'closed';
 
-  const meScanSummary = buildMeScanSummary(diagnosis, matchData);
+  // お店の設定で、予約の時に診断結果を見せない店もある（2026-11-09 渡邉要望）
+  const meScanSummary = provider.show_mescan_on_booking === false ? null : buildMeScanSummary(diagnosis, matchData);
 
   useEffect(() => {
     // プロフィールAPIから姓名・電話番号を取得して事前入力

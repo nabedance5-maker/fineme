@@ -13,7 +13,7 @@ export async function GET(request) {
   if (!a) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const pid = a.provider.id;
   const [{ data: p }, { data: staff }, { data: res }] = await Promise.all([
-    supabase.from('providers').select('booking_unit, booking_interval_minutes, store_capacity, enabled_features').eq('id', pid).single(),
+    supabase.from('providers').select('booking_unit, booking_interval_minutes, store_capacity, enabled_features, show_mescan_on_booking').eq('id', pid).single(),
     supabase.from('provider_staff').select('id, bookable').eq('provider_id', pid),
     supabase.from('provider_resources').select('id, active').eq('provider_id', pid),
   ]);
@@ -23,6 +23,7 @@ export async function GET(request) {
     staff_count: (staff || []).filter(s => s.bookable !== false).length,
     resource_count: (res || []).filter(r => r.active !== false).length,
     shift_management: !!p.enabled_features?.shift_management,
+    show_mescan_on_booking: p.show_mescan_on_booking !== false,
   });
 }
 
@@ -45,6 +46,7 @@ async function __PUT(request) {
     if (!(v >= 1 && v <= 500)) return Response.json({ error: '同時に受ける人数は1〜500で入れてください' }, { status: 400 });
     up.store_capacity = v;
   }
+  if ('show_mescan_on_booking' in b) up.show_mescan_on_booking = !!b.show_mescan_on_booking;
   const { error } = await supabase.from('providers').update(up).eq('id', a.provider.id);
   if (error) return Response.json({ error: '保存できませんでした' }, { status: 500 });
   return Response.json({ ok: true });
