@@ -77,7 +77,9 @@ export async function GET(request) {
   // カレンダーの表示幅に使う（でお要望2026-09-25：「自由記述式じゃなくて時間選択
   // する方式で正確に時間の長さがカレンダーに反映されるように」）。即時予約は
   // 枠自体の実時間を優先するため対象外。
-  const serviceIds = [...new Set((rows || []).filter(r => r.booking_mode !== 'instant' && r.service_id).map(r => r.service_id))];
+  // 即時予約でも、枠を使わず営業時間から取った予約（slot_idなし）はメニューの所要時間で幅を決める
+  // （2026-11-09 渡邉報告：120分メニューの即時予約がカレンダーで目安の40分幅になっていた）。
+  const serviceIds = [...new Set((rows || []).filter(r => r.service_id).map(r => r.service_id))];
 
   const [staffRowsRes, resourceRowsRes, classRowsRes, bookedRowsRes, slotRowsRes, serviceRowsRes] = await Promise.all([
     staffIds.length ? supabase.from('provider_staff').select('id, name').in('id', staffIds) : Promise.resolve({ data: [] }),
@@ -149,7 +151,7 @@ export async function GET(request) {
       same_name_warning: r.same_name_warning || null,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
-      duration_minutes: r.slot_id ? (slotDurationMap[r.slot_id] || null) : (r.service_id ? (serviceDurationMap[r.service_id] || null) : null),
+      duration_minutes: (r.slot_id && slotDurationMap[r.slot_id]) || (r.service_id && serviceDurationMap[r.service_id]) || null,
     }))
     .concat(classSessionItems)
     .filter(r => r.date >= from && r.date <= to)
