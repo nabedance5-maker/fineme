@@ -14961,7 +14961,7 @@ export default function ProviderDashboardPage() {
       const txListEl = $('pos-tx-list');
       if (!gridEl) return;
 
-      let products = [], services = [], settings = null, staffRows = [], txRows = [];
+      let products = [], services = [], packages = [], settings = null, staffRows = [], txRows = [];
       let cart = []; // [{kind, product_id?, service_id?, name, unit_price, qty, discount?}]
       let cartDiscount = null; // {type, value, label}
       let customer = null; // {user_id?, manual_id?, name}
@@ -15080,6 +15080,20 @@ export default function ProviderDashboardPage() {
             if (ex) ex.qty++; else cart.push({ kind: 'service', service_id: sv.id, name: sv.name, unit_price: Number(sv.price) || 0, qty: 1 });
             renderCart();
           }));
+        } else if (source === 'package') {
+          // 回数券・チケット（2026-11-09 渡邉要望）。会計が確定すると、選んだお客様にそのまま付く
+          $('pos-cat').style.display = 'none';
+          const list = packages.filter(pk => !kw || pk.name.toLowerCase().includes(kw));
+          const note = '<p style="font-size:12.5px;margin:0 0 8px;grid-column:1/-1">会計が確定すると、選んだお客様に回数券が付きます（先に上の「お客様を選ぶ」か会員証の読み取りをしてください）。</p>';
+          gridEl.innerHTML = list.length ? note + list.map(pk => `<button type="button" class="pos-tile" data-pos-pkg="${pk.id}"><b>${esc(pk.name)}</b><span>${yen(pk.price)}</span><em>${pk.package_type === 'unlimited' ? '回数無制限' : `${pk.total_sessions}回`}${pk.validity_days ? `・${pk.validity_days}日間` : ''}</em></button>`).join('') : '<p style="font-size:13px;margin:0">回数券がありません。「回数券・チケット」の設定から追加できます。</p>';
+          gridEl.querySelectorAll('[data-pos-pkg]').forEach(btn => btn.addEventListener('click', () => {
+            const pk = packages.find(x => x.id === btn.dataset.posPkg);
+            if (!pk) return;
+            if (!customer) showToast('回数券を付けるお客様を選んでください');
+            const ex = cart.find(c => c.package_id === pk.id && !c.discount);
+            if (ex) ex.qty++; else cart.push({ kind: 'package', package_id: pk.id, name: pk.name, unit_price: Number(pk.price) || 0, qty: 1 });
+            renderCart();
+          }));
         }
       }
       document.querySelectorAll('[data-pos-src]').forEach(b => b.addEventListener('click', () => { source = b.dataset.posSrc; renderGrid(); }));
@@ -15184,7 +15198,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/pos/checkout', {
           method: 'POST', headers: authHeadersPos(),
           body: JSON.stringify({
-            items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
+            items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
             discount: cartDiscount, customer, staff_id: staffSel?.value || null, payment_key: paySel?.value || null, cash_received: cashRec,
           }),
         });
@@ -15272,7 +15286,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/pos/card-checkout', {
           method: 'POST', headers: authHeadersPos(),
           body: JSON.stringify({
-            items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
+            items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
             discount: cartDiscount, customer, staff_id: staffSel?.value || null, request_id: cardRequestId,
           }),
         });
@@ -15296,7 +15310,7 @@ export default function ProviderDashboardPage() {
           const res = await fetch('/api/provider/pos/online-checkout', {
             method: 'POST', headers: authHeadersPos(),
             body: JSON.stringify({
-              items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
+              items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
               discount: cartDiscount, customer, staff_id: staffSel?.value || null,
             }),
           });
@@ -15418,7 +15432,7 @@ export default function ProviderDashboardPage() {
           f.querySelector('button').addEventListener('click', async () => {
             const r = await fetch(`/api/provider/pos/transactions/${t.id}`, { method: 'POST', headers: authHeadersPos(), body: JSON.stringify({ action: 'refund', reason: f.querySelector('input').value.trim() }) });
             const d = await r.json().catch(() => ({}));
-            showToast(r.ok ? '取り消しました' : (d.error || '取り消せませんでした'));
+            showToast(r.ok ? ((d.keptPackages || []).length ? `取り消しました。回数券（${d.keptPackages.join('、')}）はすでに使われているため残しています` : '取り消しました') : (d.error || '取り消せませんでした'));
             if (r.ok) { loadTransactions(); loadProducts(); loadRegister(); }
           });
         }));
@@ -15587,11 +15601,12 @@ export default function ProviderDashboardPage() {
         ['receipt_name', 'receipt_address', 'receipt_phone', 'invoice_number', 'receipt_footer'].forEach(k => { const el = $(`pos-set-${k}`); if (el) el.value = s[k] || ''; });
         $('pos-set-receipt_name').placeholder = s.store_name || '';
         $('pos-set-tax_rate').value = String(s.tax_rate || 10);
+        { const er = $('pos-set-email_receipt'); if (er) er.checked = s.email_receipt !== false; }
         renderCart();
       }
       $('pos-set-add-method')?.addEventListener('click', () => { settings.payment_methods.push({ key: `m${Date.now().toString(36)}`, label: '', cash: false }); renderSettings(); });
       $('pos-set-save')?.addEventListener('click', async () => {
-        const body = { payment_methods: settings.payment_methods.filter(m => m.label.trim()), tax_rate: $('pos-set-tax_rate').value };
+        const body = { payment_methods: settings.payment_methods.filter(m => m.label.trim()), tax_rate: $('pos-set-tax_rate').value, email_receipt: !!$('pos-set-email_receipt')?.checked };
         ['receipt_name', 'receipt_address', 'receipt_phone', 'invoice_number', 'receipt_footer'].forEach(k => { body[k] = $(`pos-set-${k}`).value; });
         const r = await fetch('/api/provider/pos/settings', { method: 'PUT', headers: authHeadersPos(), body: JSON.stringify(body) });
         const d = await r.json().catch(() => ({}));
@@ -15606,9 +15621,11 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadStaffAndServices() {
-        const [a, b] = await Promise.all([fetch('/api/provider/staff', { headers: authHeadersPos() }), fetch('/api/provider/services', { headers: authHeadersPos() })]);
+        const [a, b, c] = await Promise.all([fetch('/api/provider/staff', { headers: authHeadersPos() }), fetch('/api/provider/services', { headers: authHeadersPos() }), fetch('/api/provider/packages', { headers: authHeadersPos() })]);
         staffRows = a.ok ? await a.json() : [];
         services = b.ok ? await b.json() : [];
+        // 回数券・チケット（月額のものは会員プランで扱うので出さない。2026-11-09）
+        packages = c.ok ? ((await c.json()) || []).filter(p => p.active !== false && p.package_type !== 'subscription') : [];
         staffSel.innerHTML = '<option value="">選択なし</option>' + staffRows.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
         renderGrid();
       }
@@ -18720,13 +18737,14 @@ export default function ProviderDashboardPage() {
             <div>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>レジ会計</h2>
               <p style={{ fontSize: '13px', margin: 0, lineHeight: '1.6', color: '#1a1410' }}>
-                物販・メニュー（施術）・手入力をまとめて1回の会計にできます。確定すると「売上管理」にも自動で入ります。
+                物販・メニュー（施術）・回数券・手入力をまとめて1回の会計にできます。確定すると「売上管理」にも自動で入ります。
               </p>
             </div>
             <div className="pos-row">
               <div className="pos-seg" role="group" aria-label="選ぶもの">
                 <button type="button" data-pos-src="product" aria-pressed="true">物販</button>
                 <button type="button" data-pos-src="service" aria-pressed="false">メニュー</button>
+                <button type="button" data-pos-src="package" aria-pressed="false">回数券</button>
                 <button type="button" data-pos-src="custom" aria-pressed="false">手入力</button>
               </div>
               <span id="pos-search-wrap" className="pos-row"><input id="pos-search" placeholder="名前で探す" /><select id="pos-cat" style={{ display: 'none' }}></select></span>
@@ -18829,6 +18847,7 @@ export default function ProviderDashboardPage() {
               <label className="pos-field">消費税率<select id="pos-set-tax_rate"><option value="10">10%</option><option value="8">8%（軽減税率）</option></select></label>
             </div>
             <label className="pos-field">レシートの最後のひとこと（任意）<input id="pos-set-receipt_footer" maxLength={200} placeholder="例：またのご来店をお待ちしております" /></label>
+            <label className="pos-field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}><input type="checkbox" id="pos-set-email_receipt" style={{ width: 'auto', marginTop: '3px' }} /><span>お会計のあと、お客様にレシートをメールで送る（お客様を選んだ会計で、メールアドレスが分かる時）</span></label>
             <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>金額は税込みで表示し、レシート・領収書には「内消費税」を載せます。5万円以上を現金で受け取った領収書には、収入印紙を貼る欄が出ます。</p>
             <button type="button" className="btn" id="pos-set-save" style={{ width: 'fit-content' }}>設定を保存する</button>
           </div>

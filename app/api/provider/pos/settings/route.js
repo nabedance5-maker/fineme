@@ -33,6 +33,7 @@ async function __PUT(request) {
     if (v && !/^T\d{13}$/.test(v)) return Response.json({ error: '登録番号は「T」と13桁の数字で入れてください' }, { status: 400 });
     up.invoice_number = v || null;
   }
+  if ('email_receipt' in b) up.email_receipt = !!b.email_receipt;
   if ('tax_rate' in b) up.tax_rate = [8, 10].includes(Number(b.tax_rate)) ? Number(b.tax_rate) : 10;
   const { error } = await supabase.from('provider_pos_settings').upsert(up);
   if (error) return Response.json({ error: '保存できませんでした' }, { status: 500 });

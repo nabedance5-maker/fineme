@@ -44,7 +44,7 @@ async function __POST(request) {
   const { items, staff_id, memo, discount, customer } = await request.json().catch(() => ({}));
   // 明細の検証・金額計算だけここで行う（在庫引き当て・記録は支払い確定後）。会計確定と同じ計算を使う
   let priced;
-  try { priced = await priceItems(supabase, provider.id, items, discount); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
+  try { priced = await priceItems(supabase, provider.id, items, discount, { customer }); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
   const totalAmount = priced.totalAmount;
 
   const { data: pending, error: pendingError } = await supabase

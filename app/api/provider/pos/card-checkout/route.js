@@ -8,7 +8,7 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
 import { planLockedResponse } from '@/lib/plan-features';
-import { priceItems, recordPosTransaction } from '@/lib/pos-checkout';
+import { priceItems, recordPosTransaction, posSettings } from '@/lib/pos-checkout';
 import { applicationFeeAmount } from '@/lib/payment-fee';
 import { findMemberCard, cardLabel } from '@/lib/pos-member-card';
 
@@ -30,13 +30,15 @@ async function __POST(request) {
   if (!/^[0-9a-f-]{36}$/i.test(request_id || '')) return Response.json({ error: '会計の番号が正しくありません。画面を開き直してください' }, { status: 400 });
 
   let priced;
-  try { priced = await priceItems(supabase, provider.id, items, discount); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
+  try { priced = await priceItems(supabase, provider.id, items, discount, { customer }); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
   if (priced.totalAmount < 50) return Response.json({ error: 'カードで払えるのは50円からです' }, { status: 400 });
   const card = await findMemberCard(supabase, stripe, provider.id, customer.user_id);
   if (!card) return Response.json({ error: 'このお客様は、このお店で使える登録済みのカードがありません。「お客様のスマホで払う（QR）」をお使いください', code: 'no_card' }, { status: 409 });
 
   const { data: { user } = {} } = await supabase.auth.admin.getUserById(customer.user_id).catch(() => ({ data: {} }));
   const email = user?.email && !/@line\.fineme\.me$|\.invalid$/.test(user.email) ? user.email : undefined;
+  // Finemeからレシートのメールを送るお店では、Stripeの領収メールは送らない（同じ会計で2通届かないように。2026-11-09）
+  const finemeReceipt = (await posSettings(supabase, provider.id)).email_receipt !== false;
 
   let pi;
   try {
@@ -45,7 +47,7 @@ async function __POST(request) {
       customer: card.customerId, payment_method: card.paymentMethodId,
       off_session: true, confirm: true,
       description: `${provider.name} お会計`,
-      receipt_email: email, // お客様にStripeから領収のメールが届く（知らない請求にならないように）
+      ...(finemeReceipt ? {} : { receipt_email: email }), // Finemeのレシートを送らないお店では、Stripeの領収メールで知らない請求にならないように
       transfer_data: { destination: provider.stripe_connect_id },
       application_fee_amount: applicationFeeAmount(priced.totalAmount),
       metadata: { fineme_provider_id: provider.id, fineme_pos_card: '1', fineme_user_id: customer.user_id },

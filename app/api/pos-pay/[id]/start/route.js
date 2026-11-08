@@ -61,7 +61,7 @@ export async function POST(request, { params }) {
   }
 
   let priced;
-  try { priced = await priceItems(supabase, provider.id, pending.items, pending.discount); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
+  try { priced = await priceItems(supabase, provider.id, pending.items, pending.discount, { customer: pending.customer }); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
   try {
     const userId = pending.customer.user_id;
     const { data: { user } = {} } = await supabase.auth.admin.getUserById(userId).catch(() => ({ data: {} }));
