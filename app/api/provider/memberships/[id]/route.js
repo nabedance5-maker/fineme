@@ -43,7 +43,7 @@ export async function GET(request, { params }) {
     supabase.from('provider_membership_plans').select('id, name, monthly_price, active').eq('provider_id', provider.id).order('sort_order'),
     supabase.from('provider_membership_option_items').select('id, option_id, name, monthly_price, started_at').eq('membership_id', m.id).eq('status', 'active').order('started_at'),
     supabase.from('provider_membership_options').select('id, name, monthly_price').eq('provider_id', provider.id).eq('active', true).order('sort_order'),
-    supabase.from('provider_membership_discounts').select('id, name, kind, value, duration, months, code, active').eq('provider_id', provider.id).order('created_at', { ascending: false }),
+    supabase.from('provider_membership_discounts').select('id, name, kind, value, duration, months, applies_to, code, active').eq('provider_id', provider.id).order('created_at', { ascending: false }),
   ]);
   const discountOf = Object.fromEntries((discounts || []).map(d => [d.id, d]));
   const pendingOptions = m.status === 'pending_approval' && m.option_ids?.length

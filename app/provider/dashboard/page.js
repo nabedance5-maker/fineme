@@ -6468,7 +6468,7 @@ export default function ProviderDashboardPage() {
       // ── オプション・割引・クーポン（でお要望 2026-10-19：hacomono差分 #5） ──
       const JH = () => ({ 'Content-Type': 'application/json', ...authH() });
       const DUR_LABEL = { once: '初回のみ', repeating: 'か月', forever: 'ずっと' };
-      const discText = d => `${d.kind === 'percent' ? `${d.value}%引き` : `¥${Number(d.value).toLocaleString()}引き`}・${d.duration === 'repeating' ? `${d.months}か月` : DUR_LABEL[d.duration]}`;
+      const discText = d => d.applies_to === 'initial_fee' ? `入会金から${d.kind === 'percent' ? `${d.value}%引き` : `¥${Number(d.value).toLocaleString()}引き`}` : `${d.kind === 'percent' ? `${d.value}%引き` : `¥${Number(d.value).toLocaleString()}引き`}・${d.duration === 'repeating' ? `${d.months}か月` : DUR_LABEL[d.duration]}`;
       async function loadOptions() {
         const el = document.getElementById('mbr-opt-list');
         if (!el) return;
@@ -6532,9 +6532,15 @@ export default function ProviderDashboardPage() {
         }));
       }
       document.getElementById('mbr-disc-dur')?.addEventListener('change', e => { document.getElementById('mbr-disc-months-wrap').style.display = e.target.value === 'repeating' ? '' : 'none'; });
+      // 入会金から引く割引は入会時の1回だけなので、期間は選ばせない（2026-11-09 渡邉要望）
+      document.getElementById('mbr-disc-target')?.addEventListener('change', e => {
+        const fee = e.target.value === 'initial_fee';
+        document.getElementById('mbr-disc-dur-wrap').style.display = fee ? 'none' : '';
+        document.getElementById('mbr-disc-months-wrap').style.display = !fee && document.getElementById('mbr-disc-dur').value === 'repeating' ? '' : 'none';
+      });
       document.getElementById('mbr-disc-add-btn')?.addEventListener('click', async () => {
         const g = id => document.getElementById(id);
-        const body = { name: g('mbr-disc-name').value, kind: g('mbr-disc-kind').value, value: g('mbr-disc-value').value, duration: g('mbr-disc-dur').value, months: g('mbr-disc-months').value, code: g('mbr-disc-code').value, max_uses: g('mbr-disc-max').value, valid_until: g('mbr-disc-until').value };
+        const body = { name: g('mbr-disc-name').value, applies_to: g('mbr-disc-target').value, kind: g('mbr-disc-kind').value, value: g('mbr-disc-value').value, duration: g('mbr-disc-dur').value, months: g('mbr-disc-months').value, code: g('mbr-disc-code').value, max_uses: g('mbr-disc-max').value, valid_until: g('mbr-disc-until').value };
         const r = await fetch('/api/provider/membership-discounts', { method: 'POST', headers: JH(), body: JSON.stringify(body) });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) { showToast(d.error || '追加できませんでした'); return; }
@@ -6559,7 +6565,7 @@ export default function ProviderDashboardPage() {
           <div class="mbr-ex">
             <b>割引</b>
             ${m.discount ? `<div class="mbr-ex-row"><span>${esc(m.discount.name)}（${esc(m.discount.text)}）</span><button type="button" class="btn btn-ghost" id="mbr-ex-disc-rm">外す</button></div>` : '<span>付いていません</span>'}
-            ${(m.discounts || []).length ? `<div class="mbr-ex-row"><select id="mbr-ex-disc">${m.discounts.filter(d => d.id !== m.discount?.id).map(d => `<option value="${d.id}">${esc(d.name)}（${esc(d.text)}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" id="mbr-ex-disc-add">${m.discount ? '付け替える' : '付ける'}</button></div>` : ''}
+            ${(m.discounts || []).length ? `<div class="mbr-ex-row"><select id="mbr-ex-disc">${m.discounts.filter(d => d.id !== m.discount?.id && d.applies_to !== 'initial_fee').map(d => `<option value="${d.id}">${esc(d.name)}（${esc(d.text)}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" id="mbr-ex-disc-add">${m.discount ? '付け替える' : '付ける'}</button></div>` : ''}
           </div>`;
         box.querySelectorAll('[data-mbr-opt-rm]').forEach(b => b.addEventListener('click', () => send({ kind: 'option_remove', item_id: b.dataset.mbrOptRm }, 'オプションを外しました')));
         document.getElementById('mbr-ex-opt-add')?.addEventListener('click', () => send({ kind: 'option_add', option_id: document.getElementById('mbr-ex-opt').value }, 'オプションを追加しました'));
@@ -18933,13 +18939,14 @@ export default function ProviderDashboardPage() {
           <div className="card stack mbr-plan-part" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>割引・クーポン</h3>
-              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>月会費から引く割引です（例：学割、家族割、入会キャンペーン）。会員の詳細から付けられます。クーポンコードを設定すると、お客様が入会ページでコードを入れて使えます。金額と期間は作った後に変えられないため、変えたい時は新しく作ってください。</p>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', lineHeight: 1.7 }}>月会費か入会金から引く割引です（例：学割、家族割、入会金無料キャンペーン）。月会費の割引は会員の詳細からも付けられます。入会金の割引は入会の時（クーポンコードか、店舗での入会登録）に使えます。クーポンコードを設定すると、お客様が入会ページでコードを入れて使えます。金額と期間は作った後に変えられないため、変えたい時は新しく作ってください。</p>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>名前</label><input id="mbr-disc-name" placeholder="例：学割" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>引く対象</label><select id="mbr-disc-target"><option value="monthly">月会費</option><option value="initial_fee">入会金</option></select></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>種類</label><select id="mbr-disc-kind"><option value="amount">金額（円）を引く</option><option value="percent">％を引く</option></select></div>
               <div className="form-field" style={{ marginBottom: 0, width: '100px' }}><label>値</label><input id="mbr-disc-value" type="number" min="1" placeholder="1000" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>期間</label><select id="mbr-disc-dur"><option value="once">初回の月会費だけ</option><option value="repeating">決まった月数</option><option value="forever">ずっと</option></select></div>
+              <div className="form-field" id="mbr-disc-dur-wrap" style={{ marginBottom: 0 }}><label>期間</label><select id="mbr-disc-dur"><option value="once">初回の月会費だけ</option><option value="repeating">決まった月数</option><option value="forever">ずっと</option></select></div>
               <div className="form-field" id="mbr-disc-months-wrap" style={{ marginBottom: 0, width: '90px', display: 'none' }}><label>月数</label><input id="mbr-disc-months" type="number" min="1" max="36" placeholder="3" /></div>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>

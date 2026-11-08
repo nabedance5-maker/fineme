@@ -10,7 +10,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request) {
   const a = await auth(request); if (a.res) return a.res;
-  const { data } = await supabase.from('provider_membership_discounts').select('id, name, kind, value, duration, months, code, max_uses, used_count, valid_until, active, created_at').eq('provider_id', a.provider.id).order('created_at', { ascending: false });
+  const { data } = await supabase.from('provider_membership_discounts').select('id, name, kind, value, duration, months, applies_to, code, max_uses, used_count, valid_until, active, created_at').eq('provider_id', a.provider.id).order('created_at', { ascending: false });
   const { data: used } = await supabase.from('provider_memberships').select('discount_id').eq('provider_id', a.provider.id).eq('status', 'active').not('discount_id', 'is', null);
   const cnt = {}; (used || []).forEach(u => { cnt[u.discount_id] = (cnt[u.discount_id] || 0) + 1; });
   return Response.json((data || []).map(d => ({ ...d, members: cnt[d.id] || 0 })));

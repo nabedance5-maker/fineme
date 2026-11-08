@@ -14,5 +14,5 @@ export async function GET(request, { params }) {
   const r = await findCoupon(supabase, provider.id, code);
   if (r.error) return Response.json({ error: r.error }, { status: 400 });
   const d = r.discount;
-  return Response.json({ name: d.name, kind: d.kind, value: d.value, duration: d.duration, months: d.months, text: discountText(d) });
+  return Response.json({ name: d.name, kind: d.kind, value: d.value, duration: d.duration, months: d.months, applies_to: d.applies_to || 'monthly', text: discountText(d) });
 }
