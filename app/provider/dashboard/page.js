@@ -11703,8 +11703,8 @@ export default function ProviderDashboardPage() {
     })();
 
     // ── 予約リクエスト管理 ────────────────────────────────────────
-    const STATUS_LABELS = { pending: '返答待ち', approved: '承認済み', rejected: 'お断り', counter_proposed: '代替提案済み', visited: '来店確認済み', cancelled: 'キャンセル', expired: '期限切れ' };
-    const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444', counter_proposed: '#6366f1', visited: '#059669', cancelled: '#6b7280', expired: '#6b7280' };
+    const STATUS_LABELS = { pending: '返答待ち', approved: '承認済み', rejected: 'お断り', counter_proposed: '代替提案済み', visited: '来店確認済み', cancelled: 'キャンセル', expired: '期限切れ', no_show: '無断キャンセル' };
+    const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444', counter_proposed: '#6366f1', visited: '#059669', cancelled: '#6b7280', expired: '#6b7280', no_show: '#b91c1c' };
     const TIME_OPTIONS = ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
     function parseDateChoices(r) {
@@ -11951,11 +11951,17 @@ export default function ProviderDashboardPage() {
           </div>` : r.status === 'approved' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
             <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
+            ${resStarted(r) ? `<button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}')">無断キャンセル</button>` : ''}
             ${(_activePackagesByUser[r.user_id] || []).map(p => `
             <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
-          </div>` : r.status === 'visited' && r.user_id ? `
+          </div>` : r.status === 'visited' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
-            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">使用チケットを変更</button>
+            ${r.user_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">使用チケットを変更</button>` : ''}
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}', true)">来ていなかった（無断キャンセルにする）</button>
+          </div>` : r.status === 'no_show' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <span style="font-size:12px;color:#1a1410">無断キャンセル${r.package_id ? '（チケットは使ったまま）' : ''}</span>
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来ていた（来店確認に直す）</button>
           </div>` : ''}
         </div>
       `;
@@ -12058,6 +12064,32 @@ export default function ProviderDashboardPage() {
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       document.getElementById('request-detail-modal').style.display = 'none';
       await loadRequests(); showToast('承認しました');
+      window.__calReloadWeek?.();
+    };
+
+    // 予約の時間が来たか（無断キャンセルは時間が来てから）
+    function resStarted(r) {
+      const d = r.confirmed_date || r.reserved_date, t = String(r.confirmed_time || r.start_time || '00:00').slice(0, 5);
+      return !!d && new Date(`${d}T${t}:00+09:00`).getTime() <= Date.now();
+    }
+    // 無断キャンセル（2026-11-09 渡邉要望）：来店しなかった予約。キャンセルと違い、予約で使ったチケット・回数券はお客様に戻さない。お客様へのお知らせは送らない
+    window.markNoShow = async function (id, fromVisited) {
+      const r = _requestsById[id] || {};
+      const ok = await pdConfirm({
+        title: '無断キャンセルにしますか？',
+        lines: [
+          ...(r.user_name ? [['お客様', r.user_name]] : []),
+          ...(fromVisited ? ['予約の時間から24時間たって自動で来店済みになった予約も、無断キャンセルに直せます。'] : []),
+          r.package_id ? 'この予約で使ったチケット・回数券はお客様に戻しません（戻す時は「キャンセル」にしてください）。' : 'お客様へのお知らせは送りません。',
+        ],
+        okLabel: '無断キャンセルにする', cancelLabel: 'やめる',
+      });
+      if (!ok) return;
+      const _t = getSupabaseToken();
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_t ? { 'Authorization': `Bearer ${_t}` } : {}) }, body: JSON.stringify({ status: 'no_show' }) });
+      if (!res.ok) { const e = await res.json().catch(() => {}); showToast(e?.error || '無断キャンセルにできませんでした'); return; }
+      const m = document.getElementById('request-detail-modal'); if (m) m.style.display = 'none';
+      await loadRequests(); showToast('無断キャンセルにしました');
       window.__calReloadWeek?.();
     };
 
@@ -16213,6 +16245,7 @@ export default function ProviderDashboardPage() {
       delete window.showToast;
       delete window.approveRequest;
       delete window.rejectRequest;
+      delete window.markNoShow;
       delete window.showVisitModal;
       delete window.confirmVisit;
       delete window.showCounterModal;

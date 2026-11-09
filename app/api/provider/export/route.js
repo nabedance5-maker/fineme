@@ -9,7 +9,7 @@ import { providerCustomerIds } from '@/lib/broadcast';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const GENDER = { female: '女性', male: '男性', other: 'その他' };
-const STATUS = { pending: '承認待ち', approved: '確定', counter_proposed: '日程の再提案中', visited: '来店済み', cancelled: 'キャンセル', rejected: 'お断り', expired: '期限切れ' };
+const STATUS = { pending: '承認待ち', approved: '確定', counter_proposed: '日程の再提案中', visited: '来店済み', cancelled: 'キャンセル', rejected: 'お断り', expired: '期限切れ', no_show: '無断キャンセル' };
 const MSTATUS = { pending_approval: '承認待ち', active: '入会中', cancelled: '退会', rejected: '却下' };
 const jst = ts => (ts ? new Date(new Date(ts).getTime() + 9 * 3600000).toISOString().replace('T', ' ').slice(0, 16) : '');
 const cell = v => { const s = String(v ?? ''); return /^[=+\-@]/.test(s) ? `"'${s.replace(/"/g, '""')}"` : `"${s.replace(/"/g, '""')}"`; };

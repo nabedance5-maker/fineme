@@ -47,7 +47,7 @@ async function __PATCH(request, context) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = context.params.id;
-    const { data: existing, error: existingError } = await db.from('reservations').select('provider_id, user_id, status').eq('id', id).single();
+    const { data: existing, error: existingError } = await db.from('reservations').select('provider_id, user_id, status, reserved_date, start_time, confirmed_date, confirmed_time').eq('id', id).single();
     if (existingError || !existing) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
 
     const body = await request.json();
@@ -68,8 +68,14 @@ async function __PATCH(request, context) {
     const isOwnerProvider = providerRow && providerRow.id === existing.provider_id;
     const isOwnerCustomer = existing.user_id && existing.user_id === user.id;
     if (isOwnerProvider) {
-      if (!['approved', 'rejected', 'counter_proposed', 'visited'].includes(newStatus)) {
+      if (!['approved', 'rejected', 'counter_proposed', 'visited', 'no_show'].includes(newStatus)) {
         return Response.json({ error: '無効な操作です' }, { status: 400 });
+      }
+      // 無断キャンセル（2026-11-09 渡邉要望）：確定した予約（自動で来店済みになったものも）を、予約の時間が来てから。チケットは戻さない
+      if (newStatus === 'no_show') {
+        if (!['approved', 'visited'].includes(existing.status)) return Response.json({ error: '確定した予約だけ無断キャンセルにできます' }, { status: 400 });
+        const d = existing.confirmed_date || existing.reserved_date, t = (existing.confirmed_time || existing.start_time || '00:00').slice(0, 5);
+        if (d && new Date(`${d}T${t}:00+09:00`).getTime() > Date.now()) return Response.json({ error: '予約の時間が来てから無断キャンセルにできます（来られないと連絡があった時は、キャンセルにしてください）' }, { status: 400 });
       }
     } else if (isOwnerCustomer) {
       if (!['approved', 'cancelled'].includes(newStatus)) {
@@ -90,6 +96,8 @@ async function __PATCH(request, context) {
     // これまでどこでも書き込まれておらず両クロンが実質発火しない状態だった
     // （でお指摘2026-09-09の調査で発覚）。来店確認のタイミングで記録する。
     if (newStatus === 'visited') updates.visited_at = new Date().toISOString();
+    if (newStatus === 'no_show') updates.no_show_at = new Date().toISOString();
+    if (newStatus === 'visited' && existing.status === 'no_show') updates.no_show_at = null; // 無断キャンセルにした後、来ていたと分かって直した
     // 代替提案時：24時間の回答期限を設定
     if (newStatus === 'counter_proposed') {
       updates.counter_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

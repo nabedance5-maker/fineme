@@ -9,6 +9,7 @@ export const STATUS = {
   rejected: { label: 'お断り', tone: 'done' },
   cancelled: { label: 'キャンセル済み', tone: 'done' },
   expired: { label: '期限切れ', tone: 'done' },
+  no_show: { label: 'ご来店なし', tone: 'done' },
 };
 
 const ACTIVE = ['pending', 'counter_proposed', 'approved'];
