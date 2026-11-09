@@ -1,7 +1,7 @@
 // PATCH /api/reservations/[id] - 掲載者が承認/拒否/代替提案
 // GET  /api/reservations/[id] - 予約詳細取得
 import { getSupabase } from '@/lib/supabase';
-import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail } from '@/lib/email';
+import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail, contactEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { syncVisitToLog } from '@/lib/sync-visit';
@@ -170,9 +170,9 @@ async function __PATCH(request, context) {
       await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: lineMsgs[newStatus], quickReplyItems });
     }
 
-    if (newStatus === 'visited' && data.user_contact?.includes('@')) {
+    if (newStatus === 'visited' && contactEmail(data.user_contact)) {
       try {
-        await sendVisitConfirmedEmail({ reservation: data, userEmail: data.user_contact, userName: data.user_name, providerName: provider?.name });
+        await sendVisitConfirmedEmail({ reservation: data, userEmail: contactEmail(data.user_contact), userName: data.user_name, providerName: provider?.name });
       } catch (e) { console.error('[visit email]', e); }
     }
     if (newStatus === 'visited') {
