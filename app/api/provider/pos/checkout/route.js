@@ -4,7 +4,7 @@
 // 2026-10-19：施術メニュー・手入力・割引・お客様・支払方法の設定・お預かりに対応（hacomono差分 #12）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { recordPosTransaction } from '@/lib/pos-checkout';
+import { recordPosTransaction, usableReceiptEmail } from '@/lib/pos-checkout';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
 import { memberAuth } from '@/lib/provider-members';
@@ -17,7 +17,8 @@ async function __POST(request) {
   const { data: provider } = await supabase.from('providers').select('id, plan').eq('id', a.provider.id).single();
   { const locked = planLockedResponse(provider, 'pos'); if (locked) return locked; }
 
-  const { items, staff_id, payment_method, payment_key, memo, discount, customer, cash_received } = await request.json().catch(() => ({}));
+  const { items, staff_id, payment_method, payment_key, memo, discount, customer, cash_received, receipt_email, save_receipt_email } = await request.json().catch(() => ({}));
+  if (typeof receipt_email === 'string' && receipt_email.trim() && !usableReceiptEmail(receipt_email)) return Response.json({ error: 'レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）' }, { status: 400 });
 
   try {
     const result = await recordPosTransaction(supabase, {
@@ -31,6 +32,8 @@ async function __POST(request) {
       customer,
       cashReceived: cash_received,
       operator: a.user.fineme_member?.name || 'オーナー',
+      receiptEmail: typeof receipt_email === 'string' ? receipt_email.trim() : undefined,
+      saveReceiptEmail: !!save_receipt_email,
     });
     return Response.json(result);
   } catch (e) {

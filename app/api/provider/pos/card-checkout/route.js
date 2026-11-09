@@ -8,7 +8,7 @@ import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { memberAuth } from '@/lib/provider-members';
 import { planLockedResponse } from '@/lib/plan-features';
-import { priceItems, recordPosTransaction, posSettings } from '@/lib/pos-checkout';
+import { priceItems, recordPosTransaction, posSettings, usableReceiptEmail } from '@/lib/pos-checkout';
 import { applicationFeeAmount } from '@/lib/payment-fee';
 import { findMemberCard, cardLabel } from '@/lib/pos-member-card';
 
@@ -25,7 +25,8 @@ async function __POST(request) {
     return Response.json({ error: 'カード決済の受け取り設定が完了していません（「Fineme利用契約」タブ上部の「カード決済の受け取り設定」から設定できます）' }, { status: 409 });
   }
 
-  const { items, staff_id, memo, discount, customer, request_id } = await request.json().catch(() => ({}));
+  const { items, staff_id, memo, discount, customer, request_id, receipt_email, save_receipt_email } = await request.json().catch(() => ({}));
+  if (typeof receipt_email === 'string' && receipt_email.trim() && !usableReceiptEmail(receipt_email)) return Response.json({ error: 'レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）' }, { status: 400 });
   if (!customer?.user_id) return Response.json({ error: 'お客様を選んでください（会員証を読み取るか、お客様を選ぶ）' }, { status: 400 });
   if (!/^[0-9a-f-]{36}$/i.test(request_id || '')) return Response.json({ error: '会計の番号が正しくありません。画面を開き直してください' }, { status: 400 });
 
@@ -70,6 +71,7 @@ async function __POST(request) {
       providerId: provider.id, items, staffId: staff_id, memo, discount, customer,
       paymentMethod: `登録カード（${cardLabel(card)}）`, source: 'pos_card',
       operator: a.user.fineme_member?.name || 'オーナー', stripePaymentIntentId: pi.id,
+      receiptEmail: typeof receipt_email === 'string' ? receipt_email.trim() : undefined, saveReceiptEmail: !!save_receipt_email,
     });
     return Response.json({ ...result, card_label: cardLabel(card) });
   } catch (e) {

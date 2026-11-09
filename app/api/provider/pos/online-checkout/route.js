@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
-import { priceItems } from '@/lib/pos-checkout';
+import { priceItems, usableReceiptEmail } from '@/lib/pos-checkout';
 import { isStoreCustomer } from '@/lib/customer-accounts';
 import { createPosCheckoutSession, posLineName } from '@/lib/pos-online-session';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -41,7 +41,8 @@ async function __POST(request) {
     return Response.json({ error: 'カード決済の受け取り設定が完了していません（「Fineme利用契約」タブ上部の「カード決済の受け取り設定」から設定できます）' }, { status: 409 });
   }
 
-  const { items, staff_id, memo, discount, customer } = await request.json().catch(() => ({}));
+  const { items, staff_id, memo, discount, customer, receipt_email, save_receipt_email } = await request.json().catch(() => ({}));
+  if (typeof receipt_email === 'string' && receipt_email.trim() && !usableReceiptEmail(receipt_email)) return Response.json({ error: 'レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）' }, { status: 400 });
   // 明細の検証・金額計算だけここで行う（在庫引き当て・記録は支払い確定後）。会計確定と同じ計算を使う
   let priced;
   try { priced = await priceItems(supabase, provider.id, items, discount, { customer }); } catch (e) { return Response.json({ error: e.message }, { status: 400 }); }
@@ -49,7 +50,7 @@ async function __POST(request) {
 
   const { data: pending, error: pendingError } = await supabase
     .from('provider_pos_pending_checkouts')
-    .insert({ provider_id: provider.id, items, staff_id: staff_id || null, memo: memo?.trim() || null, total_amount: totalAmount, discount: discount || null, customer: customer || null })
+    .insert({ provider_id: provider.id, items, staff_id: staff_id || null, memo: memo?.trim() || null, total_amount: totalAmount, discount: discount || null, customer: customer || null, receipt_email: typeof receipt_email === 'string' ? receipt_email.trim().slice(0, 254) : null, save_receipt_email: !!save_receipt_email })
     .select()
     .single();
   if (pendingError) return Response.json({ error: pendingError.message }, { status: 500 });

@@ -190,6 +190,8 @@ export async function POST(request) {
               memo: pending.memo,
               discount: pending.discount || undefined,
               customer: pending.customer || undefined,
+              receiptEmail: typeof pending.receipt_email === 'string' ? pending.receipt_email : undefined, // null＝画面で指定なし（お客様の登録のアドレス）
+              saveReceiptEmail: !!pending.save_receipt_email,
               source: 'pos_online',
               stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
             });

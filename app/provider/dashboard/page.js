@@ -14970,6 +14970,40 @@ export default function ProviderDashboardPage() {
       const cardBtn = $('pos-card-checkout-btn');
       let source = 'product';
       let customerPool = null;
+      let receiptKey = null, receiptDefault = null; // レシートのメール：今のお客様と、その方の登録のアドレス
+      const RECEIPT_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const receiptOn = () => settings?.email_receipt !== false;
+      function renderReceipt() {
+        const wrap = $('pos-receipt-wrap'); if (!wrap) return;
+        wrap.style.display = receiptOn() ? '' : 'none';
+        const v = ($('pos-receipt-email').value || '').trim().toLowerCase();
+        $('pos-receipt-save-wrap').style.display = customer && v && v !== (receiptDefault || '') ? 'flex' : 'none';
+      }
+      // お客様を選んだら、その方の登録のアドレスを入れておく（お店で登録したメール→Finemeアカウントのメールの順）。会計の前に確かめて変えられる
+      function syncReceiptEmail() {
+        const key = customer ? (customer.manual_id ? `m:${customer.manual_id}` : `u:${customer.user_id}`) : null;
+        if (key === receiptKey) { renderReceipt(); return; }
+        receiptKey = key; receiptDefault = null;
+        const input = $('pos-receipt-email'); if (input) input.value = '';
+        renderReceipt();
+        if (!key || !input) return;
+        const q = customer.manual_id ? `manual_id=${encodeURIComponent(customer.manual_id)}` : `user_id=${encodeURIComponent(customer.user_id)}`;
+        fetch(`/api/provider/pos/receipt-email?${q}`, { headers: authHeadersPos() }).then(r => (r.ok ? r.json() : null)).then(d => {
+          if (receiptKey !== key) return;
+          receiptDefault = d?.email || null;
+          if (!input.value.trim()) input.value = receiptDefault || '';
+          renderReceipt();
+        }).catch(() => {});
+      }
+      // 会計に付けるレシートの宛先。形が違う時は null（会計を止める）
+      function receiptPayload() {
+        if (!receiptOn() || !$('pos-receipt-email')) return {};
+        const v = ($('pos-receipt-email').value || '').trim();
+        if (v && !RECEIPT_RE.test(v)) return null;
+        return { receipt_email: v, save_receipt_email: !!(customer && v && v.toLowerCase() !== (receiptDefault || '') && $('pos-receipt-save').checked) };
+      }
+      const receiptLine = () => (receiptOn() && $('pos-receipt-email') ? [['レシートのメール', ($('pos-receipt-email').value || '').trim() || '送らない']] : []);
+      $('pos-receipt-email')?.addEventListener('input', renderReceipt);
 
       const lineBase = c => c.unit_price * c.qty;
       const offOf = (base, d, qty = 1) => {
@@ -15114,6 +15148,7 @@ export default function ProviderDashboardPage() {
         $('pos-cust-clear').style.display = customer ? '' : 'none';
         if (!customer) memberCard = null;
         renderCardBtn();
+        syncReceiptEmail();
       }
       $('pos-cust-btn')?.addEventListener('click', async () => {
         const box = $('pos-cust-picker');
@@ -15181,6 +15216,8 @@ export default function ProviderDashboardPage() {
         const pay = currentPay();
         const cashRec = pay?.cash && $('pos-cash').value !== '' ? parseInt($('pos-cash').value, 10) : null;
         if (cashRec != null && cashRec < t.total) { showToast('お預かりが合計より少ないです'); return; }
+        const rc = receiptPayload();
+        if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
         // 押し間違いで会計を確定しないよう、最後に確かめてもらう（でお要望 2026-10-28）
         checkoutBtn.disabled = true;
         const ok = await pdConfirm({
@@ -15190,6 +15227,7 @@ export default function ProviderDashboardPage() {
             ...(pay?.label ? [['支払い方法', pay.label]] : []),
             ...(cashRec != null ? [['お預かり', yen(cashRec)], ['おつり', yen(cashRec - t.total)]] : []),
             ...(customer?.name ? [['お客様', customer.name]] : []),
+            ...receiptLine(),
           ],
           okLabel: 'はい', cancelLabel: 'いいえ',
         });
@@ -15199,7 +15237,7 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: authHeadersPos(),
           body: JSON.stringify({
             items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
-            discount: cartDiscount, customer, staff_id: staffSel?.value || null, payment_key: paySel?.value || null, cash_received: cashRec,
+            discount: cartDiscount, customer, staff_id: staffSel?.value || null, payment_key: paySel?.value || null, cash_received: cashRec, ...rc,
           }),
         });
         checkoutBtn.disabled = false;
@@ -15210,7 +15248,7 @@ export default function ProviderDashboardPage() {
 
       async function showSaleDone(tx, extra = '') {
         $('pos-done').hidden = false;
-        $('pos-done').innerHTML = `<b>会計しました（${esc(tx.receipt_no)}）</b><span>合計 ${yen(tx.total_amount)}${tx.cash_received != null ? `・お預かり ${yen(tx.cash_received)}・おつり ${yen(tx.cash_received - tx.total_amount)}` : ''}${extra}</span>
+        $('pos-done').innerHTML = `<b>会計しました（${esc(tx.receipt_no)}）</b><span>合計 ${yen(tx.total_amount)}${tx.cash_received != null ? `・お預かり ${yen(tx.cash_received)}・おつり ${yen(tx.cash_received - tx.total_amount)}` : ''}${extra}${tx.receipt_email ? `・レシートを ${esc(tx.receipt_email)} に送りました` : ''}</span>
           <div class="pos-row"><button type="button" class="btn" data-print-receipt="${tx.id}">レシートを印刷</button><button type="button" class="btn btn-ghost" data-print-ryoshu="${tx.id}">領収書を発行</button><button type="button" class="btn btn-ghost" id="pos-done-x">閉じる</button></div>`;
         $('pos-done-x').onclick = () => { $('pos-done').hidden = true; };
         resetSale();
@@ -15275,9 +15313,11 @@ export default function ProviderDashboardPage() {
       cardBtn?.addEventListener('click', async () => {
         if (!cart.length || !memberCard || !customer?.user_id) return;
         const t = totals();
+        const rc = receiptPayload();
+        if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
         const ok = await pdConfirm({
           title: '会計しますか？',
-          lines: [['合計', yen(t.total)], ['支払い方法', `登録済みのカード（${memberCard.label}）`], ['お客様', customer.name], 'お客様ご本人に金額を確認していただいてから「はい」を押してください。押すとカードに請求されます。'],
+          lines: [['合計', yen(t.total)], ['支払い方法', `登録済みのカード（${memberCard.label}）`], ['お客様', customer.name], ...receiptLine(), 'お客様ご本人に金額を確認していただいてから「はい」を押してください。押すとカードに請求されます。'],
           okLabel: 'はい', cancelLabel: 'いいえ',
         });
         if (!ok || !cart.length || !memberCard) return;
@@ -15287,7 +15327,7 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: authHeadersPos(),
           body: JSON.stringify({
             items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
-            discount: cartDiscount, customer, staff_id: staffSel?.value || null, request_id: cardRequestId,
+            discount: cartDiscount, customer, staff_id: staffSel?.value || null, request_id: cardRequestId, ...rc,
           }),
         });
         const d = await res.json().catch(() => ({}));
@@ -15301,6 +15341,8 @@ export default function ProviderDashboardPage() {
       const stopOnlineCheckoutPoll = () => { if (onlineCheckoutPollId) { clearTimeout(onlineCheckoutPollId); onlineCheckoutPollId = null; } };
       onlineCheckoutBtn?.addEventListener('click', async () => {
         if (!cart.length) return;
+        const rc = receiptPayload();
+        if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
         stopOnlineCheckoutPoll();
         onlineCheckoutBtn.disabled = true;
         checkoutMsg.textContent = '';
@@ -15311,7 +15353,7 @@ export default function ProviderDashboardPage() {
             method: 'POST', headers: authHeadersPos(),
             body: JSON.stringify({
               items: cart.map(c => ({ kind: c.kind, product_id: c.product_id, service_id: c.service_id, package_id: c.package_id, name: c.name, unit_price: c.unit_price, qty: c.qty, discount: c.discount || null })),
-              discount: cartDiscount, customer, staff_id: staffSel?.value || null,
+              discount: cartDiscount, customer, staff_id: staffSel?.value || null, ...rc,
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -15602,7 +15644,7 @@ export default function ProviderDashboardPage() {
         $('pos-set-receipt_name').placeholder = s.store_name || '';
         $('pos-set-tax_rate').value = String(s.tax_rate || 10);
         { const er = $('pos-set-email_receipt'); if (er) er.checked = s.email_receipt !== false; }
-        renderCart();
+        renderCart(); renderReceipt();
       }
       $('pos-set-add-method')?.addEventListener('click', () => { settings.payment_methods.push({ key: `m${Date.now().toString(36)}`, label: '', cash: false }); renderSettings(); });
       $('pos-set-save')?.addEventListener('click', async () => {
@@ -18791,6 +18833,10 @@ export default function ProviderDashboardPage() {
                   <b id="pos-change"></b>
                 </span>
               </div>
+              <div id="pos-receipt-wrap" className="pos-row" style={{ display: 'none', alignItems: 'flex-end' }}>
+                <label className="pos-field" style={{ flex: '1 1 260px' }}>レシートを送るメール<input id="pos-receipt-email" type="email" inputMode="email" autoComplete="off" maxLength={254} placeholder="送らない時は空のまま" /></label>
+                <label id="pos-receipt-save-wrap" style={{ display: 'none', fontSize: '12.5px', gap: '6px', alignItems: 'center', color: '#1a1410' }}><input type="checkbox" id="pos-receipt-save" defaultChecked style={{ width: 'auto', margin: 0 }} />次からもこのアドレスに送る（お客様の情報に残す）</label>
+              </div>
               <div className="pos-row" style={{ justifyContent: 'flex-end' }}>
                 <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled>お客様のスマホで払う（QR）</button>
                 <button type="button" id="pos-card-checkout-btn" className="btn" disabled style={{ display: 'none' }}></button>
@@ -18847,7 +18893,7 @@ export default function ProviderDashboardPage() {
               <label className="pos-field">消費税率<select id="pos-set-tax_rate"><option value="10">10%</option><option value="8">8%（軽減税率）</option></select></label>
             </div>
             <label className="pos-field">レシートの最後のひとこと（任意）<input id="pos-set-receipt_footer" maxLength={200} placeholder="例：またのご来店をお待ちしております" /></label>
-            <label className="pos-field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}><input type="checkbox" id="pos-set-email_receipt" style={{ width: 'auto', marginTop: '3px' }} /><span>お会計のあと、お客様にレシートをメールで送る（お客様を選んだ会計で、メールアドレスが分かる時）</span></label>
+            <label className="pos-field" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}><input type="checkbox" id="pos-set-email_receipt" style={{ width: 'auto', marginTop: '3px' }} /><span>お会計のあと、お客様にレシートをメールで送る（お客様を選ぶと登録のアドレスが入ります。会計の前に確かめて変えられ、お客様を選ばない会計でも入れれば送れます）</span></label>
             <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>金額は税込みで表示し、レシート・領収書には「内消費税」を載せます。5万円以上を現金で受け取った領収書には、収入印紙を貼る欄が出ます。</p>
             <button type="button" className="btn" id="pos-set-save" style={{ width: 'fit-content' }}>設定を保存する</button>
           </div>
