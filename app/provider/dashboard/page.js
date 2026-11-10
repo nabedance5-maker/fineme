@@ -3031,7 +3031,9 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-staff-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このスタッフを削除しますか？')) return;
-          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
+          const res = await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
+          // 担当の予約が残っている・勤怠の管理者などで削除できない時は、理由を見せる
+          if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || '削除できませんでした'); return; }
           loadStaff();
         }));
       }
@@ -4822,12 +4824,12 @@ export default function ProviderDashboardPage() {
           overlay.querySelector('#shift-day-close')?.addEventListener('click', () => overlay.remove());
           overlay.querySelector('#shift-day-confirm')?.addEventListener('click', () => setConfirm(isConf ? 'unconfirm' : 'confirm'));
           overlay.querySelectorAll('[data-day-del]').forEach(btn => btn.addEventListener('click', async () => {
-            let res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
-            // 担当の予約が勤務時間の外になる時は、内容を見せて確かめる（2026-11-09 渡邉報告）
+            const res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
+            // 担当の予約がある時間のシフトは外せない（2026-11-10 渡邉判断。先に予約の担当か日時を変える）
             if (res.status === 409) {
               const d = await res.json().catch(() => ({}));
-              if (!confirm(`${d.error || 'この時間に担当の予約があります。'}\n\nそれでもシフトを外しますか？（予約は残り、担当のスタッフが勤務していない状態になります）`)) return;
-              res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}?force=1`, { method: 'DELETE', headers: authHeadersShift() });
+              alert(d.error || 'この時間に担当の予約があるため、シフトを外せません。先に予約の担当スタッフか日時を変えてください。');
+              return;
             }
             if (res.ok) await refresh(); else showToast('外せませんでした');
           }));

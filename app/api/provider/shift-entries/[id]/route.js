@@ -21,7 +21,8 @@ async function assertOwnEntry(providerId, entryId) {
   return data || null;
 }
 
-// このコマを外す・変えた後に、担当の予約が勤務時間の外にはみ出すか（force で確かめた上で進める。2026-11-09）
+// このコマを外す・変えた後に、担当の予約が勤務時間の外にはみ出すか。はみ出す時は外せない・変えられない
+// （2026-11-09 確認を出す形 → 2026-11-10 渡邉判断で外せないようにした。先に予約の担当か日時を変える）
 async function uncovered(providerId, entry, after) {
   const { data: others } = await supabase.from('provider_shift_entries').select('id, start_time, end_time')
     .eq('provider_id', providerId).eq('staff_id', entry.staff_id).eq('date', entry.date).neq('id', entry.id);
@@ -44,10 +45,10 @@ async function __PATCH(request, { params }) {
   if (body.date) update.date = body.date;
   if (body.start_time) update.start_time = body.start_time;
   if (body.end_time) update.end_time = body.end_time;
-  if (!body.force) {
+  {
     const after = { staff_id: update.staff_id || entry.staff_id, date: update.date || entry.date, start_time: update.start_time || entry.start_time, end_time: update.end_time || entry.end_time };
     const out = await uncovered(provider.id, entry, after);
-    if (out.length) return Response.json({ error: outsideMessage(out), reservations: out, needs_force: true }, { status: 409 });
+    if (out.length) return Response.json({ error: outsideMessage(out), reservations: out }, { status: 409 });
   }
 
   const { data, error } = await supabase.from('provider_shift_entries').update(update).eq('id', params.id).select().single();
@@ -64,9 +65,9 @@ async function __DELETE(request, { params }) {
   { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
   const entry = await assertOwnEntry(provider.id, params.id);
   if (!entry) return Response.json({ error: 'シフトが見つかりません' }, { status: 404 });
-  if (new URL(request.url).searchParams.get('force') !== '1') {
+  {
     const out = await uncovered(provider.id, entry, null);
-    if (out.length) return Response.json({ error: outsideMessage(out), reservations: out, needs_force: true }, { status: 409 });
+    if (out.length) return Response.json({ error: outsideMessage(out), reservations: out }, { status: 409 });
   }
 
   const { error } = await supabase.from('provider_shift_entries').delete().eq('id', params.id);

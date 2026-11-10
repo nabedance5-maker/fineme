@@ -61,6 +61,19 @@ async function __DELETE(request, { params }) {
     return Response.json({ error: 'このスタッフは勤怠の管理者です。勤怠タブで管理者を外してから削除してください' }, { status: 409 });
   }
 
+  // これから先の担当の予約が残っている時は削除できない（削除するとシフトも一緒に消え、担当のいない予約になるため。
+  // 2026-11-10 渡邉判断：予約があるのにシフトを外せないように）
+  const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  const { data: upcoming } = await supabase.from('reservations')
+    .select('id, user_name, reserved_date, confirmed_date, counter_date, status')
+    .eq('provider_id', provider.id).eq('staff_id', id).in('status', ['pending', 'approved', 'counter_proposed'])
+    .or(`reserved_date.gte.${today},confirmed_date.gte.${today},counter_date.gte.${today}`)
+    .limit(5);
+  if (upcoming?.length) {
+    const list = upcoming.map(r => `${(r.status === 'counter_proposed' && r.counter_date) || r.confirmed_date || r.reserved_date} ${r.user_name || 'お客様'}様`).join('、');
+    return Response.json({ error: `このスタッフが担当する予約があります（${list}${upcoming.length >= 5 ? ' ほか' : ''}）。先に予約の担当スタッフを変えてから削除してください` }, { status: 409 });
+  }
+
   const { error } = await supabase
     .from('provider_staff')
     .delete()
