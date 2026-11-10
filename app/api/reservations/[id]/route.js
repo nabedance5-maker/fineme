@@ -10,6 +10,8 @@ import { autoConsumePackageForVisit } from '@/lib/consume-package';
 import { refundDepositIfPaid } from '@/lib/reservation-deposit';
 import { withAudit, logCustomerActivity } from '@/lib/activity-log';
 import { providerRecipients } from '@/lib/provider-recipients';
+import { checkStoreBooking, addMinutes } from '@/lib/booking-check';
+import { reservationMinutes } from '@/lib/availability-engine';
 
 export async function GET(request, context) {
   try {
@@ -56,14 +58,22 @@ async function __PATCH(request, context) {
     // 予約の日時変更（2026-11-10 渡邉要望：予約の詳細から「予約変更」）。店舗本人が、確定した予約の日時を変える。
     // ステータスはそのまま（チケットの扱いも変わらない）。notify ならお客様にメール・LINEでお知らせする
     if (action === 'reschedule') {
-      const { data: me } = await db.from('providers').select('id, name').eq('email', user.email).single();
+      const { data: me } = await db.from('providers').select('id, name, booking_unit, business_hours, booking_interval_minutes, store_capacity, enabled_features, plan').eq('email', user.email).single();
       if (!me || me.id !== existing.provider_id) return Response.json({ error: 'この予約を操作する権限がありません' }, { status: 403 });
       if (existing.status !== 'approved') return Response.json({ error: '確定した予約だけ日時を変えられます（リクエスト中の予約は「代わりの日時を提案」から）' }, { status: 400 });
       const nd = String(body.date || ''), nt = String(body.time || '').slice(0, 5);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(nd) || !/^\d{2}:\d{2}$/.test(nt)) return Response.json({ error: '日付と時刻を選んでください' }, { status: 400 });
       const before = { date: existing.confirmed_date || existing.reserved_date, time: String(existing.confirmed_time || existing.start_time || '').slice(0, 5) };
+      // 新しい時間に、担当・部屋・お客様が空いているか（同じ長さで動かす。2026-11-10）
+      const { data: full } = await db.from('reservations').select('id, user_id, user_name, user_contact, staff_id, resource_id, service_id, slot_id, start_time, confirmed_time, end_time, class_id').eq('id', id).single();
+      let slotDur = {}, svcs = {};
+      if (full.slot_id) { const { data: sl } = await db.from('provider_slots').select('start_time, end_time').eq('id', full.slot_id).maybeSingle(); if (sl) { const m = t => { const [h, mm] = String(t).split(':').map(Number); return h * 60 + (mm || 0); }; slotDur = { [full.slot_id]: m(sl.end_time) - m(sl.start_time) }; } }
+      if (full.service_id) { const { data: sv } = await db.from('provider_services').select('id, duration_minutes').eq('id', full.service_id).maybeSingle(); if (sv) svcs = { [sv.id]: sv }; }
+      const newEnd = addMinutes(nt, reservationMinutes(full, slotDur, svcs));
+      const chk = await checkStoreBooking(db, me, { date: nd, startTime: nt, endTime: newEnd, staffId: full.staff_id, resourceId: full.resource_id, serviceId: full.service_id, userId: full.user_id, userName: full.user_name, userContact: full.user_contact, excludeId: id });
+      if (!chk.ok) return Response.json({ error: chk.error }, { status: 409 });
       // 予約日（カレンダーの読み込み範囲の基準）も揃える。即時予約の枠は元の時間のままになるため外して空ける（所要時間はメニューから）
-      const { data, error } = await db.from('reservations').update({ confirmed_date: nd, confirmed_time: nt, reserved_date: nd, start_time: nt, slot_id: null }).eq('id', id).select().single();
+      const { data, error } = await db.from('reservations').update({ confirmed_date: nd, confirmed_time: nt, reserved_date: nd, start_time: nt, end_time: newEnd, slot_id: null, staff_id: chk.staffId || full.staff_id, resource_id: chk.resourceId || full.resource_id }).eq('id', id).select().single();
       if (error) return Response.json({ error: error.message }, { status: 500 });
       if (body.notify) {
         try { await sendReservationRescheduledEmail({ reservation: data, before, providerName: me.name }); } catch (e) { console.error('[reschedule email]', e); }

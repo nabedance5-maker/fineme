@@ -14159,7 +14159,37 @@ export default function ProviderDashboardPage() {
         manualTicketNote.textContent = !d ? 'この方はこのお店のお客様として見つかりません（メンバータブで追加すると、チケットを付けられます）'
           : usable.length ? `1回で${cost}枚使います（予約した時点で使い、来店前にキャンセルすると戻ります）` : 'このメニューに使えるチケットをお持ちではありません（メンバータブでお客様を開くと付けられます）';
       }
-      manualServiceEl?.addEventListener('change', refreshManualTickets);
+      // 時間とメニューの長さ・メニューで使える部屋を連動させる（2026-11-10 渡邉報告）
+      const manualStartEl = document.getElementById('cal-manual-start');
+      const manualEndEl = document.getElementById('cal-manual-end');
+      const manualTimeNoteEl = document.getElementById('cal-manual-time-note');
+      const plusMin = (t, m) => { const [h, mm] = String(t || '00:00').split(':').map(Number); const x = Math.min(24 * 60 - 1, h * 60 + mm + m); return `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`; };
+      function syncManualService() {
+        const svc = (manualServices || []).find(x => x.id === manualServiceEl?.value);
+        if (manualEndEl && manualStartEl) {
+          if (svc?.duration_minutes) {
+            manualEndEl.value = plusMin(manualStartEl.value, svc.duration_minutes);
+            manualEndEl.disabled = true;
+            if (manualTimeNoteEl) manualTimeNoteEl.textContent = `メニューの長さ（${svc.duration_minutes}分）で終わりの時刻が決まります`;
+          } else {
+            manualEndEl.disabled = false;
+            if (!manualEndEl.value || manualEndEl.value <= manualStartEl.value) manualEndEl.value = plusMin(manualStartEl.value, 60);
+            if (manualTimeNoteEl) manualTimeNoteEl.textContent = 'メニューを選ばない時は、終わりの時刻を入れてください';
+          }
+        }
+        if (manualResourceEl && manualCtx?.mode === 'reservation') {
+          const allowed = (svc?.resource_ids || []).length ? resourceList.filter(r => svc.resource_ids.includes(r.id)) : resourceList;
+          const cur = manualResourceEl.value;
+          manualResourceEl.innerHTML = `<option value="">${(svc?.resource_ids || []).length ? '空いている部屋を自動で選ぶ' : '未割当'}</option>` + allowed.map(r => `<option value="${r.id}"${r.id === cur ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+        }
+      }
+      manualServiceEl?.addEventListener('change', () => { refreshManualTickets(); syncManualService(); });
+      manualStartEl?.addEventListener('change', () => {
+        const svc = (manualServices || []).find(x => x.id === manualServiceEl?.value);
+        if (svc?.duration_minutes) manualEndEl.value = plusMin(manualStartEl.value, svc.duration_minutes);
+        else if (manualEndEl.value <= manualStartEl.value) manualEndEl.value = plusMin(manualStartEl.value, 60);
+        if (manualCtx) { manualCtx.time = manualStartEl.value; if (manualWhenEl) manualWhenEl.textContent = `${manualCtx.date} ${manualStartEl.value}〜`; }
+      });
       bindMemberSearch(
         manualNameEl,
         document.getElementById('cal-manual-name-suggest'),
@@ -14188,7 +14218,9 @@ export default function ProviderDashboardPage() {
         }
         if (manualMsgEl) manualMsgEl.textContent = '';
         setManualSelectedMember(null, '');
-        loadManualServices().then(() => { if (manualServiceEl) manualServiceEl.value = ''; refreshManualTickets(); });
+        if (manualStartEl) manualStartEl.value = time;
+        if (manualEndEl) manualEndEl.value = plusMin(time, 60);
+        loadManualServices().then(() => { if (manualServiceEl) manualServiceEl.value = ''; refreshManualTickets(); syncManualService(); });
         // 合体ビューではスタッフ列・部屋列どちらをタップしたかでcolGroupKeyが変わるため、
         // タップした列自身のgroupKeyでどちらのプルダウンを事前選択するか決める。
         if (manualStaffEl) {
@@ -14389,9 +14421,13 @@ export default function ProviderDashboardPage() {
         if (!user_name) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'お客様名を入力してください'; } return; }
         manualSaveBtn.disabled = true;
         if (manualMsgEl) { manualMsgEl.style.color = ''; manualMsgEl.textContent = '保存中…'; }
+        const startV = manualStartEl?.value || manualCtx.time;
+        const endV = manualEndEl?.value || '';
+        if (!manualServiceEl?.value && (!endV || endV <= startV)) { manualSaveBtn.disabled = false; if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = '終わりの時刻を、始まりより後にしてください'; } return; }
         const body = {
           date: manualCtx.date,
-          time: manualCtx.time,
+          time: startV,
+          end_time: manualServiceEl?.value ? null : endV,
           user_name,
           user_contact: manualContactEl?.value.trim() || '',
           staff_id: manualStaffEl?.value || null,
@@ -14644,7 +14680,7 @@ export default function ProviderDashboardPage() {
           body: JSON.stringify(body),
         });
         modalAssignSaveBtn.disabled = false;
-        if (!res.ok) { if (modalAssignMsgEl) { modalAssignMsgEl.style.color = '#ef4444'; modalAssignMsgEl.textContent = '保存に失敗しました'; } return; }
+        if (!res.ok) { const e = await res.json().catch(() => ({})); if (modalAssignMsgEl) { modalAssignMsgEl.style.color = '#ef4444'; modalAssignMsgEl.textContent = e.error || '保存に失敗しました'; } return; }
         if (modalAssignMsgEl) { modalAssignMsgEl.style.color = '#4ade80'; modalAssignMsgEl.textContent = '✓ 保存しました'; }
         await loadWeek(); // グリッドの列分けに反映
       });
@@ -16911,6 +16947,16 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>メニュー（任意）</label>
                 <select id="cal-manual-service"><option value="">選ばない</option></select>
+              </div>
+              {/* 時間（2026-11-10 渡邉報告：メニューを選ばない時に終わりの時刻を決められなかった）。メニューを選ぶと終わりはメニューの長さ */}
+              <div className="form-field">
+                <label>時間</label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <input type="time" id="cal-manual-start" step="300" style={{ flex: 1 }} />
+                  <span>〜</span>
+                  <input type="time" id="cal-manual-end" step="300" style={{ flex: 1 }} />
+                </div>
+                <p id="cal-manual-time-note" className="muted" style={{ fontSize: '12px', margin: '4px 0 0' }}></p>
               </div>
               <div className="form-field" id="cal-manual-ticket-field" style={{ display: 'none' }}>
                 <label>使うチケット</label>

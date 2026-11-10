@@ -11,13 +11,14 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { customerEntitlements, checkService, needsTicket, requiresTicket } from '@/lib/booking-eligibility';
+import { checkStoreBooking, addMinutes } from '@/lib/booking-check';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, booking_unit, business_hours, booking_interval_minutes, store_capacity, enabled_features, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -28,7 +29,7 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { date, time, user_name, user_contact, staff_id, resource_id, note, user_id, service_id, package_id } = body;
+  const { date, time, end_time, user_name, user_contact, staff_id, resource_id, note, user_id, service_id, package_id } = body;
 
   if (!date || !time || !user_name) {
     return Response.json({ error: '日時とお客様名は必須です' }, { status: 400 });
@@ -54,7 +55,7 @@ async function __POST(request) {
   // メニューとチケット（でお要望 2026-10-22）。チケットが要るメニューは、会員を選び、その方が持っているチケットで予約する
   let svc = null, ticketPkg = null;
   if (service_id) {
-    const { data } = await supabase.from('provider_services').select('id, name, ticket_ids, ticket_cost, ticket_only').eq('id', service_id).eq('provider_id', provider.id).maybeSingle();
+    const { data } = await supabase.from('provider_services').select('id, name, duration_minutes, ticket_ids, ticket_cost, ticket_only').eq('id', service_id).eq('provider_id', provider.id).maybeSingle();
     if (!data) return Response.json({ error: 'メニューが見つかりません' }, { status: 400 });
     svc = data;
   }
@@ -67,6 +68,12 @@ async function __POST(request) {
     if (!ticketPkg) return Response.json({ error: '選んだチケットはこのメニューに使えません' }, { status: 400 });
   }
 
+  // 終わりの時刻：メニューを選んだらメニューの長さ、選ばない時は入れた終了時刻（無ければ60分）。2026-11-10
+  const endTime = svc?.duration_minutes ? addMinutes(time, svc.duration_minutes) : (/^\d{2}:\d{2}$/.test(String(end_time || '')) ? end_time : addMinutes(time, 60));
+  // シフト・他の予約・部屋・同じお客様の重なりを確かめ、必要なら空いている担当・部屋を割り当てる（2026-11-10 渡邉報告）
+  const chk = await checkStoreBooking(supabase, provider, { date, startTime: time, endTime, staffId: staff_id || null, resourceId: resource_id || null, serviceId: svc?.id || null, userId: user_id || null, userName: user_name, userContact: user_contact });
+  if (!chk.ok) return Response.json({ error: chk.error }, { status: 409 });
+
   const insertPayload = {
     provider_id: provider.id,
     user_id: user_id || null, // 検索で見つけたFineme会員と紐付ける場合のみ設定
@@ -74,14 +81,15 @@ async function __POST(request) {
     user_contact: user_contact || '',
     note: note || '',
     status: 'approved',
-    staff_id: staff_id || null,
-    staff_manually_assigned: !!staff_id,
-    resource_id: resource_id || null,
+    staff_id: chk.staffId || null,
+    staff_manually_assigned: !!chk.staffId,
+    resource_id: chk.resourceId || null,
     booking_mode: 'manual',
     reserved_date: date,
     start_time: time,
     confirmed_date: date,
     confirmed_time: time,
+    end_time: endTime,
     service_id: svc?.id || null,
     package_id: ticketPkg?.id || null,
     ticket_cost: ticketPkg ? (svc.ticket_cost || 1) : 1,

@@ -5,13 +5,15 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { checkStoreBooking } from '@/lib/booking-check';
+import { reservationMinutes } from '@/lib/availability-engine';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, booking_unit, business_hours, booking_interval_minutes, store_capacity, enabled_features, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -41,6 +43,30 @@ async function __PATCH(request, { params }) {
     update.user_id = body.user_id;
   }
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
+
+  // 担当・部屋を変える時は、その時間に空いているか確かめる（2026-11-10 渡邉報告：空いていない部屋に変えられた）
+  if ('staff_id' in update || 'resource_id' in update) {
+    const { data: r } = await supabase.from('reservations').select('id, status, reserved_date, confirmed_date, start_time, confirmed_time, end_time, staff_id, resource_id, service_id, slot_id, class_id, user_id')
+      .eq('id', params.id).eq('provider_id', provider.id).maybeSingle();
+    if (!r) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
+    if (!r.class_id && ['approved', 'pending', 'counter_proposed'].includes(r.status)) {
+      let slotDur = {};
+      if (r.slot_id) { const { data: sl } = await supabase.from('provider_slots').select('start_time, end_time').eq('id', r.slot_id).maybeSingle(); if (sl) { const m = t => { const [h, mm] = String(t).split(':').map(Number); return h * 60 + (mm || 0); }; slotDur = { [r.slot_id]: m(sl.end_time) - m(sl.start_time) }; } }
+      let svcs = {};
+      if (r.service_id) { const { data: sv } = await supabase.from('provider_services').select('id, duration_minutes').eq('id', r.service_id).maybeSingle(); if (sv) svcs = { [sv.id]: sv }; }
+      const start = String(r.confirmed_time || r.start_time || '').slice(0, 5);
+      const dur = reservationMinutes(r, slotDur, svcs);
+      const [h, m] = start.split(':').map(Number); const t = h * 60 + m + dur;
+      const end = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+      const nextStaff = 'staff_id' in update ? update.staff_id : r.staff_id;
+      const nextRes = 'resource_id' in update ? update.resource_id : r.resource_id;
+      const chk = await checkStoreBooking(supabase, provider, {
+        date: r.confirmed_date || r.reserved_date, startTime: start, endTime: end,
+        staffId: nextStaff, resourceId: nextRes, serviceId: r.service_id, excludeId: r.id,
+      });
+      if (!chk.ok) return Response.json({ error: chk.error }, { status: 409 });
+    }
+  }
 
   const { data, error } = await supabase
     .from('reservations')
