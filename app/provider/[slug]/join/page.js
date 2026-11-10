@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { describeCycle } from '@/lib/membership-cycle';
-import { membershipReceipt } from '@/lib/membership-receipt';
+import { membershipReceipt, receiptDisplay } from '@/lib/membership-receipt';
 
 function getAuth() {
   try {
@@ -435,17 +435,20 @@ function Receipt({ r, cycleText }) {
   const sub = { fontSize: '11.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 2px' };
   const box = { background: '#fff', color: '#111', borderRadius: '12px', padding: '16px', margin: '0 0 16px', fontVariantNumeric: 'tabular-nums' };
   const line = { ...row, color: '#111' };
-  const rule = { borderTop: '1px dashed #999', margin: '8px 0' };
+  const rule = { borderTop: '1px dashed #999', margin: '10px 0' };
+  const head = { margin: '0 0 6px', fontSize: '13px', fontWeight: 800, color: '#111' };
+  const v = receiptDisplay(r);
   return (
     <div style={box} aria-label="お支払いの内容">
-      <p style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '14px', color: '#111' }}>お支払いの内容</p>
-      <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#111' }}>月会費の内訳（毎月）</p>
+      <p style={{ margin: '0 0 10px', fontWeight: 800, fontSize: '15px', color: '#111' }}>お支払いの内容</p>
+      <p style={head}>【{v.monthlyTitle}】</p>
       {r.monthlyLines.map((l, i) => <div key={i} style={line}><span>{l.label}</span><span>{yen(l.amount)}</span></div>)}
       <div style={{ ...line, fontWeight: 800 }}><span>月会費の合計</span><span>{yen(r.monthlyTotal)}</span></div>
-      {r.payments.map(g => (
+      {v.monthlyNote && <p style={{ ...sub, color: '#555' }}>{v.monthlyNote}</p>}
+      {v.payments.map(g => (
         <div key={g.key}>
           <div style={rule} />
-          <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 700, color: '#111' }}>{g.title}</p>
+          <p style={head}>【{g.title}】</p>
           {g.lines.map((l, i) => (
             <div key={i}>
               <div style={line}><span>{l.label}</span><span>{yen(l.amount)}</span></div>
@@ -455,9 +458,6 @@ function Receipt({ r, cycleText }) {
           <div style={{ ...line, fontWeight: 800 }}><span>このお支払いの合計</span><span>{yen(g.total)}</span></div>
         </div>
       ))}
-      <div style={rule} />
-      <div style={{ ...line, fontWeight: 800 }}><span>{r.after.title}</span><span>{yen(r.after.amount)}</span></div>
-      {r.after.note && <p style={{ ...sub, color: '#555' }}>{r.after.note}</p>}
       <div style={rule} />
       {cycleText && <p style={{ ...sub, color: '#555' }}>{cycleText}</p>}
       {r.notes.map((n, i) => <p key={i} style={{ ...sub, color: '#555' }}>{n}</p>)}
