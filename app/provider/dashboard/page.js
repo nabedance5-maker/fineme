@@ -12,7 +12,7 @@ import { REQUEST_MODES, normalizeFormat, resolveRule, describeRule } from '@/lib
 import { CYCLES as SHIFT_CYCLES, normalizeCycle, upcomingWindows } from '@/lib/shift-windows';
 import { normalizeCycle as normalizeMembershipCycle, billingSchedule as membershipSchedule, cancelPlan as membershipCancelPlan, cycleError as membershipCycleError, describeCycle as describeMembershipCycle, jstToday as membershipJstToday, addDays as addDaysMembership } from '@/lib/membership-cycle';
 import { rangeLabel } from '@/lib/time-span';
-import { membershipReceipt } from '@/lib/membership-receipt';
+import { membershipReceipt, receiptDisplay } from '@/lib/membership-receipt';
 import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
 import ContractGate from './ContractGate';
@@ -7237,13 +7237,13 @@ export default function ProviderDashboardPage() {
       const yenS = n => `${n < 0 ? '−' : ''}¥${Math.abs(n).toLocaleString()}`;
       function receiptLines(r) {
         if (!r) return [];
-        const out = ['【月会費の内訳（毎月）】', ...r.monthlyLines.map(l => [l.label, yenS(l.amount)]), ['月会費の合計', yenS(r.monthlyTotal)]];
-        r.payments.forEach(g => {
+        const v = receiptDisplay(r);
+        const out = [`【${v.monthlyTitle}】`, ...r.monthlyLines.map(l => [l.label, yenS(l.amount)]), ['月会費の合計', yenS(r.monthlyTotal) + (v.monthlyNote ? `\n${v.monthlyNote}` : '')]];
+        v.payments.forEach(g => {
           out.push(`【${g.title}】`);
           g.lines.forEach(l => out.push([l.label, yenS(l.amount) + (l.note ? `\n${l.note}` : '')]));
           out.push(['このお支払いの合計', yenS(g.total)]);
         });
-        out.push([r.after.title, yenS(r.after.amount) + (r.after.note ? `\n${r.after.note}` : '')]);
         r.notes.forEach(n => out.push(n));
         return out;
       }
@@ -12037,13 +12037,13 @@ export default function ProviderDashboardPage() {
           </div>` : r.status === 'approved' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
             <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
-            ${resStarted(r) ? `<button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}')">無断キャンセル</button>` : ''}
+            ${resStarted(r) && dashboardPrefs?.use_no_show !== false ? `<button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}')">無断キャンセル</button>` : ''}
             ${(_activePackagesByUser[r.user_id] || []).map(p => `
             <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
           </div>` : r.status === 'visited' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
             ${r.user_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">使用チケットを変更</button>` : ''}
-            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}', true)">来ていなかった（無断キャンセルにする）</button>
+            ${dashboardPrefs?.use_no_show !== false ? `<button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#b91c1c" onclick="markNoShow('${r.id}', true)">来ていなかった（無断キャンセルにする）</button>` : ''}
           </div>` : r.status === 'no_show' ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
             <span style="font-size:12px;color:#1a1410">無断キャンセル${r.package_id ? '（チケットは使ったまま）' : ''}</span>
@@ -14446,6 +14446,92 @@ export default function ProviderDashboardPage() {
         }
       }
 
+      // 予約の詳細の操作ボタン（2026-11-10 渡邉要望：来店済み・キャンセル・無断キャンセル・予約変更をここから）。
+      // 下の「この画面の設定」で、予約時のメッセージを出すか・無断キャンセルを使うかを選べる（表示の設定 dashboard_prefs）
+      function calActionsHtml(r) {
+        if (r._isClassSession || r.class_id) return '';
+        const useNoShow = dashboardPrefs?.use_no_show !== false;
+        const b = (key, label, danger) => `<button type="button" class="btn ${key === 'visit' ? '' : 'btn-ghost'}" data-cal-act="${key}" style="font-size:12.5px;padding:8px 12px;min-height:40px${danger ? ';color:#b91c1c;border-color:#b91c1c' : ''}">${label}</button>`;
+        let btns = [];
+        if (r.status === 'approved') {
+          btns = [b('visit', '来店済みにする'), b('reschedule', '予約変更'), b('cancel', 'キャンセル', true)];
+          if (useNoShow && r.date && new Date(`${r.date}T${String(r.time || '00:00').slice(0, 5)}:00+09:00`).getTime() <= Date.now()) btns.push(b('noshow', '無断キャンセル', true));
+        } else if (r.status === 'visited') {
+          if (useNoShow) btns.push(b('noshow-fix', '来ていなかった（無断キャンセルにする）', true));
+        } else if (r.status === 'no_show') {
+          btns.push(b('visit-fix', '来ていた（来店済みに直す）'));
+        }
+        const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+        return `${btns.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${btns.join('')}</div>` : ''}
+          <div data-cal-panel="reschedule" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.15);border-radius:10px">
+            <p style="margin:0 0 6px;font-size:12.5px;font-weight:700">新しい日時</p>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <input type="date" data-rs-date min="${today}" value="${esc(r.date || '')}" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
+              <input type="time" data-rs-time step="300" value="${esc((r.time || '').slice(0, 5))}" style="padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px">
+            </div>
+            <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;margin:8px 0"><input type="checkbox" data-rs-notify checked>お客様にお知らせする（メール・LINE）</label>
+            <button type="button" class="btn" data-rs-go style="font-size:12.5px;padding:8px 14px">この日時に変更する</button>
+          </div>
+          <div data-cal-panel="cancel" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(185,28,28,0.35);border-radius:10px">
+            <p style="margin:0 0 6px;font-size:12.5px;font-weight:700">キャンセルの理由</p>
+            <label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:6px"><input type="radio" name="cal-cx-kind" value="customer" checked style="margin-top:3px">お客様から連絡があった（お客様へのお知らせは送りません）</label>
+            <label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:6px"><input type="radio" name="cal-cx-kind" value="store" style="margin-top:3px">お店の都合（お客様にお知らせが届きます）</label>
+            <textarea data-cx-note placeholder="お客様へのひとこと（お店の都合の時）" style="display:none;width:100%;min-height:56px;font-size:13px;padding:8px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;margin-bottom:6px">スタッフの都合により、ご予約の時間に対応できなくなりました。誠に申し訳ございません。</textarea>
+            <p class="muted" style="margin:0 0 8px;font-size:12px">予約で使ったチケット・回数券はお客様に戻ります（消化しません）。</p>
+            <button type="button" class="btn" data-cx-go style="font-size:12.5px;padding:8px 14px;background:#b91c1c;border-color:#b91c1c;color:#fff">キャンセルにする</button>
+          </div>
+          <details style="margin-top:12px;font-size:12.5px">
+            <summary style="cursor:pointer;color:#555">この画面の設定</summary>
+            <label style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" data-pref="reservation_show_note" ${dashboardPrefs?.reservation_show_note !== false ? 'checked' : ''}>予約時のメッセージを表示する</label>
+            <label style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" data-pref="use_no_show" ${useNoShow ? 'checked' : ''}>無断キャンセルを使う</label>
+          </details>`;
+      }
+
+      function bindCalActions(r, reservationId) {
+        const root = modalReservationEl;
+        if (!root) return;
+        const hide = () => { if (modalEl) modalEl.style.display = 'none'; };
+        const after = async (msg) => { showToast(msg); hide(); await loadWeek(); };
+        const panel = k => root.querySelector(`[data-cal-panel="${k}"]`);
+        const toggle = k => { ['reschedule', 'cancel'].forEach(x => { const p = panel(x); if (p) p.style.display = x === k && p.style.display === 'none' ? 'block' : 'none'; }); };
+        const patch = async (body) => {
+          const res = await fetch(`/api/reservations/${reservationId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify(body) });
+          if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error || 'できませんでした'); return false; }
+          return true;
+        };
+        root.querySelectorAll('[data-cal-act]').forEach(btn => btn.addEventListener('click', async () => {
+          const k = btn.dataset.calAct;
+          if (k === 'visit' || k === 'visit-fix') { hide(); window.showVisitModal?.(reservationId); return; }
+          if (k === 'noshow' || k === 'noshow-fix') { hide(); await window.markNoShow?.(reservationId, k === 'noshow-fix'); return; }
+          toggle(k);
+        }));
+        root.querySelectorAll('input[name="cal-cx-kind"]').forEach(x => x.addEventListener('change', () => {
+          const note = root.querySelector('[data-cx-note]'); if (note) note.style.display = root.querySelector('input[name="cal-cx-kind"]:checked')?.value === 'store' ? 'block' : 'none';
+        }));
+        root.querySelector('[data-rs-go]')?.addEventListener('click', async (e) => {
+          const date = root.querySelector('[data-rs-date]')?.value, time = root.querySelector('[data-rs-time]')?.value;
+          if (!date || !time) { showToast('日付と時刻を選んでください'); return; }
+          e.currentTarget.disabled = true;
+          const ok = await patch({ action: 'reschedule', date, time, notify: !!root.querySelector('[data-rs-notify]')?.checked });
+          if (ok) await after('予約の日時を変更しました'); else e.currentTarget.disabled = false;
+        });
+        root.querySelector('[data-cx-go]')?.addEventListener('click', async (e) => {
+          const store = root.querySelector('input[name="cal-cx-kind"]:checked')?.value === 'store';
+          const note = (root.querySelector('[data-cx-note]')?.value || '').trim().slice(0, 500);
+          e.currentTarget.disabled = true;
+          const ok = await patch(store ? { status: 'rejected', ...(note ? { counter_proposal: note } : {}) } : { status: 'cancelled' });
+          if (ok) await after(store ? 'キャンセルしてお客様にお知らせしました' : 'キャンセルにしました'); else e.currentTarget.disabled = false;
+        });
+        root.querySelectorAll('[data-pref]').forEach(cb => cb.addEventListener('change', async () => {
+          const res = await fetch('/api/provider/dashboard-prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify({ [cb.dataset.pref]: cb.checked }) });
+          if (!res.ok) { showToast('保存できませんでした'); cb.checked = !cb.checked; return; }
+          const { prefs } = await res.json();
+          setDashboardPrefs(prefs);
+          showToast('設定を保存しました');
+          openMemberModal(reservationId);
+        }));
+      }
+
       async function openMemberModal(reservationId) {
         const r = byId[reservationId];
         if (!r || !modalEl) return;
@@ -14460,7 +14546,8 @@ export default function ProviderDashboardPage() {
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
             ${r.class_id && classById[r.class_id] ? `<div style="margin-top:4px;font-size:12.5px;font-weight:700;color:#16a34a">${esc(classById[r.class_id])}</div>` : ''}
             ${r.same_name_warning ? `<div role="note" style="margin:8px 0;padding:8px 12px;border:1.5px solid #b45309;border-radius:8px;background:rgba(180,83,9,.08);font-size:12.5px;font-weight:700;color:#1a1410">確認：${esc(r.same_name_warning)}</div>` : ''}
-            ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
+            ${r.note && dashboardPrefs?.reservation_show_note !== false ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
+            ${calActionsHtml(r)}
             ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">顧客情報を見る（カルテ・回数券など）</button>' : `
               <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
                 <label style="display:block;font-size:11px;font-weight:700;margin-bottom:4px">Fineme会員と紐付ける（任意・電話予約等で後から分かった場合）</label>
@@ -14475,6 +14562,7 @@ export default function ProviderDashboardPage() {
           // 出す時はちゃんと顧客情報全部見れて編集できたりページ飛べたりできるように」）。
           // 接客の引き出し（来店前の接客メモ・会計時の次回の一言）をこの予約の詳細にも出す（2026-10-15）
           window.__pdRenderServiceMemo?.(document.getElementById('cal-modal-service-memo'), reservationId);
+          bindCalActions(r, reservationId);
           document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => {
             if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
             window.openCustomerModal(r.user_id, 'member', r.user_name);
@@ -16121,7 +16209,7 @@ export default function ProviderDashboardPage() {
               </div>`).join('')
           : `<p class="muted" style="font-size:12.5px">${it.isFirst ? '初めてのお客様です。今日の内容をカルテに残すと、次回からここに出ます。' : 'まだカルテの記録がありません。'}</p>`;
         const caution = it.fixedNote ? `<div class="svm-caution"><strong>固定メモ</strong>　${escSm(it.fixedNote)}</div>` : '';
-        const reqNote = it.note ? `<div class="svm-caution" style="background:rgba(47,79,143,0.06)"><strong>予約時のメッセージ</strong>　${escSm(it.note)}</div>` : '';
+        const reqNote = it.note && dashboardPrefs?.reservation_show_note !== false ? `<div class="svm-caution" style="background:rgba(47,79,143,0.06)"><strong>予約時のメッセージ</strong>　${escSm(it.note)}</div>` : '';
 
         const ai = it.ai || it.draft;
         const aiTag = it.ai ? '<span class="svm-tag-ai">AI</span>' : (it.draft ? '<span class="svm-tag-ai" style="color:rgba(26,20,16,0.45)">下書き</span>' : '');

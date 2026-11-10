@@ -1,7 +1,7 @@
 // PATCH /api/reservations/[id] - 掲載者が承認/拒否/代替提案
 // GET  /api/reservations/[id] - 予約詳細取得
 import { getSupabase } from '@/lib/supabase';
-import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail, contactEmail } from '@/lib/email';
+import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail, sendReservationRescheduledEmail, contactEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { syncVisitToLog } from '@/lib/sync-visit';
@@ -53,6 +53,25 @@ async function __PATCH(request, context) {
     const body = await request.json();
     const { status, action, counter_proposal, counter_date, counter_time, confirmed_date, confirmed_time } = body;
 
+    // 予約の日時変更（2026-11-10 渡邉要望：予約の詳細から「予約変更」）。店舗本人が、確定した予約の日時を変える。
+    // ステータスはそのまま（チケットの扱いも変わらない）。notify ならお客様にメール・LINEでお知らせする
+    if (action === 'reschedule') {
+      const { data: me } = await db.from('providers').select('id, name').eq('email', user.email).single();
+      if (!me || me.id !== existing.provider_id) return Response.json({ error: 'この予約を操作する権限がありません' }, { status: 403 });
+      if (existing.status !== 'approved') return Response.json({ error: '確定した予約だけ日時を変えられます（リクエスト中の予約は「代わりの日時を提案」から）' }, { status: 400 });
+      const nd = String(body.date || ''), nt = String(body.time || '').slice(0, 5);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(nd) || !/^\d{2}:\d{2}$/.test(nt)) return Response.json({ error: '日付と時刻を選んでください' }, { status: 400 });
+      const before = { date: existing.confirmed_date || existing.reserved_date, time: String(existing.confirmed_time || existing.start_time || '').slice(0, 5) };
+      // 予約日（カレンダーの読み込み範囲の基準）も揃える。即時予約の枠は元の時間のままになるため外して空ける（所要時間はメニューから）
+      const { data, error } = await db.from('reservations').update({ confirmed_date: nd, confirmed_time: nt, reserved_date: nd, start_time: nt, slot_id: null }).eq('id', id).select().single();
+      if (error) return Response.json({ error: error.message }, { status: 500 });
+      if (body.notify) {
+        try { await sendReservationRescheduledEmail({ reservation: data, before, providerName: me.name }); } catch (e) { console.error('[reschedule email]', e); }
+        await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: `【${me.name || '店舗'}】ご予約の日時を変更しました。\n変更前: ${before.date} ${before.time}\n変更後: ${nd} ${nt}\nご都合が合わない場合は店舗へご連絡ください。` });
+      }
+      return Response.json(data);
+    }
+
     const newStatus = status || (
       action === 'approve' ? 'approved' :
       action === 'cancel_provider' ? 'rejected' :
@@ -68,7 +87,8 @@ async function __PATCH(request, context) {
     const isOwnerProvider = providerRow && providerRow.id === existing.provider_id;
     const isOwnerCustomer = existing.user_id && existing.user_id === user.id;
     if (isOwnerProvider) {
-      if (!['approved', 'rejected', 'counter_proposed', 'visited', 'no_show'].includes(newStatus)) {
+      // cancelled：お客様から連絡があってお店がキャンセルを記録する（2026-11-10）。チケットは戻り、お客様へのお知らせは送らない
+      if (!['approved', 'rejected', 'counter_proposed', 'visited', 'no_show', 'cancelled'].includes(newStatus)) {
         return Response.json({ error: '無効な操作です' }, { status: 400 });
       }
       // 無断キャンセル（2026-11-09 渡邉要望）：確定した予約（自動で来店済みになったものも）を、予約の時間が来てから。チケットは戻さない
@@ -245,8 +265,8 @@ async function __PATCH(request, context) {
       await refundDepositIfPaid(db, data);
     }
 
-    // ユーザーがキャンセルした場合：掲載者に通知
-    if (newStatus === 'cancelled') {
+    // ユーザーがキャンセルした場合：掲載者に通知（お店が自分で記録したキャンセルは通知しない）
+    if (newStatus === 'cancelled' && !isOwnerProvider) {
       if (provider?.email) {
         try {
           await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider.name });

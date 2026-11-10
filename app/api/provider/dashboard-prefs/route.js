@@ -54,6 +54,7 @@ export async function PATCH(request) {
   if ('calendar_default_view' in body && CALENDAR_DEFAULT_VIEW_OPTIONS.some(o => o.key === body.calendar_default_view)) {
     updates.calendar_default_view = body.calendar_default_view;
   }
+  for (const k of ['reservation_show_note', 'use_no_show']) if (typeof body[k] === 'boolean') updates[k] = body[k];
   if ('header_shortcuts' in body) {
     const shortcuts = body.header_shortcuts;
     const valid = Array.isArray(shortcuts) && shortcuts.length <= MAX_HEADER_SHORTCUTS &&
