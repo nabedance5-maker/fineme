@@ -1,15 +1,17 @@
 // POST /api/provider/consultant/chat { message } → ゴール・実データ・今日の時期を踏まえたAI専属コンサルの返答。
 // 会話の中でタスクの追加・完了・見送り、ゴールの更新、店舗の事実の記憶も実行する（認証済み）
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 120;
 import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
 import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
+import { freeJson } from '@/lib/ai';
 
 const HISTORY_LIMIT = 14;
-// 店舗の管理画面の機能は Claude Haiku（渡邉判断 2026-11-06：APIの消費を抑える。振り分けの考え方は lib/ai.js）
+// まず OpenRouter の無料モデルで答え、失敗した時だけ Claude Haiku（渡邉判断 2026-11-10。振り分けの考え方は lib/ai.js）。
+// 無料モデルでは道具（tool_use）が安定しないため、返答と操作を一つの JSON で返させて、操作はこちらで実行する
 const MODEL = 'claude-haiku-4-5-20251001';
 
 const TOOLS = [
@@ -33,6 +35,39 @@ const TOOLS = [
   { name: 'save_goal', description: '店舗が目指すことを言い直した・決めた時に、ゴールを更新する（店舗自身の言葉に近い形で、200字以内）', input_schema: { type: 'object', properties: { goal: { type: 'string' } }, required: ['goal'] } },
   { name: 'remember_fact', description: '店舗の状況について、今後の提案に効く事実（客層・強み・制約・スタッフの事情・やってみた結果など）を一つ記憶する', input_schema: { type: 'object', properties: { fact: { type: 'string' } }, required: ['fact'] } },
 ];
+
+const FREE_SCHEMA = {
+  type: 'object',
+  properties: {
+    reply: { type: 'string', description: '店舗への返答。操作した時はそれを一言添える' },
+    actions: {
+      type: 'array',
+      description: '実行する操作。無ければ空配列。name は ' + TOOLS.map(t => t.name).join(' / ') + ' のどれか',
+      items: {
+        type: 'object',
+        properties: { name: { type: 'string', enum: TOOLS.map(t => t.name) }, input: { type: 'object' } },
+        required: ['name', 'input'],
+      },
+    },
+  },
+  required: ['reply', 'actions'],
+};
+const ACTION_GUIDE = TOOLS.map(t => `- ${t.name}：${t.description}。input：${JSON.stringify(t.input_schema.properties)}（必須：${t.input_schema.required.join(', ')}）`).join('\n');
+
+async function freeReply(system, messages, ctx) {
+  const out = await freeJson({
+    system: `${system}\n\n【操作】次の操作を actions に入れると実行されます。\n${ACTION_GUIDE}`,
+    messages,
+    schema: FREE_SCHEMA,
+    max_tokens: 1200,
+    budget_ms: 35000,
+  });
+  const reply = String(out?.reply || '').trim();
+  const actions = (Array.isArray(out?.actions) ? out.actions : []).filter(a => TOOLS.some(t => t.name === a?.name)).slice(0, 6);
+  if (!reply && !actions.length) throw new Error('empty');
+  for (const a of actions) await runTool(a.name, a.input || {}, ctx);
+  return reply;
+}
 
 const clean = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
 
@@ -98,7 +133,7 @@ export async function POST(request) {
   const { message } = await request.json().catch(() => ({}));
   const text = String(message || '').trim().slice(0, 1000);
   if (!text) return Response.json({ error: 'message は必須です' }, { status: 400 });
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   const [state, histRes] = await Promise.all([
     loadState(provider),
@@ -122,9 +157,16 @@ ${buildContext(state, provider)}${diagnosis}`;
   const ctx = { provider, state, changed: false, goalChanged: false };
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     let reply = '';
-    for (let round = 0; round < 4; round++) {
+    let usedFree = false;
+    try {
+      reply = await freeReply(system, messages, ctx);
+      usedFree = true;
+    } catch (e) {
+      console.warn('[consultant chat] free model failed, fallback to Claude:', e?.message);
+    }
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    for (let round = 0; !usedFree && round < 4; round++) {
       const res = await client.messages.create({ model: MODEL, max_tokens: 1200, system, tools: TOOLS, messages });
       const texts = res.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
       const calls = res.content.filter(b => b.type === 'tool_use');

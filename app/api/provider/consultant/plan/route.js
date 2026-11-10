@@ -1,12 +1,13 @@
 // POST /api/provider/consultant/plan { force? } → ゴール×実データ×今日の時期から、戦略・見立て・タスクを作り直す（認証済み）
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 180;
 import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide, STAGE_KEYS } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
+import { freeJson } from '@/lib/ai';
 
-// 店舗の管理画面の機能は Claude Haiku（渡邉判断 2026-11-06：APIの消費を抑える。振り分けの考え方は lib/ai.js）
+// まず OpenRouter の無料モデルで作り、失敗した時だけ Claude Haiku（渡邉判断 2026-11-10。振り分けの考え方は lib/ai.js）
 const MODEL = 'claude-haiku-4-5-20251001';
 
 const PLAN_TOOL = {
@@ -58,7 +59,7 @@ export async function POST(request) {
   const provider = await authProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (!consultantEnabled(provider)) return Response.json({ error: 'AI専属コンサルはオフになっています' }, { status: 403 });
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   const body = await request.json().catch(() => ({}));
   const state = await loadState(provider);
@@ -95,17 +96,32 @@ export async function POST(request) {
 上のデータをもとに、submit_plan を提出してください。`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      system,
-      tools: [PLAN_TOOL],
-      tool_choice: { type: 'tool', name: 'submit_plan' },
-      messages: [{ role: 'user', content: user }],
-    });
-    const call = res.content.find(b => b.type === 'tool_use');
-    const out = call?.input;
+    let out = null;
+    try {
+      out = await freeJson({
+        system: system.replace(/submit_plan で提出する/g, 'JSON で返す').replace('submit_plan の tab の説明', 'JSON Schema の tab の説明'),
+        messages: [{ role: 'user', content: user.replace('submit_plan を提出してください', '見立て・焦点・打ち手・タスクを JSON で返してください') }],
+        schema: PLAN_TOOL.input_schema,
+        max_tokens: 4000,
+        budget_ms: 80000,
+      });
+      if (!out?.diagnosis || !out?.focus || !Array.isArray(out?.tasks)) throw new Error('missing fields');
+    } catch (e) {
+      console.warn('[consultant plan] free model failed, fallback to Claude:', e?.message);
+      out = null;
+    }
+    if (!out) {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const res = await client.messages.create({
+        model: MODEL,
+        max_tokens: 4000,
+        system,
+        tools: [PLAN_TOOL],
+        tool_choice: { type: 'tool', name: 'submit_plan' },
+        messages: [{ role: 'user', content: user }],
+      });
+      out = res.content.find(b => b.type === 'tool_use')?.input;
+    }
     if (!out?.diagnosis) return Response.json({ error: '見立てを作れませんでした' }, { status: 502 });
 
     const stageActions = (Array.isArray(out.stage_actions) ? out.stage_actions : [])
