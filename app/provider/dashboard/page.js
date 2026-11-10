@@ -2406,6 +2406,85 @@ export default function ProviderDashboardPage() {
     }
     window.pdConfirm = pdConfirm;
 
+    // 担当の予約があってシフトを外せない・スタッフを削除できない時の画面（2026-11-10 渡邉要望）。
+    // 基本は外せない。スタッフの急な休みなどの時は、予約ごとに「担当・日時を変える（予約カレンダーで開く）」
+    // 「お客様に連絡」「お店の都合でキャンセル（お客様にお知らせが届く）」から片付けて、終わったらもう一度外す。
+    function pdReservationConflict({ title, message, reservations = [], retryLabel, onRetry } = {}) {
+      document.getElementById('pd-res-conflict')?.remove();
+      const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const ov = document.createElement('div');
+      ov.id = 'pd-res-conflict';
+      ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+      const done = {};
+      const md = d => { const [, m, dd] = String(d || '').split('-'); return m ? `${Number(m)}/${Number(dd)}` : ''; };
+      const btn = 'padding:8px 12px;min-height:40px;border-radius:8px;border:1.5px solid #111;background:#fff;color:#111;font-size:12.5px;font-weight:700;cursor:pointer';
+      const contactHtml = r => {
+        const email = (String(r.contact).match(/[^\s/<>,;]+@[^\s/<>,;]+\.[^\s/<>,;]+/) || [])[0];
+        const tel = (String(r.contact).match(/\+?\d[\d-]{8,}\d/) || [])[0];
+        return [tel ? `<a href="tel:${esc(tel)}" style="color:#111">電話 ${esc(tel)}</a>` : '', email && !/@line\.fineme\.me$/i.test(email) ? `<a href="mailto:${esc(email)}" style="color:#111">メール ${esc(email)}</a>` : ''].filter(Boolean).join(' ／ ');
+      };
+      const draw = () => {
+        const left = reservations.filter(r => !done[r.id]).length;
+        ov.innerHTML = `<div style="background:#fff;color:#111;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:20px 20px 16px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
+          <h3 style="margin:0 0 6px;font-size:16px">${esc(title || '担当の予約があるため外せません')}</h3>
+          <p style="margin:0 0 12px;font-size:13px;line-height:1.7;color:#333">${esc(message || '')}</p>
+          <p style="margin:0 0 10px;font-size:12.5px;line-height:1.7;color:#444">スタッフの急なお休みなどの時は、下の予約を一件ずつ片付けてください。担当を代われるスタッフがいれば「担当・日時を変える」、難しければ「お店の都合でキャンセル」（お客様にお知らせが届きます）。片付けたら、もう一度外してください。</p>
+          <div style="display:flex;flex-direction:column;gap:10px">${reservations.map(r => `
+            <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap">
+                <b style="font-size:14px">${esc(md(r.date))} ${esc(r.time || '')} ${esc(r.name)}様</b>
+                ${done[r.id] ? `<span style="font-size:12px;font-weight:700;color:#166534">${esc(done[r.id])}</span>` : ''}
+              </div>
+              ${contactHtml(r) ? `<div style="font-size:12px;margin-top:4px;color:#444">${contactHtml(r)}</div>` : ''}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+                ${done[r.id] === 'キャンセルしました' ? '' : `<button type="button" data-rc-open="${esc(r.id)}" style="${btn}">担当・日時を変える</button>`}
+                ${r.user_id ? `<button type="button" data-rc-msg="${esc(r.id)}" style="${btn}">お客様に連絡</button>` : ''}
+                ${done[r.id] ? '' : `<button type="button" data-rc-cancel="${esc(r.id)}" style="${btn};border-color:#b91c1c;color:#b91c1c">お店の都合でキャンセル</button>`}
+              </div>
+            </div>`).join('')}</div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+            <button type="button" data-rc-close style="${btn}">閉じる</button>
+            ${onRetry ? `<button type="button" data-rc-retry style="${btn};background:#111;color:#fff"${left ? ' disabled title="先に上の予約を片付けてください"' : ''}>${esc(retryLabel || 'もう一度外す')}</button>` : ''}
+          </div></div>`;
+        ov.querySelector('[data-rc-close]').addEventListener('click', close);
+        ov.querySelector('[data-rc-retry]')?.addEventListener('click', () => { close(); onRetry(); });
+        ov.querySelectorAll('[data-rc-open]').forEach(b => b.addEventListener('click', () => {
+          const r = reservations.find(x => x.id === b.dataset.rcOpen);
+          if (typeof window.__pdOpenCalReservation !== 'function') { window.showToast?.('読み込み中です。少し待ってから再度お試しください'); return; }
+          close();
+          document.getElementById('shift-day-modal-overlay')?.remove();
+          window.__pdOpenCalReservation(r.id, r.date);
+        }));
+        ov.querySelectorAll('[data-rc-msg]').forEach(b => b.addEventListener('click', () => {
+          const r = reservations.find(x => x.id === b.dataset.rcMsg);
+          if (typeof window.openCustomerModal !== 'function') { window.showToast?.('読み込み中です。少し待ってから再度お試しください'); return; }
+          // お客様の画面はこの画面より下に出るため閉じる（片付けた後にもう一度外すと、残っている予約だけがまた出る）
+          close();
+          document.getElementById('shift-day-modal-overlay')?.remove();
+          window.openCustomerModal(r.user_id, 'member', r.name);
+        }));
+        ov.querySelectorAll('[data-rc-cancel]').forEach(b => b.addEventListener('click', async () => {
+          const r = reservations.find(x => x.id === b.dataset.rcCancel);
+          const note = prompt(`${r.name}様の${md(r.date)} ${r.time || ''}の予約を、お店の都合でキャンセルします。\nお客様にお知らせが届きます（使ったチケット・回数券はお客様に戻り、デポジットは返金されます）。\n\nお客様へのひとこと（空欄でも送れます）`, 'スタッフの急な都合により、ご予約の時間に対応できなくなりました。誠に申し訳ございません。');
+          if (note === null) return;
+          b.disabled = true;
+          const t = getSupabaseToken();
+          const res = await fetch(`/api/reservations/${r.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) }, body: JSON.stringify({ status: 'rejected', ...(note.trim() ? { counter_proposal: note.trim().slice(0, 500) } : {}) }) });
+          if (!res.ok) { b.disabled = false; const e = await res.json().catch(() => ({})); window.showToast?.(e.error || 'キャンセルできませんでした'); return; }
+          done[r.id] = 'キャンセルしました';
+          window.__calReloadWeek?.();
+          draw();
+        }));
+      };
+      const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+      function close() { document.removeEventListener('keydown', onKey, true); ov.remove(); }
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(ov);
+      draw();
+    }
+    window.pdReservationConflict = pdReservationConflict;
+
     // プラン不足の機能に触れたとき「不具合」ではなく「上のプランで使える機能」と伝えるための案内。
     // 機能ごとに「使うと何が変わるか」を示し、Fineme利用契約タブ（プラン変更）へ誘導する。
     const PLAN_INFO = { A: { name: 'ライト', price: 5000 }, B: { name: 'スタンダード', price: 7000 }, C: { name: 'プレミアム', price: 10000 } };
@@ -3033,7 +3112,12 @@ export default function ProviderDashboardPage() {
           if (!confirm('このスタッフを削除しますか？')) return;
           const res = await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           // 担当の予約が残っている・勤怠の管理者などで削除できない時は、理由を見せる
-          if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || '削除できませんでした'); return; }
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            if (res.status === 409 && d.reservations?.length) pdReservationConflict({ title: 'このスタッフは削除できません', message: d.error, reservations: d.reservations, retryLabel: 'スタッフを削除する', onRetry: () => btn.click() });
+            else alert(d.error || '削除できませんでした');
+            return;
+          }
           loadStaff();
         }));
       }
@@ -4825,10 +4909,10 @@ export default function ProviderDashboardPage() {
           overlay.querySelector('#shift-day-confirm')?.addEventListener('click', () => setConfirm(isConf ? 'unconfirm' : 'confirm'));
           overlay.querySelectorAll('[data-day-del]').forEach(btn => btn.addEventListener('click', async () => {
             const res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
-            // 担当の予約がある時間のシフトは外せない（2026-11-10 渡邉判断。先に予約の担当か日時を変える）
+            // 担当の予約がある時間のシフトは外せない（2026-11-10 渡邉判断）。予約ごとに担当を変える・連絡・キャンセルへ進める
             if (res.status === 409) {
               const d = await res.json().catch(() => ({}));
-              alert(d.error || 'この時間に担当の予約があるため、シフトを外せません。先に予約の担当スタッフか日時を変えてください。');
+              pdReservationConflict({ title: 'このシフトは外せません', message: d.error, reservations: d.reservations || [], retryLabel: 'シフトを外す', onRetry: () => btn.click() });
               return;
             }
             if (res.ok) await refresh(); else showToast('外せませんでした');
@@ -14545,6 +14629,14 @@ export default function ProviderDashboardPage() {
       // 既に開かれていれば表示を追従させるための橋渡し（でお要望2026-09-12：
       // 「代替案送ったらカレンダー上でその日時に移動するのが正解」）。
       window.__calReloadWeek = loadWeek;
+      // 他の画面（シフトを外せない時の案内など）から、予約カレンダーのその日を開いて予約の詳細を出す（2026-11-10）
+      window.__pdOpenCalReservation = async (id, date) => {
+        if (date) { weekStart = mondayOf(new Date(`${date}T00:00:00`)); selectedDate = date; userPickedDate = true; }
+        const calBtn = document.querySelector('.tab-btn[data-tab="calendar"]');
+        if (calBtn && !document.getElementById('tab-calendar')?.classList.contains('active')) calBtn.click(); else await loadWeek();
+        for (let i = 0; i < 40 && !byId[id]; i++) await new Promise(r => setTimeout(r, 250));
+        if (byId[id]) openCalItem(id); else showToast('予約カレンダーで予約が見つかりませんでした（再読み込みしてください）');
+      };
       // 後から届いた表示設定でカレンダーを描き直す（手で切り替えたビューはそのまま）
       window.__calApplyPrefs = () => {
         if (!viewModePicked && ['combined', 'staff', 'resource', 'class'].includes(dashboardPrefs?.calendar_default_view)) {
@@ -16247,6 +16339,8 @@ export default function ProviderDashboardPage() {
       delete window.showToast;
       delete window.approveRequest;
       delete window.rejectRequest;
+      delete window.pdReservationConflict;
+      delete window.__pdOpenCalReservation;
       delete window.markNoShow;
       delete window.showVisitModal;
       delete window.confirmVisit;

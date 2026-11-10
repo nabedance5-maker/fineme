@@ -65,13 +65,20 @@ async function __DELETE(request, { params }) {
   // 2026-11-10 渡邉判断：予約があるのにシフトを外せないように）
   const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
   const { data: upcoming } = await supabase.from('reservations')
-    .select('id, user_name, reserved_date, confirmed_date, counter_date, status')
+    .select('id, user_id, user_name, user_contact, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, status')
     .eq('provider_id', provider.id).eq('staff_id', id).in('status', ['pending', 'approved', 'counter_proposed'])
     .or(`reserved_date.gte.${today},confirmed_date.gte.${today},counter_date.gte.${today}`)
-    .limit(5);
+    .order('reserved_date').limit(20);
   if (upcoming?.length) {
-    const list = upcoming.map(r => `${(r.status === 'counter_proposed' && r.counter_date) || r.confirmed_date || r.reserved_date} ${r.user_name || 'お客様'}様`).join('、');
-    return Response.json({ error: `このスタッフが担当する予約があります（${list}${upcoming.length >= 5 ? ' ほか' : ''}）。先に予約の担当スタッフを変えてから削除してください` }, { status: 409 });
+    const reservations = upcoming.map(r => {
+      const counter = r.status === 'counter_proposed' && r.counter_date;
+      const date = counter ? r.counter_date : (r.confirmed_date || r.reserved_date);
+      const time = String((counter ? r.counter_time : r.confirmed_time) || r.start_time || '').slice(0, 5);
+      return { id: r.id, name: r.user_name || 'お客様', date, time, user_id: r.user_id || null, contact: r.user_contact || '', status: r.status };
+    }).filter(r => r.date >= today);
+    if (reservations.length) {
+      return Response.json({ error: `このスタッフが担当する予約が${reservations.length}件あります。先に予約の担当スタッフを変えるか、お店の都合でキャンセルしてから削除してください`, reservations }, { status: 409 });
+    }
   }
 
   const { error } = await supabase
