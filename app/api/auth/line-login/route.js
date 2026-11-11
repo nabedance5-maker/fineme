@@ -1,5 +1,7 @@
 // GET /api/auth/line-login?type=login|signup&next=/path
 // LINE Login 認可URLへリダイレクト（ユーザー認証用）
+// state には署名を付ける（lib/oauth-state.js。2026-11-11 セキュリティ点検）
+import { signState, lineAuthorizeUrl } from '@/lib/oauth-state';
 
 // 相対パスのみ許可（オープンリダイレクト防止）
 function sanitizeNext(next) {
@@ -18,18 +20,9 @@ export async function GET(request) {
     return Response.json({ error: 'LINE_LOGIN_CHANNEL_ID が未設定です' }, { status: 500 });
   }
 
-  // state に type・next・タイムスタンプを埋め込む（10分間有効）
-  const state = Buffer.from(
-    JSON.stringify({ type, next, ts: Date.now() })
-  ).toString('base64url');
+  // state に type・next を入れ、署名する（10分間有効）
+  const state = signState({ type, next });
+  const lineAuthUrl = lineAuthorizeUrl({ redirectUri: 'https://fineme.me/api/auth/line-callback', state });
 
-  const callbackUrl = 'https://fineme.me/api/auth/line-callback';
-  const lineAuthUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
-  lineAuthUrl.searchParams.set('response_type', 'code');
-  lineAuthUrl.searchParams.set('client_id', channelId);
-  lineAuthUrl.searchParams.set('redirect_uri', callbackUrl);
-  lineAuthUrl.searchParams.set('state', state);
-  lineAuthUrl.searchParams.set('scope', 'profile');
-
-  return Response.redirect(lineAuthUrl.toString());
+  return Response.redirect(lineAuthUrl);
 }

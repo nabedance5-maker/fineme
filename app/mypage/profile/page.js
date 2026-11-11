@@ -161,6 +161,23 @@ export default function MypageProfilePage() {
 
   // 連携できていても公式アカウントを友だち追加していないと届かないため、
   // 本人がその場で切り分けられるようにする
+  // LINE連携：本人はサーバーがログインの印から決める（2026-11-11 セキュリティ点検。URLにユーザーIDを書かない）
+  const [lineStarting, setLineStarting] = useState(false);
+  async function startLineConnect() {
+    if (!accessToken) { setLineMsg('エラー：先にログインしてください'); return; }
+    setLineMsg('');
+    setLineStarting(true);
+    try {
+      const r = await fetch('/api/me/line-connect', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.url) { location.href = d.url; return; }
+      setLineMsg(`エラー：${d.error || 'LINE連携を始められませんでした'}`);
+    } catch {
+      setLineMsg('エラー：LINE連携を始められませんでした。時間をおいて試してください。');
+    }
+    setLineStarting(false);
+  }
+
   async function sendLineTest() {
     setLineMsg('');
     setLineTesting(true);
@@ -463,22 +480,26 @@ export default function MypageProfilePage() {
                       >
                         {lineTesting ? '送信中…' : 'Logの通知を試し送りする'}
                       </button>
-                      <a
-                        href={`/api/me/line-connect?user_id=${userId || ''}`}
-                        style={{ padding: '9px 18px', background: 'transparent', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', textDecoration: 'none' }}
+                      <button
+                        type="button"
+                        onClick={startLineConnect}
+                        disabled={lineStarting}
+                        style={{ padding: '9px 18px', background: 'transparent', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', cursor: lineStarting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                       >
-                        連携をやり直す
-                      </a>
+                        {lineStarting ? '移動中…' : '連携をやり直す'}
+                      </button>
                     </div>
                   </div>
                 ) : (
-                  <a
-                    href={`/api/me/line-connect?user_id=${userId || ''}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#06C755', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}
+                  <button
+                    type="button"
+                    onClick={startLineConnect}
+                    disabled={lineStarting}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#06C755', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', border: 'none', cursor: lineStarting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.077 2 11.1c0 2.65 1.09 5.03 2.844 6.73C4.59 18.97 4 20.516 4 22c0 .166.1.315.25.382C4.397 22.46 4.558 22.437 4.68 22.34L7.6 20H12c5.523 0 10-4.077 10-9.1C22 6.077 17.523 2 12 2z"/></svg>
-                    LINEで連携する
-                  </a>
+                    {lineStarting ? '移動中…' : 'LINEで連携する'}
+                  </button>
                 )}
                 {lineMsg && (
                   <p style={{ margin: '10px 0 0', fontSize: '13px', color: lineMsg.includes('エラー') ? '#dc2626' : '#059669' }}>{lineMsg}</p>

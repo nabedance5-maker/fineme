@@ -7,6 +7,7 @@
 // このルートは、Callback URL に本URLを登録している環境のための後方互換として残す。
 // LINE Login OAuth2.0 コールバック（ユーザー側 LINE アカウント連携）
 import { getSupabase } from '@/lib/supabase';
+import { verifyState } from '@/lib/oauth-state';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -24,19 +25,11 @@ export async function GET(request) {
     return Response.redirect('https://fineme.me/mypage/profile?line_error=missing_params');
   }
 
-  // state をデコードして user_id とタイムスタンプを検証（10分間有効）
-  let userId;
-  try {
-    const decoded = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf-8'));
-    userId = decoded.user_id;
-    const ts = decoded.ts;
-    if (!userId || !ts) throw new Error('invalid state');
-    if (Date.now() - ts > 10 * 60 * 1000) {
-      return Response.redirect('https://fineme.me/mypage/profile?line_error=state_expired');
-    }
-  } catch {
-    return Response.redirect('https://fineme.me/mypage/profile?line_error=invalid_state');
-  }
+  // state の署名と期限を確かめる（lib/oauth-state.js。2026-11-11 セキュリティ点検）
+  const decoded = verifyState(stateParam);
+  if (decoded?.expired) return Response.redirect('https://fineme.me/mypage/profile?line_error=state_expired');
+  const userId = decoded?.link_user_id || decoded?.user_id;
+  if (!userId) return Response.redirect('https://fineme.me/mypage/profile?line_error=invalid_state');
 
   const channelId = process.env.LINE_LOGIN_CHANNEL_ID;
   const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET;

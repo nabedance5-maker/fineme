@@ -13,7 +13,12 @@ async function getUser(request) {
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+  // 公開中（approved）以外の一覧は管理画面だけ（2026-11-11 セキュリティ点検：?status=pending で誰でも審査中の体験談を読めた）
   const status = searchParams.get('status') || 'approved';
+  const adminKey = process.env.ADMIN_API_KEY || '';
+  if (status !== 'approved' && !(adminKey && request.headers.get('x-admin-key') === adminKey)) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const providerId = searchParams.get('providerId') || '';
   const tag = searchParams.get('tag') || '';
   const axisId = searchParams.get('axisId') || '';

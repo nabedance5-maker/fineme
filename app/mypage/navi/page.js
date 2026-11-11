@@ -891,7 +891,7 @@ export default function NewMeNaviPage() {
           const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           const uidForMirror = JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
           if (uidForMirror) {
-            const sRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uidForMirror}&limit=1`);
+            const sRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uidForMirror}&limit=1`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (sRes?.ok) {
               const sd = await sRes.json();
               latestMirrorSessionId = sd.sessions?.[0]?.id || null;
@@ -1009,7 +1009,7 @@ export default function NewMeNaviPage() {
           const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           const uid = JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
           if (uid) {
-            const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uid}&limit=1&include_axes=1`);
+            const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uid}&limit=1&include_axes=1`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (mRes?.ok) {
               const d = await mRes.json();
               if (d.sessions?.length) {
@@ -1100,7 +1100,7 @@ export default function NewMeNaviPage() {
     if (!hasMirrorData && (naviStepsData?.source === 'mirror_only' || naviStepsData?.source === 'diagnosis_mirror')) hasMirrorData = true;
     if (!hasMirrorData && currentUid) {
       try {
-        const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${currentUid}&limit=1&include_axes=1`);
+        const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${currentUid}&limit=1&include_axes=1`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (mRes?.ok) {
           const d = await mRes.json();
           if (d.sessions?.length) {

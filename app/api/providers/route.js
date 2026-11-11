@@ -1,5 +1,6 @@
 // GET /api/providers - 公開中の掲載者一覧（総合マッチングスコア順）
 export const dynamic = 'force-dynamic';
+import { publicProvider } from '@/lib/provider-public';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -274,7 +275,8 @@ export async function GET(request) {
   scored.sort((a, b) => b.match_score - a.match_score || 0);
 
   // レスポンスサイズを抑えるため内部フィールドを削除
-  const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ai_match_profile, ...rest }) => rest);
+  // 非公開の項目（メール・Stripe/LINEのID・シフト提出リンクの鍵など）を外す（lib/provider-public.js。2026-11-11 セキュリティ点検）
+  const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ai_match_profile, ...rest }) => publicProvider(rest));
   // entity_type と affiliate_url はレスポンスに含まれる（...rest に含まれる）
 
   return Response.json(result);

@@ -1,27 +1,21 @@
-// GET /api/provider/line-connect?provider_id=xxx
-// LINE LoginのOAuth認可URLにリダイレクトする
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const providerId = searchParams.get('provider_id');
+// POST /api/provider/line-connect（Authorization: Bearer）→ { url }：ログイン中の契約者の店舗にLINE通知をつなぐ、LINEログインのURLを返す
+// 2026-11-11 セキュリティ点検：以前は GET ?provider_id=xxx で、URLに書いた店舗IDへLINEを結びつけていた。
+// 他の店舗のIDを書けば、その店舗の予約通知（お客様の個人情報を含む）を自分のLINEで受け取れたため、
+// 店舗はログインの印から決め、state には署名を付ける。
+import { authProvider } from '../consultant/_lib';
+import { signState, lineAuthorizeUrl } from '@/lib/oauth-state';
 
-  if (!providerId) {
-    return Response.redirect('/pages/provider/index.html?error=no_provider_id');
-  }
+export const dynamic = 'force-dynamic';
 
-  const channelId = process.env.LINE_LOGIN_CHANNEL_ID;
-  if (!channelId) {
-    return Response.json({ error: 'LINE_LOGIN_CHANNEL_ID が未設定です' }, { status: 500 });
-  }
+export async function POST(request) {
+  const provider = await authProvider(request);
+  if (!provider) return Response.json({ error: 'ログインしてください' }, { status: 401 });
+  if (!process.env.LINE_LOGIN_CHANNEL_ID) return Response.json({ error: 'LINE連携の設定がありません' }, { status: 500 });
+  const state = signState({ provider_id: provider.id });
+  return Response.json({ url: lineAuthorizeUrl({ redirectUri: 'https://fineme.me/api/provider/line-callback', state }) });
+}
 
-  const state = Buffer.from(JSON.stringify({ provider_id: providerId, ts: Date.now() })).toString('base64url');
-  const callbackUrl = 'https://fineme.me/api/provider/line-callback';
-
-  const lineAuthUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
-  lineAuthUrl.searchParams.set('response_type', 'code');
-  lineAuthUrl.searchParams.set('client_id', channelId);
-  lineAuthUrl.searchParams.set('redirect_uri', callbackUrl);
-  lineAuthUrl.searchParams.set('state', state);
-  lineAuthUrl.searchParams.set('scope', 'profile');
-
-  return Response.redirect(lineAuthUrl.toString());
+// 古い画面からの GET ?provider_id= はもう受け付けない
+export async function GET() {
+  return Response.redirect('https://fineme.me/provider/dashboard?line_error=retry');
 }

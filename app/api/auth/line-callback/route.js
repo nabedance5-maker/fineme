@@ -1,6 +1,7 @@
 // GET /api/auth/line-callback?code=xxx&state=xxx
 // LINE Login OAuth2.0 コールバック（ユーザー認証・新規登録共通）
 import { getSupabase } from '@/lib/supabase';
+import { verifyState } from '@/lib/oauth-state';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const BASE_URL = 'https://fineme.me';
@@ -18,19 +19,13 @@ export async function GET(request) {
     return Response.redirect(`${BASE_URL}/login?line_error=missing_params`);
   }
 
-  // state をデコードして検証（10分間有効）
-  let stateData = {};
-  try {
-    stateData = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf-8'));
-    if (!stateData.ts) throw new Error('invalid');
-    if (Date.now() - stateData.ts > 10 * 60 * 1000) {
-      return Response.redirect(`${BASE_URL}/login?line_error=state_expired`);
-    }
-  } catch {
-    return Response.redirect(`${BASE_URL}/login?line_error=invalid_state`);
-  }
-
-  const { next = '' } = stateData;
+  // state の署名と期限（10分）を確かめる（lib/oauth-state.js。2026-11-11 セキュリティ点検：
+  // 署名の無い state を受け付けていたため、他人のアカウントにLINEを結びつけられた）
+  const stateData = verifyState(stateParam);
+  if (!stateData) return Response.redirect(`${BASE_URL}/login?line_error=invalid_state`);
+  if (stateData.expired) return Response.redirect(`${BASE_URL}/login?line_error=state_expired`);
+  const rawNext = typeof stateData.next === 'string' ? stateData.next : '';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\') ? rawNext : '';
   const channelId = process.env.LINE_LOGIN_CHANNEL_ID;
   const channelSecret = process.env.LINE_LOGIN_CHANNEL_SECRET;
   if (!channelId || !channelSecret) {

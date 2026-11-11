@@ -1,6 +1,7 @@
 // GET /api/provider/line-callback
 // LINE LoginのOAuthコールバック → user_id取得 → providersテーブルに保存
 import { getSupabase } from '@/lib/supabase';
+import { verifyState } from '@/lib/oauth-state';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -21,16 +22,11 @@ export async function GET(request) {
     return Response.redirect(`${SITE_URL}/pages/provider/index.html?line_error=invalid`);
   }
 
-  // stateからprovider_idを取得
-  let providerId;
-  try {
-    const decoded = JSON.parse(Buffer.from(state, 'base64url').toString());
-    providerId = decoded.provider_id;
-    // 10分以上前のstateは無効
-    if (!providerId || Date.now() - decoded.ts > 10 * 60 * 1000) {
-      throw new Error('expired');
-    }
-  } catch {
+  // state の署名と期限を確かめ、provider_id を取り出す（lib/oauth-state.js。2026-11-11 セキュリティ点検：
+  // 署名の無い state を受け付けていたため、他の店舗の予約通知を自分のLINEにつなげられた）
+  const decoded = verifyState(state);
+  const providerId = decoded && !decoded.expired ? decoded.provider_id : null;
+  if (!providerId) {
     return Response.redirect(`${SITE_URL}/pages/provider/index.html?line_error=invalid_state`);
   }
 

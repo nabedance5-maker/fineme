@@ -1,5 +1,8 @@
 // GET /api/mirror/sessions?user_id=X  または  ?ids=id1,id2,id3
 // ユーザーの過去Mirror分析一覧を返す
+// 2026-11-11 セキュリティ点検：?user_id= はURLのIDだけで他人の分析結果を読めたため、
+// ログインの印（Authorization: Bearer）の本人と一致する時だけ返す。?ids=（未ログインの人が
+// 自分の端末に持っている推測できないセッションID）はこれまでどおり。
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -25,6 +28,11 @@ export async function GET(request) {
 
   if (!userId && !ids) {
     return Response.json({ sessions: [] });
+  }
+  if (userId) {
+    const bearer = request.headers.get('Authorization')?.replace('Bearer ', '');
+    const { data: { user } = {} } = bearer ? await supabase.auth.getUser(bearer).catch(() => ({ data: {} })) : { data: {} };
+    if (!user || user.id !== userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   let { data, error } = await buildQuery('id, created_at, paid, analysis, report_status');

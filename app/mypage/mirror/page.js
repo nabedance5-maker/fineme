@@ -109,7 +109,7 @@ export default function MirrorHistoryPage() {
 
     // セッション一覧・サブスク状態・月次比較を並行取得
     Promise.all([
-      fetch(`/api/mirror/sessions?user_id=${uid}`).then(r => r.json()),
+      fetch(`/api/mirror/sessions?user_id=${uid}`, { headers: tok ? { Authorization: `Bearer ${tok}` } : {} }).then(r => r.json()),
       tok ? fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${tok}` } }).then(r => r.json()) : Promise.resolve(null),
       tok ? fetch('/api/me/mirror-comparison', { headers: { Authorization: `Bearer ${tok}` } }).then(r => r.json()) : Promise.resolve(null),
     ]).then(([sessionData, subData, compData]) => {

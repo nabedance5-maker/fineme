@@ -12468,8 +12468,20 @@ export default function ProviderDashboardPage() {
         return;
       }
 
+      // 店舗はサーバーがログインの印から決める（2026-11-11 セキュリティ点検。URLに店舗IDを書かない）
       const btn = document.getElementById('line-connect-btn');
-      if (btn) btn.href = `/api/provider/line-connect?provider_id=${encodeURIComponent(providerId)}`;
+      if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          try {
+            const r = await fetch('/api/provider/line-connect', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
+            const d = await r.json().catch(() => ({}));
+            if (r.ok && d.url) { location.href = d.url; return; }
+            showToast(d.error || 'LINE連携を始められませんでした');
+          } catch { showToast('LINE連携を始められませんでした。時間をおいてお試しください'); }
+        });
+      }
     })();
 
     // 紹介コードコピー（課金タブ内）

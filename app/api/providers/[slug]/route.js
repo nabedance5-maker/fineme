@@ -1,5 +1,6 @@
 // GET /api/providers/[slug] - 掲載者詳細（公開ページ用）
 export const dynamic = 'force-dynamic';
+import { publicProvider } from '@/lib/provider-public';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -20,5 +21,5 @@ export async function GET(request, props) {
   const { email, line_user_id, stripe_customer_id, stripe_subscription_id, stripe_connect_id, stripe_connect_status,
     notify_emails, affiliate_notes, referral_code, referred_by, billing_status, billing_started, dashboard_prefs, admin_hidden, entity_type,
     ...publicData } = data;
-  return Response.json(publicData, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json(publicProvider(publicData), { headers: { 'Cache-Control': 'no-store' } });
 }

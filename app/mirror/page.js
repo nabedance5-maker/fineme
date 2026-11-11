@@ -258,7 +258,7 @@ export default function MirrorPage() {
         ? `/api/mirror/sessions?user_id=${authUserId}`
         : `/api/mirror/sessions?ids=${localIds.join(',')}`;
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { headers: authUserId && authToken ? { Authorization: `Bearer ${authToken}` } : {} });
         const data = await res.json();
         if (data.sessions?.length) setPastSessions(data.sessions);
       } catch {}

@@ -3,15 +3,23 @@ import { getSupabase } from '@/lib/supabase';
 // PATCH /api/stories/[id] → ステータス更新（管理者用: approve/reject）
 
 const supabaseAdmin = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+// 2026-11-11 セキュリティ点検：PATCH（承認・却下）に認証が無く、誰でも体験談を公開・非公開にできた。
+// 承認・却下と、まだ公開していない体験談の取得は、管理APIキーがある時だけにする。
+const ADMIN_KEY = process.env.ADMIN_API_KEY || '';
+const isAdmin = req => !!ADMIN_KEY && req.headers.get('x-admin-key') === ADMIN_KEY;
 
 export async function GET(request, { params }) {
   const { id } = await params;
   const { data, error } = await supabaseAdmin.from('stories').select('*').eq('id', id).single();
   if (error || !data) return Response.json({ error: 'not found' }, { status: 404 });
+  if (data.status !== 'approved' && !isAdmin(request)) return Response.json({ error: 'not found' }, { status: 404 });
+  // 公開中の体験談でも、だれが書いたか・どの予約かは管理者にだけ返す
+  if (!isAdmin(request)) { const { user_id, reservation_id, ...pub } = data; return Response.json(pub); }
   return Response.json(data);
 }
 
 export async function PATCH(request, { params }) {
+  if (!isAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
   try {
     const body = await request.json();
