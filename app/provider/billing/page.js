@@ -118,7 +118,7 @@ export default function BillingPage() {
             setCurrentPlan(me.plan || 'A');
             setBillingStatus(me.billing_status || 'free');
             try {
-              const rr = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(me.id)}`);
+              const rr = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(me.id)}`, { headers });
               if (rr.ok) {
                 const rj = await rr.json();
                 setReferralYen(rj.summary?.pending_this_month || 0);

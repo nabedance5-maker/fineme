@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import { getReferralSummary } from '@/lib/referral-summary';
+import { memberAuth } from '@/lib/provider-members';
 
 /**
  * GET /api/billing/referrals?provider_id=xxx
@@ -16,9 +17,20 @@ import { getReferralSummary } from '@/lib/referral-summary';
  *  掲載者も希望すれば別途sales_partnersへ登録する方式に変更。報酬率・計算ロジックは不変）。
  * 計算ロジック本体は lib/referral-summary.js に集約（/api/partner/[token] と共有）。
  */
+// 2026-11-11 セキュリティ点検：認証が無く、provider_id を省くと全営業パートナーの紹介先と報酬額を、
+// provider_id を書けば他の店舗の紹介実績を、だれでも見られた。
+// いまは「ログイン中の契約者の店舗の分だけ」、または管理APIキーがある時だけ全体を返す。
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const providerId = searchParams.get('provider_id');
+  const adminKey = process.env.ADMIN_API_KEY || '';
+  const isAdmin = !!adminKey && request.headers.get('x-admin-key') === adminKey;
+  let providerId = null;
+  if (!isAdmin) {
+    const a = await memberAuth(request);
+    if (!a) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    providerId = a.provider.id; // URLの provider_id は信用しない
+  } else {
+    providerId = new URL(request.url).searchParams.get('provider_id');
+  }
 
   const sb = getSupabase();
 

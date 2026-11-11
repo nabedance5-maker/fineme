@@ -2275,7 +2275,7 @@ export default function ProviderDashboardPage() {
 
       // 紹介報酬（今月の見込み）
       try {
-        const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
+        const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`, { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (res.ok) {
           const data = await res.json();
           const amount = data.summary?.pending_this_month || 0;
@@ -12559,7 +12559,7 @@ export default function ProviderDashboardPage() {
         if (!pid) { if (listEl) listEl.innerHTML = '<p class="muted">契約者IDが見つかりません。</p>'; return; }
 
         try {
-          const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
+          const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`, { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           if (!res.ok) { if (listEl) listEl.innerHTML = authErrorHtml(res); return; }
           const data = await res.json();
           if (data.not_registered) { if (listEl) listEl.innerHTML = '<p class="muted">営業パートナー登録が必要です。</p>'; return; }
