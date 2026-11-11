@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { goToTab } from './consultant-api';
-import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
+import { OutreachCard, SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
 // ── 閉じている時の吹き出し（でお要望 2026-10-21：「折りたたみが見つけづらい。今野くんは気づいていなかった。
 //    でも作業の邪魔はしない、いい塩梅で」）。作業の区切り（画面を開いた後・タブを切り替えた直後）にだけ、
@@ -241,7 +241,10 @@ export default function ConsultantWidget() {
               <div className="cw-chat-log" ref={logRef}>
                 {chatLog.length === 0 && <p className="cw-muted">お店のことを何でも相談してください。たとえば「今月は何に力を入れる？」「このスタッフに何を任せればいい？」「やってみたけどうまくいかなかった」など。</p>}
                 {chatLog.map((m, i) => (
-                  <div key={i} className={`cw-msg is-${m.role}`}>{m.content}</div>
+                  <div key={i} style={{ display: 'contents' }}>
+                    <div className={`cw-msg is-${m.role}`}>{m.content}</div>
+                    {(m.proposals || []).map(p => <OutreachCard key={p.stage} stage={p.stage} label={p.label} body={p.body} />)}
+                  </div>
                 ))}
                 {busy && <div className="cw-msg is-assistant cw-typing">考えています…</div>}
               </div>

@@ -5,7 +5,7 @@ export const maxDuration = 120;
 import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide } from '@/lib/consultant-prompt';
-import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
+import { VALID_TABS, periodKeys, jstNow, STAGES } from '@/lib/consultant-insight';
 import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
 import { freeJson } from '@/lib/ai';
 
@@ -33,6 +33,18 @@ const TOOLS = [
   { name: 'complete_task', description: '店舗が「やった」と伝えたタスクを完了にする', input_schema: { type: 'object', properties: { task_id: { type: 'string' } }, required: ['task_id'] } },
   { name: 'skip_task', description: '店舗が「やらない・合わない」と伝えたタスクを見送りにする', input_schema: { type: 'object', properties: { task_id: { type: 'string' } }, required: ['task_id'] } },
   { name: 'save_goal', description: '店舗が目指すことを言い直した・決めた時に、ゴールを更新する（店舗自身の言葉に近い形で、200字以内）', input_schema: { type: 'object', properties: { goal: { type: 'string' } }, required: ['goal'] } },
+  {
+    name: 'prepare_outreach',
+    description: '店舗が、ある段階のお客様に声をかけたい・送ってほしい・文面を作ってほしいと言った時に、その段階の全員へ送る声かけの文面を用意する。画面に「送る」ボタン付きで出し、送るのは店舗が押した時だけ（AIが勝手に送ることはない）',
+    input_schema: {
+      type: 'object',
+      properties: {
+        stage: { type: 'string', enum: STAGES.map(s => s.key), description: STAGES.map(s => `${s.key}=${s.label}`).join(' / ') },
+        message: { type: 'string', description: 'LINEで送る2〜4文の声かけ。冒頭は「{name}さん、」で始める（お名前に自動で置き換わる）。売り込みすぎず、次の来店の一歩が分かる一文を入れる' },
+      },
+      required: ['stage', 'message'],
+    },
+  },
   { name: 'remember_fact', description: '店舗の状況について、今後の提案に効く事実（客層・強み・制約・スタッフの事情・やってみた結果など）を一つ記憶する', input_schema: { type: 'object', properties: { fact: { type: 'string' } }, required: ['fact'] } },
 ];
 
@@ -112,6 +124,14 @@ async function runTool(name, input, ctx) {
     ctx.goalChanged = true;
     return 'ゴールを更新しました。見立てと今日のタスクは次に画面を開いた時に作り直されます';
   }
+  if (name === 'prepare_outreach') {
+    const st = state.insight.stages.find(x => x.key === input.stage);
+    const body = String(input.message || '').trim().slice(0, 800);
+    if (!st || !body) return '段階か文面が足りません';
+    if (!st.count) return 'この段階のお客様は今いません';
+    ctx.proposals.push({ stage: st.key, label: st.label, count: st.count, body });
+    return `「${st.label}」の${st.count}人へ送る文面を画面に出しました。店舗が確認して「送る」を押すと届きます`;
+  }
   if (name === 'remember_fact') {
     const fact = clean(input.fact, 140);
     if (!fact) return '内容が空です';
@@ -147,14 +167,14 @@ export async function POST(request) {
 
 今回は店舗との会話です。店舗の質問や状況の変化に、上の原則にそって答えます。
 - ゴールが未記入なら、無理に提案せず「お店としてどうなりたいか」を聞く。
-- 店舗が何かをやると決めたら add_task で記録する。やった・やらないと言われたら complete_task / skip_task（id は未完了タスクの一覧から選ぶ）。目指すことが変わったら save_goal。今後の提案に効く新しい事実が出たら remember_fact（店舗が質問に答えた時、方針・こだわり・できない理由・やってみた結果が語られた時は特に記録する）。操作した時は、それを一言添えて伝える。
+- 店舗が何かをやると決めたら add_task で記録する。やった・やらないと言われたら complete_task / skip_task（id は未完了タスクの一覧から選ぶ）。目指すことが変わったら save_goal。今後の提案に効く新しい事実が出たら remember_fact（店舗が質問に答えた時、方針・こだわり・できない理由・やってみた結果が語られた時は特に記録する）。お客様への声かけ・連絡・文面づくりの話になったら、助言だけで終わらせず prepare_outreach で送れる文面まで用意する（同じ段階に直近で送っていれば、その結果を踏まえて文面を変える）。操作した時は、それを一言添えて伝える。
 - 無い機能を「ある」と言わない。画面を案内する時は次の名前で言う：${tabGuide()}
 - 返答は短く、実務的に。3〜8文程度。必要なら箇条書きも可。
 
 ${buildContext(state, provider)}${diagnosis}`;
 
   const messages = [...history.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: text }];
-  const ctx = { provider, state, changed: false, goalChanged: false };
+  const ctx = { provider, state, changed: false, goalChanged: false, proposals: [] };
 
   try {
     let reply = '';
@@ -184,7 +204,7 @@ ${buildContext(state, provider)}${diagnosis}`;
       { provider_id: provider.id, role: 'assistant', content: reply },
     ]);
     try { await maybeSummarize(supabase, provider, state); } catch (e) { console.error('consultant summarize failed:', e?.message); }
-    return Response.json({ reply, changed: ctx.changed, goalChanged: ctx.goalChanged });
+    return Response.json({ reply, changed: ctx.changed, goalChanged: ctx.goalChanged, proposals: ctx.proposals.slice(0, 3) });
   } catch {
     return Response.json({ error: '返答の生成に失敗しました' }, { status: 502 });
   }

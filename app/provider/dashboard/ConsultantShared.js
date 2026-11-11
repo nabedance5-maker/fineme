@@ -95,7 +95,7 @@ export function useConsultant() {
     setBusy(true);
     try {
       const res = await api('/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
-      setChatLog(prev => [...prev, { role: 'assistant', content: res.reply }]);
+      setChatLog(prev => [...prev, { role: 'assistant', content: res.reply, proposals: res.proposals || [] }]);
       if (res.changed) {
         await load();
         notifyChanged();
@@ -151,7 +151,94 @@ export function TaskList({ tasks, tabLabels, busy, onStatus, compact }) {
   );
 }
 
+// AIが用意した声かけを、その段階のお客様全員へ送るカード（送るのは店舗が押した時だけ）
+export function OutreachCard({ stage, label, body: initialBody, onSent }) {
+  const [body, setBody] = useState(initialBody || '');
+  const [channel, setChannel] = useState('line_then_email');
+  const [when, setWhen] = useState('');
+  const [info, setInfo] = useState(null);
+  const [state, setState] = useState('idle');
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => { setBody(initialBody || ''); }, [initialBody]);
+  useEffect(() => {
+    let alive = true;
+    api('/send', { method: 'POST', body: JSON.stringify({ stage, preview: true }) })
+      .then(d => { if (alive) setInfo(d); }).catch(e => { if (alive) setMsg(e.message); });
+    return () => { alive = false; };
+  }, [stage]);
+
+  async function send() {
+    if (!info?.count || !body.trim()) return;
+    const target = when ? `${when.replace('T', ' ')}に` : '今すぐ';
+    if (!window.confirm(`「${label}」の${info.count}人に、${target}送ります。よろしいですか？`)) return;
+    setState('sending'); setMsg('');
+    try {
+      const r = await api('/send', { method: 'POST', body: JSON.stringify({ stage, body_text: body, channel, scheduled_at: when ? new Date(when).toISOString() : null }) });
+      setState('done');
+      setMsg(r.scheduled ? `${r.count}人に送る予約をしました。` : `送りました（LINE ${r.line_sent}人・メール ${r.email_sent}人${r.skipped ? `・届け先が無い ${r.skipped}人` : ''}）。その後に予約が入ったかは、AIコンサルが数えて次の提案に使います。`);
+      notifyChanged();
+      onSent?.(r);
+    } catch (e) { setState('idle'); setMsg(e.message); }
+  }
+
+  if (state === 'done') return <div className="cc-send is-done"><p className="cc-send-msg">{msg}</p></div>;
+  return (
+    <div className="cc-send">
+      <div className="cc-send-head">
+        <strong>「{label}」の方へ送る</strong>
+        <span>{info ? `${info.count}人${info.excluded ? `（${info.cooldownDays}日以内に送った${info.excluded}人は除く）` : ''}` : '人数を確かめています…'}</span>
+      </div>
+      <textarea className="cc-send-body" rows={4} maxLength={4000} value={body} onChange={e => setBody(e.target.value)} aria-label="送る文面" />
+      <p className="cc-muted">{'{name}'}はお客様ごとのお名前に置き換わります。文面は自由に直せます。</p>
+      <div className="cc-send-row">
+        <select value={channel} onChange={e => setChannel(e.target.value)} aria-label="送り方">
+          <option value="line_then_email">LINE（届かない方はメール）</option>
+          <option value="line">LINEだけ</option>
+          <option value="email">メールだけ</option>
+        </select>
+        <input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} aria-label="送る日時（空なら今すぐ）" />
+      </div>
+      <div className="cc-send-row">
+        <button type="button" className="cc-send-btn" disabled={state === 'sending' || !info?.count || !body.trim()} onClick={send}>
+          {state === 'sending' ? '送っています…' : when ? `${info?.count || 0}人に送る予約をする` : `${info?.count || 0}人に送る`}
+        </button>
+        {when && <button type="button" className="cc-link cc-link-quiet" onClick={() => setWhen('')}>今すぐにする</button>}
+      </div>
+      {msg && <p className="cc-send-msg">{msg}</p>}
+    </div>
+  );
+}
+
+// 送った声かけと、その後に予約が入った人数
+export function OutreachResults({ list }) {
+  if (!list?.length) return null;
+  const fmt = iso => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  return (
+    <ul className="cc-results">
+      {list.slice(0, 6).map(o => (
+        <li key={o.id}>
+          <span>{o.when ? fmt(o.when) : ''} {o.label}</span>
+          <span>{o.status === 'scheduled' ? `${o.planned}人に送る予定` : o.status === 'sent' ? `${o.delivered}人に届いた / 予約 ${o.booked}人` : '送れませんでした'}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export const SHARED_CSS = `
+  .cc-send { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid rgba(26,20,16,0.16); border-radius: 10px; background: #fff; margin-top: 6px; }
+  .cc-send-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 13px; color: #1a1410; }
+  .cc-send-head span { color: rgba(26,20,16,0.6); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .cc-send-body { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; line-height: 1.7; padding: 8px 10px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; resize: vertical; }
+  .cc-send-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .cc-send-row select, .cc-send-row input { font: inherit; font-size: 13px; padding: 7px 8px; border: 1px solid rgba(26,20,16,0.2); border-radius: 8px; background: #fff; min-height: 36px; }
+  .cc-send-btn { font: inherit; font-size: 13.5px; font-weight: 700; padding: 9px 16px; border-radius: 8px; border: none; background: #1a1410; color: #fff; cursor: pointer; min-height: 40px; }
+  .cc-send-btn:disabled { opacity: .45; cursor: default; }
+  .cc-send-msg { margin: 0; font-size: 12.5px; line-height: 1.7; color: #1a1410; }
+  .cc-send.is-done { background: rgba(26,20,16,0.03); }
+  .cc-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .cc-results li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 12.5px; padding: 7px 10px; border-radius: 8px; background: rgba(26,20,16,0.04); font-variant-numeric: tabular-nums; }
   .cc-muted { margin: 0; color: rgba(26,20,16,0.55); font-size: 12.5px; line-height: 1.7; }
   .cc-groups { display: flex; flex-direction: column; gap: 14px; }
   .cc-group-label { display: flex; align-items: baseline; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: rgba(26,20,16,0.62); margin-bottom: 6px; }

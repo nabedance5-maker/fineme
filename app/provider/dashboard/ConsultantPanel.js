@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
 import { MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
-import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
+import { OutreachCard, OutreachResults, SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
 const GOAL_EXAMPLES = [
   '初めて来たお客様に、2回目も来てもらえるようにしたい',
@@ -110,6 +110,7 @@ export default function ConsultantPanel() {
   const [taskInput, setTaskInput] = useState('');
   const [taskCadence, setTaskCadence] = useState('once');
   const [openStage, setOpenStage] = useState('');
+  const [sendStage, setSendStage] = useState('');
   const [copied, setCopied] = useState('');
   const [bnCategory, setBnCategory] = useState('');
   const [bnMinutes, setBnMinutes] = useState(60);
@@ -163,7 +164,7 @@ export default function ConsultantPanel() {
     );
   }
 
-  const { goalText, needsGoal, diagnosis, focus, questions, stageActions, generatedAt, tasks, tabLabels, stages, timeText, kpis, readiness, bottlenecks, savedMinutesPerWeek, facts, premise } = data;
+  const { goalText, needsGoal, diagnosis, focus, questions, stageActions, generatedAt, tasks, tabLabels, stages, timeText, kpis, readiness, bottlenecks, savedMinutesPerWeek, facts, premise, outreach } = data;
   const showGoalEditor = editingGoal || needsGoal;
   const openBottlenecks = bottlenecks.filter(b => b.status === 'open');
   const catLabel = key => BOTTLENECK_CATEGORIES.find(c => c.key === key)?.label || key;
@@ -306,6 +307,12 @@ export default function ConsultantPanel() {
         <section id="cp-stages" className="card stack" style={{ padding: '24px', gap: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '16px' }}>お客様の段階</h3>
           <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>Fineme上の来店記録をもとにした段階です。日がたつと、お客様は次の段階に移ります。段階ごとに、打ち手と声かけの文案を出します。</p>
+          {outreach?.length > 0 && (
+            <div className="stack" style={{ gap: '6px' }}>
+              <div className="cp-kicker">送った声かけと、その後の予約</div>
+              <OutreachResults list={outreach} />
+            </div>
+          )}
           <div className="cp-stages">
             {visibleStages.map(s => {
               const act = actionByStage[s.key];
@@ -319,12 +326,15 @@ export default function ConsultantPanel() {
                   {open && (
                     <div className="cp-stage-body">
                       {act?.action ? <p className="cp-prose" style={{ margin: 0 }}>{act.action}</p> : <p className="cc-muted">この段階の打ち手は、次に考え直す時に出ます。</p>}
-                      {act?.message_draft && (
-                        <div className="cp-draft">
-                          <div className="cp-kicker">声かけの文案（名前は自動で入れ替えます）</div>
-                          <p>{act.message_draft}</p>
-                        </div>
-                      )}
+                      {act?.message_draft && (sendStage === s.key
+                        ? <OutreachCard stage={s.key} label={s.label} body={act.message_draft} />
+                        : (
+                          <div className="cp-draft">
+                            <div className="cp-kicker">声かけの文案（名前は自動で入れ替えます）</div>
+                            <p>{act.message_draft}</p>
+                            <button type="button" className="cc-send-btn" style={{ marginTop: '8px' }} onClick={() => setSendStage(s.key)}>この{s.count}人にAIの文面で送る</button>
+                          </div>
+                        ))}
                       <ul className="cp-people">
                         {s.samples.map(c => (
                           <li key={c.user_id}>
@@ -365,7 +375,7 @@ export default function ConsultantPanel() {
         )}
         <div className="cp-chat-log" ref={logRef}>
           {chatLog.length === 0 && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のことを何でも相談してください。「今月は何に力を入れるべき？」「このスタッフに何を任せればいい？」「やってみたけどうまくいかなかった」など。決めたことはやることに記録します。</p>}
-          {chatLog.map((m, i) => <div key={i} className={`cp-msg is-${m.role}`}>{m.content}</div>)}
+          {chatLog.map((m, i) => <div key={i} style={{ display: 'contents' }}><div className={`cp-msg is-${m.role}`}>{m.content}</div>{(m.proposals || []).map(p => <OutreachCard key={p.stage} stage={p.stage} label={p.label} body={p.body} />)}</div>)}
           {busy && <div className="cp-msg is-assistant">考えています…</div>}
         </div>
         <form className="cp-chat-form" onSubmit={e => { e.preventDefault(); const t = chatInput; setChatInput(''); sendChat(t); }}>
