@@ -10251,14 +10251,8 @@ export default function ProviderDashboardPage() {
           if (hmsg || herr) history.replaceState(null, '', location.pathname + location.search);
           pend.style.display = d.pending_email || note ? '' : 'none';
           pend.innerHTML = d.pending_email
-            ? `<b>${esc(d.pending_email)} への変更の確認待ちです。</b>今の ${esc(loginEmail)} と新しい ${esc(d.pending_email)} の両方に届いたメールのボタンを押すと変更が完了します（片方だけでは変わりません）。${note ? `<br>${esc(note)}` : ''}<br><button type="button" class="btn btn-ghost" id="as-email-resend" style="font-size:12px;padding:4px 10px;margin-top:6px">確認メールを送り直す</button>`
+            ? `<b>${esc(d.pending_email)} への変更の確認待ちです。</b>今の ${esc(loginEmail)} と新しい ${esc(d.pending_email)} の両方に届いたメールのボタンを押すと変更が完了します（片方だけでは変わりません）。${note ? `<br>${esc(note)}` : ''}<br>今のアドレスが使えない時は、下の欄で新しいアドレスと今のパスワードを入れて送り直してください（新しいアドレスの確認だけで変わります）。`
             : esc(note);
-          $('as-email-resend')?.addEventListener('click', async (e) => {
-            e.currentTarget.disabled = true;
-            const { error } = await _sb.auth.updateUser({ email: d.pending_email }, { emailRedirectTo: `${location.origin}/provider/dashboard?tab=members` });
-            $('as-email-msg').textContent = error ? `送れませんでした：${error.message}` : '確認メールを2通送り直しました。両方のボタンを押してください。';
-            e.currentTarget.disabled = false;
-          });
         }
         notify = d.notify_emails || [];
         renderNotify();
@@ -10276,15 +10270,32 @@ export default function ProviderDashboardPage() {
         $('as-notify-msg').textContent = r.ok ? '保存しました' : (d.error || '保存できませんでした');
         if (r.ok) { notify = d.notify_emails; renderNotify(); }
       });
+      // 今のパスワードで本人を確かめ、新しいアドレスだけで確認する（2026-11-12 渡邉指摘：前のアドレスが使えない時は両方押せない）
       $('as-email-save')?.addEventListener('click', async () => {
         const v = $('as-new-email').value.trim().toLowerCase();
+        const pw = $('as-email-pw').value;
         const msg = $('as-email-msg');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { msg.textContent = 'メールアドレスの形を確かめてください'; return; }
         if (v === loginEmail.toLowerCase()) { msg.textContent = '今と同じアドレスです'; return; }
-        const { error } = await _sb.auth.updateUser({ email: v }, { emailRedirectTo: `${location.origin}/provider/dashboard?tab=members` });
-        msg.textContent = error ? `送れませんでした：${error.message}` : '確認メールを2通送りました。今のアドレスと新しいアドレスの両方に届いたメールのボタンを押すと変更が完了します（片方だけでは変わりません）。';
-        if (!error) { $('as-new-email').value = ''; load(); }
+        if (!pw) { msg.textContent = '今のパスワードを入れてください'; return; }
+        const btn = $('as-email-save'); btn.disabled = true; msg.textContent = '送っています…';
+        const r = await fetch('/api/provider/account-settings/email-change', { method: 'POST', headers: H(), body: JSON.stringify({ new_email: v, password: pw }) });
+        const d = await r.json().catch(() => ({}));
+        btn.disabled = false;
+        $('as-email-pw').value = '';
+        msg.textContent = r.ok ? `${v} に確認メールを送りました。1時間以内にメールのボタンを押すと変更が完了します。` : (d.error || '送れませんでした');
+        if (r.ok) $('as-new-email').value = '';
       });
+      {
+        // 確認リンクを押して戻ってきた時の知らせ
+        const st = new URLSearchParams(location.search).get('email_change');
+        const text = { done: 'ログイン用メールアドレスを変更しました。次からは新しいアドレスでログインしてください。', expired: '確認リンクの期限（1時間）が切れていました。もう一度、変更の確認メールを送ってください。', invalid: '確認リンクが正しくないか、すでに使われています。もう一度、変更の確認メールを送ってください。', taken: 'このメールアドレスは、ほかのアカウントで使われています。', failed: '変更できませんでした。時間をおいてもう一度お試しください。' }[st];
+        if (text) {
+          setTimeout(() => { const m = $('as-email-msg'); if (m) m.textContent = text; }, 0);
+          showToast(text);
+          const u = new URL(location.href); u.searchParams.delete('email_change'); history.replaceState(null, '', u.pathname + u.search);
+        }
+      }
       $('as-pw-save')?.addEventListener('click', async () => {
         const cur = $('as-pw-current').value, p1 = $('as-pw-new').value, p2 = $('as-pw-new2').value;
         const msg = $('as-pw-msg');
@@ -20249,10 +20260,11 @@ export default function ProviderDashboardPage() {
             <p style={{ fontSize: '13px', margin: 0, color: '#1a1410' }}>今のログイン用メールアドレス：<b id="as-login-email">読み込み中…</b></p>
             <p id="as-pending" style={{ fontSize: '12.5px', margin: 0, color: '#1a1410', display: 'none' }}></p>
             <div className="sm-inline">
-              <input type="email" id="as-new-email" placeholder="新しいメールアドレス" style={{ flex: '1 1 240px' }} />
+              <input type="email" id="as-new-email" placeholder="新しいメールアドレス" autoComplete="email" style={{ flex: '1 1 240px' }} />
+              <input type="password" id="as-email-pw" placeholder="今のパスワード" autoComplete="current-password" style={{ flex: '1 1 160px' }} />
               <button type="button" className="btn" id="as-email-save">変更の確認メールを送る</button>
             </div>
-            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>今のアドレスと新しいアドレスの両方に確認メールが届きます。両方のメールのボタンを押すと変更が完了し、次からは新しいアドレスでログインします。お店の登録メールも自動で新しいアドレスに変わります。</p>
+            <p style={{ fontSize: '12px', margin: 0, color: '#1a1410' }}>今のパスワードで本人を確かめ、新しいアドレスに確認メールを送ります。そのメールのボタンを押すと変更が完了します（今のアドレスが使えなくなっていても変えられます）。次からは新しいアドレスと今までのパスワードでログインします。お店の登録メールも自動で新しいアドレスに変わります。</p>
             <span id="as-email-msg" style={{ fontSize: '12.5px', color: '#1a1410' }}></span>
           </div>
           <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
