@@ -10207,7 +10207,26 @@ export default function ProviderDashboardPage() {
         loginEmail = d.login_email || '';
         $('as-login-email').textContent = loginEmail;
         const pend = $('as-pending');
-        if (pend) { pend.style.display = d.pending_email ? '' : 'none'; pend.textContent = d.pending_email ? `${d.pending_email} への変更の確認待ちです（両方のアドレスに届いたメールのボタンを押してください）` : ''; }
+        if (pend) {
+          // 確認メールのボタンを押して戻ってきた時の、Supabase からの知らせ（URLの # 以降）を日本語で出す
+          const hp = new URLSearchParams(location.hash.replace(/^#/, ''));
+          const hmsg = hp.get('message') || '';
+          const herr = hp.get('error_description') || '';
+          let note = '';
+          if (/other email/i.test(hmsg)) note = '1通目の確認ができました。まだ変わっていません。もう一方のアドレスに届いたメールのボタンも押してください。';
+          else if (herr) note = /expired|invalid/i.test(herr) ? '確認のリンクの期限が切れているか、すでに使われています。下の「確認メールを送り直す」から送り直してください。' : `確認できませんでした（${herr}）`;
+          if (hmsg || herr) history.replaceState(null, '', location.pathname + location.search);
+          pend.style.display = d.pending_email || note ? '' : 'none';
+          pend.innerHTML = d.pending_email
+            ? `<b>${esc(d.pending_email)} への変更の確認待ちです。</b>今の ${esc(loginEmail)} と新しい ${esc(d.pending_email)} の両方に届いたメールのボタンを押すと変更が完了します（片方だけでは変わりません）。${note ? `<br>${esc(note)}` : ''}<br><button type="button" class="btn btn-ghost" id="as-email-resend" style="font-size:12px;padding:4px 10px;margin-top:6px">確認メールを送り直す</button>`
+            : esc(note);
+          $('as-email-resend')?.addEventListener('click', async (e) => {
+            e.currentTarget.disabled = true;
+            const { error } = await _sb.auth.updateUser({ email: d.pending_email }, { emailRedirectTo: `${location.origin}/provider/dashboard?tab=members` });
+            $('as-email-msg').textContent = error ? `送れませんでした：${error.message}` : '確認メールを2通送り直しました。両方のボタンを押してください。';
+            e.currentTarget.disabled = false;
+          });
+        }
         notify = d.notify_emails || [];
         renderNotify();
       }
@@ -10230,7 +10249,7 @@ export default function ProviderDashboardPage() {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { msg.textContent = 'メールアドレスの形を確かめてください'; return; }
         if (v === loginEmail.toLowerCase()) { msg.textContent = '今と同じアドレスです'; return; }
         const { error } = await _sb.auth.updateUser({ email: v }, { emailRedirectTo: `${location.origin}/provider/dashboard?tab=members` });
-        msg.textContent = error ? `送れませんでした：${error.message}` : '確認メールを送りました。今のアドレスと新しいアドレスの両方に届いたメールのボタンを押すと変更が完了します。';
+        msg.textContent = error ? `送れませんでした：${error.message}` : '確認メールを2通送りました。今のアドレスと新しいアドレスの両方に届いたメールのボタンを押すと変更が完了します（片方だけでは変わりません）。';
         if (!error) { $('as-new-email').value = ''; load(); }
       });
       $('as-pw-save')?.addEventListener('click', async () => {

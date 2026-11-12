@@ -60,8 +60,9 @@ export async function POST(request) {
     // 新しいアドレス(user.new_email)には token_hash を使う（公式ドキュメント「Send Email Hook」で確認済み）。
     if (email_data?.email_action_type === 'email_change') {
       const jobs = [];
-      if (email_data.token_hash_new && user?.email) jobs.push(sendAuthActionEmail({ to: user.email, actionType: 'email_change', token: email_data.token, tokenHash: email_data.token_hash_new, redirectTo: email_data.redirect_to }));
-      if (email_data.token_hash && user?.new_email) jobs.push(sendAuthActionEmail({ to: user.new_email, actionType: 'email_change', token: email_data.token_new, tokenHash: email_data.token_hash, redirectTo: email_data.redirect_to }));
+      const both = !!(email_data.token_hash_new && user?.email && email_data.token_hash && user?.new_email);
+      if (email_data.token_hash_new && user?.email) jobs.push(sendAuthActionEmail({ to: user.email, actionType: 'email_change', token: email_data.token, tokenHash: email_data.token_hash_new, redirectTo: email_data.redirect_to, emailChangeSide: both ? 'current' : null, otherEmail: user.new_email }));
+      if (email_data.token_hash && user?.new_email) jobs.push(sendAuthActionEmail({ to: user.new_email, actionType: 'email_change', token: email_data.token_new, tokenHash: email_data.token_hash, redirectTo: email_data.redirect_to, emailChangeSide: both ? 'new' : null, otherEmail: user.email }));
       await Promise.all(jobs);
       return Response.json({});
     }
