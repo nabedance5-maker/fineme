@@ -222,6 +222,13 @@ async function __PATCH(request, context) {
       const when = `${data.confirmed_date || data.counter_date || data.reserved_date || ''} ${String(data.confirmed_time || data.counter_time || data.start_time || '').slice(0, 5)}`.trim();
       await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: `【${provider?.name || '店舗'}】ご予約${when ? `（${when}）` : ''}をキャンセルしました。チケット・回数券を使っていた場合はお戻ししています。` }).catch(e => console.error('[cancel line customer]', e));
     }
+    // お店が管理画面からキャンセルした時も、お店に控えを送る（2026-11-12 渡邉報告：お店側にメールが来ていなかった。
+    // 複数の人で運営していると、誰がいつキャンセルしたか分からなくなるため）
+    if (isOwnerProvider && (newStatus === 'cancelled' || (newStatus === 'rejected' && existing.status === 'approved'))) {
+      try {
+        await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider?.name, byStore: newStatus === 'rejected' ? 'store_reason' : 'recorded' });
+      } catch (e) { console.error('[cancel email store copy]', e); }
+    }
     if (newStatus === 'cancelled' && !isOwnerProvider) {
       try {
         await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider?.name });
