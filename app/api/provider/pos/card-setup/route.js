@@ -9,10 +9,9 @@ import { getSupabase } from '@/lib/supabase';
 import { memberAuth } from '@/lib/provider-members';
 import { withAudit } from '@/lib/activity-log';
 import { isStoreCustomer, ensureManualLinked } from '@/lib/customer-accounts';
-import { stripeCustomerFor } from '@/lib/pos-member-card';
+import { createCardSetupSession } from '@/lib/card-setup-link';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function __POST(request) {
@@ -37,21 +36,7 @@ async function __POST(request) {
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const { data: { user } = {} } = await supabase.auth.admin.getUserById(userId).catch(() => ({ data: {} }));
-    const email = user?.email && !/@line\.fineme\.me$|\.invalid$/.test(user.email) ? user.email : undefined;
-    const customerId = await stripeCustomerFor(supabase, stripe, provider.id, userId, { email, name: String(b.name || '').slice(0, 60) || undefined });
-    const session = await stripe.checkout.sessions.create({
-      mode: 'setup',
-      currency: 'jpy',
-      customer: customerId,
-      // 後でお店のレジから請求するための保存（お客様がいない時の請求）
-      setup_intent_data: { metadata: { fineme_card_setup: '1', fineme_provider_id: provider.id, fineme_user_id: userId } },
-      metadata: { fineme_card_setup: '1', fineme_provider_id: provider.id, fineme_user_id: userId },
-      custom_text: { submit: { message: `このカードは${provider.name}でのお会計に使えるよう保存されます。お店が会員証を読み取った時など、お店のレジでだけ使います。登録だけでは請求されません。Finemeのマイページからいつでも外せます。` } },
-      success_url: `${BASE_URL}/card-registered?status=success&kind=store`,
-      cancel_url: `${BASE_URL}/card-registered?status=cancel&kind=store`,
-      expires_at: Math.floor(Date.now() / 1000) + 60 * 60, // レジで出したQRを何時間も後に使わせない
-    });
+    const session = await createCardSetupSession(supabase, stripe, provider, userId, { name: String(b.name || '').slice(0, 60) });
     return Response.json({ url: session.url, user_id: userId });
   } catch (e) {
     console.error('[pos card-setup]', e?.message);

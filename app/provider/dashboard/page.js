@@ -9283,6 +9283,29 @@ export default function ProviderDashboardPage() {
       document.querySelectorAll('[data-tab="customers"]').forEach(b => b.addEventListener('click', loadRemovedMembers));
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadRemovedMembers();
 
+      // お店のレジで使うカードの登録URLを、いつでもお客様に送る（2026-11-12 渡邉要望：月額会員以外にも）
+      async function sendCardLink(body, name, btn) {
+        if (btn) btn.disabled = true;
+        const r = await fetch('/api/provider/customer-card-link', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ ...body, send: true }) });
+        const d = await r.json().catch(() => ({}));
+        if (btn) btn.disabled = false;
+        if (!r.ok) { showToast(d.error || 'URLを作れませんでした'); return; }
+        const how = [d.sent?.line ? 'LINE' : '', d.sent?.email ? 'メール' : ''].filter(Boolean).join('と');
+        const copy = await window.pdConfirm({
+          title: how ? `${name}さんに${how}で送りました` : '送り先が見つかりませんでした',
+          lines: [how ? '登録が済むと、レジで会員証を読み取った時に「登録済みのカードで払う」が出ます。' : 'LINEのつながりもメールアドレスも無いため、送れませんでした。URLをコピーしてお伝えください。', ['URL', d.url], `${d.days}日間有効です。登録だけでは請求されません。`],
+          okLabel: 'URLをコピー', cancelLabel: '閉じる',
+        });
+        if (copy) { try { await navigator.clipboard.writeText(d.url); showToast('URLをコピーしました'); } catch { showToast('コピーできませんでした'); } }
+      }
+      document.getElementById('cust-modal-card-link-btn')?.addEventListener('click', e => {
+        if (!currentCustUid || currentCustType === 'manual') return;
+        sendCardLink({ user_id: currentCustUid }, document.getElementById('cust-modal-name')?.textContent || 'お客様', e.currentTarget);
+      });
+      document.getElementById('cust-modal-manual-card-link-btn')?.addEventListener('click', e => {
+        if (!currentCustUid || currentCustType !== 'manual') return;
+        sendCardLink({ manual_id: currentCustUid }, document.getElementById('cust-modal-name')?.textContent || 'お客様', e.currentTarget);
+      });
       document.getElementById('cust-modal-member-hide-btn')?.addEventListener('click', () => {
         if (!currentCustUid || currentCustType === 'manual') return;
         hideCustomer({ user_id: currentCustUid }, document.getElementById('cust-modal-name')?.textContent || 'このお客様');
@@ -15927,6 +15950,20 @@ export default function ProviderDashboardPage() {
         checkoutBtn.disabled = !cart.length;
         if (!okCust) return;
         rc = receiptPayload() || rc;
+        // 最後にもう一度、この内容で会計を記録してよいか確かめる（2026-11-12 渡邉要望）
+        const t2 = totals();
+        const okFinal = await pdConfirm({
+          title: 'この内容で会計を記録しますか？',
+          lines: [
+            ['合計', yen(t2.total)],
+            ...(pay?.label ? [['支払い方法', pay.label]] : []),
+            ...(cashRec != null ? [['お預かり', yen(cashRec)], ['おつり', yen(cashRec - t2.total)]] : []),
+            ['お客様', customer?.name ? `${customer.name} 様` : '非会員のお客様'],
+            ...receiptLine(),
+          ],
+          okLabel: '会計を記録する', cancelLabel: '戻る',
+        });
+        if (!okFinal) return;
         checkoutMsg.textContent = '';
         checkoutBtn.disabled = true; // 2回押しで二重に会計しないように
         const res = await fetch('/api/provider/pos/checkout', {
@@ -16022,6 +16059,12 @@ export default function ProviderDashboardPage() {
         const setupBtn = $('pos-card-setup-btn');
         if (setupBtn) setupBtn.style.display = customer && !memberCard ? '' : 'none';
         if (!cardBtn) return;
+        // カードを登録済みのお客様は、登録済みのカードで払うのを一番上・主のボタンにする（2026-11-12 渡邉要望）
+        if (checkoutBtn && cardBtn.parentNode) {
+          if (memberCard) { cardBtn.parentNode.insertBefore(cardBtn, cardBtn.parentNode.firstChild); cardBtn.className = 'btn'; checkoutBtn.className = 'btn btn-ghost'; checkoutBtn.textContent = 'ほかの方法（現金など）で会計を確定する'; }
+          else { cardBtn.parentNode.insertBefore(checkoutBtn, cardBtn.parentNode.firstChild); cardBtn.className = 'btn btn-ghost'; checkoutBtn.className = 'btn'; checkoutBtn.textContent = 'この内容で会計を確定する'; }
+          cardBtn.style.minHeight = memberCard ? '48px' : '44px';
+        }
         cardBtn.style.display = memberCard ? '' : 'none';
         cardBtn.textContent = memberCard ? `登録済みのカードで払う（${memberCard.label}）` : '';
         cardBtn.disabled = !cart.length || !memberCard;
@@ -19146,7 +19189,8 @@ export default function ProviderDashboardPage() {
                 </div>
                 <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
-              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '6px' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-card-link-btn" style={{ fontSize: '12px', padding: '6px 12px', marginRight: 'auto' }}>カード登録のURLを送る</button>
                 <button type="button" className="btn btn-ghost" id="cust-modal-member-hide-btn" style={{ fontSize: '12px', padding: '6px 12px', marginRight: '8px' }}>一覧で非表示にする</button>
                 <button type="button" className="btn btn-ghost" id="cust-modal-member-remove-btn" style={{ fontSize: '12px', padding: '6px 12px', color: '#b91c1c' }}>メンバーから削除</button>
               </div>
@@ -19158,7 +19202,8 @@ export default function ProviderDashboardPage() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
                 <label className="muted" style={{ fontSize: '12px' }}>会員と紐付ける：</label>
                 <input id="cust-modal-link-search" type="text" placeholder="会員の名前・会員番号で検索" autoComplete="off" style={{ flex: '1 1 160px', fontSize: '13px', padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-hide-btn" style={{ fontSize: '12px', padding: '5px 10px', marginLeft: 'auto' }}>非表示</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-card-link-btn" style={{ fontSize: '12px', padding: '5px 10px', marginLeft: 'auto' }}>カード登録のURLを送る</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-hide-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>非表示</button>
                 <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444' }}>削除</button>
               </div>
               <div id="cust-modal-link-results" style={{ marginBottom: '12px' }}></div>

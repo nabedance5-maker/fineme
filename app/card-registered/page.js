@@ -5,6 +5,17 @@ export default async function CardRegisteredPage({ searchParams }) {
   const sp = await searchParams;
   const ok = sp?.status === 'success';
   const store = sp?.kind === 'store'; // お店のレジで使うカードの登録（2026-11-12）
+  const linkProblem = { invalid: 'このご案内のURLは使えません。お店のスタッフにお声がけください。', expired: 'このご案内の期限が切れています。お店に、もう一度送ってもらってください。', unavailable: 'ただいまカードの登録を受け付けていません。お店のスタッフにお声がけください。' }[sp?.status];
+  if (store && linkProblem) {
+    return (
+      <main className="section">
+        <div className="container stack" style={{ maxWidth: 520, textAlign: 'center', padding: '48px 0' }}>
+          <h1 className="section-title">カードの登録ができませんでした</h1>
+          <p className="muted" style={{ lineHeight: 1.8 }}>{linkProblem}</p>
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="section">
       <div className="container stack" style={{ maxWidth: 520, textAlign: 'center', padding: '48px 0' }}>
