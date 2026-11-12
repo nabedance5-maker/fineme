@@ -15766,8 +15766,20 @@ export default function ProviderDashboardPage() {
         const pay = currentPay();
         const cashRec = pay?.cash && $('pos-cash').value !== '' ? parseInt($('pos-cash').value, 10) : null;
         if (cashRec != null && cashRec < t.total) { showToast('お預かりが合計より少ないです'); return; }
-        const rc = receiptPayload();
+        let rc = receiptPayload();
         if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
+        // 回数券・チケットを非会員のお客様（またはお客様を選ばず）に売る時は、その場で簡単な会員登録をしてから会計する
+        // （2026-11-12 渡邉要望：現金などで売った流れのまま、簡易的な会員登録に進ませて、できたら会計完了）
+        if (cart.some(c => c.kind === 'package') && (!customer || customer.manual_id)) {
+          checkoutBtn.disabled = true;
+          const reg = await posQuickRegister(customer);
+          checkoutBtn.disabled = !cart.length;
+          if (!reg) return;
+          customer = reg;
+          renderCustomer();
+          // 登録したメールを、レシートの宛先が空ならそこに入れる
+          if (reg.email && receiptOn() && $('pos-receipt-email') && !$('pos-receipt-email').value) { $('pos-receipt-email').value = reg.email; renderReceipt?.(); rc = receiptPayload() || rc; }
+        }
         // 押し間違いで会計を確定しないよう、最後に確かめてもらう（でお要望 2026-10-28）
         checkoutBtn.disabled = true;
         const ok = await pdConfirm({
@@ -15795,6 +15807,67 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { checkoutMsg.textContent = d?.error || '会計に失敗しました'; return; }
         await showSaleDone(d.transaction);
       });
+
+      // 簡単な会員登録（お名前・電話番号は必須、メールは任意）。非会員のお客様を選んでいれば、その方の情報を埋めて足りない所だけ入れてもらう。
+      // 登録できたら { manual_id, name, email } を返す。やめたら null
+      async function posQuickRegister(cur) {
+        let pre = {};
+        if (cur?.manual_id) {
+          const r = await fetch(`/api/provider/customer-profile?manual_id=${encodeURIComponent(cur.manual_id)}`, { headers: authHeadersPos() }).catch(() => null);
+          pre = r?.ok ? ((await r.json()).profile || {}) : {};
+          if (pre.phone && (pre.last_name || cur.name)) return { ...cur, email: pre.email || '' };
+        }
+        const escP = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const [ln0, fn0] = pre.last_name ? [pre.last_name, pre.first_name || ''] : String(cur?.name || '').split(/[\s　]+/).concat('').slice(0, 2);
+        return new Promise(resolve => {
+          const ov = document.createElement('div');
+          ov.className = 'cal-modal-overlay';
+          ov.style.zIndex = '1100';
+          ov.innerHTML = `
+            <div class="cal-modal-card" role="dialog" aria-modal="true" aria-labelledby="pqr-title" style="max-width:420px">
+              <h3 id="pqr-title" style="margin:0 0 4px;font-size:16px">回数券のお客様を登録</h3>
+              <p class="muted" style="margin:0 0 12px;font-size:12.5px;line-height:1.7">買った回数券をお客様に付けるため、簡単な会員登録をします。登録できたら、そのまま会計を完了します。</p>
+              <div style="display:flex;gap:8px">
+                <label style="flex:1;font-size:12px;font-weight:700">姓（必須）<input id="pqr-ln" type="text" maxlength="30" autocomplete="off" value="${escP(ln0)}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
+                <label style="flex:1;font-size:12px;font-weight:700">名<input id="pqr-fn" type="text" maxlength="30" autocomplete="off" value="${escP(fn0)}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
+              </div>
+              <label style="display:block;font-size:12px;font-weight:700;margin-top:10px">電話番号（必須）<input id="pqr-tel" type="tel" inputmode="tel" maxlength="20" autocomplete="off" value="${escP(pre.phone || '')}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
+              <label style="display:block;font-size:12px;font-weight:700;margin-top:10px">メールアドレス（任意・レシートや予約のお知らせに使います）<input id="pqr-mail" type="email" maxlength="120" autocomplete="off" value="${escP(pre.email || '')}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
+              <p id="pqr-msg" role="alert" style="margin:8px 0 0;font-size:12.5px;color:#b91c1c"></p>
+              <div style="display:flex;gap:8px;margin-top:14px">
+                <button type="button" class="btn" id="pqr-ok" style="flex:1;min-height:44px">登録して会計へ進む</button>
+                <button type="button" class="btn btn-ghost" id="pqr-cancel" style="min-height:44px">やめる</button>
+              </div>
+            </div>`;
+          document.body.appendChild(ov);
+          const q = id => ov.querySelector(id);
+          const close = v => { ov.remove(); resolve(v); };
+          q('#pqr-cancel').addEventListener('click', () => close(null));
+          ov.addEventListener('click', e => { if (e.target === ov) close(null); });
+          setTimeout(() => q(ln0 ? '#pqr-tel' : '#pqr-ln')?.focus(), 0);
+          q('#pqr-ok').addEventListener('click', async () => {
+            const ln = q('#pqr-ln').value.trim(), fn = q('#pqr-fn').value.trim(), tel = q('#pqr-tel').value.trim(), mail = q('#pqr-mail').value.trim();
+            const msg = q('#pqr-msg');
+            if (!ln) { msg.textContent = '姓を入れてください'; return; }
+            if (!/^[0-9０-９+\-() ]{9,}$/.test(tel)) { msg.textContent = '電話番号を確かめてください'; return; }
+            if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { msg.textContent = 'メールアドレスの形を確かめてください'; return; }
+            const btn = q('#pqr-ok'); btn.disabled = true; msg.textContent = '';
+            const name = `${ln} ${fn}`.trim();
+            let manualId = cur?.manual_id || null;
+            if (!manualId) {
+              const r = await fetch('/api/provider/customers/manual', { method: 'POST', headers: authHeadersPos(), body: JSON.stringify({ display_name: name }) });
+              const d = await r.json().catch(() => ({}));
+              if (!r.ok || !d?.id) { btn.disabled = false; msg.textContent = d.error || '登録できませんでした'; return; }
+              manualId = d.id;
+              customerPool = (customerPool || []).concat({ manual_id: d.id, name: d.display_name, phone: tel, manual: true });
+            }
+            const pr = await fetch('/api/provider/customer-profile', { method: 'PUT', headers: authHeadersPos(), body: JSON.stringify({ manual_id: manualId, last_name: ln, first_name: fn || null, phone: tel, ...(mail ? { email: mail } : {}) }) });
+            if (!pr.ok) { const d = await pr.json().catch(() => ({})); btn.disabled = false; msg.textContent = d.error || 'お客様の情報を保存できませんでした'; return; }
+            showToast(`${name} 様を登録しました`);
+            close({ manual_id: manualId, name, email: mail });
+          });
+        });
+      }
 
       async function showSaleDone(tx, extra = '') {
         $('pos-done').hidden = false;
