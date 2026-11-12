@@ -15830,7 +15830,7 @@ export default function ProviderDashboardPage() {
         const note = $('pos-co-guest-note');
         if (note) note.style.display = (!customer || customer.manual_id) && cart.some(c => c.kind === 'package' || c.kind === 'service') ? '' : 'none';
       }
-      function closeCo() { if (coModal) coModal.style.display = 'none'; coStep = null; stopPosScan(); }
+      function closeCo() { if (coModal) coModal.style.display = 'none'; coStep = null; stopPosScan(); stopCardSetupPoll(); }
       $('pos-go-btn')?.addEventListener('click', () => {
         if (!cart.length || !coModal) return;
         $('pos-done').hidden = true;
@@ -16018,6 +16018,9 @@ export default function ProviderDashboardPage() {
       // ── 会員証（QR）を読み取って、登録済みのカードで払う（でお要望 2026-10-28：今野さん「会員証で何か買う時って決済できる？」）──
       // 読み取りはお店のタブレット・スマホのカメラ。お客様を呼び出し、このお店で登録したカード（月額プランの入会時）があれば、その場で請求する
       function renderCardBtn() {
+        // カードが未登録のお客様には、スマホでカードだけ登録してもらう案内を出す（2026-11-12）
+        const setupBtn = $('pos-card-setup-btn');
+        if (setupBtn) setupBtn.style.display = customer && !memberCard ? '' : 'none';
         if (!cardBtn) return;
         cardBtn.style.display = memberCard ? '' : 'none';
         cardBtn.textContent = memberCard ? `登録済みのカードで払う（${memberCard.label}）` : '';
@@ -16092,6 +16095,47 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { checkoutMsg.textContent = d?.error || 'カードで払えませんでした'; cardRequestId = null; renderCardBtn(); return; }
         checkoutMsg.textContent = '';
         await showSaleDone(d.transaction, `・${esc(d.card_label)}で支払い済み`);
+      });
+
+      // お客様のスマホで、お店のレジで使うカードを登録してもらう（請求はしない）。登録が済んだら、登録済みのカードで払えるようになる
+      var cardSetupPoll = null;
+      function stopCardSetupPoll() { if (cardSetupPoll) { clearTimeout(cardSetupPoll); cardSetupPoll = null; } }
+      $('pos-card-setup-btn')?.addEventListener('click', async () => {
+        if (!customer) return;
+        const btn = $('pos-card-setup-btn');
+        btn.disabled = true;
+        stopCardSetupPoll();
+        onlineCheckoutBox.style.display = 'block';
+        onlineCheckoutBox.innerHTML = '<p style="font-size:13px;">カード登録の案内を作っています…</p>';
+        const res = await fetch('/api/provider/pos/card-setup', { method: 'POST', headers: authHeadersPos(), body: JSON.stringify(customer.user_id ? { user_id: customer.user_id, name: customer.name } : { manual_id: customer.manual_id, name: customer.name }) });
+        const data = await res.json().catch(() => ({}));
+        btn.disabled = false;
+        if (!res.ok || !data.url) { onlineCheckoutBox.innerHTML = `<p style="font-size:13px;">${esc(data?.error || 'カード登録の案内を作れませんでした')}</p>`; return; }
+        const uid = data.user_id;
+        if (customer.manual_id && uid) customer = { user_id: uid, name: customer.name }; // 非会員の方は、カードを持てるアカウントに紐づけた
+        const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+        const dataUrl = await QRCode.toDataURL(data.url, { width: 220, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } });
+        onlineCheckoutBox.innerHTML = `
+          <p style="font-size:13px;font-weight:700;margin:0 0 8px">お客様のスマホでQRを読み取って、カードを登録してもらってください</p>
+          <img src="${dataUrl}" alt="カード登録のQRコード" width="220" height="220" style="border-radius:8px" />
+          <p style="font-size:12px;margin:8px 0 0;line-height:1.7">登録だけでは請求されません。登録が済むと、ここに「登録済みのカードで払う」が出ます（1時間有効）。</p>
+          <p id="pos-card-setup-status" style="font-size:12.5px;font-weight:700;margin:6px 0 0">登録を待っています…</p>`;
+        const started = Date.now();
+        const check = async () => {
+          if (!customer?.user_id || customer.user_id !== uid) return stopCardSetupPoll();
+          const r = await fetch(`/api/provider/pos/member-card?user_id=${encodeURIComponent(uid)}`, { headers: authHeadersPos() }).catch(() => null);
+          const d = r?.ok ? await r.json().catch(() => null) : null;
+          if (d?.card) {
+            memberCard = d.card; cardRequestId = null;
+            renderCustomer();
+            onlineCheckoutBox.innerHTML = `<p style="font-size:13px;font-weight:700;margin:0">カードを登録しました（${esc(d.card.label)}）。「登録済みのカードで払う」で会計できます。</p>`;
+            showToast('カードの登録が済みました');
+            return stopCardSetupPoll();
+          }
+          if (Date.now() - started > 60 * 60 * 1000) { const st = $('pos-card-setup-status'); if (st) st.textContent = '時間が経ったため、待つのをやめました。もう一度ボタンを押してください。'; return stopCardSetupPoll(); }
+          cardSetupPoll = setTimeout(check, 4000);
+        };
+        cardSetupPoll = setTimeout(check, 4000);
       });
 
       // オンライン決済（お客様のスマホで払ってもらう）
@@ -19670,6 +19714,7 @@ export default function ProviderDashboardPage() {
                   <div style={{ display: 'grid', gap: '8px' }}>
                     <button type="button" id="pos-checkout-btn" className="btn" disabled style={{ minHeight: '48px', fontSize: '15px' }}>この内容で会計を確定する</button>
                     <button type="button" id="pos-card-checkout-btn" className="btn btn-ghost" disabled style={{ display: 'none', minHeight: '44px' }}></button>
+                    <button type="button" id="pos-card-setup-btn" className="btn btn-ghost" style={{ display: 'none', minHeight: '44px' }}>カードを登録してもらう（QR・請求はしません）</button>
                     <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled style={{ minHeight: '44px' }}>お客様のスマホで払う（QR）</button>
                   </div>
                   <p id="pos-checkout-msg" role="alert" style={{ fontSize: '13px', margin: 0, fontWeight: 700, color: '#1a1410' }}></p>

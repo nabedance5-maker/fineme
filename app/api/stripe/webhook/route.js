@@ -10,7 +10,7 @@ import { recordMembershipInvoice, recordMembershipSubscription, applyMembershipC
 import { afterMembershipInvoice, syncManagedDiscount } from '@/lib/membership-billing-sync';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
-import { saveCustomerCard } from '@/lib/pos-member-card';
+import { saveCustomerCard, saveSetupCard } from '@/lib/pos-member-card';
 import { recordLockerCheckout, recordLockerInvoice } from '@/lib/locker-pay';
 import { markInvoicePaid } from '@/lib/invoices';
 import { recordPaymentAndRewards, recordRefund } from '@/lib/collaborator-rewards';
@@ -154,6 +154,11 @@ export async function POST(request) {
         // 月会費のカード更新（店舗が送った更新リンク）：新しいカードを既定にし、未払いの月会費を引き落とし直す
         if (session.mode === 'setup' && session.metadata?.fineme_membership_card_update) {
           try { await applyMembershipCardUpdate(supabaseAdmin, session, stripe); } catch (e) { console.error('[webhook] membership card update error:', e); }
+          break;
+        }
+        // お店のレジで使うカードの登録（買い物なし）が終わった：このお店のお客様のカードとして記録する（2026-11-12）
+        if (session.mode === 'setup' && session.metadata?.fineme_card_setup === '1') {
+          try { await saveSetupCard(supabaseAdmin, stripe, session); } catch (e) { console.error('[webhook] store card setup error:', e); }
           break;
         }
         // オンライン入会のカード登録が終わった（お客様が入会ページに戻らなくても、承認待ちにしてお店に知らせる。2026-10-28）
