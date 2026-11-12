@@ -14601,6 +14601,67 @@ export default function ProviderDashboardPage() {
         }
       }
 
+      // 予約の詳細の「お客様の基本情報」（2026-11-12 渡邉要望：操作ボタンの下に、お名前・連絡先など
+      // お客様対応・運営に要る基本情報を出す。急な連絡の時に困らないように）。電話・メールは押すとそのまま連絡できる
+      // 属性（href）にも入るので、引用符まで逃がす
+      const escQ = v => esc(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      function calContactLinks(contact) {
+        const parts = String(contact || '').split(/\s*\/\s*/).map(x => x.trim()).filter(Boolean);
+        return parts.map(x => /@/.test(x)
+          ? `<a href="mailto:${escQ(x)}">${escQ(x)}</a>`
+          : /^[0-9+\-() ]{8,}$/.test(x) ? `<a href="tel:${escQ(x.replace(/[^0-9+]/g, ''))}">${escQ(x)}</a>` : escQ(x)).join(' / ');
+      }
+      function calBasicRow(label, html) {
+        return html ? `<div style="display:grid;grid-template-columns:92px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:12.5px"><span style="color:rgba(26,20,16,0.62)">${label}</span><span style="color:#1a1410;word-break:break-all">${html}</span></div>` : '';
+      }
+      function calBasicHtml(r, extra) {
+        if (r._isClassSession) return '';
+        const menu = ((r.note || '').match(/【メニュー】([^\n]+)/) || [])[1] || '';
+        const x = extra || {};
+        const p = x.profile || {};
+        const name = [p.last_name, p.first_name].filter(Boolean).join(' ');
+        const kana = [p.last_name_kana, p.first_name_kana].filter(Boolean).join(' ');
+        const contactHtml = [
+          p.phone ? `<a href="tel:${escQ(String(p.phone).replace(/[^0-9+]/g, ''))}">${escQ(p.phone)}</a>` : '',
+          p.email ? `<a href="mailto:${escQ(p.email)}">${escQ(p.email)}</a>` : '',
+        ].filter(Boolean).join(' / ');
+        const addr = [p.postal_code ? `〒${p.postal_code}` : '', p.prefecture, p.city, p.address1, p.address2].filter(Boolean).join(' ');
+        const emergency = [p.emergency_name, p.emergency_relation ? `（${p.emergency_relation}）` : '', p.emergency_phone ? ` <a href="tel:${escQ(String(p.emergency_phone).replace(/[^0-9+]/g, ''))}">${escQ(p.emergency_phone)}</a>` : ''];
+        const gender = { female: '女性', male: '男性', other: 'その他' }[p.gender] || '';
+        const plans = (x.payments || []).filter(m => m.kind === '会員プラン').map(m => `${escQ(m.name)}（${escQ(m.status || '')}）`).join('、');
+        const tickets = (x.tickets || []).map(t => `${escQ(t.name)}（${t.unlimited ? '通い放題' : `残り${t.remaining}回`}${t.expires_at ? `・${escQ(String(t.expires_at).slice(0, 10))}まで` : ''}）`).join('、');
+        return `
+          <div style="margin-top:14px;padding:12px;border:1px solid rgba(26,20,16,0.12);border-radius:10px;background:#fff">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#1a1410">お客様の基本情報</p>
+            ${calBasicRow('お名前', `${escQ(name || r.user_name || 'お名前未登録')}${kana ? `<span style="color:rgba(26,20,16,0.62)">（${escQ(kana)}）</span>` : ''}`)}
+            ${calBasicRow('予約の連絡先', calContactLinks(r.user_contact))}
+            ${calBasicRow('登録の連絡先', contactHtml)}
+            ${calBasicRow('性別・年齢', [gender, x.age != null ? `${x.age}歳` : ''].filter(Boolean).join('・'))}
+            ${calBasicRow('緊急連絡先', p.emergency_name || p.emergency_phone ? emergency.join('') : '')}
+            ${calBasicRow('住所', escQ(addr))}
+            ${calBasicRow('メニュー', escQ(menu))}
+            ${calBasicRow('担当', escQ([r.staff_name, r.resource_name].filter(Boolean).join(' / ')))}
+            ${calBasicRow('会員プラン', plans)}
+            ${calBasicRow('チケット', tickets)}
+            ${x.loading ? '<p class="muted" style="margin:6px 0 0;font-size:12px">登録の情報を読み込み中…</p>' : ''}
+            ${!r.user_id ? '<p class="muted" style="margin:6px 0 0;font-size:12px">Finemeに未登録のお客様のため、予約の時の情報だけを出しています。</p>' : ''}
+          </div>`;
+      }
+      async function loadCalBasic(r, reservationId) {
+        const el = document.getElementById('cal-modal-basic');
+        if (!el || !r.user_id || r._isClassSession) return;
+        el.innerHTML = calBasicHtml(r, { loading: true });
+        const q = encodeURIComponent(r.user_id);
+        const [pr, tk] = await Promise.all([
+          fetch(`/api/provider/customer-profile?user_id=${q}`, { headers: authHeadersCal() }).then(x => (x.ok ? x.json() : null)).catch(() => null),
+          fetch(`/api/provider/customer-tickets?user_id=${q}`, { headers: authHeadersCal() }).then(x => (x.ok ? x.json() : null)).catch(() => null),
+        ]);
+        // 読み込む間に別の予約を開いていたら書き換えない
+        if (modalReservationId !== reservationId) return;
+        const cur = document.getElementById('cal-modal-basic');
+        if (cur) cur.innerHTML = calBasicHtml(r, { profile: pr?.profile, age: pr?.age, payments: pr?.payments, tickets: tk?.tickets });
+      }
+
       // 予約の詳細の操作ボタン（2026-11-10 渡邉要望：来店済み・キャンセル・無断キャンセル・予約変更をここから）。
       // 下の「この画面の設定」で、予約時のメッセージを出すか・無断キャンセルを使うかを選べる（表示の設定 dashboard_prefs）
       function calActionsHtml(r) {
@@ -14703,6 +14764,7 @@ export default function ProviderDashboardPage() {
             ${r.same_name_warning ? `<div role="note" style="margin:8px 0;padding:8px 12px;border:1.5px solid #b45309;border-radius:8px;background:rgba(180,83,9,.08);font-size:12.5px;font-weight:700;color:#1a1410">確認：${esc(r.same_name_warning)}</div>` : ''}
             ${r.note && dashboardPrefs?.reservation_show_note !== false ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
             ${calActionsHtml(r)}
+            <div id="cal-modal-basic">${calBasicHtml(r)}</div>
             ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">顧客情報を見る（カルテ・回数券など）</button>' : `
               <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
                 <label style="display:block;font-size:11px;font-weight:700;margin-bottom:4px">Fineme会員と紐付ける（任意・電話予約等で後から分かった場合）</label>
@@ -14718,6 +14780,7 @@ export default function ProviderDashboardPage() {
           // 接客の引き出し（来店前の接客メモ・会計時の次回の一言）をこの予約の詳細にも出す（2026-10-15）
           window.__pdRenderServiceMemo?.(document.getElementById('cal-modal-service-memo'), reservationId);
           bindCalActions(r, reservationId);
+          loadCalBasic(r, reservationId);
           document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => {
             if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
             window.openCustomerModal(r.user_id, 'member', r.user_name);
