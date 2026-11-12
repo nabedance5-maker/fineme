@@ -8,7 +8,7 @@ import { sendLineReply, sendLinePush } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
 import { idealNextDate } from '@/lib/log-axes';
 import { SNOOZE_DAYS } from '@/lib/log-rebook';
-import { sendLineBookingRequestEmail, sendCancelledByUserEmail } from '@/lib/email';
+import { sendLineBookingRequestEmail, sendCancelledByUserEmail, sendReservationCancelledEmail } from '@/lib/email';
 import { logCustomerActivity } from '@/lib/activity-log';
 import { providerRecipients } from '@/lib/provider-recipients';
 
@@ -304,9 +304,12 @@ async function cancelReservationFromLine(rid, channelProviderId, lineUserId) {
   try {
     await sendCancelledByUserEmail({ reservation: r, providerEmail: providerRecipients(provider), providerName: provider?.name });
   } catch (e) { console.error('[line/webhook] cancel_reservation email', e); }
+  try {
+    await sendReservationCancelledEmail({ reservation: r, providerName: provider?.name, reason: 'customer' });
+  } catch (e) { console.error('[line/webhook] cancel_reservation customer email', e); }
   if (provider?.line_user_id) {
     try {
-      await sendLinePush(provider.line_user_id, `【Fineme】${r.user_name}様が予約をキャンセルしました。\n元の希望日: ${r.reserved_date || ''} ${r.start_time || ''}`);
+      await sendLinePush(provider.line_user_id, `【Fineme】${r.user_name}様が予約をキャンセルしました。\n日時: ${r.counter_date || r.reserved_date || ''} ${r.counter_time || r.start_time || ''}`);
     } catch (e) { console.error('[line/webhook] cancel_reservation provider push', e); }
   }
   return '予約をキャンセルしました。';

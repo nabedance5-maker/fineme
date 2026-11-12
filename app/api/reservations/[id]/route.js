@@ -1,7 +1,7 @@
 // PATCH /api/reservations/[id] - 掲載者が承認/拒否/代替提案
 // GET  /api/reservations/[id] - 予約詳細取得
 import { getSupabase } from '@/lib/supabase';
-import { sendReservationStatusEmail, sendCancelledByUserEmail, sendReservationRescheduledEmail } from '@/lib/email';
+import { sendReservationStatusEmail, sendCancelledByUserEmail, sendReservationRescheduledEmail, sendReservationCancelledEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { afterVisited } from '@/lib/reservation-visited';
@@ -165,6 +165,7 @@ async function __PATCH(request, context) {
           confirmedDate: confirmed_date || data.confirmed_date,
           confirmedTime: confirmed_time || data.confirmed_time,
           providerName: provider?.name,
+          wasApproved: existing.status === 'approved',
         });
       } catch (e) { console.error('[status email]', e); }
     }
@@ -184,7 +185,9 @@ async function __PATCH(request, context) {
       const comment = counter_proposal || data.provider_comment;
       const lineMsgs = {
         approved: `【${pname}】予約が承認されました✓\n確定日時: ${cd || data.reserved_date || 'ご確認ください'} ${ct || data.start_time || ''}\n直接店舗へご連絡のうえご来店ください。`,
-        rejected: `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
+        rejected: existing.status === 'approved'
+          ? `【${pname}】お店の都合により、${cd || data.reserved_date || ''} ${String(ct || data.start_time || '').slice(0, 5)}のご予約がキャンセルになりました。チケット・回数券を使っていた場合はお戻ししています。${comment ? `\nメッセージ: ${comment}` : ''}`
+          : `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
         counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\n下のボタンから直接お答えいただけます。`,
       };
       // 代替提案は文字だけだと何も操作できず、マイページに移動しないと返答できなかった
@@ -210,16 +213,22 @@ async function __PATCH(request, context) {
       await refundDepositIfPaid(db, data);
     }
 
-    // ユーザーがキャンセルした場合：掲載者に通知（お店が自分で記録したキャンセルは通知しない）
+    // キャンセル：お客様にはキャンセルの確認を、お客様がキャンセルした時はお店にも知らせる
+    // （2026-11-12 渡邉報告：キャンセルのメールが届かないことがある。お客様側には確認が一通も送られていなかった）
+    if (newStatus === 'cancelled') {
+      try {
+        await sendReservationCancelledEmail({ reservation: data, providerName: provider?.name, reason: isOwnerProvider ? 'store_recorded' : 'customer' });
+      } catch (e) { console.error('[cancel email customer]', e); }
+      const when = `${data.confirmed_date || data.counter_date || data.reserved_date || ''} ${String(data.confirmed_time || data.counter_time || data.start_time || '').slice(0, 5)}`.trim();
+      await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: `【${provider?.name || '店舗'}】ご予約${when ? `（${when}）` : ''}をキャンセルしました。チケット・回数券を使っていた場合はお戻ししています。` }).catch(e => console.error('[cancel line customer]', e));
+    }
     if (newStatus === 'cancelled' && !isOwnerProvider) {
-      if (provider?.email) {
-        try {
-          await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider.name });
-        } catch (e) { console.error('[cancel email]', e); }
-      }
+      try {
+        await sendCancelledByUserEmail({ reservation: data, providerEmail: providerRecipients(provider), providerName: provider?.name });
+      } catch (e) { console.error('[cancel email]', e); }
       if (provider?.line_user_id) {
         try {
-          const lineMsg = `【Fineme】${data.user_name}様が予約をキャンセルしました。\n元の希望日: ${data.reserved_date} ${data.start_time || ''}`;
+          const lineMsg = `【Fineme】${data.user_name}様が予約をキャンセルしました。\n日時: ${data.confirmed_date || data.reserved_date} ${String(data.confirmed_time || data.start_time || '').slice(0, 5)}`;
           await sendLinePush(provider.line_user_id, lineMsg);
         } catch (e) { console.error('[cancel line]', e); }
       }

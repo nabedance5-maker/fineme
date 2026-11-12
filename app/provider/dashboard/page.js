@@ -14629,7 +14629,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div data-cal-panel="cancel" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(185,28,28,0.35);border-radius:10px">
             <p style="margin:0 0 6px;font-size:12.5px;font-weight:700">キャンセルの理由</p>
-            <label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:6px"><input type="radio" name="cal-cx-kind" value="customer" checked style="margin-top:3px">お客様から連絡があった（お客様へのお知らせは送りません）</label>
+            <label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:6px"><input type="radio" name="cal-cx-kind" value="customer" checked style="margin-top:3px">お客様から連絡があった（キャンセルの確認だけお送りします）</label>
             <label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:6px"><input type="radio" name="cal-cx-kind" value="store" style="margin-top:3px">お店の都合（お客様にお知らせが届きます）</label>
             <textarea data-cx-note placeholder="お客様へのひとこと（お店の都合の時）" style="display:none;width:100%;min-height:56px;font-size:13px;padding:8px;border:1px solid #d1d5db;border-radius:8px;box-sizing:border-box;margin-bottom:6px">スタッフの都合により、ご予約の時間に対応できなくなりました。誠に申し訳ございません。</textarea>
             <p class="muted" style="margin:0 0 8px;font-size:12px">予約で使ったチケット・回数券はお客様に戻ります（消化しません）。</p>
