@@ -47,7 +47,7 @@ async function __POST(request, { params }) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (!hasFeature(provider, 'posture_analysis')) return Response.json({ error: 'この機能は現在OFFになっています' }, { status: 403 });
   if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
-  if (!process.env.OPENROUTER_API_KEY && !process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   if (!(await ownsManualCustomer(provider.id, params.id))) {
     return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
