@@ -12009,6 +12009,31 @@ export default function ProviderDashboardPage() {
         </label>
       `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date ? ` → 確定: ${r.confirmed_date} ${r.confirmed_time || ''}` : ''}</p>`;
 
+      // 承認前（返事待ち・代替日時を提案中）は、返事に要るものだけの簡単な表示にする
+      // （2026-11-12 渡邉要望：承認前は承認か代替日時の提案だけ、承認後は予約カレンダーと同じポップアップ）
+      if (r.status === 'pending' || r.status === 'counter_proposed') {
+        const showNote = dashboardPrefs?.reservation_show_note !== false;
+        return `
+        <div style="color:#111;text-shadow:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <strong style="font-size:16px">${esc(r.user_name)}</strong>
+            <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+          </div>
+          ${r.same_name_warning ? `<div role="note" style="margin:0 0 10px;padding:8px 12px;border:1.5px solid #b45309;border-radius:8px;background:rgba(180,83,9,.08);font-size:12.5px;font-weight:700;color:#1a1410">確認：${esc(r.same_name_warning)}</div>` : ''}
+          ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">${esc(menuText)}</p>` : ''}
+          ${r.status === 'pending' ? `<p style="font-size:12px;font-weight:700;color:#1a1410;margin:0 0 6px">確定する日時を選んでください</p>` : ''}
+          <div style="margin-bottom:8px">${choicesHtml}</div>
+          ${showNote && userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
+          ${r.counter_date ? `<div style="font-size:13px;color:#1a1410;padding:8px 12px;background:#eef2ff;border-radius:8px;margin-bottom:8px">提案した日時: ${esc(r.counter_date)} ${esc(r.counter_time || '')}（お客様の返事待ち）</div>` : ''}
+          ${r.status === 'pending' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <button class="btn" style="font-size:13px;padding:10px 16px;min-height:44px;background:#10b981;white-space:nowrap" onclick="approveRequest('${r.id}')">承認する</button>
+            <button class="btn btn-ghost" style="font-size:13px;padding:10px 16px;min-height:44px;white-space:nowrap" onclick="showCounterModal('${r.id}')">代替日時を提案する</button>
+          </div>
+          <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 10px;margin-top:10px;color:#b91c1c;border-color:transparent" onclick="rejectRequest('${r.id}')">お断りする</button>` : ''}
+        </div>`;
+      }
+
       const meMapNote = parseMeMapNote(r.note);
       // inline onclick用にJS文字列リテラルとしても安全になるようエスケープ（名前に
       // シングルクォートが含まれるケースへの対策）。
@@ -12065,6 +12090,17 @@ export default function ProviderDashboardPage() {
       const modal = document.getElementById('request-detail-modal');
       const body = document.getElementById('request-detail-modal-body');
       if (!r || !modal || !body) { showToast('このリクエストが見つかりません'); return; }
+      // 承認後（確定・来店済み・無断キャンセル）は、予約カレンダーで予約を押した時と同じポップアップを開く
+      if (['approved', 'visited', 'no_show'].includes(r.status) && !r.class_id && typeof window.__pdShowCalReservation === 'function') {
+        modal.style.display = 'none';
+        markRequestViewed(r);
+        window.__pdShowCalReservation(r.id, r.confirmed_date || r.reserved_date).then(ok => {
+          if (ok) return;
+          body.innerHTML = buildRequestCardHtml(r);
+          modal.style.display = 'flex';
+        });
+        return;
+      }
       try {
         body.innerHTML = buildRequestCardHtml(r);
       } catch (e) {
@@ -12078,6 +12114,7 @@ export default function ProviderDashboardPage() {
     window.openRequestModal = function (id) {
       showRequestModal(_requestsById[id]);
     };
+    window.__pdReloadRequests = () => loadRequests();
     // カレンダーから未確定のリクエスト（pending/counter_proposed）を開く時用。
     // カレンダーAPIのレスポンスは一覧表示用に絞ってあり、承認/代替提案フォームが
     // 必要とする生カラム（reserved_date・counter_date等）を持たないため、カレンダー側
@@ -14547,7 +14584,7 @@ export default function ProviderDashboardPage() {
         const root = modalReservationEl;
         if (!root) return;
         const hide = () => { if (modalEl) modalEl.style.display = 'none'; };
-        const after = async (msg) => { showToast(msg); hide(); await loadWeek(); };
+        const after = async (msg) => { showToast(msg); hide(); window.__pdReloadRequests?.(); await loadWeek(); };
         const panel = k => root.querySelector(`[data-cal-panel="${k}"]`);
         const toggle = k => { ['reschedule', 'cancel'].forEach(x => { const p = panel(x); if (p) p.style.display = x === k && p.style.display === 'none' ? 'block' : 'none'; }); };
         const patch = async (body) => {
@@ -14780,6 +14817,21 @@ export default function ProviderDashboardPage() {
         if (calBtn && !document.getElementById('tab-calendar')?.classList.contains('active')) calBtn.click(); else await loadWeek();
         for (let i = 0; i < 40 && !byId[id]; i++) await new Promise(r => setTimeout(r, 250));
         if (byId[id]) openCalItem(id); else showToast('予約カレンダーで予約が見つかりませんでした（再読み込みしてください）');
+      };
+      // 予約リクエストの画面などから、画面を移らずに予約カレンダーと同じ予約の詳細を開く（2026-11-12）。開けなければ false
+      window.__pdShowCalReservation = async (id, date) => {
+        try {
+          if (!byId[id]) {
+            if (date) { weekStart = mondayOf(new Date(`${date}T00:00:00`)); selectedDate = date; userPickedDate = true; }
+            await Promise.all([loadWeekData(), loadStaff().catch(() => {}), loadResourcesAndFeatures().catch(() => {})]);
+          }
+          if (!byId[id] || !modalEl) return false;
+          await openMemberModal(id);
+          return modalEl.style.display !== 'none';
+        } catch (e) {
+          console.error('[__pdShowCalReservation]', e);
+          return false;
+        }
       };
       // 後から届いた表示設定でカレンダーを描き直す（手で切り替えたビューはそのまま）
       window.__calApplyPrefs = () => {
@@ -16485,6 +16537,8 @@ export default function ProviderDashboardPage() {
       delete window.rejectRequest;
       delete window.pdReservationConflict;
       delete window.__pdOpenCalReservation;
+      delete window.__pdShowCalReservation;
+      delete window.__pdReloadRequests;
       delete window.markNoShow;
       delete window.showVisitModal;
       delete window.confirmVisit;
