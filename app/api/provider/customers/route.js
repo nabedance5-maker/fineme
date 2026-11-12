@@ -8,6 +8,7 @@ import { idealNextDate, daysUntilIdeal } from '@/lib/log-axes';
 import { ensureCustomerNumbers } from '@/lib/customer-numbers';
 import { withPlanPreview } from '@/lib/feature-flags';
 import { isOwnerTestEmail } from '@/lib/is-owner-email';
+import { removedUserIds } from '@/lib/customer-removals';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -93,15 +94,20 @@ export async function GET(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider?.slug) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: logs, error } = await supabase
-    .from('user_service_logs')
-    .select('id, user_id, axis, name, last_visit, next_visit, frequency_weeks, frequency_months, cost, created_at')
-    .eq('provider_slug', provider.slug)
-    .eq('active', true)
-    .order('next_visit', { ascending: true, nullsFirst: false });
+  const [{ data: allLogs, error }, removed] = await Promise.all([
+    supabase
+      .from('user_service_logs')
+      .select('id, user_id, axis, name, last_visit, next_visit, frequency_weeks, frequency_months, cost, created_at')
+      .eq('provider_slug', provider.slug)
+      .eq('active', true)
+      .order('next_visit', { ascending: true, nullsFirst: false }),
+    removedUserIds(supabase, provider.id),
+  ]);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  const extras = await loadNonLogCustomers(provider, new Set((logs || []).map(l => l.user_id)));
+  // お店がメンバー一覧から外したお客様は出さない（2026-11-12）
+  const logs = (allLogs || []).filter(l => !removed.has(l.user_id));
+  const extras = await loadNonLogCustomers(provider, new Set([...logs.map(l => l.user_id), ...removed]));
   if (!logs?.length && !extras.rows.length) return Response.json([]);
 
   // 会員番号は連携した順（最初のログ作成日）に採番する

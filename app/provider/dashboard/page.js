@@ -9196,9 +9196,42 @@ export default function ProviderDashboardPage() {
       custModalManualDeleteBtn?.addEventListener('click', async () => {
         if (!currentCustUid || currentCustType !== 'manual') return;
         if (!confirm('この非会員のお客様を削除しますか？（カルテ記録も削除されます）')) return;
-        await fetch(`/api/provider/customers/manual/${currentCustUid}`, { method: 'DELETE', headers: authHeaders() });
+        const res = await fetch(`/api/provider/customers/manual/${currentCustUid}`, { method: 'DELETE', headers: authHeaders() });
+        if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '削除できませんでした'); return; }
         custModalEl.style.display = 'none';
+        showToast('削除しました');
         await loadManualCustomers();
+      });
+
+      // Finemeのアカウントがあるお客様を、このお店のメンバー一覧から外す（2026-11-12 渡邉要望「メンバーの削除をできるようにしてほしい」）。
+      // お客様のアカウントや予約・カルテ・売上の記録は消さない。また予約・入会・チケットの購入があれば一覧に戻る
+      document.getElementById('cust-modal-member-remove-btn')?.addEventListener('click', async () => {
+        if (!currentCustUid || currentCustType === 'manual') return;
+        const uid = currentCustUid;
+        const name = document.getElementById('cust-modal-name')?.textContent || 'このお客様';
+        const ok = await window.pdConfirm({
+          title: 'メンバーから削除しますか？',
+          lines: [['お客様', name], 'このお店のメンバー一覧から外し、メッセージ配信の宛先にも入らなくなります。', 'お客様のFinemeのアカウントと、これまでの予約・カルテ・売上の記録は消えません。また予約や入会があれば、一覧に戻ります。'],
+          okLabel: '削除する', cancelLabel: 'やめる', danger: true,
+        });
+        if (!ok) return;
+        const go = async (ticketsOk) => fetch(`/api/provider/customers/${encodeURIComponent(uid)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ tickets_ok: !!ticketsOk }) });
+        let res = await go(false);
+        let d = await res.json().catch(() => ({}));
+        if (res.status === 409 && d.reason === 'tickets') {
+          const again = await window.pdConfirm({
+            title: '使えるチケットが残っています',
+            lines: [...(d.tickets || []).map(t => [t.name, t.unlimited ? '通い放題' : `残り${t.remaining}回`]), '削除しても、チケットはお客様に残ります（また予約があれば一覧に戻ります）。'],
+            okLabel: 'それでも削除する', cancelLabel: 'やめる',
+          });
+          if (!again) return;
+          res = await go(true);
+          d = await res.json().catch(() => ({}));
+        }
+        if (!res.ok) { showToast(d.error || '削除できませんでした'); return; }
+        custModalEl.style.display = 'none';
+        showToast(`${name}さんをメンバーから削除しました`);
+        await loadAll();
       });
 
       custModalManualSaveBtn?.addEventListener('click', async () => {
@@ -18777,6 +18810,9 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
                 <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+              </div>
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-member-remove-btn" style={{ fontSize: '12px', padding: '6px 12px', color: '#b91c1c' }}>メンバーから削除</button>
               </div>
             </div>
 
