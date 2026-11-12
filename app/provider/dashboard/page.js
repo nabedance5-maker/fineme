@@ -8618,14 +8618,16 @@ export default function ProviderDashboardPage() {
 
       // 会員（New Me Log紐づき）・非会員（Fineme未登録）を1つのリストに統合（でお指摘
       // 2026-09-12：店舗からすると分ける意味がなく、1箇所にまとまっていないと使えない）。
+      // 非表示にしたお客様（2026-11-12 渡邉要望）：一覧の表示からだけ外す。配信の人数・POS・予約などには影響させない
+      var hiddenUsers = new Set(), hiddenManual = new Set(), showHidden = false;
       function render() {
         const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
-        const memberRows = currentFilteredMemberRows();
+        const memberRows = currentFilteredMemberRows().filter(c => showHidden || !hiddenUsers.has(c.user_id));
         // 休眠・超過フィルターは非会員には概念自体が無いため、絞り込み中は一覧から外す
         // （「全て」の時だけ非会員も並べる）
         const manualRows = filter === 'all'
-          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number, m.phone) && passesExtraFilters(m, true))
+          ? manualItems.filter(m => !m.linked_user_id && (showHidden || !hiddenManual.has(m.id)) && matchesCustomer(kw, m.display_name, m.member_number, m.phone) && passesExtraFilters(m, true))
           : [];
         const sortMode = sortSel?.value || 'registered';
         const items = sortMode.startsWith('registered')
@@ -9210,8 +9212,9 @@ export default function ProviderDashboardPage() {
           if (res.status === 409 && d.reason === 'karte') { showToast('お名前が一致しないため、削除しませんでした'); return; }
         }
         if (!res.ok) {
-          if (d.reasons?.length) await window.pdConfirm({ title: 'このお客様は削除できません', lines: d.reasons, okLabel: '閉じる', cancelLabel: '戻る' });
-          else showToast(d.error || '削除できませんでした');
+          if (d.reasons?.length) {
+            if (await window.pdConfirm({ title: 'このお客様は削除できません', lines: [...d.reasons, '一覧に出したくないだけなら、非表示にできます。'], okLabel: '非表示にする', cancelLabel: '閉じる' })) await hideCustomer({ manual_id: mid }, document.getElementById('cust-modal-name')?.textContent || 'このお客様');
+          } else showToast(d.error || '削除できませんでした');
           return;
         }
         custModalEl.style.display = 'none';
@@ -9241,8 +9244,53 @@ export default function ProviderDashboardPage() {
         }));
       }
       window.__pdLoadRemovedMembers = () => { loadRemovedMembers(); loadAll(); };
+      async function loadHiddenMembers() {
+        const box = document.getElementById('hidden-members-box');
+        const listEl2 = document.getElementById('hidden-members-list');
+        const res = await fetch('/api/provider/customers/hidden', { headers: authHeaders() }).catch(() => null);
+        const rows = res?.ok ? await res.json() : [];
+        hiddenUsers = new Set(rows.filter(r => r.user_id).map(r => r.user_id));
+        hiddenManual = new Set(rows.filter(r => r.manual_id).map(r => r.manual_id));
+        if (box) box.style.display = rows.length ? '' : 'none';
+        const sum = document.getElementById('hidden-members-summary');
+        if (sum) sum.textContent = `非表示のお客様（${rows.length}人）`;
+        if (listEl2) {
+          listEl2.innerHTML = rows.map(r => `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px"><span style="flex:1 1 160px;font-weight:700">${escR(r.name)}${r.manual ? '<span class="muted" style="font-weight:400">（非会員）</span>' : ''}</span><span class="muted" style="font-size:12px">${new Date(r.hidden_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} ${escR(r.hidden_by || '')}</span><button type="button" class="btn btn-ghost" data-unhide-user="${escR(r.user_id || '')}" data-unhide-manual="${escR(r.manual_id || '')}" data-name="${escR(r.name)}" style="font-size:12px;padding:5px 12px;min-height:36px">表示に戻す</button></div>`).join('');
+          listEl2.querySelectorAll('[data-name]').forEach(b => b.addEventListener('click', async () => {
+            b.disabled = true;
+            const body = b.dataset.unhideUser ? { user_id: b.dataset.unhideUser } : { manual_id: b.dataset.unhideManual };
+            const r = await fetch('/api/provider/customers/hidden', { method: 'DELETE', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+            if (!r.ok) { b.disabled = false; showToast('表示に戻せませんでした'); return; }
+            showToast(`${b.dataset.name}さんを一覧に戻しました`);
+            await loadHiddenMembers();
+          }));
+        }
+        render();
+      }
+      window.__pdLoadHiddenMembers = loadHiddenMembers;
+      document.getElementById('hidden-members-show')?.addEventListener('change', e => { showHidden = e.target.checked; render(); });
+      document.querySelectorAll('[data-tab="customers"]').forEach(b => b.addEventListener('click', loadHiddenMembers));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadHiddenMembers();
+      async function hideCustomer(body, name) {
+        const r = await fetch('/api/provider/customers/hidden', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { showToast(d.error || '非表示にできませんでした'); return false; }
+        custModalEl.style.display = 'none';
+        showToast(`${name}さんを一覧で非表示にしました（一覧の下の「非表示のお客様」から戻せます）`);
+        await loadHiddenMembers();
+        return true;
+      }
       document.querySelectorAll('[data-tab="customers"]').forEach(b => b.addEventListener('click', loadRemovedMembers));
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadRemovedMembers();
+
+      document.getElementById('cust-modal-member-hide-btn')?.addEventListener('click', () => {
+        if (!currentCustUid || currentCustType === 'manual') return;
+        hideCustomer({ user_id: currentCustUid }, document.getElementById('cust-modal-name')?.textContent || 'このお客様');
+      });
+      document.getElementById('cust-modal-manual-hide-btn')?.addEventListener('click', () => {
+        if (!currentCustUid || currentCustType !== 'manual') return;
+        hideCustomer({ manual_id: currentCustUid }, document.getElementById('cust-modal-name')?.textContent || 'このお客様');
+      });
 
       // Finemeのアカウントがあるお客様を、このお店のメンバー一覧から外す（2026-11-12 渡邉要望「メンバーの削除をできるようにしてほしい」）。
       // お客様のアカウントや予約・カルテ・売上の記録は消さない。また予約・入会・チケットの購入があれば一覧に戻る
@@ -9259,8 +9307,9 @@ export default function ProviderDashboardPage() {
         const res = await fetch(`/api/provider/customers/${encodeURIComponent(uid)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: '{}' });
         const d = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (d.reasons?.length) await window.pdConfirm({ title: 'このお客様は削除できません', lines: d.reasons, okLabel: '閉じる', cancelLabel: '戻る' });
-          else showToast(d.error || '削除できませんでした');
+          if (d.reasons?.length) {
+            if (await window.pdConfirm({ title: 'このお客様は削除できません', lines: [...d.reasons, '一覧に出したくないだけなら、非表示にできます（予約・会計・チケットなどはそのまま使えます）。'], okLabel: '非表示にする', cancelLabel: '閉じる' })) await hideCustomer({ user_id: uid }, name);
+          } else showToast(d.error || '削除できませんでした');
           return;
         }
         custModalEl.style.display = 'none';
@@ -18963,6 +19012,12 @@ export default function ProviderDashboardPage() {
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
           {/* 削除したメンバー（2026-11-12 渡邉指摘：間違えて消した時に元に戻せるように） */}
+          <details id="hidden-members-box" className="card" style={{ padding: '14px 24px', marginTop: '16px', display: 'none' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '13.5px', fontWeight: 700 }} id="hidden-members-summary">非表示のお客様</summary>
+            <p className="muted" style={{ fontSize: '12px', margin: '8px 0' }}>一覧の表示からだけ外しているお客様です。予約・会計・チケット・配信などはそのまま使えます。</p>
+            <label style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '12.5px', margin: '0 0 8px' }}><input type="checkbox" id="hidden-members-show" style={{ width: 'auto', margin: 0 }} />一覧にも出す</label>
+            <div id="hidden-members-list"></div>
+          </details>
           <details id="removed-members-box" className="card" style={{ padding: '14px 24px', marginTop: '16px', display: 'none' }}>
             <summary style={{ cursor: 'pointer', fontSize: '13.5px', fontWeight: 700 }} id="removed-members-summary">削除したメンバー</summary>
             <p className="muted" style={{ fontSize: '12px', margin: '8px 0' }}>一覧から外したお客様です。元に戻すと、これまでの記録ごとメンバー一覧に戻ります。</p>
@@ -19048,6 +19103,7 @@ export default function ProviderDashboardPage() {
                 <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-member-hide-btn" style={{ fontSize: '12px', padding: '6px 12px', marginRight: '8px' }}>一覧で非表示にする</button>
                 <button type="button" className="btn btn-ghost" id="cust-modal-member-remove-btn" style={{ fontSize: '12px', padding: '6px 12px', color: '#b91c1c' }}>メンバーから削除</button>
               </div>
             </div>
@@ -19058,7 +19114,8 @@ export default function ProviderDashboardPage() {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
                 <label className="muted" style={{ fontSize: '12px' }}>会員と紐付ける：</label>
                 <input id="cust-modal-link-search" type="text" placeholder="会員の名前・会員番号で検索" autoComplete="off" style={{ flex: '1 1 160px', fontSize: '13px', padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444', marginLeft: 'auto' }}>削除</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-hide-btn" style={{ fontSize: '12px', padding: '5px 10px', marginLeft: 'auto' }}>非表示</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444' }}>削除</button>
               </div>
               <div id="cust-modal-link-results" style={{ marginBottom: '12px' }}></div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>メモ</label>
