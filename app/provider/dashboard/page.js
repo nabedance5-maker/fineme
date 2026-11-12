@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
 import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST } from '@/lib/dashboard-tutorial';
+import { POSTURE_SHOOTING_GUIDE } from '@/lib/posture-guide';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
@@ -9692,47 +9693,99 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function renderPostureHistoryHtml(entries) {
+      // 姿勢分析を使える道具に（渡邉採用 2026-11-12）：撮り方の案内・正面と横の2枚・前回との並べ比べ・
+      // AIの「前回からの変化」・お客様のNew Me Logに出すかを記録ごとに選ぶ（既定は出さない）。点数は目安として小さく
+      const postureImg = (url, label) => (url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;"><img src="${esc(url)}" alt="${esc(label)}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#f3f4f6;display:block;" /><span class="muted" style="font-size:10.5px;">${esc(label)}</span></a>`
+        : `<div style="width:100%;aspect-ratio:3/4;border-radius:8px;background:#f9fafb;border:1px dashed #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#9ca3af;">${esc(label)}なし</div>`);
+      function postureCompareHtml(entries, leftId, rightId) {
+        const L = entries.find(e => e.id === leftId) || entries[1];
+        const R = entries.find(e => e.id === rightId) || entries[0];
+        const opts = sel => entries.map(e => `<option value="${esc(e.id)}"${e.id === sel ? ' selected' : ''}>${fmtDate(e.created_at)}</option>`).join('');
+        const col = (e, which) => `
+          <div style="flex:1;min-width:0;">
+            <select data-posture-cmp="${which}" style="width:100%;font-size:12px;margin-bottom:6px;">${opts(e.id)}</select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${postureImg(e.photo_url, '正面')}${postureImg(e.side_photo_url, '横')}</div>
+          </div>`;
+        return `
+          <div data-posture-compare style="border:1px solid rgba(201,168,76,.45);background:rgba(201,168,76,.06);border-radius:10px;padding:10px;margin-bottom:10px;">
+            <p style="margin:0 0 8px;font-size:12.5px;font-weight:700;">前回と並べて比べる</p>
+            <div style="display:flex;gap:10px;">${col(L, 'left')}${col(R, 'right')}</div>
+            ${R.changes?.length && R.previous_entry_id === L.id ? `<ul style="margin:8px 0 0;padding-left:16px;font-size:12.5px;">${R.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+          </div>`;
+      }
+      function renderPostureHistoryHtml(entries, { shareable }) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
-        return entries.map(e => `
-          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
-            <img src="${esc(e.photo_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#f3f4f6;" />
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-                <span class="muted" style="font-size:11px;">${fmtDate(e.created_at)}</span>
-                ${Number.isFinite(e.score) ? `<span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#eff6ff;color:#2563eb;">スコア ${e.score}</span>` : ''}
-              </div>
-              ${(e.findings || []).length ? `<ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-              ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">${esc(e.note)}</p>` : ''}
+        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => `
+          <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font-size:12px;font-weight:700;">${fmtDate(e.created_at)}</span>
+              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}</span>` : ''}
             </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,90px));gap:6px;margin-bottom:6px;">${postureImg(e.photo_url, '正面')}${e.side_photo_url ? postureImg(e.side_photo_url, '横') : ''}</div>
+            ${(e.changes || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">前回からの変化</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${e.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+            ${(e.findings || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">今回の気づき</p><ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+            ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">メモ：${esc(e.note)}</p>` : ''}
+            ${shareable ? `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様のNew Me Logに表示する（写真と気づき・変化。メモは出ません）</label>` : ''}
           </div>
         `).join('');
+      }
+      // 履歴を表示して、比べる記録の切り替えと「お客様に表示する」の切り替えをつなぐ
+      function mountPostureHistory(el, entries, { patchUrl } = {}) {
+        el.innerHTML = renderPostureHistoryHtml(entries, { shareable: !!patchUrl });
+        const wireCompare = () => {
+          el.querySelectorAll('[data-posture-cmp]').forEach(sel => sel.addEventListener('change', () => {
+            const box = el.querySelector('[data-posture-compare]');
+            const left = el.querySelector('[data-posture-cmp="left"]').value;
+            const right = el.querySelector('[data-posture-cmp="right"]').value;
+            box.outerHTML = postureCompareHtml(entries, left, right);
+            wireCompare();
+          }));
+        };
+        wireCompare();
+        el.querySelectorAll('[data-posture-share]').forEach(cb => cb.addEventListener('change', async () => {
+          cb.disabled = true;
+          const res = await fetch(patchUrl, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ id: cb.dataset.postureShare, shared_with_customer: cb.checked }) });
+          cb.disabled = false;
+          if (!res.ok) { cb.checked = !cb.checked; showToast('切り替えられませんでした'); return; }
+          const e = entries.find(x => x.id === cb.dataset.postureShare); if (e) e.shared_with_customer = cb.checked;
+          showToast(cb.checked ? 'お客様のNew Me Logに表示します' : 'お客様のNew Me Logに表示しないようにしました');
+        }));
       }
 
       function buildPostureAddForm(container, endpointBase, onSaved) {
         container.innerHTML = `
+          <div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;">撮り方（毎回同じにすると、前回との比べ方が正確になります）</p>
+            <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.6;color:#374151;">${POSTURE_SHOOTING_GUIDE.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+          </div>
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:2px;">正面の写真（必須）</label>
           <input type="file" accept="image/*" capture="environment" id="posture-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
-          <textarea id="posture-note-input" placeholder="メモ（任意）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:2px;">真横の写真（任意）</label>
+          <input type="file" accept="image/*" capture="environment" id="posture-side-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
+          <textarea id="posture-note-input" placeholder="メモ（任意・お店だけが見られます）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
           <button type="button" class="btn" style="font-size:12px;padding:6px 14px;" id="posture-save-btn">写真を分析して記録</button>
           <p class="muted" id="posture-save-msg" style="font-size:11px;margin:6px 0 0;"></p>
+          <p class="muted" style="font-size:11px;margin:4px 0 0;">前回の記録があれば、AIが前回の写真と見比べて変化も書きます。記録はお店が「表示する」にするまで、お客様には見えません。</p>
         `;
-        container.dataset.built = '1';
         const saveBtn = container.querySelector('#posture-save-btn');
         const msgEl = container.querySelector('#posture-save-msg');
         saveBtn?.addEventListener('click', async () => {
           const fileInput = container.querySelector('#posture-photo-input');
+          const sideInput = container.querySelector('#posture-side-photo-input');
           const noteEl = container.querySelector('#posture-note-input');
           const file = fileInput?.files?.[0];
-          if (!file) { showToast('写真を選択してください'); return; }
+          const sideFile = sideInput?.files?.[0];
+          if (!file) { showToast('正面の写真を選択してください'); return; }
           saveBtn.disabled = true;
           msgEl.textContent = '圧縮中…';
           try {
-            const compressed = await compressImage(file);
-            msgEl.textContent = 'AIが分析中…（数秒かかります）';
-            const photo_base64 = await blobToBase64(compressed);
+            const photo_base64 = await blobToBase64(await compressImage(file));
+            const side_photo_base64 = sideFile ? await blobToBase64(await compressImage(sideFile)) : null;
+            msgEl.textContent = 'AIが分析中…（10秒ほどかかります）';
             const res = await fetch(endpointBase, {
               method: 'POST', headers: authHeaders(),
-              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', note: noteEl?.value || '' }),
+              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', ...(side_photo_base64 ? { side_photo_base64, side_media_type: 'image/jpeg' } : {}), note: noteEl?.value || '' }),
             });
             if (!res.ok) { const d = await res.json().catch(() => ({})); msgEl.textContent = ''; showToast(d.error || '分析に失敗しました'); return; }
             showToast('姿勢分析を記録しました');
@@ -9769,7 +9822,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+            mountPostureHistory(custModalPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries` });
           } catch {
             custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -9797,7 +9850,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalManualPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+            mountPostureHistory(custModalManualPostureHistoryEl, entries);
           } catch {
             custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -15768,9 +15821,10 @@ export default function ProviderDashboardPage() {
         if (cashRec != null && cashRec < t.total) { showToast('お預かりが合計より少ないです'); return; }
         let rc = receiptPayload();
         if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
-        // 回数券・チケットを非会員のお客様（またはお客様を選ばず）に売る時は、その場で簡単な会員登録をしてから会計する
-        // （2026-11-12 渡邉要望：現金などで売った流れのまま、簡易的な会員登録に進ませて、できたら会計完了）
-        if (cart.some(c => c.kind === 'package') && (!customer || customer.manual_id)) {
+        // 回数券・チケット・メニューを非会員のお客様（またはお客様を選ばず）に売る時は、その場で簡単な会員登録をしてから会計する
+        // （2026-11-12 渡邉要望：現金などで売った流れのまま、簡易的な会員登録に進ませて、できたら会計完了。メニューを買う時も同様）。
+        // 物販だけの会計は登録なしで進める
+        if (cart.some(c => c.kind === 'package' || c.kind === 'service') && (!customer || customer.manual_id)) {
           checkoutBtn.disabled = true;
           const reg = await posQuickRegister(customer);
           checkoutBtn.disabled = !cart.length;
@@ -15825,8 +15879,8 @@ export default function ProviderDashboardPage() {
           ov.style.zIndex = '1100';
           ov.innerHTML = `
             <div class="cal-modal-card" role="dialog" aria-modal="true" aria-labelledby="pqr-title" style="max-width:420px">
-              <h3 id="pqr-title" style="margin:0 0 4px;font-size:16px">回数券のお客様を登録</h3>
-              <p class="muted" style="margin:0 0 12px;font-size:12.5px;line-height:1.7">買った回数券をお客様に付けるため、簡単な会員登録をします。登録できたら、そのまま会計を完了します。</p>
+              <h3 id="pqr-title" style="margin:0 0 4px;font-size:16px">お客様を登録</h3>
+              <p class="muted" style="margin:0 0 12px;font-size:12.5px;line-height:1.7">回数券やメニューの記録をお客様に付けるため、簡単な会員登録をします。登録できたら、そのまま会計を完了します。</p>
               <div style="display:flex;gap:8px">
                 <label style="flex:1;font-size:12px;font-weight:700">姓（必須）<input id="pqr-ln" type="text" maxlength="30" autocomplete="off" value="${escP(ln0)}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
                 <label style="flex:1;font-size:12px;font-weight:700">名<input id="pqr-fn" type="text" maxlength="30" autocomplete="off" value="${escP(fn0)}" style="width:100%;box-sizing:border-box;margin-top:4px"></label>
