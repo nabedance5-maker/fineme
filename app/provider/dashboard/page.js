@@ -9195,13 +9195,53 @@ export default function ProviderDashboardPage() {
 
       custModalManualDeleteBtn?.addEventListener('click', async () => {
         if (!currentCustUid || currentCustType !== 'manual') return;
-        if (!confirm('この非会員のお客様を削除しますか？（カルテ記録も削除されます）')) return;
-        const res = await fetch(`/api/provider/customers/manual/${currentCustUid}`, { method: 'DELETE', headers: authHeaders() });
-        if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '削除できませんでした'); return; }
+        const mid = currentCustUid;
+        if (!(await window.pdConfirm({ title: 'この非会員のお客様を削除しますか？', lines: ['削除すると、カルテの記録も消え、元に戻せません。'], okLabel: '削除する', cancelLabel: 'やめる', danger: true }))) return;
+        const del = body => fetch(`/api/provider/customers/manual/${mid}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body || {}) });
+        let res = await del();
+        let d = await res.json().catch(() => ({}));
+        // カルテの記録がある時は、お名前を入れて確かめる（2026-11-12 渡邉指摘：間違えて消すと大問題）
+        if (res.status === 409 && d.reason === 'karte') {
+          const typed = prompt(`カルテの記録が${d.karte_count}件あります。削除すると元に戻せません。\n本当に削除する場合は、お名前「${d.name}」をそのまま入力してください。`);
+          if (typed == null) return;
+          res = await del({ confirm_name: typed });
+          d = await res.json().catch(() => ({}));
+          if (res.status === 409 && d.reason === 'karte') { showToast('お名前が一致しないため、削除しませんでした'); return; }
+        }
+        if (!res.ok) {
+          if (d.reasons?.length) await window.pdConfirm({ title: 'このお客様は削除できません', lines: d.reasons, okLabel: '閉じる', cancelLabel: '戻る' });
+          else showToast(d.error || '削除できませんでした');
+          return;
+        }
         custModalEl.style.display = 'none';
         showToast('削除しました');
         await loadManualCustomers();
       });
+
+      // 削除したメンバーの一覧と「元に戻す」
+      const escR = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      async function loadRemovedMembers() {
+        const box = document.getElementById('removed-members-box');
+        const listEl = document.getElementById('removed-members-list');
+        if (!box || !listEl) return;
+        const res = await fetch('/api/provider/customers/removed', { headers: authHeaders() }).catch(() => null);
+        const rows = res?.ok ? await res.json() : [];
+        box.style.display = rows.length ? '' : 'none';
+        const sum = document.getElementById('removed-members-summary');
+        if (sum) sum.textContent = `削除したメンバー（${rows.length}人）`;
+        listEl.innerHTML = rows.map(r => `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px"><span style="flex:1 1 160px;font-weight:700">${escR(r.name)}</span><span class="muted" style="font-size:12px">${new Date(r.removed_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} ${escR(r.removed_by || '')}</span><button type="button" class="btn btn-ghost" data-restore="${escR(r.user_id)}" data-name="${escR(r.name)}" style="font-size:12px;padding:5px 12px;min-height:36px">元に戻す</button></div>`).join('');
+        listEl.querySelectorAll('[data-restore]').forEach(b => b.addEventListener('click', async () => {
+          b.disabled = true;
+          const r = await fetch(`/api/provider/customers/${encodeURIComponent(b.dataset.restore)}/remove`, { method: 'DELETE', headers: authHeaders() });
+          if (!r.ok) { b.disabled = false; showToast('元に戻せませんでした'); return; }
+          showToast(`${b.dataset.name}さんをメンバー一覧に戻しました`);
+          await loadAll();
+          loadRemovedMembers();
+        }));
+      }
+      window.__pdLoadRemovedMembers = () => { loadRemovedMembers(); loadAll(); };
+      document.querySelectorAll('[data-tab="customers"]').forEach(b => b.addEventListener('click', loadRemovedMembers));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadRemovedMembers();
 
       // Finemeのアカウントがあるお客様を、このお店のメンバー一覧から外す（2026-11-12 渡邉要望「メンバーの削除をできるようにしてほしい」）。
       // お客様のアカウントや予約・カルテ・売上の記録は消さない。また予約・入会・チケットの購入があれば一覧に戻る
@@ -9211,27 +9251,20 @@ export default function ProviderDashboardPage() {
         const name = document.getElementById('cust-modal-name')?.textContent || 'このお客様';
         const ok = await window.pdConfirm({
           title: 'メンバーから削除しますか？',
-          lines: [['お客様', name], 'このお店のメンバー一覧から外し、メッセージ配信の宛先にも入らなくなります。', 'お客様のFinemeのアカウントと、これまでの予約・カルテ・売上の記録は消えません。また予約や入会があれば、一覧に戻ります。'],
+          lines: [['お客様', name], 'このお店のメンバー一覧から外し、メッセージ配信の宛先にも入らなくなります。', 'お客様のFinemeのアカウントと、これまでの予約・カルテ・売上の記録は消えません。間違えた時は、メンバー一覧の下の「削除したメンバー」から元に戻せます。'],
           okLabel: '削除する', cancelLabel: 'やめる', danger: true,
         });
         if (!ok) return;
-        const go = async (ticketsOk) => fetch(`/api/provider/customers/${encodeURIComponent(uid)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ tickets_ok: !!ticketsOk }) });
-        let res = await go(false);
-        let d = await res.json().catch(() => ({}));
-        if (res.status === 409 && d.reason === 'tickets') {
-          const again = await window.pdConfirm({
-            title: '使えるチケットが残っています',
-            lines: [...(d.tickets || []).map(t => [t.name, t.unlimited ? '通い放題' : `残り${t.remaining}回`]), '削除しても、チケットはお客様に残ります（また予約があれば一覧に戻ります）。'],
-            okLabel: 'それでも削除する', cancelLabel: 'やめる',
-          });
-          if (!again) return;
-          res = await go(true);
-          d = await res.json().catch(() => ({}));
+        const res = await fetch(`/api/provider/customers/${encodeURIComponent(uid)}/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: '{}' });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (d.reasons?.length) await window.pdConfirm({ title: 'このお客様は削除できません', lines: d.reasons, okLabel: '閉じる', cancelLabel: '戻る' });
+          else showToast(d.error || '削除できませんでした');
+          return;
         }
-        if (!res.ok) { showToast(d.error || '削除できませんでした'); return; }
         custModalEl.style.display = 'none';
-        showToast(`${name}さんをメンバーから削除しました`);
-        await loadAll();
+        showToast(`${name}さんをメンバーから削除しました（メンバー一覧の下の「削除したメンバー」から元に戻せます）`);
+        window.__pdLoadRemovedMembers?.();
       });
 
       custModalManualSaveBtn?.addEventListener('click', async () => {
@@ -18758,6 +18791,12 @@ export default function ProviderDashboardPage() {
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
+          {/* 削除したメンバー（2026-11-12 渡邉指摘：間違えて消した時に元に戻せるように） */}
+          <details id="removed-members-box" className="card" style={{ padding: '14px 24px', marginTop: '16px', display: 'none' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '13.5px', fontWeight: 700 }} id="removed-members-summary">削除したメンバー</summary>
+            <p className="muted" style={{ fontSize: '12px', margin: '8px 0' }}>一覧から外したお客様です。元に戻すと、これまでの記録ごとメンバー一覧に戻ります。</p>
+            <div id="removed-members-list"></div>
+          </details>
 
         </div>
 
