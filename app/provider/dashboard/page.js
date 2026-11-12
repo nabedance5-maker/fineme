@@ -13308,6 +13308,7 @@ export default function ProviderDashboardPage() {
       let resourceFeatureOn = false;
 
       let shiftFeatureOn = false;
+      let shiftDataLoaded = false; // シフトのデータを読み込めたか（読み込めなかった時は、全員を休み扱いにしない）
       // スタッフの休憩・外出ブロック（でお要望2026-09-14）と、シフト確定済みの勤務時間帯を
       // 週窓分キャッシュし、カレンダーのグレー表示（帯）に使う。
       let staffBlocksCache = [];
@@ -13371,7 +13372,12 @@ export default function ProviderDashboardPage() {
 
         shiftWindowsByStaffDate = {};
         shiftCoveredDates = new Set();
-        if (shiftFeatureOn && shiftRes?.ok) {
+        shiftDataLoaded = false;
+        // シフト機能の設定（shiftFeatureOn）は同時に読み込んでいて、まだ届いていないことがある。ここで shiftFeatureOn を見て
+        // 捨てると、後から「シフト機能オン・確定した日なし」となり、確定したシフトがあるのにスタッフが休み・1日中グレーに見えていた
+        // （2026-11-12 渡邉報告）。データは常に受け取り、使うかどうかは表示の時に shiftFeatureOn で決める
+        if (shiftRes?.ok) {
+          shiftDataLoaded = true;
           const { entries, coveredPeriods } = await shiftRes.json();
           (coveredPeriods || []).forEach(p => {
             let d = new Date(p.start + 'T00:00:00');
@@ -13395,13 +13401,14 @@ export default function ProviderDashboardPage() {
         // （でお要望2026-09-27「シフトを出していないから予約できないようになってるのであれば
         // 該当時間の予約カレンダーはグレーで表示して」。lib/shift-availability.jsの
         // isOutsideShift()の「!coveredDates.has(date) → ブロック」と同じ判定をここでも揃える）。
-        if (shiftFeatureOn && !shiftCoveredDates.has(dateStr)) {
+        const useShift = shiftFeatureOn && shiftDataLoaded;
+        if (useShift && !shiftCoveredDates.has(dateStr)) {
           return [{ start: RANGE_START_MIN, end: RANGE_END_MIN, kind: 'offshift' }];
         }
         staffBlocksCache.forEach(b => {
           if (b.staff_id === staffId && b.date === dateStr) out.push({ start: timeToMinutes(b.start_time), end: timeToMinutes(b.end_time), kind: 'block', id: b.id });
         });
-        if (shiftFeatureOn && shiftCoveredDates.has(dateStr)) {
+        if (useShift && shiftCoveredDates.has(dateStr)) {
           const windows = (shiftWindowsByStaffDate[staffId] && shiftWindowsByStaffDate[staffId][dateStr]) || [];
           const sorted = windows.map(w => ({ start: timeToMinutes(w.start), end: timeToMinutes(w.end) })).sort((a, b) => a.start - b.start);
           let cursor = RANGE_START_MIN;
@@ -13418,7 +13425,7 @@ export default function ProviderDashboardPage() {
       // でお指摘2026-09-29：「シフト登録されてない時は黒塗りっていうより、表示されてないと
       // 見やすい。スタッフが増えると大変だと思う」への対応で、列を隠す判定に使う。
       function isStaffOffThisDay(staffId, dateStr) {
-        if (!shiftFeatureOn || !staffId) return false;
+        if (!shiftFeatureOn || !shiftDataLoaded || !staffId) return false;
         if (!shiftCoveredDates.has(dateStr)) return true;
         const windows = (shiftWindowsByStaffDate[staffId] && shiftWindowsByStaffDate[staffId][dateStr]) || [];
         return !windows.length;
