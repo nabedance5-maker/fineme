@@ -31,7 +31,7 @@ export async function GET(request, props) {
 
   const { data, error } = await supabase
     .from('provider_posture_entries')
-    .select('id, photo_url, score, findings, note, staff_id, created_at')
+    .select('id, photo_url, side_photo_url, score, findings, changes, shared_with_customer, note, staff_id, created_at')
     .eq('provider_id', provider.id)
     .eq('manual_customer_id', params.id)
     .order('created_at', { ascending: false });
@@ -47,16 +47,17 @@ async function __POST(request, { params }) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (!hasFeature(provider, 'posture_analysis')) return Response.json({ error: 'この機能は現在OFFになっています' }, { status: 403 });
   if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
-  if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+  if (!process.env.OPENROUTER_API_KEY && !process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   if (!(await ownsManualCustomer(provider.id, params.id))) {
     return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
   }
 
-  const { photo_base64, media_type, note, staff_id } = await request.json();
-  if (!photo_base64 || !media_type) return Response.json({ error: '写真データが必要です' }, { status: 400 });
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(media_type)) return Response.json({ error: '対応していない画像形式です' }, { status: 400 });
-  if (photo_base64.length > 6_000_000) return Response.json({ error: '写真サイズが大きすぎます' }, { status: 400 });
+  const { photo_base64, media_type, side_photo_base64, side_media_type, note, staff_id } = await request.json();
+  if (!photo_base64 || !media_type) return Response.json({ error: '正面の写真が必要です' }, { status: 400 });
+  const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!TYPES.includes(media_type) || (side_photo_base64 && !TYPES.includes(side_media_type))) return Response.json({ error: '対応していない画像形式です' }, { status: 400 });
+  if (photo_base64.length > 6_000_000 || (side_photo_base64 && side_photo_base64.length > 6_000_000)) return Response.json({ error: '写真サイズが大きすぎます' }, { status: 400 });
 
   try {
     const entry = await createPostureEntry({
@@ -69,6 +70,8 @@ async function __POST(request, { params }) {
       note,
       photoBase64: photo_base64,
       mediaType: media_type,
+      sidePhotoBase64: side_photo_base64 || null,
+      sideMediaType: side_media_type || null,
     });
     return Response.json(entry);
   } catch (e) {

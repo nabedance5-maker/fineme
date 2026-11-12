@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
 import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST } from '@/lib/dashboard-tutorial';
+import { POSTURE_SHOOTING_GUIDE } from '@/lib/posture-guide';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
@@ -9692,47 +9693,99 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function renderPostureHistoryHtml(entries) {
+      // 姿勢分析を使える道具に（渡邉採用 2026-11-12）：撮り方の案内・正面と横の2枚・前回との並べ比べ・
+      // AIの「前回からの変化」・お客様のNew Me Logに出すかを記録ごとに選ぶ（既定は出さない）。点数は目安として小さく
+      const postureImg = (url, label) => (url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;"><img src="${esc(url)}" alt="${esc(label)}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#f3f4f6;display:block;" /><span class="muted" style="font-size:10.5px;">${esc(label)}</span></a>`
+        : `<div style="width:100%;aspect-ratio:3/4;border-radius:8px;background:#f9fafb;border:1px dashed #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#9ca3af;">${esc(label)}なし</div>`);
+      function postureCompareHtml(entries, leftId, rightId) {
+        const L = entries.find(e => e.id === leftId) || entries[1];
+        const R = entries.find(e => e.id === rightId) || entries[0];
+        const opts = sel => entries.map(e => `<option value="${esc(e.id)}"${e.id === sel ? ' selected' : ''}>${fmtDate(e.created_at)}</option>`).join('');
+        const col = (e, which) => `
+          <div style="flex:1;min-width:0;">
+            <select data-posture-cmp="${which}" style="width:100%;font-size:12px;margin-bottom:6px;">${opts(e.id)}</select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${postureImg(e.photo_url, '正面')}${postureImg(e.side_photo_url, '横')}</div>
+          </div>`;
+        return `
+          <div data-posture-compare style="border:1px solid rgba(201,168,76,.45);background:rgba(201,168,76,.06);border-radius:10px;padding:10px;margin-bottom:10px;">
+            <p style="margin:0 0 8px;font-size:12.5px;font-weight:700;">前回と並べて比べる</p>
+            <div style="display:flex;gap:10px;">${col(L, 'left')}${col(R, 'right')}</div>
+            ${R.changes?.length && R.previous_entry_id === L.id ? `<ul style="margin:8px 0 0;padding-left:16px;font-size:12.5px;">${R.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+          </div>`;
+      }
+      function renderPostureHistoryHtml(entries, { shareable }) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
-        return entries.map(e => `
-          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
-            <img src="${esc(e.photo_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#f3f4f6;" />
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-                <span class="muted" style="font-size:11px;">${fmtDate(e.created_at)}</span>
-                ${Number.isFinite(e.score) ? `<span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#eff6ff;color:#2563eb;">スコア ${e.score}</span>` : ''}
-              </div>
-              ${(e.findings || []).length ? `<ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-              ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">${esc(e.note)}</p>` : ''}
+        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => `
+          <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+              <span style="font-size:12px;font-weight:700;">${fmtDate(e.created_at)}</span>
+              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}</span>` : ''}
             </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,90px));gap:6px;margin-bottom:6px;">${postureImg(e.photo_url, '正面')}${e.side_photo_url ? postureImg(e.side_photo_url, '横') : ''}</div>
+            ${(e.changes || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">前回からの変化</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${e.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+            ${(e.findings || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">今回の気づき</p><ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+            ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">メモ：${esc(e.note)}</p>` : ''}
+            ${shareable ? `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様のNew Me Logに表示する（写真と気づき・変化。メモは出ません）</label>` : ''}
           </div>
         `).join('');
+      }
+      // 履歴を表示して、比べる記録の切り替えと「お客様に表示する」の切り替えをつなぐ
+      function mountPostureHistory(el, entries, { patchUrl } = {}) {
+        el.innerHTML = renderPostureHistoryHtml(entries, { shareable: !!patchUrl });
+        const wireCompare = () => {
+          el.querySelectorAll('[data-posture-cmp]').forEach(sel => sel.addEventListener('change', () => {
+            const box = el.querySelector('[data-posture-compare]');
+            const left = el.querySelector('[data-posture-cmp="left"]').value;
+            const right = el.querySelector('[data-posture-cmp="right"]').value;
+            box.outerHTML = postureCompareHtml(entries, left, right);
+            wireCompare();
+          }));
+        };
+        wireCompare();
+        el.querySelectorAll('[data-posture-share]').forEach(cb => cb.addEventListener('change', async () => {
+          cb.disabled = true;
+          const res = await fetch(patchUrl, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ id: cb.dataset.postureShare, shared_with_customer: cb.checked }) });
+          cb.disabled = false;
+          if (!res.ok) { cb.checked = !cb.checked; showToast('切り替えられませんでした'); return; }
+          const e = entries.find(x => x.id === cb.dataset.postureShare); if (e) e.shared_with_customer = cb.checked;
+          showToast(cb.checked ? 'お客様のNew Me Logに表示します' : 'お客様のNew Me Logに表示しないようにしました');
+        }));
       }
 
       function buildPostureAddForm(container, endpointBase, onSaved) {
         container.innerHTML = `
+          <div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;">撮り方（毎回同じにすると、前回との比べ方が正確になります）</p>
+            <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.6;color:#374151;">${POSTURE_SHOOTING_GUIDE.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+          </div>
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:2px;">正面の写真（必須）</label>
           <input type="file" accept="image/*" capture="environment" id="posture-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
-          <textarea id="posture-note-input" placeholder="メモ（任意）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:2px;">真横の写真（任意）</label>
+          <input type="file" accept="image/*" capture="environment" id="posture-side-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
+          <textarea id="posture-note-input" placeholder="メモ（任意・お店だけが見られます）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
           <button type="button" class="btn" style="font-size:12px;padding:6px 14px;" id="posture-save-btn">写真を分析して記録</button>
           <p class="muted" id="posture-save-msg" style="font-size:11px;margin:6px 0 0;"></p>
+          <p class="muted" style="font-size:11px;margin:4px 0 0;">前回の記録があれば、AIが前回の写真と見比べて変化も書きます。記録はお店が「表示する」にするまで、お客様には見えません。</p>
         `;
-        container.dataset.built = '1';
         const saveBtn = container.querySelector('#posture-save-btn');
         const msgEl = container.querySelector('#posture-save-msg');
         saveBtn?.addEventListener('click', async () => {
           const fileInput = container.querySelector('#posture-photo-input');
+          const sideInput = container.querySelector('#posture-side-photo-input');
           const noteEl = container.querySelector('#posture-note-input');
           const file = fileInput?.files?.[0];
-          if (!file) { showToast('写真を選択してください'); return; }
+          const sideFile = sideInput?.files?.[0];
+          if (!file) { showToast('正面の写真を選択してください'); return; }
           saveBtn.disabled = true;
           msgEl.textContent = '圧縮中…';
           try {
-            const compressed = await compressImage(file);
-            msgEl.textContent = 'AIが分析中…（数秒かかります）';
-            const photo_base64 = await blobToBase64(compressed);
+            const photo_base64 = await blobToBase64(await compressImage(file));
+            const side_photo_base64 = sideFile ? await blobToBase64(await compressImage(sideFile)) : null;
+            msgEl.textContent = 'AIが分析中…（10秒ほどかかります）';
             const res = await fetch(endpointBase, {
               method: 'POST', headers: authHeaders(),
-              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', note: noteEl?.value || '' }),
+              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', ...(side_photo_base64 ? { side_photo_base64, side_media_type: 'image/jpeg' } : {}), note: noteEl?.value || '' }),
             });
             if (!res.ok) { const d = await res.json().catch(() => ({})); msgEl.textContent = ''; showToast(d.error || '分析に失敗しました'); return; }
             showToast('姿勢分析を記録しました');
@@ -9769,7 +9822,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+            mountPostureHistory(custModalPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries` });
           } catch {
             custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -9797,7 +9850,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalManualPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+            mountPostureHistory(custModalManualPostureHistoryEl, entries);
           } catch {
             custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -15601,6 +15654,10 @@ export default function ProviderDashboardPage() {
         $('pos-change').textContent = pay?.cash && Number.isFinite(rec) ? (rec >= t.total ? `おつり ${yen(rec - t.total)}` : `${yen(t.total - rec)}不足`) : '';
         checkoutBtn.disabled = !cart.length;
         if (onlineCheckoutBtn) onlineCheckoutBtn.disabled = !cart.length;
+        const go = $('pos-go-btn');
+        if (go) { go.disabled = !cart.length; go.textContent = cart.length ? `会計に進む（${yen(t.total)}）` : '会計に進む'; }
+        if (coStep === 'pay') renderCoSummary();
+        if (!cart.length && coStep) closeCo();
         renderCardBtn();
       }
       function openDiscountForm(onApply, perLine) {
@@ -15694,11 +15751,58 @@ export default function ProviderDashboardPage() {
 
       // お客様の紐付け
       function renderCustomer() {
-        $('pos-cust-name').textContent = customer ? customer.name : 'お客様を選ぶ（任意）';
-        $('pos-cust-clear').style.display = customer ? '' : 'none';
+        $('pos-cust-name').textContent = customer ? `${customer.name} 様${customer.manual_id ? '（非会員）' : ''}` : '非会員のお客様';
         if (!customer) memberCard = null;
+        const note = $('pos-co-guest-note');
+        if (note) note.style.display = (!customer || customer.manual_id) && cart.some(c => c.kind === 'package' || c.kind === 'service') ? '' : 'none';
         renderCardBtn();
         syncReceiptEmail();
+        // 会計のポップアップでお客様が決まったら、会計の確認へ進む
+        if (customer && coStep === 'cust') showCoStep('pay');
+      }
+
+      // ── 会計のポップアップ（2026-11-12 渡邉提案）：1. お客様（会員証・探す・非会員）→ 2. 会計の確認 → 会計完了 ──
+      var coStep = null; // renderCustomer が先に呼ばれても困らないよう var
+      const coModal = $('pos-co-modal');
+      function showCoStep(step) {
+        coStep = step;
+        $('pos-co-step-cust').style.display = step === 'cust' ? '' : 'none';
+        $('pos-co-step-pay').style.display = step === 'pay' ? '' : 'none';
+        if (step !== 'cust') { stopPosScan(); const pk = $('pos-cust-picker'); if (pk) pk.hidden = true; }
+        if (step === 'pay') renderCoSummary();
+      }
+      function renderCoSummary() {
+        const t = totals();
+        $('pos-co-total').textContent = yen(t.total);
+        const el = $('pos-co-lines');
+        if (el) el.innerHTML = cart.map(c => `<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid rgba(26,20,16,0.06)"><span>${esc(c.name)} × ${c.qty}</span><span>${yen(lineTotal(c))}</span></div>`).join('')
+          + (t.off ? `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>割引</span><span>−${yen(t.off)}</span></div>` : '')
+          + `<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:800;font-size:15px"><span>合計</span><span>${yen(t.total)}</span></div>`;
+        const note = $('pos-co-guest-note');
+        if (note) note.style.display = (!customer || customer.manual_id) && cart.some(c => c.kind === 'package' || c.kind === 'service') ? '' : 'none';
+      }
+      function closeCo() { if (coModal) coModal.style.display = 'none'; coStep = null; stopPosScan(); }
+      $('pos-go-btn')?.addEventListener('click', () => {
+        if (!cart.length || !coModal) return;
+        $('pos-done').hidden = true;
+        checkoutMsg.textContent = '';
+        coModal.style.display = 'flex';
+        $('pos-co-total').textContent = yen(totals().total);
+        showCoStep(customer ? 'pay' : 'cust');
+      });
+      $('pos-co-close')?.addEventListener('click', closeCo);
+      coModal?.addEventListener('click', e => { if (e.target === coModal) closeCo(); });
+      $('pos-co-guest')?.addEventListener('click', () => { customer = null; memberCard = null; cardRequestId = null; renderCustomer(); showCoStep('pay'); });
+      // 回数券・メニューを非会員に売る時は、確定の前に簡単な会員登録をする（会計の確定・スマホで払う 共通）
+      async function ensureSaleCustomer() {
+        if (!(cart.some(c => c.kind === 'package' || c.kind === 'service') && (!customer || customer.manual_id))) return true;
+        const reg = await posQuickRegister(customer);
+        if (!reg) return false;
+        customer = reg;
+        coStep = 'pay';
+        renderCustomer();
+        if (reg.email && receiptOn() && $('pos-receipt-email') && !$('pos-receipt-email').value) { $('pos-receipt-email').value = reg.email; renderReceipt(); }
+        return true;
       }
       $('pos-cust-btn')?.addEventListener('click', async () => {
         const box = $('pos-cust-picker');
@@ -15751,7 +15855,7 @@ export default function ProviderDashboardPage() {
         }));
       }
       $('pos-cust-q')?.addEventListener('input', renderPicker);
-      $('pos-cust-clear')?.addEventListener('click', () => { customer = null; renderCustomer(); });
+      $('pos-cust-clear')?.addEventListener('click', () => { customer = null; memberCard = null; cardRequestId = null; renderCustomer(); showCoStep('cust'); });
 
       function resetSale() {
         cart = []; cartDiscount = null; customer = null; memberCard = null; cardRequestId = null;
@@ -15768,34 +15872,14 @@ export default function ProviderDashboardPage() {
         if (cashRec != null && cashRec < t.total) { showToast('お預かりが合計より少ないです'); return; }
         let rc = receiptPayload();
         if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
-        // 回数券・チケット・メニューを非会員のお客様（またはお客様を選ばず）に売る時は、その場で簡単な会員登録をしてから会計する
-        // （2026-11-12 渡邉要望：現金などで売った流れのまま、簡易的な会員登録に進ませて、できたら会計完了。メニューを買う時も同様）。
-        // 物販だけの会計は登録なしで進める
-        if (cart.some(c => c.kind === 'package' || c.kind === 'service') && (!customer || customer.manual_id)) {
-          checkoutBtn.disabled = true;
-          const reg = await posQuickRegister(customer);
-          checkoutBtn.disabled = !cart.length;
-          if (!reg) return;
-          customer = reg;
-          renderCustomer();
-          // 登録したメールを、レシートの宛先が空ならそこに入れる
-          if (reg.email && receiptOn() && $('pos-receipt-email') && !$('pos-receipt-email').value) { $('pos-receipt-email').value = reg.email; renderReceipt?.(); rc = receiptPayload() || rc; }
-        }
-        // 押し間違いで会計を確定しないよう、最後に確かめてもらう（でお要望 2026-10-28）
+        // 2. 会計の確認の画面そのものが確認なので、ここでは聞き直さない。回数券・メニューを非会員に売る時だけ、先に簡単な会員登録をする
         checkoutBtn.disabled = true;
-        const ok = await pdConfirm({
-          title: '会計しますか？',
-          lines: [
-            ['合計', yen(t.total)],
-            ...(pay?.label ? [['支払い方法', pay.label]] : []),
-            ...(cashRec != null ? [['お預かり', yen(cashRec)], ['おつり', yen(cashRec - t.total)]] : []),
-            ...(customer?.name ? [['お客様', customer.name]] : []),
-            ...receiptLine(),
-          ],
-          okLabel: 'はい', cancelLabel: 'いいえ',
-        });
-        if (!ok) { checkoutBtn.disabled = !cart.length; return; }
+        const okCust = await ensureSaleCustomer();
+        checkoutBtn.disabled = !cart.length;
+        if (!okCust) return;
+        rc = receiptPayload() || rc;
         checkoutMsg.textContent = '';
+        checkoutBtn.disabled = true; // 2回押しで二重に会計しないように
         const res = await fetch('/api/provider/pos/checkout', {
           method: 'POST', headers: authHeadersPos(),
           body: JSON.stringify({
@@ -15871,6 +15955,7 @@ export default function ProviderDashboardPage() {
       }
 
       async function showSaleDone(tx, extra = '') {
+        closeCo();
         $('pos-done').hidden = false;
         $('pos-done').innerHTML = `<b>会計しました（${esc(tx.receipt_no)}）</b><span>合計 ${yen(tx.total_amount)}${tx.cash_received != null ? `・お預かり ${yen(tx.cash_received)}・おつり ${yen(tx.cash_received - tx.total_amount)}` : ''}${extra}${tx.receipt_email ? `・レシートを ${esc(tx.receipt_email)} に送りました` : ''}</span>
           <div class="pos-row"><button type="button" class="btn" data-print-receipt="${tx.id}">レシートを印刷</button><button type="button" class="btn btn-ghost" data-print-ryoshu="${tx.id}">領収書を発行</button><button type="button" class="btn btn-ghost" id="pos-done-x">閉じる</button></div>`;
@@ -15965,6 +16050,7 @@ export default function ProviderDashboardPage() {
       const stopOnlineCheckoutPoll = () => { if (onlineCheckoutPollId) { clearTimeout(onlineCheckoutPollId); onlineCheckoutPollId = null; } };
       onlineCheckoutBtn?.addEventListener('click', async () => {
         if (!cart.length) return;
+        if (!(await ensureSaleCustomer())) return;
         const rc = receiptPayload();
         if (!rc) { showToast('レシートを送るメールアドレスの形を確かめてください（送らない時は空のままに）'); $('pos-receipt-email')?.focus(); return; }
         stopOnlineCheckoutPoll();
@@ -19461,24 +19547,7 @@ export default function ProviderDashboardPage() {
             <div id="pos-product-grid" className="pos-grid"><p>読み込み中…</p></div>
 
             <div className="pos-cart">
-              <div className="pos-cart-head"><h3>カート</h3>
-                <div className="pos-row">
-                  <button type="button" className="btn btn-ghost" id="pos-scan-btn">会員証を読み取る</button>
-                  <button type="button" className="btn btn-ghost" id="pos-cust-btn"><span id="pos-cust-name">お客様を選ぶ（任意）</span></button>
-                  <button type="button" className="btn btn-ghost" id="pos-cust-clear" style={{ display: 'none' }}>外す</button>
-                </div>
-              </div>
-              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>体験・単発の方も、会員でない方も買えます。お客様を選ばずに会計することもできます。</p>
-              <div id="pos-scan-box" hidden style={{ padding: '12px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}>
-                <video id="pos-scan-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '10px', background: '#000' }}></video>
-                <canvas id="pos-scan-canvas" style={{ display: 'none' }}></canvas>
-                <p id="pos-scan-msg" style={{ fontSize: '13px', margin: '8px 0', color: '#1a1410' }}></p>
-                <button type="button" className="btn btn-ghost" id="pos-scan-stop">読み取りをやめる</button>
-              </div>
-              <div id="pos-cust-picker" className="pos-picker" hidden>
-                <input id="pos-cust-q" placeholder="名前・電話番号・会員番号で探す" />
-                <div id="pos-cust-results" className="pos-picker-list"></div>
-              </div>
+              <div className="pos-cart-head"><h3>カート</h3></div>
               <div id="pos-cart-list"><p style={{ fontSize: '13px', margin: 0 }}>まだ何も選ばれていません</p></div>
               <div id="pos-disc-form" className="pos-disc-form" hidden></div>
               <div className="pos-sum">
@@ -19486,29 +19555,72 @@ export default function ProviderDashboardPage() {
                 <div className="r" id="pos-disc-row" style={{ display: 'none' }}><span>割引</span><span id="pos-disc-amt"></span></div>
                 <div className="r pos-total"><span>合計</span><span>¥<span id="pos-cart-total">0</span></span></div>
               </div>
-              <div className="pos-row">
+              <div className="pos-row" style={{ justifyContent: 'space-between' }}>
                 <button type="button" className="btn btn-ghost" id="pos-cart-disc-btn">会計全体を割引</button>
-                <label className="pos-field">担当<select id="pos-staff"><option value="">選択なし</option></select></label>
-                <label className="pos-field">支払方法<select id="pos-payment"></select></label>
-                <span id="pos-cash-wrap" className="pos-row" style={{ display: 'none' }}>
-                  <label className="pos-field">お預かり<input id="pos-cash" type="number" min="0" inputMode="numeric" placeholder="例：10000" /></label>
-                  <b id="pos-change"></b>
-                </span>
+                {/* 2026-11-12 渡邉提案：カートに入れたら「会計に進む」だけのシンプルな画面にし、押したらポップアップで
+                    会員証の読み取り or 非会員 → 会計の確認（非会員で回数券・メニューなら簡単な登録）→ 会計完了 の流れにする */}
+                <button type="button" className="btn" id="pos-go-btn" disabled style={{ minHeight: '48px', padding: '12px 22px', fontSize: '15px' }}>会計に進む</button>
               </div>
-              <div id="pos-receipt-wrap" className="pos-row" style={{ display: 'none', alignItems: 'flex-end' }}>
-                <label className="pos-field" style={{ flex: '1 1 260px' }}>レシートを送るメール<input id="pos-receipt-email" type="email" inputMode="email" autoComplete="off" maxLength={254} placeholder="送らない時は空のまま" /></label>
-                <label id="pos-receipt-save-wrap" style={{ display: 'none', fontSize: '12.5px', gap: '6px', alignItems: 'center', color: '#1a1410' }}><input type="checkbox" id="pos-receipt-save" defaultChecked style={{ width: 'auto', margin: 0 }} />次からもこのアドレスに送る（お客様の情報に残す）</label>
-              </div>
-              <div className="pos-row" style={{ justifyContent: 'flex-end' }}>
-                <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled>お客様のスマホで払う（QR）</button>
-                <button type="button" id="pos-card-checkout-btn" className="btn" disabled style={{ display: 'none' }}></button>
-                <button type="button" id="pos-checkout-btn" className="btn" disabled>会計を確定する</button>
-              </div>
-              <p id="pos-checkout-msg" style={{ fontSize: '13px', margin: 0, fontWeight: 700, color: '#1a1410' }}></p>
               <div id="pos-done" className="pos-done" hidden></div>
-              {/* でお要望2026-09-27：決済機能Phase6②POSオンライン決済。QRを表示してお客様
-                  自身のスマホで支払ってもらい、Stripe Webhookでの確定をポーリングで待つ。 */}
-              <div id="pos-online-checkout-box" style={{ display: 'none', padding: '16px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}></div>
+            </div>
+
+            <div id="pos-co-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+              <div className="cal-modal-card" role="dialog" aria-modal="true" aria-labelledby="pos-co-title" style={{ maxWidth: '520px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                  <h3 id="pos-co-title" style={{ margin: 0, fontSize: '16px' }}>会計 <span id="pos-co-total"></span></h3>
+                  <button type="button" className="btn btn-ghost" id="pos-co-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+                </div>
+
+                <div id="pos-co-step-cust" className="stack" style={{ gap: '10px' }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>1. お客様</p>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <button type="button" className="btn" id="pos-scan-btn" style={{ minHeight: '48px' }}>会員証を読み取る</button>
+                    <button type="button" className="btn btn-ghost" id="pos-cust-btn" style={{ minHeight: '44px' }}>名前・電話番号で探す</button>
+                    <button type="button" className="btn btn-ghost" id="pos-co-guest" style={{ minHeight: '44px' }}>非会員のお客様（会員証なし・初めての方）</button>
+                  </div>
+                  <div id="pos-scan-box" hidden style={{ padding: '12px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}>
+                    <video id="pos-scan-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '10px', background: '#000' }}></video>
+                    <canvas id="pos-scan-canvas" style={{ display: 'none' }}></canvas>
+                    <p id="pos-scan-msg" style={{ fontSize: '13px', margin: '8px 0', color: '#1a1410' }}></p>
+                    <button type="button" className="btn btn-ghost" id="pos-scan-stop">読み取りをやめる</button>
+                  </div>
+                  <div id="pos-cust-picker" className="pos-picker" hidden>
+                    <input id="pos-cust-q" placeholder="名前・電話番号・会員番号で探す" />
+                    <div id="pos-cust-results" className="pos-picker-list"></div>
+                  </div>
+                </div>
+
+                <div id="pos-co-step-pay" className="stack" style={{ gap: '12px', display: 'none' }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>2. 会計の確認</p>
+                  <div className="pos-row" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#f9fafb', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '13.5px' }}>お客様：<b id="pos-cust-name">非会員のお客様</b></span>
+                    <button type="button" className="btn btn-ghost" id="pos-cust-clear" style={{ fontSize: '12px', padding: '5px 10px' }}>変更</button>
+                  </div>
+                  <p id="pos-co-guest-note" className="muted" style={{ fontSize: '12px', margin: 0, display: 'none' }}>回数券・メニューが入っているため、会計を確定する時に簡単な会員登録（お名前・電話番号）をします。</p>
+                  <div id="pos-co-lines" style={{ fontSize: '13px' }}></div>
+                  <div className="pos-row">
+                    <label className="pos-field">担当<select id="pos-staff"><option value="">選択なし</option></select></label>
+                    <label className="pos-field">支払方法<select id="pos-payment"></select></label>
+                    <span id="pos-cash-wrap" className="pos-row" style={{ display: 'none' }}>
+                      <label className="pos-field">お預かり<input id="pos-cash" type="number" min="0" inputMode="numeric" placeholder="例：10000" /></label>
+                      <b id="pos-change"></b>
+                    </span>
+                  </div>
+                  <div id="pos-receipt-wrap" className="pos-row" style={{ display: 'none', alignItems: 'flex-end' }}>
+                    <label className="pos-field" style={{ flex: '1 1 260px' }}>レシートを送るメール<input id="pos-receipt-email" type="email" inputMode="email" autoComplete="off" maxLength={254} placeholder="送らない時は空のまま" /></label>
+                    <label id="pos-receipt-save-wrap" style={{ display: 'none', fontSize: '12.5px', gap: '6px', alignItems: 'center', color: '#1a1410' }}><input type="checkbox" id="pos-receipt-save" defaultChecked style={{ width: 'auto', margin: 0 }} />次からもこのアドレスに送る（お客様の情報に残す）</label>
+                  </div>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <button type="button" id="pos-checkout-btn" className="btn" disabled style={{ minHeight: '48px', fontSize: '15px' }}>この内容で会計を確定する</button>
+                    <button type="button" id="pos-card-checkout-btn" className="btn btn-ghost" disabled style={{ display: 'none', minHeight: '44px' }}></button>
+                    <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled style={{ minHeight: '44px' }}>お客様のスマホで払う（QR）</button>
+                  </div>
+                  <p id="pos-checkout-msg" role="alert" style={{ fontSize: '13px', margin: 0, fontWeight: 700, color: '#1a1410' }}></p>
+                  {/* でお要望2026-09-27：決済機能Phase6②POSオンライン決済。QRを表示してお客様
+                      自身のスマホで支払ってもらい、Stripe Webhookでの確定をポーリングで待つ。 */}
+                  <div id="pos-online-checkout-box" style={{ display: 'none', padding: '16px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}></div>
+                </div>
+              </div>
             </div>
           </div>
 

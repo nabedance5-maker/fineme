@@ -756,9 +756,11 @@ export default function ServiceLog({ withSideNav = false }) {
                   <span class="lsr-card-type">${esc(STORE_RECORD_TYPE_LABEL[r.type] || r.type)}${subLabel}</span>
                   <span class="lsr-card-date">${dateStr}</span>
                 </div>
-                ${r.type === 'posture' && r.score != null ? `<p class="lsr-card-score">姿勢スコア <b>${esc(String(r.score))}</b></p>` : ''}
+                ${r.type === 'posture' && r.changes?.length ? `<p class="lsr-card-score"><b>前回からの変化</b></p><ul class="lsr-card-findings">${r.changes.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
                 ${r.findings?.length ? `<ul class="lsr-card-findings">${r.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
-                ${r.photo_url ? `<a class="lsr-card-photo-link" href="${esc(r.photo_url)}" target="_blank" rel="noopener">写真を見る</a>` : ''}
+                ${r.type === 'posture' && r.score != null ? `<p class="lsr-card-score" style="font-size:11.5px;opacity:.75">目安スコア ${esc(String(r.score))}（撮り方で変わるため、変化の目安としてご覧ください）</p>` : ''}
+                ${r.photo_url ? `<a class="lsr-card-photo-link" href="${esc(r.photo_url)}" target="_blank" rel="noopener">${r.side_photo_url ? '正面の写真を見る' : '写真を見る'}</a>` : ''}
+                ${r.side_photo_url ? ` <a class="lsr-card-photo-link" href="${esc(r.side_photo_url)}" target="_blank" rel="noopener">横の写真を見る</a>` : ''}
               </div>`;
           }).join('')}
         </div>`).join('');

@@ -21,12 +21,13 @@ export async function GET(request) {
   // note（スタッフの内部メモ欄）は本人向けの表現になっていない可能性があるため、
   // このお客様向けエンドポイントでは意図的に取得・返却しない（AIが生成したfindings/adviceのみ渡す）。
   const [{ data: postureRows }, { data: healthRows }] = await Promise.all([
-    supabase.from('provider_posture_entries').select('id, provider_id, photo_url, score, findings, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+    // 姿勢分析は、お店が「お客様に表示する」にした記録だけ（2026-11-12）
+    supabase.from('provider_posture_entries').select('id, provider_id, photo_url, side_photo_url, score, findings, changes, created_at').eq('user_id', user.id).eq('shared_with_customer', true).order('created_at', { ascending: false }),
     supabase.from('provider_health_advice_entries').select('id, provider_id, category, advice_axis, photo_url, advice, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
   ]);
 
   const records = [
-    ...(postureRows || []).map(r => ({ id: r.id, type: 'posture', provider_id: r.provider_id, photo_url: r.photo_url, score: r.score, findings: r.findings || [], created_at: r.created_at })),
+    ...(postureRows || []).map(r => ({ id: r.id, type: 'posture', provider_id: r.provider_id, photo_url: r.photo_url, side_photo_url: r.side_photo_url, score: r.score, findings: r.findings || [], changes: r.changes || [], created_at: r.created_at })),
     ...(healthRows || []).map(r => ({ id: r.id, type: 'health_advice', provider_id: r.provider_id, category: r.category, advice_axis: r.advice_axis, photo_url: r.photo_url, findings: r.advice || [], created_at: r.created_at })),
   ];
   if (!records.length) return Response.json([]);
