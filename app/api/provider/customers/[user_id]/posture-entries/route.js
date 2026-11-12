@@ -8,6 +8,7 @@ import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
 import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
 import { withAudit } from '@/lib/activity-log';
+import { providerCustomerIds } from '@/lib/broadcast';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -63,6 +64,10 @@ async function __POST(request, { params }) {
   if (!hasFeature(provider, 'posture_analysis')) return Response.json({ error: 'この機能は現在OFFになっています' }, { status: 403 });
   if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+
+  // このお店のお客様（顧客一覧に出る人）にだけ記録できる。記録はお客様のNew Me Logにも表示されるため、
+  // IDだけで他人の記録に書き込めないようにする（2026-11-12）
+  if (!(await providerCustomerIds(supabase, provider)).has(params.user_id)) return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
 
   const { photo_base64, media_type, note, staff_id } = await request.json();
   if (!photo_base64 || !media_type) return Response.json({ error: '写真データが必要です' }, { status: 400 });
