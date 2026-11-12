@@ -12248,15 +12248,16 @@ export default function ProviderDashboardPage() {
       }
     }
 
-    function visitModalRowHtml(idx, presetName) {
+    function visitModalRowHtml(idx, presetName, presetAmount) {
       const preset = _salesServicesCache.find(s => s.name === presetName);
+      const amount = presetAmount !== undefined ? presetAmount : (preset ? preset.price : '');
       const menuOptions = ['<option value="">メニューを選択（任意）</option>']
         .concat(_salesServicesCache.map(s => `<option value="${esc(s.name)}" data-amount="${s.price}"${s.name === presetName ? ' selected' : ''}>${esc(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`))
         .join('');
       return `
         <div class="visit-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
           <select class="vr-menu" style="flex:1 1 180px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">${menuOptions}</select>
-          <input class="vr-amount" type="number" min="1" placeholder="金額" value="${preset ? preset.price : ''}" style="width:110px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+          <input class="vr-amount" type="number" min="1" placeholder="金額" value="${esc(amount)}" style="width:110px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
           <button type="button" class="vr-del" style="padding:6px 10px;background:#f3f4f6;color:#6b7280;border:none;border-radius:8px;font-size:12px;cursor:pointer;">×</button>
         </div>`;
     }
@@ -12265,11 +12266,37 @@ export default function ProviderDashboardPage() {
       const alreadyVisited = !!opts?.alreadyVisited;
       const existing = document.getElementById('visit-modal-overlay'); if (existing) existing.remove();
       await loadSalesModalOptions();
-      const r = _requestsById[id] || {};
+      let r = _requestsById[id] || {};
+      // 予約カレンダーから開いた時など、一覧に無い・メニューや担当が分からない時は予約そのものを読み直す
+      if (!r.id || !('service_id' in r) || !('staff_id' in r)) {
+        try {
+          const res = await fetch(`/api/reservations/${id}`, { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+          if (res.ok) r = { ...r, ...(await res.json()) };
+        } catch {}
+      }
+      // 予約時のメニュー：メニューのIDで探し、無ければメモの【メニュー】（「カット（単発 ¥5,000）」の形）から名前で探す
+      // （2026-11-12 渡邉報告：お客様が選んだメニュー・スタッフが来店確認に入っていなかった。名前の完全一致で探していたため外れていた）
       const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
-      const presetName = menuMatch ? menuMatch[1].trim() : '';
+      const menuText = menuMatch ? menuMatch[1].trim() : '';
+      const byNote = menuText ? (_salesServicesCache.find(s => s.name === menuText)
+        || _salesServicesCache.find(s => s.name === menuText.replace(/[（(][^（()）]*[）)]\s*$/, '').trim())
+        || [..._salesServicesCache].sort((a, b) => b.name.length - a.name.length).find(s => s.name && menuText.startsWith(s.name))) : null;
+      const presetSvc = (r.service_id && _salesServicesCache.find(s => s.id === r.service_id)) || byNote;
+      const presetName = presetSvc ? presetSvc.name : '';
+      // チケット・回数券で予約した時は、その場の支払いは無いので金額は空にしておく
+      const usedTicket = !!r.package_id || /チケットを使用/.test(menuText);
+      const presetAmount = usedTicket ? '' : undefined;
+      const presetStaff = r.staff_id && _salesStaffCache.some(s => s.id === r.staff_id) ? r.staff_id : '';
 
-      const staffOptions = ['<option value="">スタッフ（任意）</option>'].concat(_salesStaffCache.map(s => `<option value="${s.id}">${esc(s.name)}</option>`)).join('');
+      // 予約時にメニューが決まっている（またはチケット・回数券を使う）予約は、確認の画面を出さずに
+      // その場で来店確認と売上の記録まで済ませる（2026-11-12 渡邉判断：「メニューとか決まってるなら、その画面いらない」）。
+      // 違っていた時は売上管理から直せる。メニューが分からない予約だけ、今までどおり画面で選んでもらう
+      if (!opts?.form && (usedTicket || presetSvc)) {
+        await quickVisit(id, { svc: usedTicket ? null : presetSvc, staffId: presetStaff || null, alreadyVisited });
+        return;
+      }
+
+      const staffOptions = ['<option value="">スタッフ（任意）</option>'].concat(_salesStaffCache.map(s => `<option value="${s.id}"${s.id === presetStaff ? ' selected' : ''}>${esc(s.name)}</option>`)).join('');
       const overlay = document.createElement('div');
       overlay.id = 'visit-modal-overlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -12277,7 +12304,8 @@ export default function ProviderDashboardPage() {
         <div style="background:#fff;border-radius:18px;padding:28px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
           <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">${alreadyVisited ? 'チェックイン済みです' : '来店を確認'}</h2>
           <p style="font-size:13px;color:#6b7280;margin:0 0 18px">${alreadyVisited ? 'QRチェックインと同時に予約も来店確認済みです。実際にご利用いただいたメニュー・金額を記録してください。' : '実際にご利用いただいたメニュー・金額を確認してください。予約時の内容から自動で入っていますが、変更・追加できます。'}</p>
-          <div id="visit-rows">${visitModalRowHtml(0, presetName)}</div>
+          ${usedTicket ? '<p style="font-size:12.5px;color:#1a1410;margin:-8px 0 12px">この予約はチケット・回数券を使っています。別にお支払いがあった時だけ金額を入れてください。</p>' : ''}
+          <div id="visit-rows">${visitModalRowHtml(0, presetName, presetAmount)}</div>
           <button type="button" id="visit-add-row-btn" style="font-size:12px;padding:6px 12px;background:none;border:1px dashed #d1d5db;border-radius:8px;color:#6b7280;cursor:pointer;margin-bottom:14px;">＋ メニューを追加</button>
           <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">担当スタッフ（任意）</label>
           <select id="visit-staff" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px">${staffOptions}</select>
@@ -12303,6 +12331,40 @@ export default function ProviderDashboardPage() {
       });
       wireVisitRowEvents();
     };
+
+    const _quickVisitBusy = new Set(); // 2回押しで売上が二重にならないように
+    async function quickVisit(id, opts) {
+      if (_quickVisitBusy.has(id)) return;
+      _quickVisitBusy.add(id);
+      try { await quickVisitInner(id, opts); } finally { _quickVisitBusy.delete(id); }
+    }
+    async function quickVisitInner(id, { svc, staffId, alreadyVisited }) {
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` };
+      let autoConsumedPackage = null;
+      if (!alreadyVisited) {
+        const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'visited' }) });
+        if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+        autoConsumedPackage = (await res.json().catch(() => ({})))?.auto_consumed_package || null;
+      }
+      let recorded = '';
+      if (svc && Number(svc.price) > 0) {
+        const res = await fetch('/api/provider/sales-entries', { method: 'POST', headers, body: JSON.stringify({ items: [{ reservation_id: id, amount: svc.price, menu_name: svc.name, staff_id: staffId, payment_method: null }] }) });
+        recorded = res.ok ? `${svc.name} ¥${Number(svc.price).toLocaleString()}を売上に記録しました` : '売上の記録はできませんでした（売上管理から入れてください）';
+      }
+      await loadRequests();
+      window.__calReloadWeek?.();
+      const msg = [
+        alreadyVisited ? 'チェックイン済みです' : '来店を確認しました',
+        autoConsumedPackage ? `${autoConsumedPackage.packageName}を1回使いました` : '',
+        recorded,
+      ].filter(Boolean).join('。');
+      const t = document.createElement('div');
+      t.setAttribute('role', 'status');
+      t.style.cssText = 'position:fixed;bottom:20px;right:20px;left:20px;max-width:420px;margin-left:auto;background:#111;color:#fff;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.6;z-index:1001';
+      t.textContent = `${msg}。${recorded ? '内容が違う時は売上管理から直せます。' : ''}`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 6000);
+    }
 
     function wireVisitRowEvents() {
       document.querySelectorAll('#visit-rows .visit-row').forEach(row => {
