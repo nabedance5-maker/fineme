@@ -27,9 +27,10 @@ export async function GET(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data } = await supabase.from('providers').select('max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, booking_horizon_days, booking_messages, require_member_registration').eq('id', provider.id).single();
+  const { data } = await supabase.from('providers').select('max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, booking_horizon_days, booking_messages, require_member_registration, auto_visit_hours').eq('id', provider.id).single();
   return Response.json({
     booking_horizon_days: horizonDays(data),
+    auto_visit_hours: data ? data.auto_visit_hours : 24, // null＝自動で来店済みにしない（2026-11-12）
     require_member_registration: !!data?.require_member_registration,
     booking_messages: { instant: bookingMessageTemplate(data, 'instant'), request: bookingMessageTemplate(data, 'request') },
     message_defaults: BOOKING_MESSAGE_DEFAULTS,
@@ -71,6 +72,15 @@ async function __PATCH(request) {
     const n = Number(body.booking_horizon_days);
     if (!Number.isInteger(n) || n < 1 || n > 365) return Response.json({ error: '1〜365日で指定してください' }, { status: 400 });
     update.booking_horizon_days = n;
+  }
+  // 確定した予約を、終わりの時刻から何時間で自動的に来店済みにするか（null＝しない。2026-11-12 渡邉要望。app/api/cron/auto-visited）
+  if ('auto_visit_hours' in body) {
+    if (body.auto_visit_hours === null || body.auto_visit_hours === '') update.auto_visit_hours = null;
+    else {
+      const n = Number(body.auto_visit_hours);
+      if (!Number.isInteger(n) || n < 1 || n > 168) return Response.json({ error: '1〜168時間で指定してください' }, { status: 400 });
+      update.auto_visit_hours = n;
+    }
   }
   // 会員登録してから予約・入会（2026-10-28。lib/store-member.js）
   if ('require_member_registration' in body) update.require_member_registration = !!body.require_member_registration;

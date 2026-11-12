@@ -8,7 +8,7 @@
     { "path": "/api/cron/cleanup-unpaid-mirror-photos", "schedule": "0 3 * * *" },
     { "path": "/api/cron/archive-activity-logs", "schedule": "0 4 * * *" },
     { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" },
-    { "path": "/api/cron/auto-visited", "schedule": "0 */2 * * *" },
+    { "path": "/api/cron/auto-visited", "schedule": "20 * * * *" },
     { "path": "/api/cron/index-submit", "schedule": "0 2 * * *" },
     { "path": "/api/cron/seo-bulk-submit", "schedule": "0 1 * * 0" },
     { "path": "/api/cron/expire-counters", "schedule": "0 * * * *" },

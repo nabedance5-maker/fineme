@@ -6834,6 +6834,8 @@ export default function ProviderDashboardPage() {
         const idreqEl = document.getElementById('mbr-set-idreq');
         const termsEl = document.getElementById('mbr-set-terms');
         if (idreqEl) idreqEl.checked = !!s.require_id_document;
+        const autoEl = document.getElementById('mbr-set-autoapprove');
+        if (autoEl) autoEl.checked = !!s.auto_approve;
         if (termsEl) termsEl.value = s.terms_text || '';
         renderTermsFile(s);
         fetch('/api/provider/booking-limits', { headers: authH() }).then(r => (r.ok ? r.json() : null)).then(d => { if (d) window.__setMemberRegToggles?.(d.require_member_registration); }).catch(() => {});
@@ -6848,6 +6850,7 @@ export default function ProviderDashboardPage() {
         const body = {
           ...billingFormValues(),
           require_id_document: document.getElementById('mbr-set-idreq')?.checked,
+          auto_approve: document.getElementById('mbr-set-autoapprove')?.checked,
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
           form_fields: ffState,
           custom_fields: cfList,
@@ -7785,6 +7788,7 @@ export default function ProviderDashboardPage() {
           if (cutoffTimeInput) cutoffTimeInput.value = d.booking_cutoff_time || '';
           updateCutoffModeFields();
           const hz = document.getElementById('booking-horizon-input'); if (hz) hz.value = d.booking_horizon_days ?? 60;
+          const av = document.getElementById('auto-visit-hours'); if (av) av.value = d.auto_visit_hours == null ? '' : String(d.auto_visit_hours);
           setMemberRegToggles(d.require_member_registration);
           window.__bookingMsgDefaults = d.message_defaults || {};
           const mi = document.getElementById('booking-msg-instant'); if (mi) mi.value = d.booking_messages?.instant || '';
@@ -7839,6 +7843,10 @@ export default function ProviderDashboardPage() {
         if (msg) { msg.style.color = res.ok ? '#15803d' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : (d.error || '保存に失敗しました'); }
         return res.ok;
       }
+      document.getElementById('auto-visit-save-btn')?.addEventListener('click', () => {
+        const v = document.getElementById('auto-visit-hours')?.value;
+        patchBookingLimits({ auto_visit_hours: v === '' ? null : Number(v) }, 'auto-visit-msg');
+      });
       document.getElementById('booking-horizon-save-btn')?.addEventListener('click', () => {
         const n = Number(document.getElementById('booking-horizon-input')?.value);
         if (!Number.isInteger(n) || n < 1 || n > 365) { const m = document.getElementById('booking-horizon-msg'); if (m) { m.style.color = '#ef4444'; m.textContent = '1〜365の整数で入れてください'; } return; }
@@ -17795,6 +17803,20 @@ export default function ProviderDashboardPage() {
               <span id="booking-horizon-msg" className="muted" style={{ fontSize: '12px' }}></span>
             </div>
 
+            {/* 来店確認の押し忘れ（渡邉要望 2026-11-12）。確定した予約を、終わりの時刻から指定の時間で自動的に来店済みにする */}
+            <div className="form-field" style={{ marginBottom: 0, maxWidth: '420px', marginTop: '16px' }}>
+              <label>来店確認を押し忘れた予約を、自動で来店済みにする</label>
+              <select id="auto-visit-hours" defaultValue="24" style={{ maxWidth: '260px' }}>
+                <option value="">自動にしない</option>
+                {[1, 2, 3, 6, 12, 24, 48, 72].map(h => <option key={h} value={String(h)}>予約の終わりから{h}時間後</option>)}
+              </select>
+              <span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>確定した予約のまま来店確認されていないものを、自動で来店済みにします（New Me Logの来店日やチケットも、来店確認を押した時と同じように反映されます）。お客様へのお礼の連絡は送りません。来ていなかった予約は、あとから予約を開いて「無断キャンセル」に直せます。既定は24時間後。</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+              <button type="button" className="btn btn-ghost" id="auto-visit-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
+              <span id="auto-visit-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+
             {/* 会員登録してから予約・入会（でお要望 2026-10-28） */}
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', marginTop: '16px' }}>
               <input type="checkbox" data-member-reg-toggle="1" style={{ marginTop: '3px' }} />
@@ -19356,6 +19378,11 @@ export default function ProviderDashboardPage() {
             <div id="mbr-set-billing" style={{ padding: '14px 16px', border: '1px solid rgba(201,168,76,.45)', borderRadius: '10px', background: 'rgba(201,168,76,.06)' }}>読み込み中…</div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-idreq" />本人確認書類（免許証・保険証・パスポート）を必須にする
+            </label>
+            {/* 入会の自動承認（渡邉要望 2026-11-12）。既定はオフ（お店が内容を確認してから承認） */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <input type="checkbox" id="mbr-set-autoapprove" style={{ marginTop: '3px' }} />
+              <span>お客様のカード登録が済んだら、承認を待たずに入会を確定する（自動承認）<br /><span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>その場で初回のお支払いが始まります。本人確認書類や入力内容は、入会が確定した後に「入会手続き」で確認することになります。お支払いができなかった・選んだロッカーが埋まっていた時は自動で確定せず、今までどおり承認待ちで残り、メールとLINEでお知らせします。</span></span>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-allowreq" />お客様がマイページから休会・プラン変更・退会を申請できるようにする（承認するまで契約は変わりません）

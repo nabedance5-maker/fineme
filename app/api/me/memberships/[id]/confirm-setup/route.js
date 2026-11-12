@@ -2,6 +2,7 @@
 // success_urlに戻ってきた時に呼ぶ。カードの保存を確認し、仮契約（pending_approval）に
 // 進める。ここではまだ課金しない——課金は店舗の承認時（でお要望2026-09-15：
 // 「スマホ上での入力が終わると仮契約の状態になる」「店舗側で承認・完了処理を行う」）。
+// お店が自動承認をオンにしていれば、ここで入会まで確定する（2026-11-12。lib/membership-enroll.js）。
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
@@ -29,7 +30,8 @@ export async function POST(request, { params }) {
     // 承認待ちにして、お店にメール・LINEで知らせる（webhook と共通。どちらが先でも1回だけ。lib/membership-enroll.js）
     const r = await completeEnrollmentSetup(supabase, stripe, id);
     if (r.error) return Response.json({ error: r.error }, { status: r.status || 409 });
-    return Response.json(r.membership);
+    // 画面に要るのは状態だけ（Stripeの顧客IDや請求の内訳まで返さない。2026-11-12）
+    return Response.json({ id: r.membership.id, status: r.membership.status });
   } catch (e) {
     console.error('[memberships confirm-setup]', e);
     return Response.json({ error: '確認に失敗しました: ' + e.message }, { status: 500 });

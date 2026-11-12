@@ -108,7 +108,11 @@ export default function JoinMembershipPage() {
     const res = await fetch(`/api/me/memberships/${mid}/confirm-setup`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     setSubmitting(false);
     if (res.ok) {
-      setResultMessage('仮契約が完了しました！店舗の確認・承認をお待ちください。承認され次第、登録したカードでお支払いが開始されます。');
+      const d = await res.json().catch(() => ({}));
+      // お店が自動承認をオンにしている時は、この時点で入会が確定している（2026-11-12）
+      setResultMessage(d.status === 'active'
+        ? '入会手続きが完了しました！登録したカードでお支払いが始まります。ご来店をお待ちしています。'
+        : '仮契約が完了しました！店舗の確認・承認をお待ちください。承認され次第、登録したカードでお支払いが開始されます。');
       setStep(99);
     } else {
       const d = await res.json().catch(() => ({}));

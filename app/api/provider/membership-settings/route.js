@@ -31,6 +31,7 @@ export async function GET(request) {
     ...normalizeCycle(data), // 請求日・初月の扱い・退会の締め日（でお指摘 2026-10-27）
     initial_fee_timing: data?.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval', // 入会金をいつ請求するか（2026-10-27）
     require_id_document: data?.require_id_document ?? true,
+    auto_approve: !!data?.auto_approve, // カード登録が済んだら自動で入会を確定する（2026-11-12）
     allow_online_requests: data?.allow_online_requests ?? true,
     form_fields: normalizeFormFields(data?.form_fields),
     custom_fields: data?.custom_fields || [],
@@ -60,6 +61,7 @@ async function __PATCH(request) {
   }
   if ('initial_fee_timing' in body) update.initial_fee_timing = body.initial_fee_timing === 'first_dues' ? 'first_dues' : 'approval';
   if ('require_id_document' in body) update.require_id_document = !!body.require_id_document;
+  if ('auto_approve' in body) update.auto_approve = !!body.auto_approve;
   if ('allow_online_requests' in body) update.allow_online_requests = !!body.allow_online_requests;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;
   // 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
