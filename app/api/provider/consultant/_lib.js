@@ -51,7 +51,7 @@ export async function loadState(provider) {
     gatherContext(supabase, provider),
     supabase.from('provider_consultant_step_state').select('step_key, status, until').eq('provider_id', provider.id),
     supabase.from('provider_consultant_bottlenecks').select('id, category, label, minutes_per_week, source, status, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(30),
-    supabase.from('provider_consultant_settings').select('interview_done_at, goals, goal_note, facts, memory_summary, summarized_until').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_consultant_settings').select('interview_done_at, goals, goal_note, facts, memory_summary, summarized_until, web_profile').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_consultant_plans').select('goal_text, diagnosis, strategy, generated_at').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_consultant_tasks').select('id, title, why, cadence, due_date, period_key, tab, source, status, done_at, created_at')
       .eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(120),
@@ -75,6 +75,7 @@ export async function loadState(provider) {
     goalOptions: GOAL_OPTIONS,
     goalText,
     facts: settingsRes.data?.facts || [],
+    webProfile: settingsRes.data?.web_profile || '',
     memorySummary: settingsRes.data?.memory_summary || '',
     summarizedUntil: settingsRes.data?.summarized_until || null,
     goalHistory: memory.goalHistory,

@@ -99,6 +99,54 @@ function HistorySection({ refreshKey }) {
   );
 }
 
+// お店の公式サイト・SNSのURLを入れると、AIが読んで「どんなお店か」を学ぶ（2026-11-13 渡邉提案）
+function WebLearnSection() {
+  const [d, setD] = useState(null);
+  const [urls, setUrls] = useState(['']);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    api('/web').then(x => { setD(x); setUrls(x.urls?.length ? [...x.urls, ...(x.urls.length < x.max ? [''] : [])] : ['']); }).catch(() => {});
+  }, []);
+  async function save() {
+    setBusy(true); setMsg('ページを読んでいます（1分ほどかかることがあります）…');
+    try {
+      const x = await api('/web', { method: 'PUT', body: JSON.stringify({ urls: urls.map(u => u.trim()).filter(Boolean) }) });
+      setD(prev => ({ ...prev, ...x }));
+      setMsg(x.profile ? '読み取りました。次の見立てから、このお店らしさを踏まえて考えます。' : x.urls?.length ? 'ページを読めませんでした。下の理由を確かめてください。' : 'URLを外しました。');
+      notifyChanged();
+    } catch (e) { setMsg(e.message); }
+    setBusy(false);
+  }
+  const max = d?.max || 6;
+  return (
+    <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+      <h3 style={{ margin: 0, fontSize: '16px' }}>お店のことをAIに教える</h3>
+      <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>公式サイト・Instagram・X・Googleマップ・ブログなどのURLを入れると、AIがページを読んで、コンセプト・強み・お客様・発信の雰囲気を学びます。見立てや声かけの文面が、このお店らしくなります。InstagramやXはログインしないと読めない部分が多く、プロフィールの説明くらいしか読めないことがあります。</p>
+      <div className="stack" style={{ gap: '6px' }}>
+        {urls.map((u, i) => (
+          <input key={i} className="cp-input" type="url" inputMode="url" placeholder="https://" value={u} aria-label={`URL ${i + 1}`}
+            onChange={e => { const n = [...urls]; n[i] = e.target.value; if (i === n.length - 1 && e.target.value && n.length < max) n.push(''); setUrls(n); }} />
+        ))}
+      </div>
+      <div className="fx-actions">
+        <button type="button" className="fx-pill-gold" disabled={busy} onClick={save}>{busy ? '読んでいます…' : '保存して読み込む'}</button>
+        {d?.fetched_at && <span className="cc-muted">最後に読んだ日時：{new Date(d.fetched_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+      </div>
+      {msg && <p className="cc-muted" role="status">{msg}</p>}
+      {(d?.sources || []).length > 0 && (
+        <ul className="cc-results">{d.sources.map((x, i) => <li key={i}><span>{x.kind}：{x.url.replace(/^https?:\/\//, '').slice(0, 40)}</span><span>{x.ok ? '読めました' : x.reason}</span></li>)}</ul>
+      )}
+      {d?.profile && (
+        <details>
+          <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>AIが読み取ったこのお店</summary>
+          <p className="cp-prose" style={{ whiteSpace: 'pre-wrap', margin: '8px 0 0' }}>{d.profile}</p>
+        </details>
+      )}
+    </section>
+  );
+}
+
 export default function ConsultantPanel() {
   const { data, error, setError, planning, busy, chatLog, load, replan, run, setTaskStatus, addTask, saveGoal, sendChat } = useConsultant();
   const [editingGoal, setEditingGoal] = useState(false);
@@ -227,6 +275,8 @@ export default function ConsultantPanel() {
           <p className="muted" style={{ margin: 0, fontSize: '13.5px' }}>お店のデータと今日の日付を見て、見立てと今日の作業を考えています。30秒ほどかかります。</p>
         </section>
       )}
+
+      <WebLearnSection />
 
       {(hasWeekly || (!needsGoal && diagnosis)) && (
         <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
