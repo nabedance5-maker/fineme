@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
 import { MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
-import { OutreachCard, OutreachResults, SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
+import { OutreachCard, OutreachResults, ProposalCard, SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
 const GOAL_EXAMPLES = [
   '初めて来たお客様に、2回目も来てもらえるようにしたい',
@@ -375,7 +375,7 @@ export default function ConsultantPanel() {
         )}
         <div className="cp-chat-log" ref={logRef}>
           {chatLog.length === 0 && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のことを何でも相談してください。「今月は何に力を入れるべき？」「このスタッフに何を任せればいい？」「やってみたけどうまくいかなかった」など。決めたことはやることに記録します。</p>}
-          {chatLog.map((m, i) => <div key={i} style={{ display: 'contents' }}><div className={`cp-msg is-${m.role}`}>{m.content}</div>{(m.proposals || []).map(p => <OutreachCard key={p.stage} stage={p.stage} label={p.label} body={p.body} />)}</div>)}
+          {chatLog.map((m, i) => <div key={i} style={{ display: 'contents' }}><div className={`cp-msg is-${m.role}`}>{m.content}</div>{(m.proposals || []).map((p, j) => <ProposalCard key={j} p={p} />)}</div>)}
           {busy && <div className="cp-msg is-assistant">考えています…</div>}
         </div>
         <form className="cp-chat-form" onSubmit={e => { e.preventDefault(); const t = chatInput; setChatInput(''); sendChat(t); }}>

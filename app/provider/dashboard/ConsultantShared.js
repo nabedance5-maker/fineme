@@ -210,6 +210,75 @@ export function OutreachCard({ stage, label, body: initialBody, onSent }) {
   );
 }
 
+// AIコンサルが会話の中で用意した作業のカード（2026-11-12 渡邉要望：相談役だけでなく、管理画面の作業を代わりにやる）。
+// 変える作業は「実行」を押した時だけ動く。お客様を探す結果は、名前を押すと顧客情報が開く
+export function ProposalCard({ p }) {
+  if (!p) return null;
+  if (!p.kind || p.kind === 'outreach') return <OutreachCard stage={p.stage} label={p.label} body={p.body} />;
+  if (p.kind === 'find') return <FindCard p={p} />;
+  return <ActCard p={p} />;
+}
+
+function FindCard({ p }) {
+  return (
+    <div className="cc-send">
+      <div className="cc-send-head"><strong>{p.label}</strong><span>{p.total}人{p.total > p.people.length ? `（先頭の${p.people.length}人）` : ''}</span></div>
+      {p.people.length ? (
+        <ul className="cc-results">
+          {p.people.map(c => (
+            <li key={c.user_id}>
+              <button type="button" className="cc-link" onClick={() => (window.openCustomerModal ? window.openCustomerModal(c.user_id, 'member', c.name) : goToTab('customers'))}>{c.name}</button>
+              <span>顧客情報を開く</span>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="cc-muted">該当するお客様はいません。</p>}
+      <div className="cc-send-row"><button type="button" className="cc-link" onClick={() => goToTab('customers')}>メンバーの画面を開く</button></div>
+    </div>
+  );
+}
+
+function ActCard({ p }) {
+  const [state, setState] = useState('idle');
+  const [msg, setMsg] = useState('');
+  const [warn, setWarn] = useState([]);
+  const isShift = p.kind === 'shift';
+  const title = isShift ? `${p.from}〜${p.to}のシフトを自動で作る` : `${p.date}の予約${p.count}件を来店済みにする`;
+  const note = isShift
+    ? '確定していない日だけ作ります。作った後、シフトの画面で確かめてから確定してください。'
+    : '確定済みで時間が始まった予約だけが対象です。お礼の連絡・チケットの消化は、いつもの来店確認と同じように行われます。';
+  async function go() {
+    if (!window.confirm(`${title}。よろしいですか？`)) return;
+    setState('running'); setMsg('');
+    try {
+      const r = await api('/act', { method: 'POST', body: JSON.stringify(isShift ? { kind: 'shift', from: p.from, to: p.to } : { kind: 'visit', date: p.date }) });
+      setState('done'); setMsg(r.message || '終わりました'); setWarn(r.warnings || []);
+      notifyChanged();
+      if (isShift) window.dispatchEvent(new Event('shift:changed'));
+      else window.__calReloadWeek?.();
+    } catch (e) { setState('idle'); setMsg(e.message); }
+  }
+  if (!isShift && !p.count) return <div className="cc-send is-done"><p className="cc-send-msg">{p.date}は、来店済みにできる予約がありません。</p></div>;
+  return (
+    <div className={`cc-send${state === 'done' ? ' is-done' : ''}`}>
+      <div className="cc-send-head"><strong>{title}</strong>{isShift && <span>{p.days}日</span>}</div>
+      {!isShift && p.people?.length > 0 && (
+        <ul className="cc-results">{p.people.map(c => <li key={c.id}><span>{c.time}</span><span>{c.name}</span></li>)}</ul>
+      )}
+      {state !== 'done' && <p className="cc-muted">{note}</p>}
+      {state !== 'done' ? (
+        <div className="cc-send-row">
+          <button type="button" className="cc-send-btn" disabled={state === 'running'} onClick={go}>{state === 'running' ? '実行しています…' : isShift ? 'シフトを作る' : '来店済みにする'}</button>
+        </div>
+      ) : (
+        <div className="cc-send-row"><button type="button" className="cc-link" onClick={() => goToTab(isShift ? 'shift' : 'calendar')}>{isShift ? 'シフトの画面を開く' : '予約カレンダーを開く'}</button></div>
+      )}
+      {msg && <p className="cc-send-msg">{msg}</p>}
+      {warn.length > 0 && <ul className="cc-results">{warn.map((w, i) => <li key={i}><span>{w}</span></li>)}</ul>}
+    </div>
+  );
+}
+
 // 送った声かけと、その後に予約が入った人数
 export function OutreachResults({ list }) {
   if (!list?.length) return null;
