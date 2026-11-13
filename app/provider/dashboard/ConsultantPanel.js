@@ -164,7 +164,7 @@ export default function ConsultantPanel() {
     );
   }
 
-  const { goalText, needsGoal, diagnosis, focus, questions, stageActions, generatedAt, tasks, tabLabels, stages, timeText, kpis, readiness, bottlenecks, savedMinutesPerWeek, facts, premise, outreach } = data;
+  const { goalText, needsGoal, diagnosis, focus, questions, stageActions, generatedAt, tasks, tabLabels, stages, timeText, kpis, readiness, bottlenecks, savedMinutesPerWeek, facts, premise, outreach, roadmap } = data;
   const showGoalEditor = editingGoal || needsGoal;
   const openBottlenecks = bottlenecks.filter(b => b.status === 'open');
   const catLabel = key => BOTTLENECK_CATEGORIES.find(c => c.key === key)?.label || key;
@@ -239,6 +239,19 @@ export default function ConsultantPanel() {
             </div>
           ) : (
             <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のゴールを書くと、AIがこの数字とお客様の来店間隔から見立てを出します。</p>
+          )}
+          {!needsGoal && roadmap?.kpi && (
+            <div className="cp-road" aria-label="ゴールまでの道筋">
+              <div className="cp-kicker">ゴールまでの道筋</div>
+              <div className="cp-road-kpi">
+                <strong>{roadmap.kpi}</strong>
+                <span><span className="cp-road-now">今 {roadmap.current}</span> → <span className="cp-road-target">目標 {roadmap.target}</span>{roadmap.deadline ? `（${roadmap.deadline}まで）` : ''}</span>
+              </div>
+              {roadmap.reason && <p className="cc-muted" style={{ margin: 0 }}>{roadmap.reason}</p>}
+              {roadmap.milestones?.length > 0 && (
+                <ol className="cp-road-steps">{roadmap.milestones.map((m, i) => <li key={i}><b>{m.when}</b><span>{m.goal}</span></li>)}</ol>
+              )}
+            </div>
           )}
           {!needsGoal && diagnosis && (
             <div className="fx-actions">
@@ -526,6 +539,13 @@ const PANEL_CSS = `
   .cp-learned { white-space: pre-wrap; font-size: 13.5px; line-height: 1.8; background: rgba(26,20,16,0.04); border-radius: 10px; padding: 12px 14px; }
   .cp-done { margin: 8px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: rgba(26,20,16,0.7); }
   .cp-stages { display: flex; flex-direction: column; gap: 8px; }
+  .cp-road { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid rgba(26,20,16,0.14); border-radius: 12px; background: #fff; }
+  .cp-road-kpi { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #1a1410; }
+  .cp-road-kpi > span { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .cp-road-now { font-weight: 700; }
+  .cp-road-target { font-weight: 800; }
+  .cp-road-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .cp-road-steps li { display: grid; grid-template-columns: 56px 1fr; gap: 8px; font-size: 13px; line-height: 1.6; padding: 6px 10px; border-radius: 8px; background: rgba(26,20,16,0.04); }
   .cp-stage { border: 1px solid rgba(26,20,16,0.14); border-radius: 12px; overflow: hidden; background: #fff; }
   .cp-stage-head { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; background: none; border: none; cursor: pointer; text-align: left; font: inherit; color: #1a1410; }
   .cp-stage-count { flex: 0 0 56px; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }

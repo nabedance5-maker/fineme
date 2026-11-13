@@ -8,6 +8,7 @@ import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide } from '@/lib/consu
 import { VALID_TABS, periodKeys, jstNow, STAGES } from '@/lib/consultant-insight';
 import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
 import { freeJson } from '@/lib/ai';
+import { deepStoreAnalysis } from '@/lib/consultant-deep';
 import { shiftDates, visitCandidates, findCustomers, FIND_SEGMENTS, todayJst, resolveCustomers, resolveService, resolveStaff, resolvePackage, upcomingReservations, numbersForPrompt } from '@/lib/consultant-actions';
 
 const HISTORY_LIMIT = 14;
@@ -270,10 +271,12 @@ export async function POST(request) {
     loadState(provider),
     supabase.from('provider_consultant_messages').select('role, content').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(HISTORY_LIMIT),
   ]);
+  state.deep = await deepStoreAnalysis(supabase, provider).catch(() => '');
   const history = (histRes.data || []).reverse();
   while (history.length && history[0].role !== 'user') history.shift();
 
-  const diagnosis = state.plan?.diagnosis ? `\n\n【これまでの見立て】\n${state.plan.diagnosis}${state.plan.strategy?.focus ? `\n今の焦点：${state.plan.strategy.focus}` : ''}` : '';
+  const road = state.plan?.strategy?.roadmap;
+  const diagnosis = state.plan?.diagnosis ? `\n\n【これまでの見立て】\n${state.plan.diagnosis}${state.plan.strategy?.focus ? `\n今の焦点：${state.plan.strategy.focus}` : ''}${road?.kpi ? `\n道筋：${road.kpi}を${road.current}から${road.target}へ${road.deadline ? `（${road.deadline}まで）` : ''}。相談への答えも、この道筋に結びつけ、このお店の数字・メニュー・担当を根拠にする（一般論だけで答えない）` : ''}` : '';
   const system = `${CONSULTANT_ROLE}
 
 今回は店舗との会話です。店舗の質問や状況の変化に、上の原則にそって答えます。

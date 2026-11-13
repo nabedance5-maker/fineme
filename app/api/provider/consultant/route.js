@@ -29,6 +29,7 @@ export async function GET(request) {
     facts: state.facts,
     diagnosis: state.plan?.diagnosis || '',
     focus: state.plan?.strategy?.focus || '',
+    roadmap: state.plan?.strategy?.roadmap || null,
     stageActions: state.plan?.strategy?.stage_actions || [],
     questions: state.plan?.strategy?.questions || [],
     generatedAt: state.plan?.generated_at || null,

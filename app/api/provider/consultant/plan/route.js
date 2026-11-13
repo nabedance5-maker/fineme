@@ -6,6 +6,7 @@ import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide, STAGE_KEYS } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
 import { freeJson } from '@/lib/ai';
+import { deepStoreAnalysis } from '@/lib/consultant-deep';
 
 // まず OpenRouter の無料モデルで作り、失敗した時だけ Claude Haiku（渡邉判断 2026-11-10。振り分けの考え方は lib/ai.js）
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -16,7 +17,20 @@ const PLAN_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      diagnosis: { type: 'string', description: '現状の見立て。実データから読み取れること、ゴールまでの距離、いちばんの課題と機会。3〜5文。データが乏しければそう述べる' },
+      diagnosis: { type: 'string', description: '現状の見立て。このお店の数字（初回→2回目の率・メニュー別/担当別の差・次回予約の率・来店の間隔など）から読み取れる、ゴールまでの距離と、いちばん効く課題（ボトルネック）。前回の道筋があれば指標がどう動いたか。3〜5文。データが乏しければそう述べる' },
+      roadmap: {
+        type: 'object',
+        description: 'ゴールまでの道筋。いちばん効く課題を1つの指標にし、今の値・目標・期限を数字で決め、今週・今月・3か月の節目を置く',
+        properties: {
+          kpi: { type: 'string', description: '追う指標（例：初回のお客様が90日以内に2回目に来る率）' },
+          current: { type: 'string', description: '今の値（データから。分からなければ「まだ測れない」とし、測るための作業をタスクに入れる）' },
+          target: { type: 'string', description: '目標の値' },
+          deadline: { type: 'string', description: '期限 YYYY-MM-DD' },
+          reason: { type: 'string', description: 'なぜこの指標がこのお店のゴールにいちばん効くか（データを根拠に一文）' },
+          milestones: { type: 'array', items: { type: 'object', properties: { when: { type: 'string', enum: ['今週', '今月', '3か月'] }, goal: { type: 'string', description: 'その時点で達成していたいこと（数字があれば数字で）' } }, required: ['when', 'goal'] } },
+        },
+        required: ['kpi', 'current', 'target', 'milestones'],
+      },
       focus: { type: 'string', description: '今の時期（月初/月末・曜日・季節や行事）を踏まえて、今月・今週に集中すべきこと。2〜3文' },
       stage_actions: {
         type: 'array',
@@ -38,7 +52,8 @@ const PLAN_TOOL = {
           type: 'object',
           properties: {
             title: { type: 'string', description: '誰が・何をするかが分かる一文（70字以内）' },
-            why: { type: 'string', description: 'このタスクがゴールにどう効くか（一文）' },
+            why: { type: 'string', description: 'このタスクが道筋の指標をどう動かすか（一文）' },
+            evidence: { type: 'string', description: 'このお店のどの数字・メニュー・担当・段階を根拠にしたか（例：「カットの初回は2回目に来る率が20%と低い」）。必須' },
             cadence: { type: 'string', enum: ['daily', 'weekly', 'monthly', 'once'] },
             due_in_days: { type: 'integer', description: 'cadence が once の時だけ。何日後までにやるか' },
             tab: { type: 'string', description: `作業に使う Fineme の画面があれば、そのキー。無ければ空。選べるキー：${tabGuide()}` },
@@ -49,11 +64,16 @@ const PLAN_TOOL = {
       drop_task_ids: { type: 'array', items: { type: 'string' }, description: '状況が変わって不要になった未完了タスクのid' },
       questions: { type: 'array', items: { type: 'string' }, description: 'さらに精度を上げるために店舗に聞きたいこと。最大2つ。無ければ空' },
     },
-    required: ['diagnosis', 'focus', 'tasks'],
+    required: ['diagnosis', 'focus', 'roadmap', 'tasks'],
   },
 };
 
 const clean = (s, n) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, n);
+const roadmapOf = r => (r?.kpi ? {
+  kpi: clean(r.kpi, 120), current: clean(r.current, 80), target: clean(r.target, 80),
+  deadline: /^\d{4}-\d{2}-\d{2}$/.test(r.deadline || '') ? r.deadline : null, reason: clean(r.reason, 240),
+  milestones: (Array.isArray(r.milestones) ? r.milestones : []).filter(m => ['今週', '今月', '3か月'].includes(m?.when) && m.goal).slice(0, 3).map(m => ({ when: m.when, goal: clean(m.goal, 160) })),
+} : null);
 
 export async function POST(request) {
   const provider = await authProvider(request);
@@ -63,6 +83,7 @@ export async function POST(request) {
 
   const body = await request.json().catch(() => ({}));
   const state = await loadState(provider);
+  state.deep = await deepStoreAnalysis(supabase, provider).catch(e => { console.warn('[consultant plan] deep analysis failed:', e?.message); return ''; });
   if (!state.goalText) return Response.json({ error: 'まずお店のゴールを書いてください' }, { status: 400 });
 
   const recentlyMade = state.plan?.generated_at && Date.now() - new Date(state.plan.generated_at).getTime() < 45000 && state.plan.goal_text === state.goalText;
@@ -80,11 +101,19 @@ export async function POST(request) {
 
   const context = buildContext({ ...state, tasks: state.tasks.filter(t => t.bucket !== 'missed') }, provider);
   const missedLines = missed.length ? `\n\n【期間内にできなかったタスク（今回閉じた）】\n${missed.slice(0, 12).map(t => `- ${t.title}`).join('\n')}\n同じ内容を繰り返すより、なぜ続かなかったかを考えて、小さくする・担当を変える・やめる判断も含めて組み立て直してください。` : '';
-  const prevPlan = state.plan?.diagnosis ? `\n\n【前回の見立て】\n${state.plan.diagnosis}\n前回から状況がどう動いたか（段階の人数・売上・予約・時期の変化）を踏まえて、見立てを更新してください。これまでの見立て・ゴールの変遷・タスクの実績・学んだことも踏まえ、店舗に合うやり方へ寄せていってください。` : '';
+  const rm = state.plan?.strategy?.roadmap;
+  const prevRoad = rm?.kpi ? `\n\n【前回決めた道筋】\n指標：${rm.kpi}／決めた時の値：${rm.current}／目標：${rm.target}${rm.deadline ? `（${rm.deadline}まで）` : ''}\n${(rm.milestones || []).map(m => `- ${m.when}：${m.goal}`).join('\n')}\n同じ指標を続けるのが基本。今の値を上のデータから出し直し、進み具合を見立てに書く。指標を変える時は理由を書く。` : '';
+  const prevPlan = (state.plan?.diagnosis ? `\n\n【前回の見立て】\n${state.plan.diagnosis}\n前回から状況がどう動いたか（段階の人数・売上・予約・時期の変化）を踏まえて、見立てを更新してください。これまでの見立て・ゴールの変遷・タスクの実績・学んだことも踏まえ、店舗に合うやり方へ寄せていってください。` : '') + prevRoad;
 
   const system = `${CONSULTANT_ROLE}
 
 今回の仕事：店舗のゴールに向けて、今日の時点での見立て・集中点・段階別の打ち手・タスクを submit_plan で提出する。
+考える順番（2026-11-13：どのお店にも当てはまる当たり前の助言をやめ、このお店が目標に近づく道筋を立てる）：
+1. 【このお店のリピートの流れ】【売っているもの】から、ゴールにいちばん効く課題（ボトルネック）を1つ決める。例：初回→2回目の率が低い／特定のメニュー・担当の初回だけ2回目が少ない／来店の日に次の予約を取れていない／常連の間隔が目安より長い／回数券・会員プランが通う理由になっていない。
+2. それを1つの指標（roadmap）にし、今の値・目標・期限を数字で決め、今週・今月・3か月の節目を置く。
+3. タスクは、その指標を動かすものだけ。必ずこのお店の数字・メニュー名・担当名・段階を根拠（evidence）にし、Finemeのどの道具（【Finemeでできること】）で、誰が、いつやるかまで書く。
+4. 禁止：どのお店にも言える一般論だけのタスク（「お礼を丁寧に伝える」「関係を深める」「SNSを更新する」「接客の質を上げる」など、根拠の数字が無いもの）。
+5. データが足りなくて課題が決められない時は、正直にそう言い、まず数字が取れるようにするタスク（来店確認を毎日つける・会計で次回予約を入れる・カルテを書く）を最初に出す。
 タスクの出し方：
 - 毎日の作業は、その日にやる小さな習慣だけ（最大3）。毎週・毎月の作業は、そのゴールを達成する営みとして必要なもの。
 - すでに未完了のタスクは重複して出さない。不要になったものは drop_task_ids に入れる。
@@ -105,7 +134,7 @@ export async function POST(request) {
         max_tokens: 4000,
         budget_ms: 120000,
       });
-      if (!out?.diagnosis || !out?.focus || !Array.isArray(out?.tasks)) throw new Error('missing fields');
+      if (!out?.diagnosis || !out?.focus || !Array.isArray(out?.tasks) || !out?.roadmap?.kpi) throw new Error('missing fields');
     } catch (e) {
       console.warn('[consultant plan] free model failed, fallback to Claude:', e?.message);
       out = null;
@@ -154,7 +183,7 @@ export async function POST(request) {
       rows.push({
         provider_id: provider.id,
         title,
-        why: clean(t.why, 200) || null,
+        why: clean([t.why, t.evidence ? `根拠：${t.evidence}` : ''].filter(Boolean).join('　'), 300) || null,
         cadence,
         due_date: due,
         period_key: cadence === 'once' ? null : keys[cadence],
@@ -171,7 +200,7 @@ export async function POST(request) {
       provider_id: provider.id,
       goal_text: state.goalText,
       diagnosis: clean(out.diagnosis, 1200),
-      strategy: { focus: clean(out.focus, 600), stage_actions: stageActions, questions },
+      strategy: { focus: clean(out.focus, 600), stage_actions: stageActions, questions, roadmap: roadmapOf(out.roadmap) },
       generated_at: new Date().toISOString(),
     }, { onConflict: 'provider_id' });
     if (planErr) return Response.json({ error: planErr.message }, { status: 500 });
