@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/tokusho' },
   title: '特定商取引法に基づく表記 | Fineme',
   robots: 'index,follow',
 };

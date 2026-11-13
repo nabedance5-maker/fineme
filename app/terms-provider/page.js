@@ -1,6 +1,7 @@
 import { PROVIDER_TERMS_VERSION } from '@/lib/terms-version';
 
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/terms-provider' },
   title: '契約者向け利用規約 | Fineme',
   robots: 'index,follow',
 };

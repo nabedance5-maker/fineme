@@ -1,3 +1,7 @@
+export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/provider/referral' },
+};
+
 export default function ProviderReferralPage() {
   return (
     <main>

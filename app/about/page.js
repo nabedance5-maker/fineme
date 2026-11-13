@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/about' },
   title: 'Finemeとは？ | 変容の旅のインフラ',
   description: '外見を起点に自信を再設計するためのプラットフォーム。Me Scan（8軸診断・無料・コア約3分）で地図を描き、Mirror（写真1枚のAI分析）で現在地を測る。男性向けFinemeと女性向けBelleの二つのトラックで展開しています。',
 };

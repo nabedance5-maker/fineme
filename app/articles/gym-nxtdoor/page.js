@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { AnimatedSection, HeroTitle } from './_components/ArticleClient'
 
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/articles/gym-nxtdoor' },
   title: '「変われない」と思っていた元ガリガリ男が、今日も誰かの体を変えている。| Fineme',
   description: 'JR高円寺駅徒歩7分のパーソナルジム「GYM NXT DOOR」トレーナー・後藤海へのインタビュー。',
 }

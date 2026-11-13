@@ -4,6 +4,7 @@ import { getAllBelleArticles, getAllBelleArticlesFromDB } from '@/lib/belle-arti
 export const revalidate = 3600;
 
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/belle/journal' },
   title: 'Belle Journal | Fineme Belle',
   description: '外見を起点に自信を再設計するための女性向けコンテンツ。眉・肌・髪・ファッション・ネイル・脱毛・歯・ボディの8軸で、あなたの「最初の一手」を見つける。',
   keywords: ['外見改善 女性', 'Belle Journal', 'スキンケア', '眉毛 整え方', 'ファッション 初心者'],

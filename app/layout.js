@@ -5,9 +5,8 @@ export const metadata = {
   },
   description: 'そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。外見を起点に自信を再設計するプラットフォーム。男性向けFinemeと女性向けFineme Belleの2トラックで、自分だけの変容ロードマップを手に入れる。',
   metadataBase: new URL('https://www.fineme.me'),
-  alternates: {
-    canonical: 'https://www.fineme.me',
-  },
+  // canonical はここで共通指定しない。共通で入れると、上書きしていない全ページが
+  // 「正規URL＝トップ」と宣言してしまう（2026-11-13 修正）。各ページで自分のURLを指定する。
   verification: {
     google: 'rV01Z0WUK3HqetQjrbWjrhACNGPAvOY2sWIolOtdfIc',
   },

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import PixelTrack from './_PixelTrack';
 
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/lp/mirror' },
   title: '写真1枚で「変われる余白」がわかる | Fineme Mirror',
   description: '写真をアップロードするだけ。AIが眉・肌・ヘア・表情・姿勢・体型・服装の最大7軸を分析し、今のあなたが最も変わりやすい場所を可視化します。無料プレビューあり、続きは¥500。写真は保存されません。',
   robots: { index: true, follow: true },

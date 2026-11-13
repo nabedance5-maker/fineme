@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/privacy' },
   title: 'プライバシーポリシー | Fineme',
   robots: 'index,follow',
 };

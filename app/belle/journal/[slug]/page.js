@@ -28,6 +28,7 @@ export async function generateMetadata(props) {
     title: `${article.title} | Belle Journal | Fineme Belle`,
     description: article.description,
     keywords: article.keywords,
+    alternates: { canonical: `https://www.fineme.me/belle/journal/${params.slug}` },
     openGraph: {
       title: article.title,
       description: article.description,

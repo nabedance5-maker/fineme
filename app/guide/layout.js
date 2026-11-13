@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/guide' },
   title: 'はじめての方へ — 使い方ガイド',
   description: 'Finemeの使い方を解説。Me Scan（外見診断）→ New Me Navi（変容プロファイル）→ Fineme Compass（最初の一手）の3ステップで、外見変容の旅が始まります。',
   openGraph: {

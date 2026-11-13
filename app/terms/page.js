@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/terms' },
   title: '利用規約（一般ユーザー向け） | Fineme',
   robots: 'index,follow',
 };

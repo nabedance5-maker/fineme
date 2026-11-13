@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/provider/philosophy' },
   title: 'Finemeの考え方',
   description: 'Finemeは、一度来てくださったお客様に、また来たいと思ってもらうための店舗の道具です。大切にしていることと、毎日の回し方を掲載店舗の皆さまにお伝えします。',
   openGraph: {

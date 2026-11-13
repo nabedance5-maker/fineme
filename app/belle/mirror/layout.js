@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/belle/mirror' },
   title: 'Fineme Belle Mirror — 外見変容余地マップ | Fineme Belle',
   description: '顔・全身写真をAIが分析。あなたの外見の「変われる余白」を複数軸で可視化する、Fineme Belleのビジュアル診断。',
   robots: 'index,follow',

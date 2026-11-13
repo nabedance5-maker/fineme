@@ -1,4 +1,5 @@
 export const metadata = {
+  alternates: { canonical: 'https://www.fineme.me/mirror/scoring' },
   title: 'Mirrorのスコアはどう決まる？ | Fineme',
   description: 'Fineme Mirrorのビジュアルスコアの算出方法を説明します。',
   robots: 'index,follow',
