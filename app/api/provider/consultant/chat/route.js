@@ -154,7 +154,7 @@ export async function POST(request) {
   const { message } = await request.json().catch(() => ({}));
   const text = String(message || '').trim().slice(0, 1000);
   if (!text) return Response.json({ error: 'message は必須です' }, { status: 400 });
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY && !process.env.GEMINI_FREE_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENROUTER_API_KEY && !process.env.GEMINI_FREE_API_KEY && !process.env.GROQ_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   const [state, histRes] = await Promise.all([
     loadState(provider),
