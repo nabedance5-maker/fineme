@@ -103,7 +103,7 @@ export async function POST(request) {
         messages: [{ role: 'user', content: user.replace('submit_plan を提出してください', '見立て・焦点・打ち手・タスクを JSON で返してください') }],
         schema: PLAN_TOOL.input_schema,
         max_tokens: 4000,
-        budget_ms: 80000,
+        budget_ms: 120000,
       });
       if (!out?.diagnosis || !out?.focus || !Array.isArray(out?.tasks)) throw new Error('missing fields');
     } catch (e) {

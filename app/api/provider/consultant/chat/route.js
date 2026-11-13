@@ -72,7 +72,8 @@ async function freeReply(system, messages, ctx) {
     messages,
     schema: FREE_SCHEMA,
     max_tokens: 1200,
-    budget_ms: 35000,
+    budget_ms: 60000,
+    text_fallback_key: 'reply',
   });
   const reply = String(out?.reply || '').trim();
   const actions = (Array.isArray(out?.actions) ? out.actions : []).filter(a => TOOLS.some(t => t.name === a?.name)).slice(0, 6);
@@ -205,7 +206,9 @@ ${buildContext(state, provider)}${diagnosis}`;
     ]);
     try { await maybeSummarize(supabase, provider, state); } catch (e) { console.error('consultant summarize failed:', e?.message); }
     return Response.json({ reply, changed: ctx.changed, goalChanged: ctx.goalChanged, proposals: ctx.proposals.slice(0, 3) });
-  } catch {
-    return Response.json({ error: '返答の生成に失敗しました' }, { status: 502 });
+  } catch (e) {
+    // 無料モデルが全部だめで、切り替え先の Claude も使えなかった時（クレジット切れ等）。原因をログに残す
+    console.error('[consultant chat] fallback failed:', e?.status || '', String(e?.message || e).slice(0, 200));
+    return Response.json({ error: 'AIが混み合っていて返答できませんでした。少し時間をおいてもう一度お試しください' }, { status: 502 });
   }
 }
