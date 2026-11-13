@@ -91,6 +91,7 @@ const CSS = `
 export default function Onboarding() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(-1); // -1: はじめに / 0..5: 質問 / 6: おすすめ / 7: 完了
+  const [webUrls, setWebUrls] = useState(''); // 公式サイト・SNSのURL（任意。AIコンサルがお店を学ぶため。2026-11-13）
   const [answers, setAnswers] = useState(EMPTY);
   const [locks, setLocks] = useState({});
   const [toggles, setToggles] = useState({});
@@ -164,6 +165,9 @@ export default function Onboarding() {
       if (!res.ok) { setError(data.error || '保存できませんでした。もう一度お試しください。'); setSaving(false); return; }
       setDoneSteps(data.steps || steps);
       setStep(7);
+      // 公式サイト・SNSのURLがあれば、AIコンサルに読ませる（時間がかかるので待たない）
+      const urls = webUrls.split(/[\s,、]+/).map(x => x.trim()).filter(x => /^https?:\/\//i.test(x)).slice(0, 6);
+      if (urls.length) fetch('/api/provider/consultant/web', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ urls }) }).catch(() => {});
     } catch {
       setError('通信できませんでした。電波の良いところでもう一度お試しください。');
     }
@@ -286,6 +290,11 @@ export default function Onboarding() {
                   <textarea className="pob-input" rows={3} maxLength={300} value={answers.concern}
                     placeholder="例：2回目に来てくれないお客様が多い／予約の電話で施術が止まる"
                     onChange={e => set('concern', e.target.value)} aria-label="いちばん困っていること" />
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginTop: '14px' }}>お店の公式サイト・SNSのURL（任意・1行に1つ）</label>
+                  <textarea className="pob-input" rows={3} maxLength={1200} value={webUrls}
+                    placeholder={'https://（公式サイト）\nhttps://www.instagram.com/…'}
+                    onChange={e => setWebUrls(e.target.value)} aria-label="お店の公式サイト・SNSのURL" />
+                  <p style={{ fontSize: '12px', margin: '4px 0 0', lineHeight: 1.6 }}>入れると、AI専属コンサルがページを読んで、お店のコンセプトや強み・発信の雰囲気を学びます。後からAIコンサルの画面でも変えられます。</p>
                 </>
               )}
             </div>
