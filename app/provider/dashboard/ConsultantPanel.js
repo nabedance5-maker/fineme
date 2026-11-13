@@ -4,7 +4,7 @@
 // AIが見立て・段階別の打ち手・日々のタスクを考える。Fineme の導入チェックは「準備状況」に格下げ。
 import { useEffect, useRef, useState } from 'react';
 import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
-import { MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
+import { MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged, runDashboardAction } from './consultant-api';
 import { OutreachCard, OutreachResults, ProposalCard, SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
 const GOAL_EXAMPLES = [
@@ -95,6 +95,87 @@ function HistorySection({ refreshKey }) {
             : <p className="cc-muted">相談の記録はまだありません。</p>)}
         </div>
       </details>
+    </section>
+  );
+}
+
+// 導入時の設定を、AIが定期的に見直して振り返る（2026-11-13 渡邉要望。間隔はお店が選ぶ・既定3か月）
+const fmtDate = iso => (iso ? new Date(iso).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' }) : '');
+function ReviewSection() {
+  const [d, setD] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [applied, setApplied] = useState({});
+  const tried = useRef(false);
+  async function make(force) {
+    setBusy(true); setMsg('AIが見直しています（1分ほどかかることがあります）…');
+    try {
+      const r = await api('/review', { method: 'POST', body: JSON.stringify({ force: !!force }) });
+      if (r.review) setD(prev => ({ ...prev, review: r.review, next_review_at: r.next_review_at, due: false }));
+      setMsg('');
+    } catch (e) { setMsg(e.message); }
+    setBusy(false);
+  }
+  useEffect(() => {
+    api('/review').then(x => {
+      setD(x);
+      // 期限が来ていたら、開いた時に1回だけ作る
+      if (x.due && !tried.current) { tried.current = true; make(false); }
+    }).catch(() => {});
+  }, []);
+  async function setInterval_(n) {
+    try { const r = await api('/review', { method: 'PATCH', body: JSON.stringify({ interval_months: n }) }); setD(prev => ({ ...prev, interval_months: r.interval_months, next_review_at: r.next_review_at })); }
+    catch (e) { setMsg(e.message); }
+  }
+  async function applyFeature(c) {
+    if (!window.confirm(`「${c.label}」を${c.on ? 'オン' : 'オフ'}にします。よろしいですか？`)) return;
+    try { await runDashboardAction('PATCH', '/api/provider/features', { [c.key]: c.on }); setApplied(a => ({ ...a, [c.key]: true })); notifyChanged(); }
+    catch (e) { setMsg(e.message); }
+  }
+  if (!d) return null;
+  const rv = d.review?.content;
+  return (
+    <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+      <h3 style={{ margin: 0, fontSize: '16px' }}>定期の見直し</h3>
+      <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>導入の時に答えた内容と、今の使い方・数字を、AIが定期的に見直します。合っていない設定や、効いた手・効かなかった手を振り返り、次の期間に絞ることを出します。</p>
+      <div className="fx-actions" style={{ alignItems: 'center' }}>
+        <label className="cc-muted" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>見直す間隔
+          <select value={d.interval_months} onChange={e => setInterval_(Number(e.target.value))} style={{ fontSize: '13px', padding: '6px 8px' }}>
+            {(d.intervals || [1, 3, 6, 12]).map(n => <option key={n} value={n}>{n}か月ごと</option>)}
+          </select>
+        </label>
+        {d.next_review_at && <span className="cc-muted">次の見直し：{fmtDate(d.next_review_at)}</span>}
+        <button type="button" className="fx-pill" disabled={busy} onClick={() => make(true)}>{busy ? '見直しています…' : '今すぐ見直す'}</button>
+      </div>
+      {msg && <p className="cc-muted" role="status">{msg}</p>}
+      {rv ? (
+        <div className="stack" style={{ gap: '10px' }}>
+          <div className="cp-kicker">{fmtDate(d.review.created_at)}の見直し（{d.review.period_from}〜{d.review.period_to}）</div>
+          <p className="cp-prose" style={{ margin: 0 }}>{rv.summary}</p>
+          {rv.fit && <p className="cp-prose" style={{ margin: 0 }}>{rv.fit}</p>}
+          {rv.feature_changes?.length > 0 && (
+            <div className="stack" style={{ gap: '6px' }}>
+              <div className="cp-kicker">設定の見直しの提案</div>
+              <ul className="cc-results">{rv.feature_changes.map(c => (
+                <li key={c.key} style={{ alignItems: 'center' }}>
+                  <span><b>{c.label}を{c.on ? 'オン' : 'オフ'}に</b><br /><span className="cc-muted">{c.reason}</span></span>
+                  {applied[c.key] ? <span>反映しました</span> : <button type="button" className="cc-link" onClick={() => applyFeature(c)}>{c.on ? 'オンにする' : 'オフにする'}</button>}
+                </li>
+              ))}</ul>
+            </div>
+          )}
+          {rv.reask?.length > 0 && (
+            <div className="stack" style={{ gap: '6px' }}>
+              <div className="cp-kicker">導入の時から変わっていそうなこと</div>
+              <ul className="cc-results">{rv.reask.map((q, i) => <li key={i}><span>{q}</span></li>)}</ul>
+              <button type="button" className="cc-link" onClick={() => window.dispatchEvent(new Event('pd-open-onboarding'))}>はじめの質問に答え直す</button>
+            </div>
+          )}
+          {rv.next_focus && <p className="cp-prose" style={{ margin: 0 }}><b>次の見直しまでに絞ること：</b>{rv.next_focus}</p>}
+        </div>
+      ) : (
+        <p className="cc-muted">まだ見直しはありません。「今すぐ見直す」で、今の時点の振り返りを作れます。</p>
+      )}
     </section>
   );
 }
@@ -277,6 +358,8 @@ export default function ConsultantPanel() {
       )}
 
       <WebLearnSection />
+
+      <ReviewSection />
 
       {(hasWeekly || (!needsGoal && diagnosis)) && (
         <section className="card stack" style={{ padding: '24px', gap: '12px' }}>

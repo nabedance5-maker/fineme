@@ -57,6 +57,7 @@ const ALLOWED_ACTION_PATHS = [
   ['PATCH', /^\/api\/reservations\/[0-9a-f-]{36}$/i],
   ['POST', /^\/api\/provider\/customer-packages$/],
   ['POST', /^\/api\/provider\/dormant-settings$/],
+  ['PATCH', /^\/api\/provider\/features$/],
 ];
 export async function runDashboardAction(method, path, body) {
   if (!ALLOWED_ACTION_PATHS.some(([m, re]) => m === method && re.test(path))) throw new Error('この作業はここからは実行できません');
