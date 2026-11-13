@@ -1,7 +1,7 @@
 'use client';
 // AIコンサルの右下ウィジェットと専用タブで共有する、データ取得・操作・タスク表示。
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CHANGED_EVENT, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
+import { CHANGED_EVENT, consultantApi as api, goToTab, notifyChanged, runDashboardAction } from './consultant-api';
 
 // 同じ画面に2つのコンポーネントがあっても、見立ての作り直しは同時に1回だけにする
 let planInFlight = null;
@@ -216,7 +216,52 @@ export function ProposalCard({ p }) {
   if (!p) return null;
   if (!p.kind || p.kind === 'outreach') return <OutreachCard stage={p.stage} label={p.label} body={p.body} />;
   if (p.kind === 'find') return <FindCard p={p} />;
+  if (p.kind === 'api') return <ApiCard p={p} />;
+  if (p.kind === 'notice') return <div className="cc-send is-done"><div className="cc-send-head"><strong>{p.title}</strong></div><p className="cc-send-msg">{p.text}</p></div>;
   return <ActCard p={p} />;
+}
+
+// 予約を入れる・日時を変える・回数券を付ける・設定を変える など（候補が複数なら選んでもらう）
+const AFTER_LABEL = { calendar: '予約カレンダーを開く', customers: 'メンバーの画面を開く', 'visit-settings': '来店の設定を開く' };
+function ApiCard({ p }) {
+  const opts = p.options || [];
+  const [pick, setPick] = useState(opts.length === 1 ? 0 : -1);
+  const [state, setState] = useState('idle');
+  const [msg, setMsg] = useState('');
+  async function go() {
+    const o = opts[pick];
+    if (!o) { setMsg('どれにするか選んでください'); return; }
+    if (!window.confirm(`${p.title}${o.label ? `（${o.label}）` : ''}。よろしいですか？`)) return;
+    setState('running'); setMsg('');
+    try {
+      await runDashboardAction(p.method, o.path || p.path, o.body);
+      setState('done'); setMsg('できました。');
+      notifyChanged();
+      if (p.after === 'calendar') window.__calReloadWeek?.();
+    } catch (e) { setState('idle'); setMsg(e.message); }
+  }
+  return (
+    <div className={`cc-send${state === 'done' ? ' is-done' : ''}`}>
+      <div className="cc-send-head"><strong>{p.title}</strong></div>
+      {(p.lines || []).length > 0 && <ul className="cc-results">{p.lines.map(([k, v], i) => <li key={i}><span>{k}</span><span>{v}</span></li>)}</ul>}
+      {opts.length > 1 && state !== 'done' && (
+        <div className="cc-send-row" role="radiogroup" aria-label="対象を選ぶ" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+          {opts.map((o, i) => (
+            <label key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '13px' }}>
+              <input type="radio" name={`cc-pick-${p.title}`} checked={pick === i} onChange={() => setPick(i)} style={{ width: 'auto' }} />{o.label}
+            </label>
+          ))}
+        </div>
+      )}
+      {opts.length === 1 && opts[0].label && <p className="cc-muted">対象：{opts[0].label}</p>}
+      {state !== 'done' ? (
+        <div className="cc-send-row"><button type="button" className="cc-send-btn" disabled={state === 'running'} onClick={go}>{state === 'running' ? '実行しています…' : p.button || '実行する'}</button></div>
+      ) : (
+        AFTER_LABEL[p.after] && <div className="cc-send-row"><button type="button" className="cc-link" onClick={() => goToTab(p.after)}>{AFTER_LABEL[p.after]}</button></div>
+      )}
+      {msg && <p className="cc-send-msg">{msg}</p>}
+    </div>
+  );
 }
 
 function FindCard({ p }) {

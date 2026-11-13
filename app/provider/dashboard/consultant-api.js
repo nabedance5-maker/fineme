@@ -49,3 +49,20 @@ export function goToTab(tab) {
 export function notifyChanged() {
   window.dispatchEvent(new Event(CHANGED_EVENT));
 }
+
+// AIコンサルが用意した作業を、管理画面のいつもの入口に送る（権限・重なりの確認は各入口がいつもどおり行う）。
+// 送れる入口は決めたものだけ（AIの返答に変な行き先が混ざっても送らない）
+const ALLOWED_ACTION_PATHS = [
+  ['POST', /^\/api\/provider\/reservations\/manual$/],
+  ['PATCH', /^\/api\/reservations\/[0-9a-f-]{36}$/i],
+  ['POST', /^\/api\/provider\/customer-packages$/],
+  ['POST', /^\/api\/provider\/dormant-settings$/],
+];
+export async function runDashboardAction(method, path, body) {
+  if (!ALLOWED_ACTION_PATHS.some(([m, re]) => m === method && re.test(path))) throw new Error('この作業はここからは実行できません');
+  const token = getToken();
+  const res = await fetch(path, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body || {}) });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.error || 'できませんでした');
+  return d;
+}

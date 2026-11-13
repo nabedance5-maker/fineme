@@ -8,7 +8,7 @@ import { CONSULTANT_ROLE, buildContext, fixTaskTab, tabGuide } from '@/lib/consu
 import { VALID_TABS, periodKeys, jstNow, STAGES } from '@/lib/consultant-insight';
 import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
 import { freeJson } from '@/lib/ai';
-import { shiftDates, visitCandidates, findCustomers, FIND_SEGMENTS, todayJst } from '@/lib/consultant-actions';
+import { shiftDates, visitCandidates, findCustomers, FIND_SEGMENTS, todayJst, resolveCustomers, resolveService, resolveStaff, resolvePackage, upcomingReservations, numbersForPrompt } from '@/lib/consultant-actions';
 
 const HISTORY_LIMIT = 14;
 // まず OpenRouter の無料モデルで答え、失敗した時だけ Claude Haiku（渡邉判断 2026-11-10。振り分けの考え方は lib/ai.js）。
@@ -60,6 +60,26 @@ const TOOLS = [
     name: 'find_customers',
     description: '店舗が「最近来ていない人を探して」「休眠の人を見せて」などと頼んだ時に、該当するお客様の一覧を画面に出す（見るだけ）。segment は ' + Object.entries(FIND_SEGMENTS).map(([k, v]) => `${k}=${v.label}`).join(' / '),
     input_schema: { type: 'object', properties: { segment: { type: 'string', enum: Object.keys(FIND_SEGMENTS) } }, required: ['segment'] },
+  },
+  {
+    name: 'book_reservation',
+    description: '店舗が「田中さんを明日15時で入れて」などと予約を入れてほしいと言った時に、予約を入れる準備をする。お客様・メニュー・担当はお店の中から名前で探し、画面に内容と「予約を入れる」を出す（押した時だけ入る。シフト・部屋・重なりは管理画面から入れる時と同じく確かめる）',
+    input_schema: { type: 'object', properties: { customer: { type: 'string', description: 'お客様の名前（姓だけでも可）' }, date: { type: 'string', description: 'YYYY-MM-DD' }, time: { type: 'string', description: 'HH:MM' }, menu: { type: 'string', description: 'メニュー名（言われなければ空）' }, staff: { type: 'string', description: '担当スタッフ名（言われなければ空）' }, end_time: { type: 'string', description: 'メニューが無い時の終わりの時刻 HH:MM（無ければ空）' } }, required: ['customer', 'date', 'time'] },
+  },
+  {
+    name: 'reschedule_reservation',
+    description: '店舗が「田中さんの予約を金曜の14時に変えて」などと言った時に、そのお客様のこれからの予約の日時を変える準備をする。画面で対象の予約を選び「変更する」を押した時だけ変わる',
+    input_schema: { type: 'object', properties: { customer: { type: 'string' }, current_date: { type: 'string', description: '今の予約の日 YYYY-MM-DD（分かれば）' }, new_date: { type: 'string', description: 'YYYY-MM-DD' }, new_time: { type: 'string', description: 'HH:MM' }, notify: { type: 'boolean', description: 'お客様に知らせるか（言われなければ true）' } }, required: ['customer', 'new_date', 'new_time'] },
+  },
+  {
+    name: 'grant_ticket',
+    description: '店舗が「田中さんに10回券を付けて」などと言った時に、お客様に回数券・チケットを付ける準備をする。画面の「付ける」を押した時だけ付く（代金のやりとりは記録しない。売る時はPOSで）',
+    input_schema: { type: 'object', properties: { customer: { type: 'string' }, ticket: { type: 'string', description: '回数券・チケットの名前' } }, required: ['customer', 'ticket'] },
+  },
+  {
+    name: 'change_setting',
+    description: '店舗が設定を変えてほしいと言った時に、変える準備をする。今できる設定：dormant_days＝休眠と判断する日数（最終来店からこの日数を超えたら休眠）。画面の「変更する」を押した時だけ変わる',
+    input_schema: { type: 'object', properties: { setting: { type: 'string', enum: ['dormant_days'] }, value: { type: 'integer' } }, required: ['setting', 'value'] },
   },
   { name: 'remember_fact', description: '店舗の状況について、今後の提案に効く事実（客層・強み・制約・スタッフの事情・やってみた結果など）を一つ記憶する', input_schema: { type: 'object', properties: { fact: { type: 'string' } }, required: ['fact'] } },
 ];
@@ -167,6 +187,62 @@ async function runTool(name, input, ctx) {
     ctx.proposals.push({ kind: 'find', segment: input.segment, ...r });
     return `「${r.label}」${r.total}人を画面に出しました`;
   }
+  if (name === 'book_reservation' || name === 'reschedule_reservation' || name === 'grant_ticket') {
+    const people = await resolveCustomers(supabase, provider, input.customer);
+    if (!people.length) {
+      ctx.proposals.push({ kind: 'notice', title: `「${clean(input.customer, 30)}」さんが見つかりません`, text: 'メンバーの画面で名前を確かめるか、フルネーム・電話番号で言い直してください。' });
+      return 'お客様が見つかりませんでした。名前を言い直してもらってください';
+    }
+    if (name === 'book_reservation') {
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(input.date || '') ? input.date : null;
+      const time = /^\d{1,2}:\d{2}$/.test(input.time || '') ? input.time.padStart(5, '0') : null;
+      if (!date || !time) return '日付か時刻が正しくありません';
+      const [svc, staff] = await Promise.all([input.menu ? resolveService(supabase, provider, input.menu) : null, input.staff ? resolveStaff(supabase, provider, input.staff) : null]);
+      const end = /^\d{1,2}:\d{2}$/.test(input.end_time || '') ? input.end_time.padStart(5, '0') : null;
+      ctx.proposals.push({
+        kind: 'api', title: '予約を入れる', button: '予約を入れる', method: 'POST', path: '/api/provider/reservations/manual', after: 'calendar',
+        lines: [['日時', `${date} ${time}${!svc && end ? `〜${end}` : ''}`], ['メニュー', svc ? svc.name : (input.menu ? `「${clean(input.menu, 30)}」は見つかりませんでした（メニューなし）` : 'なし')], ['担当', staff ? staff.name : (input.staff ? `「${clean(input.staff, 20)}」は見つかりませんでした（空いている人を自動で）` : '空いている人を自動で')]],
+        options: people.map(c => ({ label: c.name, body: { date, time, ...(svc ? { service_id: svc.id } : end ? { end_time: end } : {}), ...(staff ? { staff_id: staff.id } : {}), user_name: c.name, ...(c.user_id ? { user_id: c.user_id } : {}), note: 'AIコンサルから入力' } })),
+      });
+      return `予約の内容を画面に出しました${people.length > 1 ? `（同じ名前の候補が${people.length}人。店舗が選びます）` : ''}。店舗が「予約を入れる」を押すと入ります`;
+    }
+    if (name === 'reschedule_reservation') {
+      const nd = /^\d{4}-\d{2}-\d{2}$/.test(input.new_date || '') ? input.new_date : null;
+      const nt = /^\d{1,2}:\d{2}$/.test(input.new_time || '') ? input.new_time.padStart(5, '0') : null;
+      if (!nd || !nt) return '新しい日付か時刻が正しくありません';
+      const opts = [];
+      for (const c of people.filter(x => x.user_id)) {
+        const rs = await upcomingReservations(supabase, provider, c.user_id, /^\d{4}-\d{2}-\d{2}$/.test(input.current_date || '') ? input.current_date : null);
+        rs.slice(0, 5).forEach(r => opts.push({ label: `${c.name}　${r.date} ${r.time} の予約`, body: { action: 'reschedule', date: nd, time: nt, notify: input.notify !== false }, path: `/api/reservations/${r.id}` }));
+      }
+      if (!opts.length) {
+        ctx.proposals.push({ kind: 'notice', title: '変えられる予約が見つかりません', text: 'これからの確定済みの予約だけが対象です。予約カレンダーで確かめてください。' });
+        return '対象の予約が見つかりませんでした';
+      }
+      ctx.proposals.push({ kind: 'api', title: `予約の日時を ${nd} ${nt} に変える`, button: '変更する', method: 'PATCH', after: 'calendar', lines: [['お客様へのお知らせ', input.notify !== false ? 'メール・LINEで送る' : '送らない']], options: opts });
+      return '変える予約の候補を画面に出しました。店舗が選んで「変更する」を押すと変わります';
+    }
+    const pkg = await resolvePackage(supabase, provider, input.ticket);
+    if (!pkg) {
+      ctx.proposals.push({ kind: 'notice', title: `「${clean(input.ticket, 30)}」という回数券が見つかりません`, text: '回数券・チケットの画面で名前を確かめてください。' });
+      return '回数券が見つかりませんでした';
+    }
+    ctx.proposals.push({
+      kind: 'api', title: `「${pkg.name}」を付ける`, button: '付ける', method: 'POST', path: '/api/provider/customer-packages', after: 'customers',
+      lines: [['回数券', `${pkg.name}${pkg.total_sessions ? `（${pkg.total_sessions}回）` : ''}`], ['代金', '記録しません（売る時はPOSで）']],
+      options: people.map(c => ({ label: c.name, body: { package_id: pkg.id, ...(c.user_id ? { user_id: c.user_id } : { manual_id: c.manual_id }) } })),
+    });
+    return '回数券を付ける内容を画面に出しました。店舗が「付ける」を押すと付きます';
+  }
+  if (name === 'change_setting') {
+    if (input.setting === 'dormant_days') {
+      const v = parseInt(input.value, 10);
+      if (!Number.isInteger(v) || v < 14 || v > 730) return '日数は14〜730の間で言ってください';
+      ctx.proposals.push({ kind: 'api', title: `休眠と判断する日数を${v}日にする`, button: '変更する', method: 'POST', path: '/api/provider/dormant-settings', after: 'visit-settings', lines: [['今', `${state.ctx?.noVisitDays ?? 90}日`], ['変更後', `${v}日`]], options: [{ label: '', body: { no_visit_days: v } }] });
+      return '設定の変更を画面に出しました。店舗が「変更する」を押すと変わります';
+    }
+    return 'その設定はまだ変えられません';
+  }
   if (name === 'remember_fact') {
     const fact = clean(input.fact, 140);
     if (!fact) return '内容が空です';
@@ -203,11 +279,14 @@ export async function POST(request) {
 今回は店舗との会話です。店舗の質問や状況の変化に、上の原則にそって答えます。
 - ゴールが未記入なら、無理に提案せず「お店としてどうなりたいか」を聞く。
 - 店舗が何かをやると決めたら add_task で記録する。やった・やらないと言われたら complete_task / skip_task（id は未完了タスクの一覧から選ぶ）。目指すことが変わったら save_goal。今後の提案に効く新しい事実が出たら remember_fact（店舗が質問に答えた時、方針・こだわり・できない理由・やってみた結果が語られた時は特に記録する）。お客様への声かけ・連絡・文面づくり・一斉メールの話になったら、助言だけで終わらせず prepare_outreach で送れる文面まで用意する（同じ段階に直近で送っていれば、その結果を踏まえて文面を変える）。
-- 管理画面の作業を頼まれたら、やり方の説明で終わらせず、できる操作で実際に進める：シフトを作って → make_shift（今日は${todayJst()}。「1月」なら次に来る1月の1日〜末日）、来店確認・来店済みにして → mark_visited、お客様を探して・見せて → find_customers。変える作業は店舗が画面で押した時に実行されると一言添える。操作した時は、それを一言添えて伝える。
+- 管理画面の作業を頼まれたら、やり方の説明で終わらせず、できる操作で実際に進める（今日は${todayJst()}。「明日」「金曜」「1月」などはここから日付にする）：シフトを作って → make_shift（「1月」なら次に来る1月の1日〜末日）、来店確認・来店済みにして → mark_visited、お客様を探して・見せて → find_customers、予約を入れて → book_reservation、予約を変えて → reschedule_reservation、回数券・チケットを付けて → grant_ticket、休眠の日数を変えて → change_setting。変える作業は店舗が画面で押した時に実行されると一言添える。まだ操作が無い作業は、どの画面でできるかを案内する。
+- 売上や予約の数字を聞かれたら、下の【数字】だけを使って答える。操作した時は、それを一言添えて伝える。
 - 無い機能を「ある」と言わない。画面を案内する時は次の名前で言う：${tabGuide()}
 - 返答は短く、実務的に。3〜8文程度。必要なら箇条書きも可。
 
-${buildContext(state, provider)}${diagnosis}`;
+${buildContext(state, provider)}${diagnosis}
+
+${await numbersForPrompt(supabase, provider).catch(() => '')}`;
 
   const messages = [...history.map(h => ({ role: h.role, content: h.content })), { role: 'user', content: text }];
   const ctx = { provider, state, changed: false, goalChanged: false, proposals: [] };
