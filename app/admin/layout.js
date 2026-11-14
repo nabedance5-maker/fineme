@@ -24,6 +24,7 @@ const CATEGORIES = [
     { href: '/admin/affiliates', label: 'アフィリエイト管理' },
     { href: '/admin/products', label: '商品アフィリエイト' },
     { href: '/admin/sales-partners', label: '営業パートナー' },
+    { href: '/admin/demo', label: 'デモの招待コード' },
     { href: '/admin/collaborator-rewards', label: '協業者の報酬' },
   ] },
   // 投稿キュレーション・集客施策はメニューから外した（渡邉 2026-11-06：もういらない）。画面は /admin/curated-posts・/admin/acquisition に残す

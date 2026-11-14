@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { permOfApi, normalizePerms, PERM_DEFS } from './lib/member-perms'
 import { contractActive, contractFreeApi } from './lib/provider-contract'
+import { demoClaimsFromAuth, demoBlockReason, DEMO_AI_PER_HOUR } from './lib/demo'
 
 // ── スタッフ個別ログインの権限チェック（でお要望 2026-10-19） ──
 // スタッフのログインで呼ばれた掲載者向けAPIを、役割ごとに許可されたメニュー分類だけに絞る。
@@ -93,9 +94,29 @@ async function guardContract(request) {
   return NextResponse.json({ error: 'Finemeの月額プランをお申し込みいただくと使えます。管理画面からお申し込みください', code: 'contract_required' }, { status: 402 })
 }
 
+// ── 営業用のデモアカウント（2026-11-14） ──
+// デモのログインからの要求は、外に出る送信・お金・アカウント・実在の人の情報に触るAPIを止め、AIは全体で1時間の回数に上限を付ける。
+// トークンの署名はここでは確かめない（デモと判定すると止める側にしか働かず、偽のトークンは各APIが401にする）。
+async function guardDemo(request) {
+  if (!demoClaimsFromAuth(request.headers.get('authorization'))) return null
+  const reason = demoBlockReason(request.nextUrl.pathname, request.method)
+  if (!reason) return null
+  if (reason === 'blocked') {
+    return NextResponse.json({ error: 'デモでは使えない操作です（本物の送信・決済・アカウントの変更は行いません）', code: 'demo_blocked' }, { status: 403 })
+  }
+  try {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const r = await fetch(`${base}/rest/v1/rpc/demo_ai_hit`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: '{}', signal: AbortSignal.timeout(5000) })
+    const n = r.ok ? Number(await r.json()) : Infinity
+    if (n <= DEMO_AI_PER_HOUR) return null
+  } catch {}
+  return NextResponse.json({ error: 'デモのAIは、いま混み合っています。1時間ほどおいてからお試しください', code: 'demo_ai_limit' }, { status: 429 })
+}
+
 export async function middleware(request) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    return (await guardMemberApi(request)) || (await guardContract(request)) || NextResponse.next()
+    return (await guardDemo(request)) || (await guardMemberApi(request)) || (await guardContract(request)) || NextResponse.next()
   }
   const host = request.headers.get('host') || ''
   if (host === 'finemenextjs.vercel.app') {
@@ -141,5 +162,5 @@ export async function middleware(request) {
 // リダイレクト）はどれも/api/*やNext内部アセットには関係ないため、対象から除外して
 // 無駄な処理を減らす。
 export const config = {
-  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)', '/api/provider/:path*', '/api/reservations/:path*', '/api/reservations', '/api/stripe/connect/:path*'],
+  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)', '/api/provider/:path*', '/api/reservations/:path*', '/api/reservations', '/api/stripe/connect/:path*', '/api/stripe/provider-subscribe', '/api/stripe/update-subscription'],
 }

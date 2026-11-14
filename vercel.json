@@ -5,6 +5,7 @@
   "outputDirectory": ".next",
   "crons": [
     { "path": "/api/cron/cleanup-mirror-sessions", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/demo-reset", "schedule": "0 19 * * *" },
     { "path": "/api/cron/cleanup-unpaid-mirror-photos", "schedule": "0 3 * * *" },
     { "path": "/api/cron/archive-activity-logs", "schedule": "0 4 * * *" },
     { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" },
