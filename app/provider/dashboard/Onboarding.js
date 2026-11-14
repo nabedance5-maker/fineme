@@ -11,12 +11,24 @@ import {
 } from '@/lib/onboarding';
 import { FEATURE_DEFS } from '@/lib/feature-flags';
 import { HEADER_SHORTCUT_OPTIONS } from '@/lib/dashboard-prefs';
+import { isDemoEmail, DEMO_ONBOARDING_FLAG } from '@/lib/demo';
 
 function getToken() {
   try {
     const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
     return key ? JSON.parse(localStorage.getItem(key))?.access_token || null : null;
   } catch { return null; }
+}
+// 営業用のデモ（2026-11-14 渡邉要望）：デモ店舗は全員で共有するため、店舗の「回答済み」に関係なく、
+// /demo から入るたびに（＝見せる相手が変わるたびに）はじめの質問を空の状態から出す
+function demoFreshEntry() {
+  try {
+    const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    const email = key ? JSON.parse(localStorage.getItem(key))?.user?.email : '';
+    if (!isDemoEmail(email) || sessionStorage.getItem(DEMO_ONBOARDING_FLAG) !== '1') return false;
+    sessionStorage.removeItem(DEMO_ONBOARDING_FLAG);
+    return true;
+  } catch { return false; }
 }
 function authHeaders() {
   const t = getToken();
@@ -114,7 +126,8 @@ export default function Onboarding() {
         const res = await fetch('/api/provider/onboarding', { headers: authHeaders() });
         if (!res.ok || cancelled) return;
         const data = await res.json();
-        if (!data.completed) { setOpen(true); setStep(-1); loadLocks(); }
+        const demoFresh = demoFreshEntry();
+        if (!data.completed || demoFresh) { setAnswers(EMPTY); setOpen(true); setStep(-1); loadLocks(); }
       } catch { /* 取得できない時は出さない（作業の邪魔をしない） */ }
     })();
     const reopen = async () => {

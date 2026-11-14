@@ -3,6 +3,7 @@
 // ?code=XXXX を付けたURLを渡せば、ボタンを押すだけで入れる。
 import { useEffect, useState } from 'react';
 import { setBrowserSession } from '@/lib/browser-auth';
+import { DEMO_ONBOARDING_FLAG } from '@/lib/demo';
 
 export default function DemoPage() {
   const [code, setCode] = useState('');
@@ -22,6 +23,7 @@ export default function DemoPage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || 'デモに入れませんでした');
       await setBrowserSession(j);
+      try { sessionStorage.setItem(DEMO_ONBOARDING_FLAG, '1'); } catch {}
       location.href = '/provider/dashboard';
     } catch (err) {
       setError(err.message || 'デモに入れませんでした');
