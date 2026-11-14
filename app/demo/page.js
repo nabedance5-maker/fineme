@@ -3,28 +3,45 @@
 // ?code=XXXX を付けたURLを渡せば、ボタンを押すだけで入れる。
 import { useEffect, useState } from 'react';
 import { setBrowserSession } from '@/lib/browser-auth';
-import { DEMO_ONBOARDING_FLAG } from '@/lib/demo';
+import { DEMO_ONBOARDING_FLAG, DEMO_ACTIVE_KEY, DEMO_CODE_KEY, safeDemoRedirect } from '@/lib/demo';
 
 export default function DemoPage() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // again=1：デモの途中でログインが切れて戻ってきた時。このタブで使った招待コードがあれば、そのまま入り直す（2026-11-15）
+  const [again, setAgain] = useState(false);
   useEffect(() => {
-    try { const c = new URLSearchParams(location.search).get('code'); if (c) setCode(c.toUpperCase()); } catch {}
+    let c = '', isAgain = false;
+    try {
+      const q = new URLSearchParams(location.search);
+      isAgain = q.get('again') === '1';
+      c = (q.get('code') || (isAgain ? sessionStorage.getItem(DEMO_CODE_KEY) : '') || '').toUpperCase();
+    } catch {}
+    setAgain(isAgain);
+    if (c) setCode(c);
+    if (isAgain && c) start(null, c, true);
   }, []);
 
-  async function start(e) {
+  async function start(e, codeArg, isAgain = again) {
     e?.preventDefault();
-    if (busy) return;
+    const useCode = codeArg || code;
+    if (busy && !codeArg) return;
     setBusy(true); setError('');
     try {
-      const res = await fetch('/api/demo/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+      const res = await fetch('/api/demo/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: useCode }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || 'デモに入れませんでした');
       await setBrowserSession(j);
-      try { sessionStorage.setItem(DEMO_ONBOARDING_FLAG, '1'); } catch {}
-      location.href = '/provider/dashboard';
+      try {
+        sessionStorage.setItem(DEMO_ACTIVE_KEY, '1');
+        sessionStorage.setItem(DEMO_CODE_KEY, useCode);
+        if (!isAgain) sessionStorage.setItem(DEMO_ONBOARDING_FLAG, '1');
+      } catch {}
+      let to = '/provider/dashboard';
+      try { to = isAgain ? safeDemoRedirect(new URLSearchParams(location.search).get('redirect')) : to; } catch {}
+      location.href = to;
     } catch (err) {
       setError(err.message || 'デモに入れませんでした');
       setBusy(false);
@@ -35,7 +52,8 @@ export default function DemoPage() {
     <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', background: 'var(--color-bg, #fafaf7)' }}>
       <form onSubmit={start} style={{ width: '100%', maxWidth: 440, background: '#fff', border: '1px solid var(--color-border, #e5e5e0)', borderRadius: 14, padding: '28px 24px', display: 'grid', gap: 16 }}>
         <div style={{ display: 'grid', gap: 6 }}>
-          <h1 style={{ fontSize: 22, margin: 0, color: 'var(--color-fg, #1a1a1a)' }}>Fineme のデモを体験する</h1>
+          <h1 style={{ fontSize: 22, margin: 0, color: 'var(--color-fg, #1a1a1a)' }}>{again ? 'デモに入り直す' : 'Fineme のデモを体験する'}</h1>
+          {again && <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: 'var(--color-fg, #1a1a1a)' }}>デモのログインが切れました（毎晩の作り直しや、時間がたった時に切れます）。招待コードで入り直すと、さっきの画面に戻ります。</p>}
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: 'var(--color-muted, #5c5c58)' }}>
             架空のパーソナルジムの管理画面に入れます。予約・来店確認・シフト・POS・顧客管理・カルテ・AI専属コンサルなど、実際の機能をそのまま使えます。
           </p>

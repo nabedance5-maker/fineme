@@ -22,6 +22,7 @@ import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
 import { withOperator, setOperator } from './operator';
+import { DEMO_ACTIVE_KEY, DEMO_CODE_KEY, demoClaimsFromAuth } from '@/lib/demo';
 import { FORM_FIELDS, FIELD_STATES } from '@/lib/membership-form';
 import { PERM_DEFS, ROLE_LABEL, permOfTab } from '@/lib/member-perms';
 import './fx.css';
@@ -40,6 +41,21 @@ const _sb = createClient(
 // このファイル内で掲載者ログインへ遷移する箇所は全てこの定数を使うこと。新しく
 // ログインへの導線を足す時は絶対に'/login'を直書きしない）。
 const PROVIDER_LOGIN_URL = '/login?type=provider';
+// デモのタブ（/demo から入った）では、ログインが切れた時・ログアウトした時の行き先をデモの入口にする（2026-11-15 渡邉報告：
+// デモでログインが切れると本番のログイン画面に飛ばされた）。back は encodeURIComponent 済みのパス
+function isDemoTab() {
+  try {
+    if (typeof window === 'undefined') return false;
+    if (sessionStorage.getItem(DEMO_ACTIVE_KEY) === '1') return true;
+    const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    const tok = key ? JSON.parse(localStorage.getItem(key))?.access_token : null;
+    return !!(tok && demoClaimsFromAuth(`Bearer ${tok}`));
+  } catch { return false; }
+}
+function providerLoginUrl(back) {
+  if (isDemoTab()) return `/demo?again=1${back ? `&redirect=${back}` : ''}`;
+  return `${PROVIDER_LOGIN_URL}${back ? `&redirect=${back}` : ''}`;
+}
 
 // サイドバー・タブ・カード等の見た目CSS。以前はuseEffect内でdocument.createElement('style')
 // により動的にDOM注入していたが、useEffectはクライアント側の初回マウント後（=最初の描画の後）
@@ -1312,7 +1328,11 @@ export default function ProviderDashboardPage() {
     // 対策として、①タブがバックグラウンドから戻った瞬間（visibilitychange）と
     // ②念のための定期チェック（10分毎）の両方でgetSession()を呼び直し、
     // 開きっぱなしでも裏側で自動延長され続けるようにする。
-    _sb.auth.getSession().catch(() => {});
+    _sb.auth.getSession().then(({ data }) => {
+      // 本物の店舗でログインし直したタブには、デモの印を残さない
+      const em = data?.session?.user?.email;
+      if (em && !/@demo\.fineme\.me$/i.test(em)) { try { sessionStorage.removeItem(DEMO_ACTIVE_KEY); sessionStorage.removeItem(DEMO_CODE_KEY); } catch {} }
+    }).catch(() => {});
     const sessionKeepAlive = setInterval(() => { _sb.auth.getSession().catch(() => {}); }, 10 * 60 * 1000);
     const onVisible = () => { if (document.visibilityState === 'visible') _sb.auth.getSession().catch(() => {}); };
     document.addEventListener('visibilitychange', onVisible);
@@ -1376,7 +1396,7 @@ export default function ProviderDashboardPage() {
           <div class="pd-session-mark">鍵</div>
           <h2>ログインの有効期限が切れました</h2>
           <p>安全のため、しばらく操作がない場合などにログインが切れます。もう一度ログインすると、いまの画面に戻ります。入力途中の内容は保存されていない場合があります。</p>
-          <a class="pd-session-btn" href="${PROVIDER_LOGIN_URL}&redirect=${back}">もう一度ログインする</a>
+          <a class="pd-session-btn" href="${providerLoginUrl(back)}">もう一度ログインする</a>
         </div>`;
       document.body.appendChild(el);
       el.querySelector('a')?.focus();
@@ -1427,6 +1447,11 @@ export default function ProviderDashboardPage() {
           new Promise(resolve => setTimeout(resolve, 3000)),
         ]);
       } catch {}
+      if (isDemoTab()) {
+        try { sessionStorage.removeItem(DEMO_ACTIVE_KEY); sessionStorage.removeItem(DEMO_CODE_KEY); } catch {}
+        window.location.replace('/demo');
+        return;
+      }
       window.location.replace(PROVIDER_LOGIN_URL);
     });
 
@@ -1439,7 +1464,7 @@ export default function ProviderDashboardPage() {
     // ビルド時に検知できるよう、URLをハードコードせず唯一の定数から組み立てる。
     function authErrorHtml(res) {
       if (res?.status === 401) {
-        return `<p style="color:#ef4444" class="muted">セッションの有効期限が切れています。<a href="${PROVIDER_LOGIN_URL}&redirect=%2Fprovider%2Fdashboard" style="color:inherit;text-decoration:underline;font-weight:700;">再ログインしてください</a></p>`;
+        return `<p style="color:#ef4444" class="muted">セッションの有効期限が切れています。<a href="${providerLoginUrl('%2Fprovider%2Fdashboard')}" style="color:inherit;text-decoration:underline;font-weight:700;">再ログインしてください</a></p>`;
       }
       return '<p style="color:#ef4444" class="muted">取得エラー</p>';
     }
