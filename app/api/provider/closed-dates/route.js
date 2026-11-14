@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { activeReservationsBetween, reservationListText, hmToMinutes } from '@/lib/shift-reservation-guard';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -39,6 +40,11 @@ async function __POST(request) {
 
   const { date, reason } = await request.json().catch(() => ({}));
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return Response.json({ error: '日付を指定してください' }, { status: 400 });
+  // 予約が入っている日は臨時休業にできない（2026-11-15 渡邉要望：あり得ない状態は設定させない）
+  const hit = await activeReservationsBetween(supabase, { providerId: provider.id, from: date, to: date });
+  if (hit.length) {
+    return Response.json({ error: `この日は予約が${hit.length}件あります（${reservationListText(hit)}）。予約がある日は臨時休業にできません。先に予約の日時を変えるか、お店の都合でキャンセルしてください。`, reservations: hit }, { status: 409 });
+  }
 
   const { error } = await supabase.from('provider_closed_dates').upsert({ provider_id: provider.id, date, reason: reason || null });
   if (error) return Response.json({ error: error.message }, { status: 500 });

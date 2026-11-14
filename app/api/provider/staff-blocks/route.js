@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { activeReservationsBetween, reservationListText, hmToMinutes } from '@/lib/shift-reservation-guard';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -46,6 +47,19 @@ async function __POST(request) {
   }
   if (start_time >= end_time) {
     return Response.json({ error: '終了時刻は開始時刻より後にしてください' }, { status: 400 });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !/^\d{2}:\d{2}/.test(String(start_time)) || !/^\d{2}:\d{2}/.test(String(end_time))) {
+    return Response.json({ error: '日付・時間の形が正しくありません' }, { status: 400 });
+  }
+  // 自分の店舗のスタッフだけ
+  const { data: staffRow } = await supabase.from('provider_staff').select('id').eq('id', staff_id).eq('provider_id', provider.id).maybeSingle();
+  if (!staffRow) return Response.json({ error: 'スタッフが見つかりません' }, { status: 400 });
+  // そのスタッフの予約がある時間はブロックできない（2026-11-15 渡邉要望：あり得ない状態は設定させない）
+  const bs = hmToMinutes(start_time), be = hmToMinutes(end_time);
+  const hit = (await activeReservationsBetween(supabase, { providerId: provider.id, from: date, to: date, staffId: staff_id }))
+    .filter(r => !r.class_id && r.start < be && bs < r.end);
+  if (hit.length) {
+    return Response.json({ error: `この時間に担当の予約があります（${reservationListText(hit)}）。予約がある間はブロックできません。先に予約の担当スタッフか日時を変えてください。`, reservations: hit }, { status: 409 });
   }
 
   const { data, error } = await supabase

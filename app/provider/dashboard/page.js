@@ -7710,7 +7710,7 @@ export default function ProviderDashboardPage() {
           });
           if (msg) {
             if (res.ok) { msg.style.color = '#4ade80'; msg.textContent = '✓ 保存しました'; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
-            else { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
+            else { const e = await res.json().catch(() => ({})); msg.style.color = '#ef4444'; msg.textContent = e.error || '保存に失敗しました'; }
           }
         });
         // 予約の受付設定は店舗設定側（booking-settings）からも開ける（2026-10-27）
