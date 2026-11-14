@@ -1121,6 +1121,7 @@ export default function ProviderDashboardPage() {
     function setDashboardPrefs(prefs) {
       dashboardPrefs = prefs;
       if (prefs) settingsCache.write('prefs', prefs);
+      if (typeof window !== 'undefined') window.__calAxisLabel?.(); // カレンダーの「縦横を入れ替え」の表示を合わせる
     }
     let resolvePrefsReady;
     const dashboardPrefsReady = new Promise(r => { resolvePrefsReady = r; });
@@ -15112,6 +15113,31 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-prev-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() - 7); userPickedDate = false; loadWeek(); });
       document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); userPickedDate = false; loadWeek(); });
       document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; userPickedDate = false; loadWeek(); });
+      // 縦横の入れ替え：その場で描き直し、店舗の表示設定（表示設定タブと同じ項目）にも保存する
+      const axisBtnEl = document.getElementById('cal-axis-btn');
+      const axisBtnLabel = () => {
+        if (!axisBtnEl) return;
+        const timeX = dashboardPrefs?.calendar_axis === 'time-x';
+        axisBtnEl.textContent = timeX ? '縦横を入れ替え（今：時間が横）' : '縦横を入れ替え（今：時間が縦）';
+      };
+      axisBtnLabel();
+      window.__calAxisLabel = axisBtnLabel;
+      axisBtnEl?.addEventListener('click', async () => {
+        const next = dashboardPrefs?.calendar_axis === 'time-x' ? 'time-y' : 'time-x';
+        const prev = dashboardPrefs;
+        setDashboardPrefs({ ...(dashboardPrefs || {}), calendar_axis: next });
+        axisBtnLabel();
+        await loadWeek();
+        try {
+          const res = await fetch('/api/provider/dashboard-prefs', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
+            body: JSON.stringify({ calendar_axis: next }),
+          });
+          if (res.ok) { const { prefs } = await res.json(); if (prefs) setDashboardPrefs(prefs); }
+          else if (prev) { setDashboardPrefs(prev); axisBtnLabel(); await loadWeek(); }
+        } catch {}
+      });
 
       // 日付を直接選んで一気に飛ぶ（でお要望2026-09-28）。
       const dateJumpInput = document.getElementById('cal-date-jump');
@@ -17405,6 +17431,8 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="cal-prev-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>← 前週</button>
                 <button type="button" className="btn btn-ghost" id="cal-today-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>今日に戻る</button>
                 <button type="button" className="btn btn-ghost" id="cal-next-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>次週 →</button>
+                {/* 縦横の切替をカレンダーの上から直接（渡邉要望2026-11-15：表示設定まで行かずに切り替えたい） */}
+                <button type="button" className="btn btn-ghost" id="cal-axis-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>縦横を入れ替え</button>
                 {/* 遠い日付へ一気に飛べるよう、ネイティブの日付ピッカーをその場で開く
                     （でお要望2026-09-28：「何月って書いてあるボタンとかで押したら、その次の
                     カレンダーがポップアップで開いて違う日に飛べるボタンもあるといい」）。
