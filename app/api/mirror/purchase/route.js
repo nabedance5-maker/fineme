@@ -32,8 +32,10 @@ export async function POST(request) {
     const stripe = new Stripe(stripeKey);
     const baseUrl = getBaseUrl(request);
 
-    const checkout = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+    // 2026-11-15：カードに加えて PayPay でも払えるようにする（Stripe の PayPay は単発の支払いのみ・
+    // 決済仲介(Connect)では使えないため、Fineme が直接受け取る Mirror 単発だけが対象）。
+    // Stripe の管理画面で PayPay が有効になっていない・使えない時は作成が失敗するので、その時はカードだけで作り直す。
+    const params = {
       line_items: [{
         price_data: {
           currency: 'jpy',
@@ -49,7 +51,14 @@ export async function POST(request) {
       success_url: `${baseUrl}/mirror?session_id=${session_id}&purchased=1`,
       cancel_url: `${baseUrl}/mirror?session_id=${session_id}`,
       metadata: { mirror_session_id: session_id },
-    });
+    };
+    let checkout;
+    try {
+      checkout = await stripe.checkout.sessions.create({ ...params, payment_method_types: ['card', 'paypay'] });
+    } catch (e) {
+      console.warn('[mirror purchase] PayPay unavailable, falling back to card only:', e?.message);
+      checkout = await stripe.checkout.sessions.create({ ...params, payment_method_types: ['card'] });
+    }
 
     // checkout session IDをmirror_sessionsに保存
     await supabase

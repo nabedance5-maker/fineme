@@ -196,6 +196,7 @@ export default function MoneyFlowPage() {
           <h2 id="faq-h" style={{ fontSize: '20px', margin: '4px 0 6px' }}>よくある質問</h2>
           <details><summary>受け取り口座の登録をしないとどうなりますか？</summary><p>お客様のカード決済（回数券・月会費・POSのカード会計など）が使えません。登録していないのに代金がFinemeに貯まることもありません。登録は管理画面の「Fineme利用契約」タブから、Stripeの画面で本人確認と銀行口座を入れるだけです。</p></details>
           <details><summary>手数料{PAYMENT_FEE_PERCENT}%のほかに、かかるお金はありますか？</summary><p>Finemeに対しては、月額の利用料と決済手数料{PAYMENT_FEE_PERCENT}%だけです。カード会社・Stripeの手数料は{PAYMENT_FEE_PERCENT}%に含まれています。</p></details>
+          <details><summary>お客様はPayPayや電子マネーで支払えますか？</summary><p>Finemeを通じたお支払い（回数券・月会費・POSのオンライン会計・お支払いリンク・予約のデポジットなど）は、クレジットカードのみです。Finemeは決済を仲介して手数料を差し引いた残りを貴店に送る仕組みのため、この仕組みに対応していないPayPayは使えません。店頭でPayPayや電子マネーを受け付ける場合は、貴店でお使いのPayPayや決済端末で受け取り、POSの会計で支払方法に「PayPay」「電子マネー」を選んで記録してください。現金と同じく、代金はその場で貴店に入り、Finemeの手数料はかかりません（Finemeは売上の記録だけを行います）。</p></details>
           <details><summary>銀行口座にはいつ入りますか？</summary><p>貴店の受け取り口座（Stripe）の入金予定どおりに、自動で入金されます。予定の日付は「入金・口座を確認する（Stripe）」から確認できます。</p></details>
           <details><summary>お客様が払ったかどうかは、どこで分かりますか？</summary><p>Finemeを通じたお支払いは、管理画面の売上に自動で記録されます。月会費は「月会費の支払い状況」で、お客様ごとに確認できます。</p></details>
         </section>
