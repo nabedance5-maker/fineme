@@ -58,46 +58,47 @@ export default function DemoPage() {
 
   if (expired) {
     return (
-      <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', background: 'var(--color-bg, #fafaf7)' }}>
-        <div style={{ width: '100%', maxWidth: 440, background: '#fff', border: '1px solid var(--color-border, #e5e5e0)', borderRadius: 14, padding: '28px 24px', display: 'grid', gap: 14 }}>
-          <h1 style={{ fontSize: 20, margin: 0, color: 'var(--color-fg, #1a1a1a)' }}>このデモの期限が切れています</h1>
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: 'var(--color-muted, #5c5c58)' }}>
+      <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', background: '#f4f2ec' }}>
+        <div style={{ width: '100%', maxWidth: 440, background: '#fff', border: '1px solid #dcd8ce', boxShadow: '0 2px 12px rgba(20,24,35,0.06)', color: '#1a1a1a', borderRadius: 14, padding: '28px 24px', display: 'grid', gap: 14 }}>
+          <h1 style={{ fontSize: 20, margin: 0, color: '#1a1a1a' }}>このデモの期限が切れています</h1>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: '#55534d' }}>
             ご覧いただきありがとうございます。続けて触ってみたい方、実際の店舗での使い方を聞きたい方は、下のフォームからお気軽にご連絡ください。新しいデモのご案内や、オンラインでのご説明をいたします。
           </p>
           <a href="/provider/inquiry" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48, fontSize: 15, fontWeight: 600, borderRadius: 10, background: '#1f2a44', color: '#fff', textDecoration: 'none' }}>説明を聞く・続けて使いたい</a>
-          <a href="/business/providers" style={{ textAlign: 'center', fontSize: 13, color: 'var(--color-muted, #5c5c58)' }}>店舗管理の機能を見る</a>
+          <a href="/business/providers" style={{ textAlign: 'center', fontSize: 13, color: '#55534d' }}>店舗管理の機能を見る</a>
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', background: 'var(--color-bg, #fafaf7)' }}>
-      <form onSubmit={start} style={{ width: '100%', maxWidth: 440, background: '#fff', border: '1px solid var(--color-border, #e5e5e0)', borderRadius: 14, padding: '28px 24px', display: 'grid', gap: 16 }}>
+    <main style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', background: '#f4f2ec' }}>
+      <style>{`.demo-field input::placeholder{color:#8a867c;-webkit-text-fill-color:#8a867c;opacity:1}.demo-field input:focus{outline:none;border-color:#1f2a44;box-shadow:0 0 0 3px rgba(31,42,68,0.18)}`}</style>
+      <form onSubmit={start} style={{ width: '100%', maxWidth: 440, background: '#fff', border: '1px solid #dcd8ce', boxShadow: '0 2px 12px rgba(20,24,35,0.06)', color: '#1a1a1a', borderRadius: 14, padding: '28px 24px', display: 'grid', gap: 16 }}>
         <div style={{ display: 'grid', gap: 6 }}>
-          <h1 style={{ fontSize: 22, margin: 0, color: 'var(--color-fg, #1a1a1a)' }}>{again ? 'デモに入り直す' : 'Fineme のデモを体験する'}</h1>
-          {again && <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: 'var(--color-fg, #1a1a1a)' }}>デモのログインが切れました（毎晩の作り直しや、時間がたった時に切れます）。招待コードで入り直すと、さっきの画面に戻ります。</p>}
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: 'var(--color-muted, #5c5c58)' }}>
+          <h1 style={{ fontSize: 22, margin: 0, color: '#1a1a1a' }}>{again ? 'デモに入り直す' : 'Fineme のデモを体験する'}</h1>
+          {again && <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: '#1a1a1a' }}>デモのログインが切れました（毎晩の作り直しや、時間がたった時に切れます）。招待コードで入り直すと、さっきの画面に戻ります。</p>}
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: '#55534d' }}>
             架空のパーソナルジムの管理画面に入れます。予約・来店確認・シフト・POS・顧客管理・カルテ・AI専属コンサルなど、実際の機能をそのまま使えます。
           </p>
         </div>
-        <label style={{ display: 'grid', gap: 6, fontSize: 14, color: 'var(--color-fg, #1a1a1a)' }}>
+        <label className="demo-field" style={{ display: 'grid', gap: 6, fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>
           招待コード
           <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} autoComplete="off" spellCheck={false} placeholder="例：DEMO-XXXX-XXXX"
-            style={{ fontSize: 16, padding: '12px 14px', border: '1px solid var(--color-border, #d6d6d0)', borderRadius: 10, letterSpacing: '0.04em' }} />
+            style={{ fontSize: 16, padding: '12px 14px', border: '1.5px solid #9a968c', borderRadius: 10, background: '#fff', color: '#1a1a1a', WebkitTextFillColor: '#1a1a1a', letterSpacing: '0.04em' }} />
         </label>
-        <label style={{ display: 'grid', gap: 6, fontSize: 14, color: 'var(--color-fg, #1a1a1a)' }}>
-          <span>店舗名<span style={{ marginLeft: 6, fontSize: 12, color: 'var(--color-muted, #5c5c58)' }}>任意</span></span>
+        <label className="demo-field" style={{ display: 'grid', gap: 6, fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>
+          <span>店舗名<span style={{ marginLeft: 6, fontSize: 12, fontWeight: 400, color: '#55534d' }}>任意</span></span>
           <input value={storeName} onChange={e => setStoreName(e.target.value.slice(0, 60))} maxLength={60} autoComplete="organization" placeholder="例：〇〇ジム 渋谷店"
-            style={{ fontSize: 16, padding: '12px 14px', border: '1px solid var(--color-border, #d6d6d0)', borderRadius: 10 }} />
-          <span style={{ fontSize: 12, color: 'var(--color-muted, #5c5c58)', lineHeight: 1.6 }}>書いていただくと、ご説明の時にお話がしやすくなります。空欄でも入れます。</span>
+            style={{ fontSize: 16, padding: '12px 14px', border: '1.5px solid #9a968c', borderRadius: 10, background: '#fff', color: '#1a1a1a', WebkitTextFillColor: '#1a1a1a' }} />
+          <span style={{ fontSize: 12, fontWeight: 400, color: '#55534d', lineHeight: 1.6 }}>書いていただくと、ご説明の時にお話がしやすくなります。空欄でも入れます。</span>
         </label>
         {error && <p role="alert" style={{ margin: 0, fontSize: 13, color: '#b42318' }}>{error}</p>}
         <button type="submit" disabled={busy || !code.trim()}
           style={{ minHeight: 48, fontSize: 15, fontWeight: 600, border: 'none', borderRadius: 10, background: '#1f2a44', color: '#fff', cursor: busy ? 'wait' : 'pointer', opacity: busy || !code.trim() ? 0.5 : 1 }}>
           {busy ? '準備しています…' : 'デモを始める'}
         </button>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: 'var(--color-muted, #5c5c58)' }}>
+        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.8, color: '#55534d' }}>
           <li>お客様・予約・売上はすべて架空のデータです。毎晩、元の状態に戻ります。</li>
           <li>デモを使う方は全員同じ店舗に入ります。入力した内容は他の方にも見えるため、実在の方の情報は入れないでください。</li>
           <li>メール・LINEの送信、決済、アカウントの変更は行われません。</li>
