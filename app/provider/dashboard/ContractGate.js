@@ -152,7 +152,8 @@ export default function ContractGate() {
       return (
         <div className="pcg-due" role="status">
           <style>{CSS}</style>
-          <span>無料モニター期間は{until}までです（あと{Math.max(left, 0)}日）。終わると管理画面の機能は止まりますが、自動で課金されることはありません。続けてお使いになる場合は、期間が終わったあとにプランをお申し込みください。</span>
+          <span>無料モニター期間は{until}までです（あと{Math.max(left, 0)}日）。お申し込みがないまま終わると機能は止まりますが、自動で課金されることはありません。続ける場合は今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。</span>
+          <a href="/provider/billing" style={{ border: '1px solid #7c2d12', background: '#fff', color: '#7c2d12', borderRadius: 99, padding: '6px 14px', fontWeight: 800, fontSize: 13, textDecoration: 'none' }}>続けるお申し込み</a>
         </div>
       );
     }

@@ -32,6 +32,11 @@ export default function BillingPage() {
   const [currentPlan, setCurrentPlan] = useState('A');
   const [billingStatus, setBillingStatus] = useState('free');
   const [monitorUntil, setMonitorUntil] = useState(null);
+  const [billingStarted, setBillingStarted] = useState(null);
+  const [monitorPlan, setMonitorPlan] = useState('B');
+  const [monitorAgree, setMonitorAgree] = useState(false);
+  const [monitorBusy, setMonitorBusy] = useState(false);
+  const [monitorErr, setMonitorErr] = useState('');
   const [connectStatus, setConnectStatus] = useState(null);
   const [referralYen, setReferralYen] = useState(0); // 今月の紹介報酬（初月90%＋継続¥500の合計）
   const [upgrading, setUpgrading] = useState(false);
@@ -119,6 +124,8 @@ export default function BillingPage() {
             setCurrentPlan(me.plan || 'A');
             setBillingStatus(me.billing_status || 'free');
             setMonitorUntil(me.monitor_until || null);
+            setBillingStarted(me.billing_started || null);
+            if (['A', 'B', 'C'].includes(me.plan)) setMonitorPlan(me.plan);
             try {
               const rr = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(me.id)}`, { headers });
               if (rr.ok) {
@@ -139,6 +146,26 @@ export default function BillingPage() {
 
   // 無料→有料：Stripe Checkoutにリダイレクト
 
+
+  // 無料モニター中の申し込み（2026-11-16）：課金はモニター期間が終わった次の日から（provider-subscribe が Stripe の無料期間を付ける）
+  async function handleMonitorSubscribe() {
+    if (!monitorAgree) { setMonitorErr('利用規約をご確認のうえ、「同意する」にチェックを入れてください'); return; }
+    setMonitorBusy(true); setMonitorErr('');
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const res = await fetch('/api/stripe/provider-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ plan: monitorPlan, agree_terms: true, return_to: 'billing' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) { location.href = data.url; return; }
+      setMonitorErr(data.error || 'お申し込みの準備に失敗しました。時間をおいてもう一度お試しください');
+    } catch {
+      setMonitorErr('通信に失敗しました。電波のよい場所でもう一度お試しください');
+    }
+    setMonitorBusy(false);
+  }
 
   // 有料→別プランへ変更（既存サブスク更新）
   async function handleUpgrade(newPlan) {
@@ -194,6 +221,8 @@ export default function BillingPage() {
   const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus, monitor_until: monitorUntil });
   // 無料モニター中（2026-11-16）：Stripe の契約は無いので、プラン変更・支払い方法の画面は出さない
   const isMonitor = isActive && billingStatus === 'monitor';
+  // モニター中に申し込み済み（課金はモニター終了の次の日から・まだ1度も払っていない）
+  const monitorScheduled = isActive && !isMonitor && !billingStarted && !!monitorUntil && new Date(monitorUntil).getTime() > Date.now() && ['active', 'trialing'].includes(billingStatus);
   const monitorUntilLabel = monitorUntil ? new Date(monitorUntil).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric' }) : '';
   const isFree   = !isActive;
   const plan     = PLANS[currentPlan] || PLANS.A;
@@ -202,9 +231,10 @@ export default function BillingPage() {
     active:   { icon: '', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
     free:     { icon: '', cls: 'badge-free',   label: '未契約',       heroClass: 'free',     title: 'まだプランのお申し込みがありません', desc: 'プランをお申し込みいただくと、その日から管理画面の機能が使えるようになります。' },
     past_due: { icon: '', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
-    monitor:  { icon: '', cls: 'badge-active', label: '無料モニター',   heroClass: 'active',   title: `${monitorUntilLabel}まで、無料でお使いいただけます`, desc: '期間が終わると管理画面の機能は止まりますが、自動で課金されることはありません。続けてお使いになる場合は、期間が終わったあとにプランをお申し込みください。' },
+    monitor:  { icon: '', cls: 'badge-active', label: '無料モニター',   heroClass: 'active',   title: `${monitorUntilLabel}まで、無料でお使いいただけます`, desc: 'お申し込みがないまま期間が終わると、管理画面の機能は止まります。自動で課金されることはありません。続けてお使いになる場合は、下から今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。' },
+    scheduled: { icon: '', cls: 'badge-active', label: 'お申し込み済み', heroClass: 'active',  title: `${monitorUntilLabel}までは無料、その次の日から月額が始まります`, desc: '無料モニター期間中にお申し込みいただきました。期間が終わっても、そのまま続けてお使いいただけます。' },
   };
-  const st = isActive ? (statusMap[billingStatus] || statusMap.active) : statusMap.free;
+  const st = isActive ? (monitorScheduled ? statusMap.scheduled : statusMap[billingStatus] || statusMap.active) : statusMap.free;
 
   return (
     <main className="section">
@@ -245,8 +275,8 @@ export default function BillingPage() {
         <div className="kpi-row">
           <div className="kpi-card">
             <div className="kpi-label">今月の掲載料</div>
-            <div className="kpi-value">¥{isActive && !isMonitor ? plan.amount.toLocaleString() : '0'}</div>
-            <div className="kpi-sub">{isMonitor ? '無料モニター期間中' : isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
+            <div className="kpi-value">¥{isActive && !isMonitor && !monitorScheduled ? plan.amount.toLocaleString() : '0'}</div>
+            <div className="kpi-sub">{isMonitor || monitorScheduled ? '無料モニター期間中' : isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">決済手数料率</div>
@@ -312,6 +342,32 @@ export default function BillingPage() {
             })}
           </div>
         </div>
+
+        {/* 無料モニター中のお申し込み（2026-11-16） */}
+        {isMonitor && (
+          <div className="card" style={{ padding: '24px' }}>
+            <h2 style={{ margin: '0 0 6px' }}>モニター期間のあとも続ける</h2>
+            <p className="muted" style={{ fontSize: '13px', marginBottom: '14px', lineHeight: 1.8 }}>
+              今お申し込みいただいても、{monitorUntilLabel}までは無料のままです。月額はその次の日から毎月かかります。期間が終わる前に解約すれば、課金はされません。
+            </p>
+            <div role="radiogroup" aria-label="続けるプラン" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+              {Object.entries(PLANS).map(([key, p]) => (
+                <button key={key} type="button" role="radio" aria-checked={monitorPlan === key} onClick={() => setMonitorPlan(key)}
+                  className="btn btn-ghost" style={{ minHeight: 44, borderColor: monitorPlan === key ? p.color : undefined, boxShadow: monitorPlan === key ? `0 0 0 2px ${p.color}` : 'none' }}>
+                  {p.name} ¥{p.amount.toLocaleString()}/月
+                </button>
+              ))}
+            </div>
+            <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontSize: '13px', lineHeight: 1.7, marginBottom: '12px' }}>
+              <input type="checkbox" checked={monitorAgree} onChange={e => { setMonitorAgree(e.target.checked); setMonitorErr(''); }} style={{ marginTop: 4 }} />
+              <span><a href="/terms-provider" target="_blank" rel="noopener noreferrer">契約者利用規約</a>を読み、同意します（<a href="/tokusho" target="_blank" rel="noopener noreferrer">特定商取引法に基づく表記</a>）</span>
+            </label>
+            {monitorErr && <p role="alert" style={{ color: '#b42318', fontSize: '13px', margin: '0 0 10px' }}>{monitorErr}</p>}
+            <button type="button" className="btn btn-primary" disabled={monitorBusy} onClick={handleMonitorSubscribe} style={{ minHeight: 44 }}>
+              {monitorBusy ? '準備しています…' : `${PLANS[monitorPlan]?.name || ''}で続ける（カードを登録する）`}
+            </button>
+          </div>
+        )}
 
         {/* 決済手数料の説明 */}
         <div className="card" style={{ padding: '24px' }}>

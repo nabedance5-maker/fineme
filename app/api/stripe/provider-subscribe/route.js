@@ -42,10 +42,12 @@ export async function POST(request) {
     if (provider.plan === 'special') {
       return Response.json({ error: '特例無料のアカウントのため、お支払いは不要です' }, { status: 409 });
     }
-    if (provider.billing_status === 'monitor' && contractActive(provider)) {
-      return Response.json({ error: '無料モニター期間中です。続けてお使いになる場合は、期間が終わったあとにお申し込みください' }, { status: 409 });
-    }
-    if (contractActive(provider)) {
+    // 無料モニター中（2026-11-16 渡邉判断）：期間中でも申し込める。課金はモニター期間が終わった次の瞬間から（Stripe の無料期間で待つ）。
+    // Stripe の trial_end は48時間以上先が必要なので、残りが48時間を切っている時は48時間後から（最大2日ほど無料が延びる）
+    const monitorTrialEnd = provider.billing_status === 'monitor' && contractActive(provider)
+      ? Math.max(Math.floor(new Date(provider.monitor_until).getTime() / 1000) + 1, Math.floor(Date.now() / 1000) + 48 * 3600 + 300)
+      : null;
+    if (!monitorTrialEnd && contractActive(provider)) {
       return Response.json({ error: 'すでに契約中です。プランの変更は「Fineme利用契約」からどうぞ。' }, { status: 409 });
     }
     if (agree_terms !== true) {
@@ -74,7 +76,8 @@ export async function POST(request) {
       customer: customerId,
       line_items: [{ price: planConfig.price_id, quantity: 1 }],
       subscription_data: {
-        metadata: { fineme_provider_id: String(provider.id) },
+        metadata: { fineme_provider_id: String(provider.id), ...(monitorTrialEnd ? { fineme_monitor: '1' } : {}) },
+        ...(monitorTrialEnd ? { trial_end: monitorTrialEnd } : {}),
       },
       success_url: `${BASE_URL}/provider/${back}?subscribed=1`,
       cancel_url:  `${BASE_URL}/provider/${back}?canceled=1`,

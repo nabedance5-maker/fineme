@@ -56,6 +56,9 @@ export default function AdminProvidersPage() {
         return contractActive(p) ? `<span class="badge badge-green">無料モニター（${until}まで）</span>` : `<span class="badge badge-gray">無料モニター終了（${until}・未契約に戻す処理待ち）</span>`;
       }
       if (p.billing_status === 'past_due') return `<span class="badge badge-red">${planName}・引き落とし失敗</span>`;
+      if (contractActive(p) && p.monitor_until && !p.billing_started && new Date(p.monitor_until).getTime() > Date.now()) {
+        return `<span class="badge badge-green">無料モニター・${planName}を申し込み済み（${new Date(p.monitor_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}の次の日から課金）</span>`;
+      }
       if (contractActive(p)) return `<span class="badge badge-green">${planName} 契約中</span>`;
       return `<span class="badge badge-gray">未契約（${planName}を案内中）</span>`;
     }
