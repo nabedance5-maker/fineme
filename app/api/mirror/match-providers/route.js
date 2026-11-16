@@ -37,7 +37,7 @@ export async function POST(request) {
     .from('providers')
     .select('id, slug, name, catchphrase, photo_url, area, price_from, plan, lat, lon')
     .eq('published', true)
-    .eq('billing_status', 'active');
+    .in('billing_status', ['active', 'monitor']);
   const { data: providers, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!providers?.length) return Response.json({ providers: [] });

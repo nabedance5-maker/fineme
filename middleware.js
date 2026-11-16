@@ -71,11 +71,11 @@ async function contractOkFor(claims) {
     if (!r.ok) throw new Error(`contract ${r.status}`)
     return r.json()
   }
-  let rows = claims.email ? await get(`providers?email=eq.${encodeURIComponent(claims.email)}&select=plan,billing_status&limit=1`) : []
+  let rows = claims.email ? await get(`providers?email=eq.${encodeURIComponent(claims.email)}&select=plan,billing_status,monitor_until&limit=1`) : []
   if (!rows[0]) {
     // スタッフ個別ログイン：所属するお店の契約で決める
     const m = await get(`provider_members?user_id=eq.${claims.sub}&status=eq.active&select=provider_id&limit=1`)
-    if (m[0]) rows = await get(`providers?id=eq.${m[0].provider_id}&select=plan,billing_status&limit=1`)
+    if (m[0]) rows = await get(`providers?id=eq.${m[0].provider_id}&select=plan,billing_status,monitor_until&limit=1`)
   }
   // お店のアカウントでなければ、ここでは判断しない（各APIが401/404を返す）
   if (!rows[0]) return true

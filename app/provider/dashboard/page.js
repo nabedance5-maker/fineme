@@ -2167,7 +2167,9 @@ export default function ProviderDashboardPage() {
         const billingStatusEl = document.getElementById('billing-status');
         if (billingStatusEl) billingStatusEl.style.display = 'none';
       } else {
-        document.getElementById('billing-status').textContent = provider.billing_status === 'active' ? '課金中' : 'まだプランのお申し込みがありません';
+        document.getElementById('billing-status').textContent = provider.billing_status === 'active' ? '課金中'
+          : provider.billing_status === 'monitor' ? `無料モニター期間中（${provider.monitor_until ? new Date(provider.monitor_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : ''}まで・課金なし）`
+          : 'まだプランのお申し込みがありません';
       }
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;

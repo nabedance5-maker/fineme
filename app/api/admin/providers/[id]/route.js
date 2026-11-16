@@ -1,7 +1,7 @@
 // PATCH /api/admin/providers/[id] - 掲載者情報更新（運営用）
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { getSupabase } from '@/lib/supabase';
-import { contractActive } from '@/lib/provider-contract';
+import { contractActive, monitorUntilFrom } from '@/lib/provider-contract';
 import { checkReferralCode } from '@/lib/referral-code';
 import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
 
@@ -53,11 +53,35 @@ export async function PATCH(request, props) {
   // 契約まわり（2026-10-30）：特例無料をやめて A/B/C に戻した時は、Stripe の月額が無ければ「未契約」に戻す。
   // 公開は、契約が有効な（払っている・特例無料の）お店だけ
   let oldPlanForUpsell;
+  let monitorChange = false;
   if (updates.plan !== undefined || updates.published === true) {
-    const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id').eq('id', id).maybeSingle();
+    const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id, monitor_until').eq('id', id).maybeSingle();
     if (!cur) return Response.json({ error: 'お店が見つかりません' }, { status: 404 });
     oldPlanForUpsell = cur.plan;
     if (updates.plan === 'free') updates.plan = 'A';
+    // 無料モニター（2026-11-16）：スタンダード（B）を3か月無料。期限が来たら /api/cron/monitor-expiry が未契約に戻す（自動で有料にはしない）。
+    // すでにモニター中なら期限はそのまま（編集画面で保存し直しても延びない）。月額を払っているお店はモニターにできない
+    if (updates.plan === 'monitor') {
+      monitorChange = true;
+      if (cur.billing_status === 'monitor' && (!cur.monitor_until || new Date(cur.monitor_until).getTime() > Date.now())) {
+        updates.plan = 'B';
+        delete updates.billing_status;
+      } else {
+        if (cur.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(cur.billing_status)) {
+          return Response.json({ error: 'このお店は月額プランを契約中のため、無料モニターにできません' }, { status: 400 });
+        }
+        Object.assign(updates, {
+          plan: 'B', billing_status: 'monitor',
+          monitor_started_at: new Date().toISOString(), monitor_until: monitorUntilFrom().toISOString(),
+          monitor_notified_14_at: null, monitor_notified_3_at: null, monitor_ended_at: null,
+        });
+      }
+    } else if (cur.billing_status === 'monitor' && ['A', 'B', 'C', 'special'].includes(updates.plan) && updates.billing_status === undefined) {
+      // モニターをやめる（運営が手で別のプランに変えた）：特例無料以外は未契約に戻す
+      monitorChange = true;
+      if (updates.plan !== 'special') updates.billing_status = null;
+      updates.monitor_ended_at = new Date().toISOString();
+    }
     if (['A', 'B', 'C'].includes(updates.plan) && cur.plan === 'special' && !cur.stripe_subscription_id && updates.billing_status === undefined) {
       updates.billing_status = null;
     }
@@ -77,7 +101,8 @@ export async function PATCH(request, props) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   // 運営が代理でプラン変更した時も、紹介した営業パートナーへアップセル報酬を発生させる（渡邉確認2026-11-09）
-  if (updates.plan !== undefined && oldPlanForUpsell && oldPlanForUpsell !== updates.plan) {
+  // モニターの開始・終了は支払いを伴わないので、アップセル報酬の対象にしない
+  if (!monitorChange && updates.plan !== undefined && oldPlanForUpsell && oldPlanForUpsell !== updates.plan) {
     try {
       await recordUpsellReward(supabase, id, oldPlanForUpsell, updates.plan);
     } catch (e) {

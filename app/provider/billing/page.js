@@ -31,6 +31,7 @@ export default function BillingPage() {
   const initialized = useRef(false);
   const [currentPlan, setCurrentPlan] = useState('A');
   const [billingStatus, setBillingStatus] = useState('free');
+  const [monitorUntil, setMonitorUntil] = useState(null);
   const [connectStatus, setConnectStatus] = useState(null);
   const [referralYen, setReferralYen] = useState(0); // 今月の紹介報酬（初月90%＋継続¥500の合計）
   const [upgrading, setUpgrading] = useState(false);
@@ -117,6 +118,7 @@ export default function BillingPage() {
           if (me?.id) {
             setCurrentPlan(me.plan || 'A');
             setBillingStatus(me.billing_status || 'free');
+            setMonitorUntil(me.monitor_until || null);
             try {
               const rr = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(me.id)}`, { headers });
               if (rr.ok) {
@@ -189,7 +191,10 @@ export default function BillingPage() {
   }
 
   // 契約中＝払っている（引き落とし失敗でやり直し中も含む）か特例無料。それ以外は未契約（lib/provider-contract.js）
-  const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus });
+  const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus, monitor_until: monitorUntil });
+  // 無料モニター中（2026-11-16）：Stripe の契約は無いので、プラン変更・支払い方法の画面は出さない
+  const isMonitor = isActive && billingStatus === 'monitor';
+  const monitorUntilLabel = monitorUntil ? new Date(monitorUntil).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric' }) : '';
   const isFree   = !isActive;
   const plan     = PLANS[currentPlan] || PLANS.A;
 
@@ -197,6 +202,7 @@ export default function BillingPage() {
     active:   { icon: '', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
     free:     { icon: '', cls: 'badge-free',   label: '未契約',       heroClass: 'free',     title: 'まだプランのお申し込みがありません', desc: 'プランをお申し込みいただくと、その日から管理画面の機能が使えるようになります。' },
     past_due: { icon: '', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
+    monitor:  { icon: '', cls: 'badge-active', label: '無料モニター',   heroClass: 'active',   title: `${monitorUntilLabel}まで、無料でお使いいただけます`, desc: '期間が終わると管理画面の機能は止まりますが、自動で課金されることはありません。続けてお使いになる場合は、期間が終わったあとにプランをお申し込みください。' },
   };
   const st = isActive ? (statusMap[billingStatus] || statusMap.active) : statusMap.free;
 
@@ -216,7 +222,7 @@ export default function BillingPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className={`badge ${st.cls}`}>{st.label}</span>
               {isActive && (
-                <span className="muted" style={{ fontSize: '13px' }}>Finemeのご利用プラン: <strong style={{ color: plan.color }}>{plan.name} ¥{plan.amount.toLocaleString()}/月</strong></span>
+                <span className="muted" style={{ fontSize: '13px' }}>Finemeのご利用プラン: <strong style={{ color: plan.color }}>{plan.name} {isMonitor ? '（無料モニター）' : `¥${plan.amount.toLocaleString()}/月`}</strong></span>
               )}
             </div>
             <div style={{ fontWeight: 700, fontSize: '17px' }}>{st.title}</div>
@@ -239,8 +245,8 @@ export default function BillingPage() {
         <div className="kpi-row">
           <div className="kpi-card">
             <div className="kpi-label">今月の掲載料</div>
-            <div className="kpi-value">¥{isActive ? plan.amount.toLocaleString() : '0'}</div>
-            <div className="kpi-sub">{isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
+            <div className="kpi-value">¥{isActive && !isMonitor ? plan.amount.toLocaleString() : '0'}</div>
+            <div className="kpi-sub">{isMonitor ? '無料モニター期間中' : isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">決済手数料率</div>
@@ -291,7 +297,7 @@ export default function BillingPage() {
                   )}
 
                   {/* 有料ティア：現在プランは表示のみ、上位プランは変更ボタン */}
-                  {isActive && (
+                  {isActive && !isMonitor && (
                     <button
                       className={`plan-btn ${isCurrent ? 'current-btn' : 'upgrade-btn'}`}
                       style={isCurrent ? {} : { background: p.color }}
@@ -375,7 +381,7 @@ export default function BillingPage() {
         </div>
 
         {/* 支払い方法（有料ティアのみ） */}
-        {isActive && (
+        {isActive && !isMonitor && (
           <div className="card" style={{ padding: '20px' }}>
             <h2 style={{ margin: '0 0 4px' }}>支払い方法</h2>
             <p className="muted" style={{ fontSize: '14px', marginBottom: '12px' }}>クレジットカード（Stripe）で管理しています。</p>

@@ -51,6 +51,10 @@ export default function AdminProvidersPage() {
     function contractBadge(p) {
       const planName = { A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || 'プランA';
       if (p.plan === 'special') return '<span class="badge badge-green">特例無料</span>';
+      if (p.billing_status === 'monitor') {
+        const until = p.monitor_until ? new Date(p.monitor_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '';
+        return contractActive(p) ? `<span class="badge badge-green">無料モニター（${until}まで）</span>` : `<span class="badge badge-gray">無料モニター終了（${until}・未契約に戻す処理待ち）</span>`;
+      }
       if (p.billing_status === 'past_due') return `<span class="badge badge-red">${planName}・引き落とし失敗</span>`;
       if (contractActive(p)) return `<span class="badge badge-green">${planName} 契約中</span>`;
       return `<span class="badge badge-gray">未契約（${planName}を案内中）</span>`;
@@ -62,6 +66,7 @@ export default function AdminProvidersPage() {
     const norm = v => String(v || '').toLowerCase().replace(/\s+/g, '');
     function contractState(p) {
       if (p.plan === 'special') return 'special';
+      if (p.billing_status === 'monitor') return contractActive(p) ? 'monitor' : 'none';
       if (p.billing_status === 'past_due') return 'past_due';
       return contractActive(p) ? 'active' : 'none';
     }
@@ -102,7 +107,7 @@ export default function AdminProvidersPage() {
         }
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
-        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.plan !== 'special' && contractActive(p)).length;
+        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.plan !== 'special' && p.billing_status !== 'monitor' && contractActive(p)).length;
         if (!providers.length) { listEl.innerHTML = '<p class="muted">契約者がいません。「契約者を登録」から追加してください。</p>'; return; }
         const shown = applyProviderFilters(providers);
         const cnt = document.getElementById('pv-count'); if (cnt) cnt.textContent = `${shown.length}件 / 全${providers.length}件`;
@@ -199,7 +204,7 @@ export default function AdminProvidersPage() {
         // プランセレクトの初期値を billing_status と plan から正しく復元
         const planSel = form.querySelector('select[name="plan"]');
         if (planSel) {
-          planSel.value = ['A', 'B', 'C', 'special'].includes(data.plan) ? data.plan : 'A';
+          planSel.value = data.billing_status === 'monitor' ? 'monitor' : ['A', 'B', 'C', 'special'].includes(data.plan) ? data.plan : 'A';
         }
       }
       modal.style.display = 'flex';
@@ -254,7 +259,7 @@ export default function AdminProvidersPage() {
           <div className="ad-toolbar" style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
             <input id="pv-q" type="search" placeholder="掲載名・メール・URL・紹介コード・エリアで探す" style={{flex:'1 1 260px',padding:'8px 10px',border:'1.5px solid #ddd',borderRadius:'8px',fontSize:'14px'}} />
             <select id="pv-pub" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">公開：すべて</option><option value="published">公開中</option><option value="unpublished">非公開</option><option value="hidden">強制非公開</option></select>
-            <select id="pv-contract" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">契約：すべて</option><option value="active">契約中</option><option value="none">未契約</option><option value="past_due">引き落とし失敗</option><option value="special">特例無料</option></select>
+            <select id="pv-contract" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">契約：すべて</option><option value="active">契約中</option><option value="none">未契約</option><option value="past_due">引き落とし失敗</option><option value="special">特例無料</option><option value="monitor">無料モニター</option></select>
             <select id="pv-kind" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">種類：すべて</option><option value="provider">契約者</option><option value="affiliate">アフィリエイト掲載</option></select>
             <select id="pv-cat" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">カテゴリ：すべて</option></select>
             <select id="pv-sort" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="new">新しい順</option><option value="old">古い順</option><option value="name">名前順</option><option value="code">紹介コード順</option></select>
@@ -318,6 +323,7 @@ export default function AdminProvidersPage() {
                   <option value="B">B・スタンダード（¥7,000/月）</option>
                   <option value="C">C・プレミアム（¥10,000/月）</option>
                   <option value="special">【特例無料】有料機能すべて使用可（支払いなし）</option>
+                  <option value="monitor">【無料モニター】Bを3か月無料・終わると自動で未契約に（課金なし）</option>
                 </select>
               </div>
               <div className="form-field form-field-full"><label>キャッチコピー</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>

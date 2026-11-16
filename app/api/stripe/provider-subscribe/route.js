@@ -34,13 +34,16 @@ export async function POST(request) {
     // 掲載者情報を取得
     const { data: provider } = await db
       .from('providers')
-      .select('id, plan, stripe_customer_id, billing_status, referral_code')
+      .select('id, plan, stripe_customer_id, billing_status, referral_code, monitor_until')
       .eq('email', user.email)
       .single();
 
     if (!provider) return Response.json({ error: '契約者情報が見つかりません' }, { status: 404 });
     if (provider.plan === 'special') {
       return Response.json({ error: '特例無料のアカウントのため、お支払いは不要です' }, { status: 409 });
+    }
+    if (provider.billing_status === 'monitor' && contractActive(provider)) {
+      return Response.json({ error: '無料モニター期間中です。続けてお使いになる場合は、期間が終わったあとにお申し込みください' }, { status: 409 });
     }
     if (contractActive(provider)) {
       return Response.json({ error: 'すでに契約中です。プランの変更は「Fineme利用契約」からどうぞ。' }, { status: 409 });

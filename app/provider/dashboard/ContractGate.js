@@ -144,6 +144,18 @@ export default function ContractGate() {
   if (!me) return null;
 
   if (!blocked) {
+    // 無料モニター（2026-11-16）：終わる14日前から、期限と「自動で課金されない」ことを知らせる
+    if (me.billing_status === 'monitor' && me.monitor_until && !me._member) {
+      const left = Math.ceil((new Date(me.monitor_until).getTime() - Date.now()) / 86400000);
+      if (left > 14) return null;
+      const until = new Date(me.monitor_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric' });
+      return (
+        <div className="pcg-due" role="status">
+          <style>{CSS}</style>
+          <span>無料モニター期間は{until}までです（あと{Math.max(left, 0)}日）。終わると管理画面の機能は止まりますが、自動で課金されることはありません。続けてお使いになる場合は、期間が終わったあとにプランをお申し込みください。</span>
+        </div>
+      );
+    }
     if (me.billing_status !== 'past_due' || me._member) return null;
     return (
       <div className="pcg-due" role="alert">
@@ -161,6 +173,7 @@ export default function ContractGate() {
         <div className="pcg-head">
           <div className="pcg-eyebrow">Fineme 利用のお申し込み</div>
           <h1 id="pcg-title">{me.name ? `${me.name} 様、` : ''}プランを選んで、お申し込みください</h1>
+          {me.monitor_ended_at && <p className="pcg-lead"><b>無料モニター期間が終わりました。ご協力ありがとうございました。</b>自動で課金はされていません。続けてお使いになる場合は、下からプランをお申し込みください。これまでのお客様・予約などのデータはそのまま残っています。</p>}
           <p className="pcg-lead">お申し込みの日から、管理画面の機能（予約・顧客管理・決済・配信など）が使えるようになります。プランはあとからいつでも変えられます。</p>
         </div>
 
