@@ -1606,7 +1606,7 @@ export default function ProviderDashboardPage() {
       const box = document.getElementById('rp-body');
       if (!box) return;
       const yen = n => `¥${Number(n || 0).toLocaleString()}`;
-      const COLS = [['joined', '入会'], ['left', '退会'], ['members_end', '月末の会員数'], ['reservations', '予約'], ['visits', '来店'], ['cancels', 'キャンセル'], ['new_customers', '新しいお客様'], ['sales', '売上'], ['checkins', 'チェックイン'], ['packages', '回数券の販売']];
+      const COLS = [['joined', '入会'], ['left', '退会'], ['members_end', '月末の会員数'], ['reservations', '予約'], ['visits', '来店'], ['cancels', 'キャンセル'], ['new_customers', '新しいお客様'], ['sales', '売上'], ['checkins', 'QRチェックイン'], ['packages', '回数券の販売']];
       let rows = [];
       async function load() {
         box.innerHTML = '<p style="font-size:13px">読み込み中…</p>';
@@ -2282,8 +2282,11 @@ export default function ProviderDashboardPage() {
           document.getElementById('stat-inquiries').textContent = inquiryCount + '件';
 
           // 予約転換率・確定数・来店数
-          const approvedCount = thisMonthItems.filter(r => r.status === 'approved').length;
-          const visitedCount = thisMonthItems.filter(r => r.status === 'visited').length;
+          // 2026-11-16：確定は「今まだ確定のまま」の予約だけを数えていたため、来店済みになった予約が確定から抜け、
+          // 確定0件なのに来店完了1件のような数字になっていた。確定＝一度確定した予約（来店済み・無断キャンセルを含む）。
+          // 来店完了は、今月に来店した予約（受付した月ではなく来店した日で数える）
+          const approvedCount = thisMonthItems.filter(r => ['approved', 'visited', 'no_show'].includes(r.status)).length;
+          const visitedCount = items.filter(r => r.status === 'visited' && String(r.visited_at || r.confirmed_date || r.reserved_date || '').startsWith(yyyymm)).length;
           const cvr = inquiryCount > 0 ? Math.round((approvedCount / inquiryCount) * 100) : 0;
           document.getElementById('stat-approved').textContent = approvedCount + '件';
           document.getElementById('stat-cvr').textContent = cvr + '%';
@@ -8373,8 +8376,13 @@ export default function ProviderDashboardPage() {
       // 各絞り込み条件に何人該当するかをオプションに表示（クリックしなくても状況が分かるように）
       function updateFilterCounts() {
         if (!filterSel) return;
-        const counts = { all: allItems.length, 'user-overdue': 0, 'store-overdue': 0, dormant: 0 };
-        allItems.forEach(c => {
+        // 一覧に出る人数と合わせる（2026-11-16：非会員のお客様が数に入らず、追加・削除しても変わらなかった）。
+        // 非表示にしたお客様は、「非表示も表示」にしている時だけ数える
+        const members = allItems.filter(c => showHidden || !hiddenUsers.has(c.user_id));
+        let manualN = 0;
+        try { manualN = manualItems.filter(m => !m.linked_user_id && (showHidden || !hiddenManual.has(m.id))).length; } catch {} // 読み込み前は0
+        const counts = { all: members.length + manualN, 'user-overdue': 0, 'store-overdue': 0, dormant: 0 };
+        members.forEach(c => {
           if (typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0) counts['user-overdue']++;
           if (typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0) counts['store-overdue']++;
           if (c.status === 'dormant' || c.status === 'churned') counts.dormant++;
@@ -8652,6 +8660,7 @@ export default function ProviderDashboardPage() {
       // 非表示にしたお客様（2026-11-12 渡邉要望）：一覧の表示からだけ外す。配信の人数・POS・予約などには影響させない
       var hiddenUsers = new Set(), hiddenManual = new Set(), showHidden = false;
       function render() {
+        updateFilterCounts();
         const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
         const memberRows = currentFilteredMemberRows().filter(c => showHidden || !hiddenUsers.has(c.user_id));
@@ -9156,6 +9165,8 @@ export default function ProviderDashboardPage() {
           custModalNoteTa.disabled = false;
           custModalNoteTa.placeholder = 'この店舗だけが見られるメモ（要望・使った薬剤・注意点など）。お客様には表示されません。';
           custModalNoteSaveBtn.disabled = false;
+        } else {
+          custModalNoteTa.placeholder = '読み込めませんでした。開き直してください';
         }
 
         // 契約中のロッカーがあればバッジで表示（でお質問2026-09-18：「ロッカーを契約したら
@@ -15092,8 +15103,11 @@ export default function ProviderDashboardPage() {
         ]);
         if (noteRes.ok) {
           const noteData = await noteRes.json();
-          if (modalNoteEl) { modalNoteEl.value = noteData.note || ''; modalNoteEl.disabled = false; }
+          // 読み込み後は「読み込み中…」を案内文に戻す（2026-11-16：保存はできるのに読み込み中のままに見えていた）
+          if (modalNoteEl) { modalNoteEl.value = noteData.note || ''; modalNoteEl.disabled = false; modalNoteEl.placeholder = 'この店舗だけが見られるメモ（要望・注意点など）。お客様には表示されません。'; }
           if (modalNoteSaveBtn) modalNoteSaveBtn.disabled = false;
+        } else if (modalNoteEl) {
+          modalNoteEl.placeholder = '読み込めませんでした。開き直してください';
         }
         if (historyRes.ok) {
           const entries = await historyRes.json();
@@ -15372,7 +15386,7 @@ export default function ProviderDashboardPage() {
         el.innerHTML = todays.length
           ? `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${todays.length}件</p>` +
             todays.slice(0, 5).map(r => `<div style="padding:4px 0;font-size:13px">${esc(r.customer_name || '')}</div>`).join('')
-          : '<p class="muted" style="font-size:13px">今日のチェックインはまだありません。</p>';
+          : '<p class="muted" style="font-size:13px">今日のQRチェックインはまだありません（予約から来店確認した方はここには出ません）。</p>';
       }
 
       async function loadTodaySales() {
@@ -16356,8 +16370,8 @@ export default function ProviderDashboardPage() {
 
       // ── 会計の履歴（返品・取り消し、レシート、領収書） ──
       async function loadTransactions() {
-        const res = await fetch('/api/provider/pos/transactions', { headers: authHeadersPos() });
-        if (!res.ok) { txListEl.innerHTML = authErrorHtml(res); return; }
+        const res = await posGet('/api/provider/pos/transactions');
+        if (!res || !res.ok) { posLoadError(txListEl, res, loadTransactions); return; }
         txRows = await res.json();
         if (!txRows.length) { txListEl.innerHTML = '<p style="font-size:13px;margin:0">まだ会計の履歴がありません。</p>'; return; }
         txListEl.innerHTML = txRows.map(t => `
@@ -16513,9 +16527,26 @@ export default function ProviderDashboardPage() {
       }
       $('prod-moves-toggle')?.addEventListener('click', () => { const el = $('prod-moves'); el.hidden = !el.hidden; loadMovements(); });
 
+      // 読み込み（2026-11-16：失敗すると何も出さずに「読み込み中…」のまま止まっていた）。
+      // 一時的な失敗（通信・5xx・時間切れ）は1回だけやり直し、それでもだめなら「もう一度読み込む」を出す
+      async function posGet(url) {
+        for (let i = 0; i < 2; i++) {
+          try {
+            const res = await fetch(url, { headers: authHeadersPos(), signal: AbortSignal.timeout(15000) });
+            if (res.ok || res.status === 401 || res.status === 402 || res.status === 403 || i === 1) return res;
+          } catch (e) { if (i === 1) return null; }
+          await new Promise(r => setTimeout(r, 1200));
+        }
+        return null;
+      }
+      function posLoadError(el, res, retry) {
+        if (!el) return;
+        el.innerHTML = res && res.status === 401 ? authErrorHtml(res) : '<p style="font-size:13px;margin:0;color:#b42318">読み込めませんでした。<button type="button" class="btn btn-ghost" data-pos-retry style="font-size:12px;padding:4px 12px;margin-left:6px">もう一度読み込む</button></p>';
+        el.querySelector('[data-pos-retry]')?.addEventListener('click', () => { el.innerHTML = '<p>読み込み中…</p>'; retry(); });
+      }
       async function loadProducts() {
-        const res = await fetch('/api/provider/products', { headers: authHeadersPos() });
-        if (!res.ok) return;
+        const res = await posGet('/api/provider/products');
+        if (!res || !res.ok) { posLoadError(gridEl, res, loadProducts); posLoadError(prodListEl, res, loadProducts); return; }
         products = await res.json();
         renderGrid(); renderProductList();
       }
@@ -16566,11 +16597,11 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadStaffAndServices() {
-        const [a, b, c] = await Promise.all([fetch('/api/provider/staff', { headers: authHeadersPos() }), fetch('/api/provider/services', { headers: authHeadersPos() }), fetch('/api/provider/packages', { headers: authHeadersPos() })]);
-        staffRows = a.ok ? await a.json() : [];
-        services = b.ok ? await b.json() : [];
+        const [a, b, c] = await Promise.all([posGet('/api/provider/staff'), posGet('/api/provider/services'), posGet('/api/provider/packages')]);
+        staffRows = a?.ok ? await a.json() : [];
+        services = b?.ok ? await b.json() : [];
         // 回数券・チケット（月額のものは会員プランで扱うので出さない。2026-11-09）
-        packages = c.ok ? ((await c.json()) || []).filter(p => p.active !== false && p.package_type !== 'subscription') : [];
+        packages = c?.ok ? ((await c.json()) || []).filter(p => p.active !== false && p.package_type !== 'subscription') : [];
         staffSel.innerHTML = '<option value="">選択なし</option>' + staffRows.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
         renderGrid();
       }
@@ -16834,6 +16865,12 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: authHeadersEv(), body: JSON.stringify({ title, event_date: eventDate, start_time: startTime || null, memo: memo || null, image_url: uploadedEventImageUrl }),
         });
         if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+        // 作ったイベントをすぐ一覧に出す（2026-11-16：読み直しを待つ数秒間、作れていないように見えた）
+        const created = await res.json().catch(() => null);
+        if (created?.id && !events.some(x => x.id === created.id)) {
+          events = [{ ...created, counts: { invited: 0, attending: 0, declined: 0 } }, ...events].sort((a, b) => String(b.event_date).localeCompare(String(a.event_date)));
+          renderList();
+        }
         document.getElementById('ev-title').value = '';
         document.getElementById('ev-date').value = '';
         document.getElementById('ev-time').value = '';
