@@ -2129,11 +2129,12 @@ export default function ProviderDashboardPage() {
         }));
       }
       document.getElementById('mb-invite')?.addEventListener('click', async e => {
+        const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
         const body = { email: document.getElementById('mb-email').value, name: document.getElementById('mb-name').value, role: document.getElementById('mb-role').value, staff_id: document.getElementById('mb-staff').value || null };
-        e.currentTarget.disabled = true;
+        btn.disabled = true;
         const r = await fetch('/api/provider/members', { method: 'POST', headers: H(), body: JSON.stringify(body) });
         const d = await r.json().catch(() => ({}));
-        e.currentTarget.disabled = false;
+        btn.disabled = false;
         if (!r.ok) { showToast(d.error || '招待できませんでした'); return; }
         ['mb-email', 'mb-name'].forEach(id => { document.getElementById(id).value = ''; });
         showToast(d.mail_error ? `招待しましたが、メールを送れませんでした。初期パスワード：${d.temp_password || '（既存のアカウント）'}` : '招待メールを送りました');
@@ -4347,10 +4348,11 @@ export default function ProviderDashboardPage() {
           renderLinksInto(el, win);
         }));
         el.querySelector('[data-send-line]')?.addEventListener('click', async e => {
-          e.currentTarget.disabled = true;
+          const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
+          btn.disabled = true;
           const res = await fetch('/api/provider/shift-submissions/send-links', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ window: win.key }) });
           const d = await res.json().catch(() => ({}));
-          if (!res.ok) { showToast(d.error || '送れませんでした'); e.currentTarget.disabled = false; return; }
+          if (!res.ok) { showToast(d.error || '送れませんでした'); btn.disabled = false; return; }
           showToast(`${d.sent.length}人にLINEで送りました${d.skipped.length ? `（送れなかった人：${d.skipped.join('・')}）` : ''}`);
         });
       }
@@ -4754,8 +4756,9 @@ export default function ProviderDashboardPage() {
           await loadCalendar();
         });
         el.querySelector('[data-auto-confirm]')?.addEventListener('click', async e => {
+          const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
           if (!(await pdConfirm({ title: `${month}月のシフトを確定しますか？`, lines: [['対象', `${month}月（確定していない日）`]], okLabel: '確定する', cancelLabel: 'やめる' }))) return;
-          e.currentTarget.disabled = true;
+          btn.disabled = true;
           const res = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'confirm', dates }) });
           if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '確定できませんでした'); renderAutoCard(); return; }
           autoResult = null;
@@ -4845,9 +4848,10 @@ export default function ProviderDashboardPage() {
           ]);
         });
         el.querySelector('[data-easy-confirm]')?.addEventListener('click', async e => {
+          const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
           const dates = monthDates();
           if (!(await pdConfirm({ title: `${month}月のシフトを確定しますか？`, lines: [['対象', `${month}月の全日`]], okLabel: '確定する', cancelLabel: 'やめる' }))) return;
-          e.currentTarget.disabled = true;
+          btn.disabled = true;
           const r = await fetch('/api/provider/shift-range', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() }, body: JSON.stringify({ action: 'confirm', dates }) });
           const d = await r.json().catch(() => ({}));
           if (!r.ok) { showToast(d.error || '確定できませんでした'); renderEasyPanel(); return; }
@@ -6328,8 +6332,9 @@ export default function ProviderDashboardPage() {
             <button type="button" class="btn btn-ghost" style="color:#ef4444" data-lkr-del>削除</button>
           </div>`);
         root?.querySelector('[data-lkr-copy-link]')?.addEventListener('click', async e => {
-          try { await navigator.clipboard.writeText(e.currentTarget.dataset.lkrCopyLink); showToast('支払いリンクをコピーしました'); }
-          catch { prompt('このリンクをコピーしてお客様に送ってください', e.currentTarget.dataset.lkrCopyLink); }
+          const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
+          try { await navigator.clipboard.writeText(btn.dataset.lkrCopyLink); showToast('支払いリンクをコピーしました'); }
+          catch { prompt('このリンクをコピーしてお客様に送ってください', btn.dataset.lkrCopyLink); }
         });
         root?.querySelector('[data-lkr-open-cust]')?.addEventListener('click', () => {
           if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
@@ -9048,12 +9053,13 @@ export default function ProviderDashboardPage() {
         </div>`;
         el.querySelector('[data-cp-cancel]').addEventListener('click', () => renderCustProfile(el, target, d));
         el.querySelector('[data-cp-save]').addEventListener('click', async e => {
+          const btn = e.currentTarget; // await の後は e.currentTarget が null になるため先に取る
           const body = { ...target };
           el.querySelectorAll('[data-cp]').forEach(i => { body[i.dataset.cp] = i.type === 'checkbox' ? i.checked : i.value; });
-          e.currentTarget.disabled = true;
+          btn.disabled = true;
           const res = await fetch('/api/provider/customer-profile', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
           const r = await res.json().catch(() => ({}));
-          if (!res.ok) { e.currentTarget.disabled = false; showToast(r.error || '保存できませんでした'); return; }
+          if (!res.ok) { btn.disabled = false; showToast(r.error || '保存できませんでした'); return; }
           showToast('基本情報を保存しました');
           loadCustProfile(target);
         });
