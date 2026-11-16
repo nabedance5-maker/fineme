@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getKnownTrackId } from '@/lib/track';
+import { MONITOR_CAMPAIGN, isMonitorOpen, monitorDeadlineLabel } from '@/lib/monitor-campaign';
 
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
@@ -776,6 +777,19 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* 店舗の方へ：無料モニター店舗の募集（2026-11-16。切り替え・締切は lib/monitor-campaign.js） */}
+        {isMonitorOpen() && (
+          <aside aria-label="店舗の方へのお知らせ" style={{ padding: '0 20px', margin: '8px 0 40px' }}>
+            <Link href="/provider/join#monitor" style={{ maxWidth: '960px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px 16px', padding: '14px 20px', border: '1px solid rgba(200,164,90,0.35)', borderRadius: '12px', background: 'rgba(200,164,90,0.06)', textDecoration: 'none' }}>
+              <span style={{ display: 'grid', gap: '2px', minWidth: 0 }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '.12em', color: 'rgba(200,164,90,0.85)' }}>店舗の方へ</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#f0ece4', lineHeight: 1.6 }}>無料モニター店舗を募集しています（{MONITOR_CAMPAIGN.slots}店限定・{monitorDeadlineLabel()}締切）</span>
+              </span>
+              <span style={{ fontSize: '13px', color: 'rgba(200,164,90,0.9)', whiteSpace: 'nowrap' }}>詳しく見る →</span>
+            </Link>
+          </aside>
+        )}
 
         {/* FAQ Section */}
         <section style={{ padding: '80px 24px', background: '#11161e', borderTop: '1px solid rgba(236,232,223,0.066)' }}>

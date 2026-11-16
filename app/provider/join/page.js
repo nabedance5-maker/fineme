@@ -3,6 +3,7 @@ import { axisGlyph } from '@/lib/axis-glyph';
 import { PROVIDER_PLANS as PLANS } from '@/lib/provider-plans';
 import { RevealScope, HeroDemo, CountUp, RoiCalculator, StickyCta, IndustryTabs } from './JoinFx';
 import RefCapture from './RefCapture';
+import { MONITOR_CAMPAIGN, REPEAT_CHECK, isMonitorOpen, monitorDeadlineLabel } from '@/lib/monitor-campaign';
 
 export const metadata = {
   alternates: { canonical: 'https://www.fineme.me/provider/join' },
@@ -166,6 +167,62 @@ function MockTag() {
   return <span className="pj-mock-tag">画面イメージ</span>;
 }
 
+// 無料モニター店舗の募集と、無料のリピート診断（2026-11-16）。表示の切り替え・締切は lib/monitor-campaign.js
+function MonitorCampaign() {
+  const open = isMonitorOpen();
+  if (!open && !REPEAT_CHECK.enabled) return null;
+  const plan = PLANS.find((p) => p.label === MONITOR_CAMPAIGN.planLabel);
+  return (
+    <section className="pj-monitor" id="monitor" aria-label="無料モニター店舗の募集">
+      <div className="pj-container">
+        {open && (
+          <div className="pj-monitor-card">
+            <div className="pj-monitor-head">
+              <div className="pj-eyebrow">Monitor</div>
+              <h2 className="pj-monitor-h">無料モニター店舗を募集しています<span className="pj-nb">（{MONITOR_CAMPAIGN.slots}店限定）</span></h2>
+              <p className="pj-monitor-lead">
+                Finemeは、外見磨きの専門店のリピーターづくりを仕組み化する運営システムです。
+                導入事例をつくるため、実際のお店で使っていただけるモニター店舗を募集しています。
+              </p>
+            </div>
+            <dl className="pj-monitor-list">
+              <div>
+                <dt>内容</dt>
+                <dd>{plan ? `${plan.label}プラン（通常 月額${plan.price}円）` : `${MONITOR_CAMPAIGN.planLabel}プラン`}を{MONITOR_CAMPAIGN.months}か月間、無料でお使いいただけます。初期設定はこちらでサポートします。</dd>
+              </div>
+              <div>
+                <dt>お願いしたいこと</dt>
+                <dd>月1回・30分程度のオンラインヒアリングと、導入事例へのご協力をお願いします。店舗名をどこまで公表するかは、事前にご相談して決めます。</dd>
+              </div>
+              <div>
+                <dt>終了後</dt>
+                <dd>有料プランへの移行は任意です。モニター期間が終わっても、自動で課金されることはありません。</dd>
+              </div>
+              <div>
+                <dt>応募締切</dt>
+                <dd>{monitorDeadlineLabel()}</dd>
+              </div>
+            </dl>
+            <div className="pj-monitor-cta">
+              <a className="pj-btn pj-btn-gold pj-btn-lg" href={MONITOR_CAMPAIGN.formUrl} target="_blank" rel="noopener noreferrer">モニターに応募する</a>
+              <span className="pj-monitor-note">応募フォーム（Googleフォーム）が別のタブで開きます</span>
+            </div>
+          </div>
+        )}
+        {REPEAT_CHECK.enabled && (
+          <div className="pj-repeat-check">
+            <div>
+              <b>無料のリピート診断</b>
+              <span>お店のリピーターづくりの今の状態を、質問に答えながらふり返れます。</span>
+            </div>
+            <a className="pj-btn pj-btn-ghost" href={REPEAT_CHECK.formUrl} target="_blank" rel="noopener noreferrer">リピート診断を受ける（無料）</a>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function PlanBadge({ plan }) {
   return <span className={`pj-plan-chip pj-plan-chip-${plan.toLowerCase()}`}>{plan === 'A' ? '全プラン' : `${plan}〜`}</span>;
 }
@@ -215,6 +272,8 @@ export default async function ProviderJoinPage(props) {
           </div>
         </div>
       </section>
+
+      <MonitorCampaign />
 
       <div className="pj-marquee" aria-hidden="true">
         <div className="pj-marquee-track">
