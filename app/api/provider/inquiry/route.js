@@ -30,7 +30,10 @@ async function __POST(request) {
     const body = await request.json();
     const { bizName, contactName, email, phone, category, contactPref, message, referralCode } = body;
     // LPで押したプラン（任意）。アカウントを作る時の初期プランになる
-    const desiredPlan = ['A', 'B', 'C'].includes(body.desiredPlan) ? body.desiredPlan : null;
+    // 'monitor' は無料モニターへの応募（2026-11-16）。ここでは記録するだけで、モニターにするのは運営が管理画面で行う
+    const desiredPlan = ['A', 'B', 'C', 'monitor'].includes(body.desiredPlan) ? body.desiredPlan : null;
+    const isMonitor = desiredPlan === 'monitor';
+    const planLabel = isMonitor ? '無料モニターに応募' : desiredPlan ? `PLAN ${desiredPlan}` : '';
     // オンライン相談のご希望日時（問い合わせの次は、必ずオンラインで話す。2026-10-30）
     const meetingWish = String(body.meetingWish || '').trim().slice(0, 500) || null;
     // このページを知ったきっかけ（任意。AI経由の応募を数える）
@@ -75,7 +78,7 @@ async function __POST(request) {
           await resend.emails.send({
             from: 'Fineme <noreply@fineme.me>',
             to: process.env.ADMIN_EMAIL,
-            subject: isPartner ? `【営業パートナー応募】${bizName}` : `【掲載問い合わせ】${bizName}`,
+            subject: isPartner ? `【営業パートナー応募】${bizName}` : isMonitor ? `【無料モニター応募】${bizName}` : `【掲載問い合わせ】${bizName}`,
             text: [
               isPartner ? '営業パートナー募集ページ（/sales-partner）から応募が届きました。' : '掲載相談フォームから問い合わせが届きました。',
               '',
@@ -86,7 +89,7 @@ async function __POST(request) {
               `カテゴリ: ${categoryLabel}`,
               `希望連絡方法: ${contactPrefLabel}`,
               rc.code ? `紹介コード: ${rc.code}` : '',
-              desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
+              planLabel ? `気になっているプラン: ${planLabel}` : '',
               meetingWish ? `オンライン相談の希望日時: ${meetingWish}` : '',
               source ? `知ったきっかけ: ${sourceLabel(source)}` : '',
               '',
@@ -103,7 +106,7 @@ async function __POST(request) {
         await resend.emails.send({
           from: 'Fineme <noreply@fineme.me>',
           to: email,
-          subject: isPartner ? `【Fineme】営業パートナーへのご応募を受け付けました` : `【Fineme】お問い合わせを受け付けました`,
+          subject: isPartner ? `【Fineme】営業パートナーへのご応募を受け付けました` : isMonitor ? `【Fineme】無料モニターへのご応募を受け付けました` : `【Fineme】お問い合わせを受け付けました`,
           text: [
             `${contactName} 様`,
             '',
@@ -117,7 +120,7 @@ async function __POST(request) {
             phone ? `電話: ${phone}` : '',
             `カテゴリ: ${categoryLabel}`,
             `希望連絡方法: ${contactPrefLabel}`,
-            desiredPlan ? `気になっているプラン: PLAN ${desiredPlan}` : '',
+            planLabel ? `気になっているプラン: ${planLabel}` : '',
             meetingWish ? `オンライン相談のご希望日時: ${meetingWish}` : '',
             '',
             '相談内容:',

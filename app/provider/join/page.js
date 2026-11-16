@@ -168,7 +168,7 @@ function MockTag() {
 }
 
 // 無料モニター店舗の募集と、無料のリピート診断（2026-11-16）。表示の切り替え・締切は lib/monitor-campaign.js
-function MonitorCampaign() {
+function MonitorCampaign({ refCode }) {
   const open = isMonitorOpen();
   if (!open && !REPEAT_CHECK.enabled) return null;
   const plan = PLANS.find((p) => p.label === MONITOR_CAMPAIGN.planLabel);
@@ -204,8 +204,8 @@ function MonitorCampaign() {
               </div>
             </dl>
             <div className="pj-monitor-cta">
-              <a className="pj-btn pj-btn-gold pj-btn-lg" href={MONITOR_CAMPAIGN.formUrl} target="_blank" rel="noopener noreferrer">モニターに応募する</a>
-              <span className="pj-monitor-note">応募フォーム（Googleフォーム）が別のタブで開きます</span>
+              <a className="pj-btn pj-btn-gold pj-btn-lg" href={refCode ? `${MONITOR_CAMPAIGN.applyPath}&ref=${encodeURIComponent(refCode)}` : MONITOR_CAMPAIGN.applyPath}>モニターに応募する</a>
+              <span className="pj-monitor-note">2分ほどで終わります。応募のあと、オンラインで30分ほどお話を伺います</span>
             </div>
           </div>
         )}
@@ -273,7 +273,7 @@ export default async function ProviderJoinPage(props) {
         </div>
       </section>
 
-      <MonitorCampaign />
+      <MonitorCampaign refCode={typeof ref === 'string' ? ref : null} />
 
       <div className="pj-marquee" aria-hidden="true">
         <div className="pj-marquee-track">

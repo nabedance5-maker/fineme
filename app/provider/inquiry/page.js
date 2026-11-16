@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { readRef } from '@/lib/referral-ref';
 import { INQUIRY_SOURCES } from '@/lib/inquiry-source';
+import { isMonitorOpen, MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 
 export default function ProviderInquiryPage() {
   const initialized = useRef(false);
@@ -174,6 +175,19 @@ export default function ProviderInquiryPage() {
     }
     const planSel = document.getElementById('desiredPlan');
     if (planSel && ['A', 'B', 'C'].includes(planParam)) planSel.value = planParam;
+    // 無料モニターの応募（/provider/join の「モニターに応募する」から。2026-11-16）
+    // 紹介コードはこのフォームで受けるので、モニター後に有料になった時の紹介報酬も紐づく
+    if (planSel && planParam === 'monitor' && planSel.querySelector('option[value="monitor"]')) {
+      planSel.value = 'monitor';
+      const t = document.getElementById('inqTitle');
+      if (t) t.textContent = '無料モニターへの応募';
+      const l = document.getElementById('inqLead');
+      if (l) l.textContent = `${MONITOR_CAMPAIGN.planLabel}プランを${MONITOR_CAMPAIGN.months}か月間無料でお使いいただくモニターへの応募フォームです（${MONITOR_CAMPAIGN.slots}店限定）。応募のあと、オンライン（30分ほど）でお店のご様子を伺います。ご都合のよい日時をお知らせください。`;
+      const m = document.getElementById('message');
+      if (m) m.placeholder = '例: いまの予約・お客様の管理の方法（紙・表計算・予約サイトなど）／困っていること／導入事例として店舗名を出してよいか など';
+      const b = document.querySelector('#provider-inquiry-form .inq-btn-primary');
+      if (b) b.textContent = 'モニターに応募する';
+    }
 
     const refCode = readRef();
     const refInput = document.getElementById('referralCode');
@@ -271,7 +285,9 @@ export default function ProviderInquiryPage() {
         submitBtn.textContent = '送信中…';
         try {
           await saveInquiry(data);
-          statusEl.textContent = 'お申し込みを受け付けました。担当者から、オンライン相談の日時とURLをメールでご連絡します。';
+          statusEl.textContent = data.desiredPlan === 'monitor'
+            ? '無料モニターへのご応募を受け付けました。担当者から、オンラインでお話を伺う日時とURLをメールでご連絡します。'
+            : 'お申し込みを受け付けました。担当者から、オンライン相談の日時とURLをメールでご連絡します。';
           statusEl.style.color = '#065f46';
           form.reset();
         } catch (err) {
@@ -285,7 +301,7 @@ export default function ProviderInquiryPage() {
           statusEl.style.color = '#b91c1c';
         } finally {
           submitBtn.disabled = false;
-          submitBtn.textContent = '問い合わせを送信';
+          submitBtn.textContent = data.desiredPlan === 'monitor' ? 'モニターに応募する' : '相談を申し込む';
         }
       });
     }
@@ -321,8 +337,8 @@ export default function ProviderInquiryPage() {
     <div className="inq-page">
       <div className="inq-container">
         <p className="inq-eyebrow">Provider Inquiry</p>
-        <h1 className="inq-title">オンライン相談のお申し込み</h1>
-        <p className="inq-lead">まずはオンライン（30分ほど）で、お店のご様子を伺い、Finemeの使い方をご説明します。ご都合のよい日時をお知らせください。2分で完了します。</p>
+        <h1 className="inq-title" id="inqTitle">オンライン相談のお申し込み</h1>
+        <p className="inq-lead" id="inqLead">まずはオンライン（30分ほど）で、お店のご様子を伺い、Finemeの使い方をご説明します。ご都合のよい日時をお知らせください。2分で完了します。</p>
         <p className="inq-referral-note" id="inqReferralNote" style={{ display: 'none' }}></p>
 
         <div className="inq-card">
@@ -392,6 +408,7 @@ export default function ProviderInquiryPage() {
                   <option value="A">PLAN A ライト（¥5,000/月）</option>
                   <option value="B">PLAN B スタンダード（¥7,000/月）</option>
                   <option value="C">PLAN C プレミアム（¥10,000/月）</option>
+                  {isMonitorOpen() && <option value="monitor">無料モニターに応募（{MONITOR_CAMPAIGN.months}か月無料・{MONITOR_CAMPAIGN.slots}店限定）</option>}
                 </select>
               </div>
               <div className="inq-field">

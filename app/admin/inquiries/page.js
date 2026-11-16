@@ -104,13 +104,13 @@ export default function AdminInquiriesPage() {
         td2.innerHTML = `
           <div class="stack" style="gap:6px;padding:8px 0">
             ${it.referral_code ? `<div class="badge" style="width:fit-content">紹介コード: ${esc(it.referral_code)}</div>` : ''}
-            ${it.desired_plan ? `<div class="badge" style="width:fit-content">気になっているプラン: PLAN ${esc(it.desired_plan)}</div>` : ''}
+            ${it.desired_plan === 'monitor' ? `<div class="badge" style="width:fit-content;background:#fef3c7;color:#92400e">無料モニターに応募${it.referral_code ? `（紹介 ${esc(it.referral_code)}）` : ''}</div>` : it.desired_plan ? `<div class="badge" style="width:fit-content">気になっているプラン: PLAN ${esc(it.desired_plan)}</div>` : ''}
             ${it.source ? `<div class="badge" style="width:fit-content">知ったきっかけ: ${esc(SOURCE_LABEL[it.source] || it.source)}</div>` : ''}
             ${it.meeting_wish ? `<div style="font-size:13px"><b>オンライン相談の希望日時：</b>${esc(it.meeting_wish)}</div>` : ''}
             ${it.provider_id ? '<div class="badge status-done" style="width:fit-content">アカウント作成済み（契約者一覧にあります）</div>' : ''}
             <div class="msg">${esc(it.message || '')}</div>
             <div class="cluster" style="gap:8px">
-              ${!it.provider_id && it.category !== 'sales_partner' ? '<button class="btn btn-ghost" data-act="signup-url">登録ページのURLをコピー</button><button class="btn btn-ghost" data-act="create">お店の代わりに登録する</button>' : ''}
+              ${!it.provider_id && it.category !== 'sales_partner' ? '<button class="btn btn-ghost" data-act="signup-url">登録ページのURLをコピー</button><button class="btn btn-ghost" data-act="create">' + (it.desired_plan === 'monitor' ? '無料モニターとして登録する' : 'お店の代わりに登録する') + '</button>' : ''}
               <button class="btn btn-ghost" data-act="done">${isDone ? '未対応に戻す' : '対応済みにする'}</button>
               <button class="btn btn-ghost" data-act="ref">${it.referral_code ? '紹介コードを直す' : '紹介コードを入れる'}</button>
               <button class="btn btn-ghost" data-act="copy">内容をコピー</button>
@@ -142,13 +142,15 @@ export default function AdminInquiriesPage() {
         td2.querySelector('[data-act="signup-url"]')?.addEventListener('click', () => {
           const sp = new URLSearchParams();
           if (it.referral_code) sp.set('ref', it.referral_code);
-          if (it.desired_plan) sp.set('plan', it.desired_plan);
+          if (['A', 'B', 'C'].includes(it.desired_plan)) sp.set('plan', it.desired_plan);
           const url = `https://www.fineme.me/provider/signup${sp.toString() ? `?${sp}` : ''}`;
           navigator.clipboard.writeText(url).then(() => alert(`コピーしました\n${url}`)).catch(() => prompt('このURLをお店に送ってください', url));
         });
         td2.querySelector('[data-act="create"]')?.addEventListener('click', async e => {
-          const plan = ['A', 'B', 'C'].includes(it.desired_plan) ? it.desired_plan : 'A';
-          if (!confirm(`この内容でお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\nカテゴリ：${labelCategory(it.category)}\nはじめに選んでおくプラン：PLAN ${plan}\n\n通常は、オンライン相談でご利用が決まったら、お店に登録ページ（/provider/signup）から登録してもらいます。お店の代わりに運営が登録する時だけ使ってください。作るとすぐ、お店に「管理画面のご用意ができました」というパスワード設定のメールが届きます。お店が管理画面で申し込む（支払う）まで、機能は使えません。`)) return;
+          // 無料モニターの応募は、モニター（スタンダード・3か月無料）でアカウントを作る。紹介コードはお店の紹介者になる（モニター後の紹介報酬が紐づく）
+          const plan = it.desired_plan === 'monitor' ? 'monitor' : ['A', 'B', 'C'].includes(it.desired_plan) ? it.desired_plan : 'A';
+          if (plan === 'monitor' && !confirm(`無料モニターとしてお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\n紹介者：${it.referral_code || 'なし'}\n\n作るとすぐ3か月の無料モニターが始まり、お店にパスワード設定のメールが届きます。モニターで受け入れると決めた時だけ使ってください。`)) return;
+          if (plan !== 'monitor' && !confirm(`この内容でお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\nカテゴリ：${labelCategory(it.category)}\nはじめに選んでおくプラン：PLAN ${plan}\n\n通常は、オンライン相談でご利用が決まったら、お店に登録ページ（/provider/signup）から登録してもらいます。お店の代わりに運営が登録する時だけ使ってください。作るとすぐ、お店に「管理画面のご用意ができました」というパスワード設定のメールが届きます。お店が管理画面で申し込む（支払う）まで、機能は使えません。`)) return;
           const btn = e.currentTarget; btn.disabled = true;
           const res = await fetch('/api/admin/providers', { method: 'POST', headers: h(), body: JSON.stringify({
             name: it.biz_name, email: it.email, main_category: it.category || 'other', plan,
