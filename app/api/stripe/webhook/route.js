@@ -13,6 +13,7 @@ import { recordPosTransaction } from '@/lib/pos-checkout';
 import { saveCustomerCard, saveSetupCard } from '@/lib/pos-member-card';
 import { recordLockerCheckout, recordLockerInvoice } from '@/lib/locker-pay';
 import { markInvoicePaid } from '@/lib/invoices';
+import { finalizePackagePurchase } from '@/lib/customer-package-purchase';
 import { recordPaymentAndRewards, recordRefund } from '@/lib/collaborator-rewards';
 
 function getStripe() {
@@ -175,6 +176,12 @@ export async function POST(request) {
         const depositReservationId = session.metadata?.fineme_deposit_reservation_id;
         const invoiceId = session.metadata?.fineme_invoice_id;
         if (session.payment_status !== 'paid') break;
+
+        // 回数券・チケットのオンライン購入：お客様が支払い完了の画面に戻らなくても確定し、売上に記録する（2026-11-16）
+        if (session.mode === 'payment' && session.metadata?.fineme_package_id) {
+          try { await finalizePackagePurchase(supabaseAdmin, session); } catch (e) { console.error('[webhook] package purchase error:', e?.message); }
+          break;
+        }
 
         if (invoiceId) {
           // 請求（店舗がお客様に送ったお支払いリンク）の入金確定。二重配信は markInvoicePaid 側で1回に絞る
