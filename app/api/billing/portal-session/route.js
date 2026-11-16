@@ -68,7 +68,8 @@ export async function POST(request) {
   }
 
   try {
-    const origin = request.headers.get('origin') || 'https://fineme.me';
+    // 戻り先は自サイトに固定する（Origin ヘッダーは送る側が変えられるため使わない。2026-11-16）
+    const origin = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me';
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/provider/billing`,

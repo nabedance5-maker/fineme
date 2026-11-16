@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
-import { BASE_URL } from '@/lib/invoices';
+import { BASE_URL, markInvoicePaid } from '@/lib/invoices';
 import { applicationFeeAmount } from '@/lib/payment-fee';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -12,7 +12,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 export async function POST(request, { params }) {
   if (!process.env.STRIPE_SECRET_KEY) return Response.json({ error: '現在お支払いを受け付けできません' }, { status: 503 });
   const { id } = await params;
-  const { data: inv } = await supabase.from('provider_invoices').select('id, provider_id, title, amount, status').eq('id', id).maybeSingle();
+  const { data: inv } = await supabase.from('provider_invoices').select('id, provider_id, title, amount, status, stripe_checkout_session_id').eq('id', id).maybeSingle();
   if (!inv) return Response.json({ error: '見つかりません' }, { status: 404 });
   if (inv.status !== 'unpaid') return Response.json({ error: 'この請求はお支払いできません' }, { status: 409 });
 
@@ -22,6 +22,21 @@ export async function POST(request, { params }) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  // 前に作った決済ページがもう払われていたら、新しく作らない（通知が遅れた・届かなかった時に二重に払わせない）。
+  // 開いたままの古いページは閉じる（2つのページで二重に払えないように）。2026-11-16
+  if (inv.stripe_checkout_session_id) {
+    try {
+      const old = await stripe.checkout.sessions.retrieve(inv.stripe_checkout_session_id);
+      if (old.status === 'complete' && old.payment_status === 'paid') {
+        await markInvoicePaid(supabase, inv.id, { method: 'online', paymentIntentId: old.payment_intent });
+        return Response.json({ error: 'この請求は、もうお支払い済みです', code: 'paid' }, { status: 409 });
+      }
+      if (old.status === 'open') await stripe.checkout.sessions.expire(old.id);
+    } catch (e) {
+      console.error('[pay checkout] previous session', e?.message);
+      return Response.json({ error: 'お支払いの手続きを開始できませんでした。時間をおいてもう一度お試しください' }, { status: 500 });
+    }
+  }
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

@@ -21,7 +21,7 @@ export async function POST(request) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const origin = request.headers.get('origin') || 'https://www.fineme.me';
+  const origin = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'; // 戻り先は自サイトに固定（2026-11-16）
 
   const session = await stripe.billingPortal.sessions.create({
     customer:   profile.stripe_customer_id,

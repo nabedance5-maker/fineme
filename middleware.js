@@ -162,5 +162,5 @@ export async function middleware(request) {
 // リダイレクト）はどれも/api/*やNext内部アセットには関係ないため、対象から除外して
 // 無駄な処理を減らす。
 export const config = {
-  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)', '/api/provider/:path*', '/api/reservations/:path*', '/api/reservations', '/api/stripe/connect/:path*', '/api/stripe/provider-subscribe', '/api/stripe/update-subscription'],
+  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)', '/api/provider/:path*', '/api/reservations/:path*', '/api/reservations', '/api/stripe/connect/:path*', '/api/stripe/provider-subscribe', '/api/stripe/update-subscription', '/api/billing/portal-session'],
 }
