@@ -1,5 +1,5 @@
 // GET /api/cron/cleanup-unpaid-mirror-photos
-// Vercel Cron Job: 毎日 3:00 UTC に、未購入のまま保存期限（expires_at, 既定7日）を過ぎた
+// Vercel Cron Job: 毎日 3:00 UTC に、未購入のまま作成から7日を過ぎた
 // Mirrorセッションの写真だけをStorageから削除する（分析テキスト行自体は残す）。
 // paid=trueになったセッションの写真は対象外（app/api/cron/cleanup-mirror-sessions が別途、
 // 解約後90日でセッションごと削除する）。
@@ -16,13 +16,16 @@ export async function GET(request) {
 
   const db = getSupabase();
   const now = new Date().toISOString();
+  // mirror_sessions に expires_at は無い（2026-11-16：存在しない列を読んで8月から毎日失敗していた）。
+  // プライバシーポリシーの「購入されない限り7日を目安に自動削除」に合わせ、作成日から7日で判定する
+  const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
 
   const { data: targets, error: fetchError } = await db
     .from('mirror_sessions')
     .select('id, photo_path')
     .eq('paid', false)
     .not('photo_path', 'is', null)
-    .lt('expires_at', now);
+    .lt('created_at', cutoff);
 
   if (fetchError) {
     console.error('[cron/cleanup-unpaid-mirror-photos] fetch error:', fetchError);

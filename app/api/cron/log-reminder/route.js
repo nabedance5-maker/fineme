@@ -70,11 +70,8 @@ export async function GET(request) {
   const today = jstToday();
   const todayStr = today.toISOString().slice(0, 10);
 
-  // weekly-nudge も月曜 JST 9:00 に走る。同じ朝に2通は多いので月曜は譲る。
-  // notify_days_before の猶予があるため、翌日に届いて実用上の損失はない。
-  if (today.getUTCDay() === 1) {
-    return Response.json({ sent: 0, skipped: 'weekly-nudge-day', date: todayStr });
-  }
+  // 以前は月曜を weekly-nudge に譲って休んでいたが、weekly-nudge は存在しない列を読んで6月から一度も送れておらず、
+  // 月曜は誰にも届いていなかった。weekly-nudge は止めたので、月曜も毎日と同じに送る（2026-11-16）
 
   // next_visit がある行（予約済み）と無い行（前回だけ記録）の両方を見るため、
   // active な行をまとめて取り、判定はアプリ側で行う。

@@ -17,7 +17,7 @@
 | cron | ファイル | スケジュール(UTC) | 対象 | 補足 |
 |---|---|---|---|---|
 | `line-reminder` | `app/api/cron/line-reminder/route.js` | 15:00（毎日） | 翌日の`reservations`（status=approved）／New Me Logの`next_visit`一致 | ユーザー向け通知にクイックリプライ「行きます」「予定が変わりそう」を付与（ノーショー対策）。掲載者本人にも別途通知 |
-| `log-reminder` | `app/api/cron/log-reminder/route.js` | 0:00（毎日、月曜除く） | New Me Logの「そろそろ」判定（本人設定頻度 or 軸の目安） | 店舗別チャネル宛と、Fineme公式フォールバック宛の2系統に分けて送信。月曜は`weekly-nudge`に譲る |
+| `log-reminder` | `app/api/cron/log-reminder/route.js` | 0:00（毎日） | New Me Logの「そろそろ」判定（本人設定頻度 or 軸の目安） | 店舗別チャネル宛と、Fineme公式フォールバック宛の2系統に分けて送信。（weekly-nudge は2026-11-16に停止。月曜も送る） |
 | `review-request` | `app/api/cron/review-request/route.js` | 8:00（毎日） | 来店（`status=visited`）から1〜2日後、かつ`providers.google_review_url`設定済み | 未設定の店舗はスキップ（無理にクチコミを求めない） |
 | `birthday-nudge` | `app/api/cron/birthday-nudge/route.js` | 1:00（毎日） | `profiles.birthday`の月日が今日と一致、かつNew Me Logで店舗と紐づけ済み | `provider_birthday_nudges`で年1回だけに制限 |
 
