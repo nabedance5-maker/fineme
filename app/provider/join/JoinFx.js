@@ -77,7 +77,7 @@ export function HeroDemo() {
         </div>
       </div>
 
-      <div className={`pj-float pj-float-ai ${at(1) ? 'on' : ''}`}>
+      <div className="pj-float pj-float-ai">
         <div className="pj-float-head">
           <span className="fm-seal pj-seal-sm">談</span>
           <b>AI専属コンサル｜今日やること</b>
@@ -89,11 +89,11 @@ export function HeroDemo() {
         </ul>
       </div>
 
-      <div className={`pj-float pj-float-pay ${at(3) ? 'on' : ''}`}>
+      <div className="pj-float pj-float-pay">
         <span className="pj-pay-dot" />
         <div>
           <div className="pj-pay-title">入金がありました</div>
-          <div className="pj-pay-sub">回数券 10回 ¥55,000｜売上に記録済み</div>
+          <div className="pj-pay-sub">回数券 10回 ¥55,000<br />売上に記録済み</div>
         </div>
       </div>
       <div className="pj-demo-tag">画面イメージ</div>

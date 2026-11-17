@@ -223,6 +223,21 @@ function MonitorCampaign({ refCode }) {
   );
 }
 
+// FV最上部の細い告知（2026-11-18）。締切を過ぎると isMonitorOpen が false になり自動で消える
+function MonitorBanner() {
+  if (!isMonitorOpen()) return null;
+  const [, m, d] = MONITOR_CAMPAIGN.deadline.split('-').map(Number);
+  return (
+    <div className="pj-mbanner">
+      <div className="pj-container pj-mbanner-in">
+        <span className="pj-mbanner-dot" aria-hidden="true" />
+        <span className="pj-mbanner-text">無料モニター店舗を募集中<span className="pj-keep">（{MONITOR_CAMPAIGN.slots}店限定・{m}月{d}日締切）</span></span>
+        <a href="#monitor" className="pj-mbanner-link">詳しく見る</a>
+      </div>
+    </div>
+  );
+}
+
 function PlanBadge({ plan }) {
   return <span className={`pj-plan-chip pj-plan-chip-${plan.toLowerCase()}`}>{plan === 'A' ? '全プラン' : `${plan}〜`}</span>;
 }
@@ -242,11 +257,12 @@ export default async function ProviderJoinPage(props) {
 
       {/* ① ヘッドライン */}
       <section className="pj-hero">
+        <MonitorBanner />
         <div className="pj-hero-glow" aria-hidden="true" />
         <div className="pj-container pj-hero-grid">
           <div className="pj-hero-copy">
             <div className="pj-chips pj-rise" style={{ '--d': '0ms' }}>
-              <span className="pj-chip">リピート特化の店舗運営SaaS</span>
+              <span className="pj-chip">外見磨きの専門店向け</span>
               <span className="pj-chip">AI専属コンサル付き</span>
             </div>
             <h1 className="pj-h1 pj-rise" style={{ '--d': '120ms' }}>
@@ -254,11 +270,14 @@ export default async function ProviderJoinPage(props) {
               <em className="pj-gold"><span className="pj-nb">今のお客様を、</span><span className="pj-nb">離さない。</span></em>
             </h1>
             <p className="pj-lead pj-rise" style={{ '--d': '240ms' }}>
-              予約、チケットと会員プラン、お会計、カルテ、声かけ、スタッフの管理まで。
-              ばらばらだった道具をひとつにまとめ、AI専属コンサルが「いま誰に、何をするか」を教えてくれる店舗運営SaaSです。
+              パーソナルジム・エステ・ネイル・美容室など、外見磨きの専門店のリピーターづくりを仕組み化する運営システムです。{''}
+              予約、チケットと会員プラン、お会計、カルテ、声かけ、スタッフの管理まで、ばらばらだった道具をひとつにまとめ、AI専属コンサルが『いま誰に、何をするか』を教えてくれます。
             </p>
             <div className="pj-cta-row pj-rise" style={{ '--d': '360ms' }}>
-              <a className="pj-btn pj-btn-gold pj-btn-lg" href={inquiryHref}>話を聞いてみる（無料）</a>
+              <div className="pj-cta-main">
+                <a className="pj-btn pj-btn-gold pj-btn-lg" href={inquiryHref}>話を聞いてみる（無料）</a>
+                <span className="pj-cta-micro">15分・オンラインでOK／無理な勧誘はありません</span>
+              </div>
               <a className="pj-btn pj-btn-ghost pj-btn-lg" href="#industry">業種別にできることを見る</a>
             </div>
             <ul className="pj-trust pj-rise" style={{ '--d': '480ms' }}>
