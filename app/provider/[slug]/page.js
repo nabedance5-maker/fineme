@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { hasFeature } from '@/lib/feature-flags';
+import { hasFeature, planAllows } from '@/lib/feature-flags';
 import { isClosedWeekday } from '@/lib/closed-weekday';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import { themeToCssVars } from '@/lib/provider-theme';
@@ -93,7 +93,7 @@ function tabsFor(provider, opts = {}) {
   // 月額プラン（入会ページへ）は回数券と別のタブ（でお指摘 2026-10-27：同じタブに混ぜない）。
   // オンラインで入会できる月額プランがある店舗にだけ出す
   if (opts.plans && isShown(provider, 'tab_plans')) tabs.push({ id: 'plans', label: '月額プラン' });
-  if (isShown(provider, 'tab_packages')) tabs.push({ id: 'packages', label: '回数券' });
+  if (isShown(provider, 'tab_packages') && planAllows(provider, 'customer_packages')) tabs.push({ id: 'packages', label: '回数券' });
   return tabs;
 }
 // 「今すぐ予約する」系CTAの着地先。予約は1つのタブにまとめた（2026-10-22）。旧タブ名（instant/consult/class）のリンクもここへ

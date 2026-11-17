@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { normalizeTermsFiles } from '@/lib/membership-terms';
 import { memberGate } from '@/lib/store-member';
+import { customerSaleLocked } from '@/lib/plan-features';
 import { billingSchedule } from '@/lib/membership-cycle';
 import { findCoupon } from '@/lib/membership-changes';
 import { normalizeFormFields, checkRequired } from '@/lib/membership-form';
@@ -69,6 +70,7 @@ export async function POST(request) {
     return Response.json({ error: '規約への同意が必要です' }, { status: 400 });
   }
 
+  { const locked = await customerSaleLocked(supabase, provider_id, 'membership_enrollment'); if (locked) return locked; }
   // 会員登録してから入会するお店（2026-10-28）
   { const g = await memberGate(supabase, provider_id, user.id); if (g) return Response.json({ error: g.error, code: g.code }, { status: g.status }); }
 

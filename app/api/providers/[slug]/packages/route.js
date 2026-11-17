@@ -3,6 +3,7 @@
 // カード保存＋サブスク作成が別建てで必要になり今回のスコープ外のため除外する。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { planAllows } from '@/lib/feature-flags';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -11,12 +12,14 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, stripe_connect_id, stripe_connect_status')
+    .select('id, plan, stripe_connect_id, stripe_connect_status')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)
     .single();
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
+  // プランを下げたお店は回数券を売らない（2026-11-17 渡邉判断。持っているチケットはそのまま使える）
+  if (!planAllows(provider, 'customer_packages')) return Response.json([]);
 
   // オンライン決済の受け皿（Stripe Connect）が整っていない店舗も、回数券は一覧には出す（買うボタンは出さない）。
   // 以前は1件も返さず、店舗が作った回数券が公開ページに出ないと見えていた（今野さんの店舗 2026-10-27）

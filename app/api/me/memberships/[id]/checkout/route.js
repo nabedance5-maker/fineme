@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { customerSaleLocked } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -25,6 +26,7 @@ export async function POST(request, { params }) {
   const { data: m } = await supabase.from('provider_memberships').select('*').eq('id', id).single();
   if (!m || m.user_id !== user.id) return Response.json({ error: '見つかりません' }, { status: 404 });
   if (m.status !== 'draft') return Response.json({ error: 'この申込は既に手続きが進んでいます' }, { status: 409 });
+  { const locked = await customerSaleLocked(supabase, m.provider_id, 'membership_enrollment'); if (locked) return locked; }
 
   const { data: settings } = await supabase.from('provider_membership_settings').select('require_id_document').eq('provider_id', m.provider_id).maybeSingle();
   if ((settings?.require_id_document ?? true) && !m.id_document_path) {

@@ -8,6 +8,7 @@ import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { memberGate } from '@/lib/store-member';
 import { applicationFeeAmount } from '@/lib/payment-fee';
+import { customerSaleLocked } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -32,6 +33,7 @@ export async function POST(request) {
   if (!pkg) return Response.json({ error: 'チケットが見つかりません' }, { status: 404 });
   if (pkg.package_type === 'subscription') return Response.json({ error: 'このチケットはオンライン購入に対応していません' }, { status: 400 });
   if (!pkg.price) return Response.json({ error: '金額が設定されていません' }, { status: 409 });
+  { const locked = await customerSaleLocked(supabase, pkg.provider_id, 'customer_packages'); if (locked) return locked; }
 
   const { data: provider } = await supabase.from('providers').select('id, slug, name, stripe_connect_id, stripe_connect_status').eq('id', pkg.provider_id).single();
   if (!provider) return Response.json({ error: '店舗が見つかりません' }, { status: 404 });
