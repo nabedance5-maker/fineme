@@ -23,7 +23,7 @@ Me Scan（8軸診断）・136タイプ体系・Fineme Compass・New Me Map・Fin
 3. New Me Map - 25〜35ステップの変容ロードマップ。週次チェックインと月次の変化レポートで、自分の変化を記録・可視化し続ける。
 
 ## 店舗向けサービス（Fineme 店舗向け）
-来店したお客様を常連に変えることに特化した、個人〜小規模店舗向けの店舗運営SaaS。URL: https://www.fineme.me/provider/join
+外見磨きの専門店（パーソナルジム・眉毛サロン・美容室・エステ・脱毛・ホワイトニング・メンズ美容・外見コンサルなど）向けに、リピーターづくりを仕組み化する店舗運営SaaS。来店したお客様を常連に変えることに特化し、個人〜小規模店舗でも使える。URL: https://www.fineme.me/provider/join
 
 - 対象：パーソナルジム・眉毛サロン・美容室・エステ・ネイル・外見コンサルなど、予約制でお客様に繰り返し通っていただく店舗
 - 機能：予約（LINEで完結）・チケット/回数券・会員プラン/月会費・オンライン決済・顧客カルテ・LINE/メール配信・休眠顧客の掘り起こし・アンケート・予約ウィジェット・POS/レジ締め・スタッフ権限・シフト/勤怠・月次レポート
@@ -65,7 +65,7 @@ Fineme 店舗向けを店舗に紹介する営業パートナーを募集して�
 - Fineme Mirror（AI写真分析）: https://www.fineme.me/belle/lp/mirror
 - Belle Journal（特集記事一覧）: https://www.fineme.me/belle/journal
 
-### 店舗運営ガイド（サロン・ジム・美容室の運営者向け）
+### 店舗運営ガイド（外見磨きの専門店の運営者向け：リピート・予約/顧客管理システムの選び方・集客）
 - 一覧: https://www.fineme.me/shop-guide
 - 新規のお客様が2回目に来ない理由と、リピートにつなげる5つの方法: https://www.fineme.me/shop-guide/second-visit
 - 小規模店舗の売上を伸ばす考え方：新規集客の前に「来店頻度」を見る: https://www.fineme.me/shop-guide/sales-formula
@@ -76,6 +76,30 @@ Fineme 店舗向けを店舗に紹介する営業パートナーを募集して�
 - 予約サイト頼みの集客から抜け出す：2回目以降を自店の予約とLINEで受ける方法: https://www.fineme.me/shop-guide/own-booking-line
 - 個人サロン・ジムの顧客カルテの付け方: https://www.fineme.me/shop-guide/customer-karte
 - 小規模店舗の集客・売上アップにAIを使う方法: https://www.fineme.me/shop-guide/ai-for-shop
+- 小規模店舗のDXは何から始める?予約・顧客管理・連絡の順: https://www.fineme.me/shop-guide/small-shop-dx-start
+- 外見磨きの専門店でリピーターを仕組み化する5つの方法は？: https://www.fineme.me/shop-guide/beauty-shop-repeat-system
+- パーソナルジムの予約システムは何を見るべき？体験・回数券・月会費まで徹底解説: https://www.fineme.me/shop-guide/personal-gym-booking
+- 眉毛サロンの顧客管理はどうやる？前回のデザインと来店周期を残す方法: https://www.fineme.me/shop-guide/brow-salon-customer-management
+- サロンの電子カルテに何を記入すべきか、紙の記録からスムーズに移行する方法は？: https://www.fineme.me/shop-guide/salon-electronic-karte
+- 回数券の管理をアプリで自動化するには？残り回数・有効期限・消化の記録: https://www.fineme.me/shop-guide/ticket-app-management
+- 小規模店舗に最適な予約システムは無料か有料か、どちらを選べばいいですか？: https://www.fineme.me/shop-guide/free-paid-booking-system
+- 予約・顧客管理システムの乗り換え手順は？お客様の情報を失わずに移す方法: https://www.fineme.me/shop-guide/booking-system-migration-steps
+- エクセルで顧客管理は限界ですか？システムに切り替える最適なタイミングは: https://www.fineme.me/shop-guide/excel-customer-management-limit
+- ホワイトニングサロンのリピートはどう作る？効果を保つ通い方の伝え方: https://www.fineme.me/shop-guide/whitening-salon-repeat
+- メンズ美容サロン（眉毛・脱毛・スキンケア）のリピーターを増やすにはどうすればいいですか？: https://www.fineme.me/shop-guide/mens-beauty-repeat
+- 外見コンサル・パーソナルスタイリストが顧客と長く続く関係を作るには？: https://www.fineme.me/shop-guide/image-consultant-long-term-client
+- 美容サロン・パーソナルジムのLTV（1人あたり売上）を上げるにはどうすればいいですか: https://www.fineme.me/shop-guide/increase-ltv-beauty-shop
+- 予約1件ごとの手数料をなくすには？2回目以降は自店で受ける方法: https://www.fineme.me/shop-guide/no-fee-second-booking
+- サロンやパーソナルジムのAI活用、明日から使える使い方は？: https://www.fineme.me/shop-guide/salon-ai-practical-examples
+- 店舗にAIを導入するときの失敗には何がある？避け方を知りたい: https://www.fineme.me/shop-guide/shop-ai-adoption-mistakes
+- IT担当がいない個人店でDXを進める手順は？今日からできる5ステップ: https://www.fineme.me/shop-guide/shop-dx-no-it-staff
+- 来店後のお礼LINEや休眠のお客様への連絡はAIで楽にできますか？: https://www.fineme.me/shop-guide/ai-follow-dormant-outreach
+- 美容室のリピート率を上げるには？指名・次回予約・来店周期の整え方: https://www.fineme.me/shop-guide/hair-salon-repeat-tips
+- パーソナルジムの会員管理システムで何ができるか？手作業から自動化するポイント: https://www.fineme.me/shop-guide/gym-member-management-system-features
+- サロン・ジムで月額制を始めるには？料金の決め方と自動引き落とし: https://www.fineme.me/shop-guide/salon-gym-subscription-start
+- お会計時に自然に次回予約を取るにはどうすればいいですか？: https://www.fineme.me/shop-guide/next-booking-rate-tips
+- リピート率の計算方法は？小規模店舗が毎月見るべき指標: https://www.fineme.me/shop-guide/repeat-rate-calculation
+- 脱毛サロンで最後まで通ってもらうには施術間隔の案内と途中解約防止の具体策は？: https://www.fineme.me/shop-guide/hair-removal-last-visit
 
 ### 営業パートナーガイド（営業代行・紹介の副業を探している方向け）
 - 一覧: https://www.fineme.me/sales-partner/guide
