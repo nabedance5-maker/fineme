@@ -40,6 +40,13 @@ export default function AdminPaymentsPage() {
     document.head.appendChild(style);
 
     const API = '/api/billing';
+    // 管理APIキー（契約者管理と同じ保存場所）。以前はキーを付けずに呼んでいて、一覧が読めていなかった
+    let ADMIN_KEY = sessionStorage.getItem('fineme:admin:key') || '';
+    if (!ADMIN_KEY) {
+      ADMIN_KEY = prompt('管理APIキーを入力してください：') || '';
+      if (ADMIN_KEY) sessionStorage.setItem('fineme:admin:key', ADMIN_KEY);
+    }
+    const hk = () => ({ headers: { 'x-admin-key': ADMIN_KEY } });
 
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function copyStripeId(id) { if (!id) return alert('Stripe IDがありません（未連携）'); navigator.clipboard.writeText(id).then(() => alert(`コピーしました: ${id}`)); }
@@ -47,7 +54,7 @@ export default function AdminPaymentsPage() {
 
     async function loadKPI() {
       try {
-        const data = await fetch(`${API}/summary`).then(r => r.json());
+        const data = await fetch(`${API}/summary`, hk()).then(r => r.json());
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         set('kpi-mrr', `¥${(data.mrr || 0).toLocaleString()}`);
         set('kpi-active', data.activeSubscriptions || 0);
@@ -60,7 +67,7 @@ export default function AdminPaymentsPage() {
     let subsData = [];
     async function loadSubscriptions() {
       try {
-        subsData = await fetch(`${API}/providers`).then(r => r.json());
+        subsData = await fetch(`${API}/providers`, hk()).then(r => r.json());
         renderSubscriptions();
       } catch {
         const empty = document.getElementById('sub-empty'); if (empty) empty.style.display = '';
@@ -103,7 +110,7 @@ export default function AdminPaymentsPage() {
     async function loadPayments() {
       if (paymentsData.length > 0) return;
       try {
-        paymentsData = await fetch(`${API}/payments`).then(r => r.json());
+        paymentsData = await fetch(`${API}/payments`, hk()).then(r => r.json());
         renderPayments();
       } catch {
         const tbody = document.getElementById('payments-tbody');
@@ -134,7 +141,7 @@ export default function AdminPaymentsPage() {
     async function loadReferrals() {
       if (referralsData.length > 0) return;
       try {
-        referralsData = await fetch(`${API}/referrals`).then(r => r.json());
+        referralsData = await fetch(`${API}/referrals`, hk()).then(r => r.json());
         renderReferrals();
       } catch {
         const tbody = document.getElementById('referrals-tbody');
@@ -186,12 +193,62 @@ export default function AdminPaymentsPage() {
         btn.classList.add('active');
         const panel = document.getElementById(`tab-${btn.dataset.tab}`); if (panel) panel.classList.add('active');
         if (btn.dataset.tab === 'payments') loadPayments();
+        if (btn.dataset.tab === 'monthly' && !document.querySelector('#monthly-body .kpi-grid')) loadMonthly();
         if (btn.dataset.tab === 'referrals') loadReferrals();
       });
     });
 
+    // ── 月ごとのまとめ（2026-11-17 渡邉依頼）。契約は申込日から1か月ごと、締めは暦の月で見る ──
+    const yen = n => `¥${Number(n || 0).toLocaleString('ja-JP')}`;
+    const day = v => (v ? new Date(v).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' }) : '-');
+    const monthInput = document.getElementById('monthly-month');
+    if (monthInput && !monthInput.value) {
+      const d = new Date(Date.now() + 9 * 3600 * 1000);
+      monthInput.value = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    }
+    function table(head, rows) {
+      if (!rows.length) return '<p class="muted" style="font-size:13px;margin:4px 0 16px">なし</p>';
+      return `<div class="table-responsive"><table class="table"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    }
+    async function loadMonthly() {
+      const box = document.getElementById('monthly-body');
+      if (!box || !monthInput?.value) return;
+      box.innerHTML = '<p class="muted" style="padding:24px;text-align:center">集計中…（Stripe から読み込んでいます）</p>';
+      try {
+        const res = await fetch(`/api/admin/billing-monthly?month=${encodeURIComponent(monthInput.value)}`, hk());
+        const s = await res.json();
+        if (!res.ok) { box.innerHTML = `<p style="color:#991b1b;padding:16px">${esc(s.error || '読み込めませんでした')}</p>`; return; }
+        const t = s.totals;
+        const plans = Object.entries(t.by_plan).map(([k, v]) => `PLAN ${esc(k)}：${v.count}件 ${yen(v.amount)}`).join(' ／ ') || 'なし';
+        box.innerHTML = `
+          <div class="kpi-grid" style="margin-bottom:16px">
+            <div class="kpi-card"><div class="kpi-label">入金（税込）</div><div class="kpi-value">${yen(t.paid_amount)}</div><div class="kpi-sub">${t.paid_count}件・税抜 ${yen(t.paid_amount_excl_tax)}</div></div>
+            <div class="kpi-card"><div class="kpi-label">引き落としに失敗</div><div class="kpi-value" style="color:${t.unpaid_count ? '#991b1b' : 'inherit'}">${t.unpaid_count}件</div><div class="kpi-sub">${yen(t.unpaid_amount)}</div></div>
+            <div class="kpi-card"><div class="kpi-label">新しく申し込み</div><div class="kpi-value">${t.started_count}件</div><div class="kpi-sub">この月に始まった契約</div></div>
+            <div class="kpi-card"><div class="kpi-label">解約</div><div class="kpi-value">${t.ended_count}件</div><div class="kpi-sub">この月に終わった契約</div></div>
+            <div class="kpi-card"><div class="kpi-label">返金</div><div class="kpi-value">${t.refunded_count}件</div><div class="kpi-sub">入金の合計から除外</div></div>
+          </div>
+          <p style="font-size:13px;margin:0 0 16px">プラン別：${plans}</p>
+          <h3 style="font-size:15px;margin:8px 0">引き落としに失敗しているお店</h3>
+          ${table(['お店', 'プラン', '金額', '請求日', 'やり直し'], s.unpaid.map(r => [esc(r.name), esc(r.plan), yen(r.amount), day(r.billed_at), r.status === 'uncollectible' ? '<span class="badge badge-failed">回収できず</span>' : `${r.attempts}回目まで・次 ${day(r.next_attempt_at)}`]))}
+          <h3 style="font-size:15px;margin:8px 0">入金があったお店</h3>
+          ${table(['お店', 'プラン', '金額', '入金日'], s.paid.map(r => [esc(r.name) + (r.refunded ? ' <span class="badge badge-cancelled">返金済み</span>' : ''), esc(r.plan), yen(r.amount), day(r.paid_at)]))}
+          <h3 style="font-size:15px;margin:8px 0">新しく申し込んだお店</h3>
+          ${table(['お店', 'プラン', '申込日', '課金の開始'], s.started.map(r => [esc(r.name), esc(r.plan), day(r.at), r.first_charge_at ? `${day(r.first_charge_at)}から（無料モニター後）` : '申込日から']))}
+          <h3 style="font-size:15px;margin:8px 0">解約したお店</h3>
+          ${table(['お店', 'プラン', '解約日'], s.ended.map(r => [esc(r.name), esc(r.plan), day(r.at)]))}
+          <p class="muted" style="font-size:12px">Stripe の記録から集計（税込）。無料モニター中の0円の請求は含みません。毎月1日の朝に、前の月のまとめを運営にメールで送ります。</p>`;
+      } catch (e) {
+        box.innerHTML = '<p style="color:#991b1b;padding:16px">読み込めませんでした。時間をおいてもう一度お試しください</p>';
+      }
+    }
+    monthInput?.addEventListener('change', loadMonthly);
+    document.getElementById('monthly-refresh')?.addEventListener('click', loadMonthly);
+
     loadKPI();
     loadSubscriptions();
+    loadMonthly();
+    if (new URLSearchParams(location.search).get('tab') === 'subscriptions') document.querySelector('.tab-btn[data-tab="subscriptions"]')?.click();
 
     return () => {
       try { document.head.removeChild(style); } catch {}
@@ -216,12 +273,22 @@ export default function AdminPaymentsPage() {
 
           <div className="card" style={{padding:'16px'}}>
             <div className="tab-bar">
-              <button className="tab-btn active" data-tab="subscriptions">サブスク一覧</button>
+              <button className="tab-btn active" data-tab="monthly">月ごとのまとめ</button>
+              <button className="tab-btn" data-tab="subscriptions">サブスク一覧</button>
               <button className="tab-btn" data-tab="payments">決済履歴</button>
               <button className="tab-btn" data-tab="referrals">紹介報酬</button>
             </div>
 
-            <div id="tab-subscriptions" className="tab-panel active">
+            <div id="tab-monthly" className="tab-panel active">
+              <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px',flexWrap:'wrap'}}>
+                <label htmlFor="monthly-month" style={{fontSize:'13px',fontWeight:600}}>対象の月</label>
+                <input id="monthly-month" type="month" />
+                <button className="btn btn-ghost" id="monthly-refresh">更新</button>
+              </div>
+              <div id="monthly-body"></div>
+            </div>
+
+            <div id="tab-subscriptions" className="tab-panel">
               <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px',flexWrap:'wrap'}}>
                 <input id="sub-search" type="text" placeholder="契約者名・メールで検索" style={{flex:'1',minWidth:'200px'}} />
                 <select id="sub-status-filter">
