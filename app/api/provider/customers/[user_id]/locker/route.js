@@ -3,13 +3,14 @@
 // を受けて追加。顧客詳細ポップアップに契約中のロッカーを表示するために使う。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -19,6 +20,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
 
   const { data: contract } = await supabase
     .from('provider_locker_contracts')

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { hashPin } from '@/lib/attendance';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -12,8 +13,9 @@ async function __POST(request) {
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data: provider } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data: provider } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
   const body = await request.json().catch(() => ({}));
   if (body.password !== null && !/^\d{4,8}$/.test(String(body.password || ''))) return Response.json({ error: 'パスワードは4〜8桁の数字にしてください' }, { status: 400 });
   const { data: staff } = await supabase.from('provider_staff').select('id').eq('id', body.staff_id).eq('provider_id', provider.id).maybeSingle();

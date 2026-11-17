@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { verifyPin } from '@/lib/attendance';
+import { providerPlanLocked } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const isUuid = s => /^[0-9a-f-]{36}$/i.test(String(s || ''));
@@ -20,6 +21,7 @@ export async function GET(request, { params }) {
   const { token } = await params;
   const store = await storeOf(token);
   if (!store) return Response.json({ error: 'リンクが無効です。お店に新しいリンクを確認してください' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, store.id, 'shift_management'); if (locked) return locked; }
   const [{ data: staff }, { data: members }] = await Promise.all([
     supabase.from('provider_staff').select('id, name, shift_pin_hash').eq('provider_id', store.id).order('sort_order').order('created_at'),
     supabase.from('provider_members').select('staff_id').eq('provider_id', store.id).eq('status', 'active').not('staff_id', 'is', null),
@@ -35,6 +37,7 @@ export async function POST(request, { params }) {
   const { token } = await params;
   const store = await storeOf(token);
   if (!store) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, store.id, 'shift_management'); if (locked) return locked; }
 
   // Finemeのスタッフアカウントでログインしている人
   const bearer = request.headers.get('Authorization')?.replace('Bearer ', '');

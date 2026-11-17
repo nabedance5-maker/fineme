@@ -9,6 +9,7 @@ import { getSupabase } from '@/lib/supabase';
 import { isDeadlinePassed, LOCKED_MESSAGE } from '@/lib/shift-deadline';
 import { notifyShiftSubmitted } from '@/lib/shift-submit-notify';
 import { loadCycle, findOpenWindow } from '@/lib/shift-windows';
+import { providerPlanLocked } from '@/lib/plan-features';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getStaffByToken(token) {
@@ -24,6 +25,7 @@ export async function POST(request, props) {
   const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, staff.provider_id, 'shift_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
   const { period_id } = body;

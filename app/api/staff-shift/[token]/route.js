@@ -18,6 +18,7 @@ import { getSupabase } from '@/lib/supabase';
 import { isDeadlinePassed, LOCKED_MESSAGE } from '@/lib/shift-deadline';
 import { resolveRule, describeRule } from '@/lib/shift-request-format';
 import { loadCycle, upcomingWindows, findOpenWindow } from '@/lib/shift-windows';
+import { providerPlanLocked } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -63,6 +64,7 @@ export async function GET(request, props) {
   const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, staff.provider_id, 'shift_management'); if (locked) return locked; }
 
   const { cycle, request_format } = await loadCycle(supabase, staff.provider_id);
   const windows = upcomingWindows(cycle);
@@ -97,6 +99,7 @@ export async function POST(request, props) {
   const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, staff.provider_id, 'shift_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
   const { period_id, date, type, start_time, end_time, note } = body;
@@ -165,6 +168,7 @@ export async function DELETE(request, props) {
   const params = await props.params;
   const staff = await getStaffByToken(params.token);
   if (!staff) return Response.json({ error: 'リンクが無効です' }, { status: 404 });
+  { const locked = await providerPlanLocked(supabase, staff.provider_id, 'shift_management'); if (locked) return locked; }
 
   const { searchParams } = new URL(request.url);
   const period_id = searchParams.get('period_id');

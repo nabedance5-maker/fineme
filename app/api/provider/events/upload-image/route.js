@@ -2,6 +2,7 @@
 // アップロード（でお要望2026-09-15：「詳細を書けるようにしたり画像を入れたりできるように」）。
 // 既存のupload-facility-photoと同じprovider-photosバケット・同じ検証方針を踏襲。
 import { getSupabase } from '@/lib/supabase';
+import { planLockedResponse } from '@/lib/plan-features';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -20,10 +21,11 @@ async function __POST(request) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, referral_code')
+    .select('id, referral_code, plan')
     .eq('email', user.email)
     .single();
   if (!provider) return Response.json({ error: 'Provider not found' }, { status: 404 });
+  { const locked = planLockedResponse(provider, 'attendance_confirm'); if (locked) return locked; }
 
   const formData = await request.formData();
   const file = formData.get('image');
