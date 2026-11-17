@@ -1,7 +1,7 @@
 // POST /api/me/navi-steps/generate
 // ユーザーの診断データ + body_data を Claude Sonnet に渡して
 // この人専用の変容ステップリストを生成し profiles.navi_steps に保存する
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import { AGE_BANDS } from '@/lib/attributes';
@@ -522,7 +522,7 @@ ${BRAND_PHILOSOPHY}
 ## 出力形式（JSONのみ・コードブロック不要）
 {"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"...","related_post_id":null},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none","related_post_id":"（本当に合う投稿があればそのid、無ければnullまたは省略）"},...]}'`;
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = claudeClient({ personal: true });
   let generated;
   try {
     const msg = await client.messages.create({

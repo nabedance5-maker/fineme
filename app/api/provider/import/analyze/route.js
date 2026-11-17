@@ -4,7 +4,7 @@
 // 全件はAIに送らない。決めた割り振りは、お店が確認画面で直してから /api/provider/import/commit で取り込む。
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { memberAuth } from '@/lib/provider-members';
 import { IMPORT_TYPES, missingRequired, guessNameColumns } from '@/lib/import-schema';
 
@@ -26,7 +26,7 @@ export async function POST(request) {
   if (!headers.length) return Response.json({ error: 'CSVの1行目（見出し）が読めませんでした' }, { status: 400 });
 
   const table = headers.map((h, i) => `${i}: 「${h}」 例: ${samples.map(r => JSON.stringify(r[i])).join(' / ')}`).join('\n');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = claudeClient({ personal: true });
   let parsed;
   try {
     const res = await client.messages.create({

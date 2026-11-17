@@ -9,7 +9,7 @@
 // 軸ラベルだけを使った固定テンプレートにフォールバックする。
 export const dynamic = 'force-dynamic';
 import { createHash } from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
 import { trialMenus } from '@/lib/trial-menus';
@@ -68,7 +68,7 @@ ${menuList}
 
   let parsed = null;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = claudeClient({ personal: false });
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,

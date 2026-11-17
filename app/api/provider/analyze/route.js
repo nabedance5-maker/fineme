@@ -1,6 +1,6 @@
 // POST /api/provider/analyze
 // 掲載者プロフィールの全テキストをClaudeが読み取り、ai_match_profileを生成・保存する
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -77,7 +77,7 @@ export async function POST(request) {
     }
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = claudeClient({ personal: false });
 
   const systemPrompt = `あなたは外見磨きサービスのマッチングシステムのアナリストです。
 契約者（美容院、ジム、エステ、骨格診断等のサービス提供者）のプロフィールテキストを読み、

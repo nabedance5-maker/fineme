@@ -1,7 +1,7 @@
 // POST /api/mirror/analyze
 // 写真をClaude Visionで分析し、New Me Logを生成
 // 写真はサーバーに保存しない。分析結果（テキスト）のみSupabaseに保存。
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import {
@@ -134,7 +134,7 @@ export async function POST(request) {
       return Response.json({ error: '写真サイズが大きすぎます。圧縮してから再試行してください。' }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = claudeClient({ personal: true });
 
     // キュレーション済みInstagram/TikTok投稿プール（New Me Mapと同じ仕組み。
     // 軸の観察内容に本当に合う場合だけAIがrelated_post_idを付ける）

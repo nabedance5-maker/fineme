@@ -4,7 +4,7 @@
 // AIには lib/service-memo.js の factsText（店舗が持っている事実）だけを渡し、
 // 書かれていないことを作らせない。生成できなかった予約は決定的な下書きにフォールバックする。
 export const dynamic = 'force-dynamic';
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { buildServiceMemos } from '@/lib/service-memo-build';
@@ -82,7 +82,7 @@ async function __POST(request) {
   const pending = items.filter(it => force || !it.ai).slice(0, MAX_PER_CALL);
 
   if (pending.length && process.env.ANTHROPIC_API_KEY) {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = claudeClient({ personal: true });
     let cursor = 0;
     const worker = async () => {
       while (cursor < pending.length) {

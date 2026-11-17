@@ -1,7 +1,7 @@
 // POST /api/provider/customers/[user_id]/karte-insight → 来店記録ログの履歴からAIが傾向・提案を出す（認証済み）
 // オンデマンド呼び出しのみ（cron化・DB保存はしない。毎回最新の履歴で生成し直す）。
 export const dynamic = 'force-dynamic';
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { planLockedResponse } from '@/lib/plan-features';
@@ -71,7 +71,7 @@ ${historyText}
 { "insights": ["...", "..."] }`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = claudeClient({ personal: true });
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,

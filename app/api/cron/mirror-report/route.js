@@ -1,7 +1,7 @@
 // GET /api/cron/mirror-report
 // 毎週月曜9時JST（0時UTC）にMirrorファネルの週次サマリーをオーナーへ送信
 // Schedule: "0 0 * * 1"
-import Anthropic from '@anthropic-ai/sdk';
+import { claudeClient } from '@/lib/ai';
 import { sendLinePush } from '@/lib/line-push';
 import { computeMirrorStats } from '@/app/api/admin/mirror-stats/route';
 
@@ -15,7 +15,7 @@ const OWNER_LINE_USER_ID = process.env.OWNER_LINE_USER_ID;
 async function generateInsight(s) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = claudeClient({ personal: false });
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
