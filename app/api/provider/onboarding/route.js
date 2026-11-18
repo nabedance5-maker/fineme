@@ -11,6 +11,7 @@ import { withAudit } from '@/lib/activity-log';
 import { FEATURE_DEFS, resolveFeatures, featureLocks, withPlanPreview } from '@/lib/feature-flags';
 import { resolveDashboardPrefs } from '@/lib/dashboard-prefs';
 import { isOwnerTestEmail } from '@/lib/is-owner-email';
+import { DEMO_STORE_EMAIL } from '@/lib/demo';
 import { recordGoal } from '@/lib/consultant-memory';
 import {
   normalizeAnswers, recommendFeatures, recommendShortcuts, firstSteps, onboardingFacts, goalNote,
@@ -25,7 +26,7 @@ async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
   const { data } = await supabase.from('providers').select('id, plan, enabled_features, dashboard_prefs, created_at').eq('email', user.email).single();
-  return data ? { ...data, isOwner: isOwnerTestEmail(user.email) } : null;
+  return data ? { ...data, isOwner: isOwnerTestEmail(user.email), isDemo: String(user.email || '').toLowerCase() === DEMO_STORE_EMAIL } : null;
 }
 
 async function auth(request) {

@@ -5,6 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 import { FEATURE_DEFS, resolveFeatures, featureLocks, withPlanPreview } from '@/lib/feature-flags';
 import { withAudit } from '@/lib/activity-log';
 import { isOwnerTestEmail } from '@/lib/is-owner-email';
+import { DEMO_STORE_EMAIL } from '@/lib/demo';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -12,7 +13,7 @@ async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
   const { data } = await supabase.from('providers').select('id, plan, enabled_features').eq('email', user.email).single();
-  return data ? { ...data, isOwner: isOwnerTestEmail(user.email) } : null;
+  return data ? { ...data, isOwner: isOwnerTestEmail(user.email), isDemo: String(user.email || '').toLowerCase() === DEMO_STORE_EMAIL } : null;
 }
 
 export async function GET(request) {
