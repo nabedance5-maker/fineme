@@ -144,6 +144,34 @@ export default function ProviderInquiryPage() {
       }
       .inq-btn-secondary:hover { border-color: #c9a84c; color: #c9a84c; }
 
+      /* ─── 送信後の完了画面（2026-11-18） ─── */
+      .inq-done {
+        background: rgba(255,255,255,0.96); border: 1px solid rgba(201,168,76,0.25); border-radius: 16px;
+        padding: 36px 36px 32px; box-shadow: 0 8px 40px rgba(0,0,0,.22); color: #1a1d24; outline: none;
+      }
+      .inq-done[hidden] { display: none; }
+      .inq-done-mark {
+        width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 16px;
+        background: rgba(201,168,76,.14); border: 1px solid rgba(201,168,76,.45);
+      }
+      .inq-done-kicker { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: #9a7a22; margin: 0 0 6px; }
+      .inq-done-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(20px, 4vw, 26px); font-weight: 700; line-height: 1.45; margin: 0 0 12px; }
+      .inq-done-lead { font-size: 14px; line-height: 1.85; color: #374151; margin: 0 0 22px; }
+      .inq-done-steps-h { font-size: 13px; font-weight: 800; color: #1a1d24; margin: 0 0 10px; }
+      .inq-done-steps { list-style: none; padding: 0; margin: 0 0 22px; display: grid; gap: 0; border-top: 1px solid #ece7dc; }
+      .inq-done-steps li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid #ece7dc; font-size: 14px; line-height: 1.75; color: #1f2937; }
+      .inq-done-steps li span:first-child {
+        width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; margin-top: 1px;
+        background: #1f2a44; color: #e8cf7e; font-size: 12px; font-weight: 800;
+      }
+      .inq-done-note { font-size: 12.5px; line-height: 1.75; color: #6b7280; margin: 0 0 22px; }
+      .inq-done-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+      .inq-done-actions a { text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; min-height: 46px; }
+      @media (max-width: 600px) {
+        .inq-done { padding: 28px 20px 24px; }
+        .inq-done-actions a { flex: 1 1 100%; }
+      }
+
       /* ─── Status ─── */
       .inq-status {
         margin-top: 14px;
@@ -241,6 +269,44 @@ export default function ProviderInquiryPage() {
       ].filter(Boolean).join('\n');
     }
 
+    // 送信できたら、フォームを閉じて完了画面に切り替える（2026-11-18 渡邉依頼）。入力された値は textContent でだけ入れる
+    function showDone(data) {
+      const isMonitor = data.desiredPlan === 'monitor';
+      const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      set('inqDoneKicker', isMonitor ? '応募が完了しました' : '送信が完了しました');
+      set('inqDoneTitle', isMonitor ? '無料モニターへのご応募、ありがとうございます' : 'オンライン相談のお申し込みを受け付けました');
+      set('inqDoneLead', `${data.contactName} 様、${data.bizName} のご${isMonitor ? '応募' : '相談'}を受け付けました。受付のメールを ${data.email} にお送りしています。`);
+      const steps = isMonitor ? [
+        '担当者が内容を拝見し、オンラインでお話を伺う日時とURLをメールでご連絡します。',
+        'オンライン（30分ほど）で、お店のご様子と、いまお困りのことを伺います。',
+        `モニターとしてご一緒できることになったら、${MONITOR_CAMPAIGN.planLabel}プランを${MONITOR_CAMPAIGN.months}か月間無料でお使いいただけます。初期設定はこちらでお手伝いします。`,
+        'モニター期間が終わっても、自動で課金されることはありません。続けるかどうかは、そのときにお決めいただけます。',
+      ] : [
+        'ご希望の日時をもとに、担当者からオンライン相談の日時とURLをメールでご連絡します。',
+        'オンライン（30分ほど）で、お店のご様子を伺い、Finemeの使い方をご説明します。',
+        '導入するかどうかは、お話のあとでゆっくりお決めください。',
+      ];
+      const ol = document.getElementById('inqDoneSteps');
+      if (ol) {
+        ol.replaceChildren(...steps.map((t, i) => {
+          const li = document.createElement('li');
+          const n = document.createElement('span'); n.textContent = String(i + 1);
+          const b = document.createElement('span'); b.textContent = t;
+          li.append(n, b);
+          return li;
+        }));
+      }
+      ['inqTitle', 'inqLead', 'inqReferralNote', 'inqSignupNote', 'inqBack'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+      const card = document.querySelector('.inq-card');
+      if (card) card.style.display = 'none';
+      const done = document.getElementById('inqDone');
+      if (done) {
+        done.hidden = false;
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        done.focus({ preventScroll: true });
+      }
+    }
+
     const form = document.getElementById('provider-inquiry-form');
     const statusEl = document.getElementById('inquiryStatus');
     const copyBtn = document.getElementById('copyInquiry');
@@ -285,11 +351,8 @@ export default function ProviderInquiryPage() {
         submitBtn.textContent = '送信中…';
         try {
           await saveInquiry(data);
-          statusEl.textContent = data.desiredPlan === 'monitor'
-            ? '無料モニターへのご応募を受け付けました。担当者から、オンラインでお話を伺う日時とURLをメールでご連絡します。'
-            : 'お申し込みを受け付けました。担当者から、オンライン相談の日時とURLをメールでご連絡します。';
-          statusEl.style.color = '#065f46';
           form.reset();
+          showDone(data);
         } catch (err) {
           if (err.field === 'referralCode') {
             statusEl.textContent = err.message;
@@ -451,8 +514,24 @@ export default function ProviderInquiryPage() {
           </form>
         </div>
 
-        <p className="inq-lead" style={{ marginTop: '20px', fontSize: '13px' }}>すでに導入を決めていて、すぐに始めたい方は<a id="inqSignupLink" href="/provider/signup" style={{ color: '#c9a84c', fontWeight: 700 }}>こちらから登録</a>できます。</p>
-        <a className="inq-back" href="/provider/join">← 導入のご案内ページに戻る</a>
+        <section className="inq-done" id="inqDone" hidden tabIndex={-1} aria-labelledby="inqDoneTitle">
+          <div className="inq-done-mark" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#9a7a22" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <p className="inq-done-kicker" id="inqDoneKicker">送信が完了しました</p>
+          <h2 className="inq-done-title" id="inqDoneTitle">お申し込みを受け付けました</h2>
+          <p className="inq-done-lead" id="inqDoneLead"></p>
+          <p className="inq-done-steps-h">このあとの流れ</p>
+          <ol className="inq-done-steps" id="inqDoneSteps"></ol>
+          <p className="inq-done-note">受付のメールが届かない場合は、迷惑メールのフォルダもご確認ください。それでも見当たらない時は、お手数ですが contact@fineme.me までご連絡ください。</p>
+          <div className="inq-done-actions">
+            <a className="inq-btn-primary" href="/provider/join">導入のご案内ページに戻る</a>
+            <a className="inq-btn-secondary" href="/">Finemeのトップへ</a>
+          </div>
+        </section>
+
+        <p className="inq-lead" id="inqSignupNote" style={{ marginTop: '20px', fontSize: '13px' }}>すでに導入を決めていて、すぐに始めたい方は<a id="inqSignupLink" href="/provider/signup" style={{ color: '#c9a84c', fontWeight: 700 }}>こちらから登録</a>できます。</p>
+        <a className="inq-back" id="inqBack" href="/provider/join">← 導入のご案内ページに戻る</a>
       </div>
     </div>
   );
