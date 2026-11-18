@@ -100,6 +100,21 @@ Fineme 店舗向けを店舗に紹介する営業パートナーを募集して�
 - お会計時に自然に次回予約を取るにはどうすればいいですか？: https://www.fineme.me/shop-guide/next-booking-rate-tips
 - リピート率の計算方法は？小規模店舗が毎月見るべき指標: https://www.fineme.me/shop-guide/repeat-rate-calculation
 - 脱毛サロンで最後まで通ってもらうには施術間隔の案内と途中解約防止の具体策は？: https://www.fineme.me/shop-guide/hair-removal-last-visit
+- まつ毛サロンのリピート率を上げるには？リペアの周期を伝えて次回予約につなげる方法: https://www.fineme.me/shop-guide/eyelash-salon-repeat
+- ネイルサロンの予約システムの選び方：施術時間と付け替え周期で見るべき項目: https://www.fineme.me/shop-guide/nail-salon-booking-system
+- エステサロンの顧客管理のやり方：肌の状態とコースの進み具合をカルテに残す方法: https://www.fineme.me/shop-guide/esthetic-salon-customer-management
+- ピラティス・ヨガスタジオの会員が辞めない仕組み：月額会員の継続と休会の扱い方: https://www.fineme.me/shop-guide/pilates-studio-member-retention
+- 脱毛サロンの無断キャンセル・直前キャンセルを減らす方法：リマインドと規定の作り方: https://www.fineme.me/shop-guide/hair-removal-no-show
+- パーソナルジムで来なくなった会員に送るLINEの文面例と、送るタイミング: https://www.fineme.me/shop-guide/personal-gym-dormant-line
+- 眉毛サロンの予約システムの選び方：施術時間・来店周期・デザインの記録で見る: https://www.fineme.me/shop-guide/brow-salon-booking-system
+- セルフホワイトニングの回数券の作り方：回数・価格・有効期限の決め方: https://www.fineme.me/shop-guide/whitening-salon-ticket
+- メンズ眉毛・メンズ脱毛の初回で男性のお客様の不安を減らす接客の流れ: https://www.fineme.me/shop-guide/mens-salon-first-visit
+- パーソナルカラー・骨格診断のサロンが1回で終わらないリピートの作り方: https://www.fineme.me/shop-guide/personal-color-salon-repeat
+- 美容室の顧客カルテに書くこと：薬剤の履歴・髪の状態・会話のメモの残し方: https://www.fineme.me/shop-guide/hair-salon-customer-karte
+- パーソナルジムの体験予約のドタキャンを減らすには？予約から当日までの連絡の流れ: https://www.fineme.me/shop-guide/gym-trial-no-show
+- 一人エステサロンの予約・連絡・会計を一つにまとめて、事務作業を減らす方法: https://www.fineme.me/shop-guide/solo-esthetic-admin
+- ネイルサロンで付け替えに来なくなったお客様を呼び戻す方法とLINEの文面例: https://www.fineme.me/shop-guide/nail-salon-dormant
+- まつ毛サロンの顧客管理：デザイン・使った商材・目元の状態を記録する方法: https://www.fineme.me/shop-guide/lash-salon-customer-management
 
 ### 営業パートナーガイド（営業代行・紹介の副業を探している方向け）
 - 一覧: https://www.fineme.me/sales-partner/guide
