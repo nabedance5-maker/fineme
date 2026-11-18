@@ -35,8 +35,7 @@
     { "path": "/api/cron/partner-payouts", "schedule": "0 1 25 * *" },
     { "path": "/api/cron/billing-monthly-summary", "schedule": "30 0 1 * *" },
     { "path": "/api/cron/uptime-check", "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/broadcasts", "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/biz-guide", "schedule": "30 18 * * 2" }
+    { "path": "/api/cron/broadcasts", "schedule": "*/10 * * * *" }
   ],
   "redirects": [
     {
