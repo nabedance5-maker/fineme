@@ -4,6 +4,7 @@ import { monitorUntilFrom } from '@/lib/provider-contract';
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
 import { checkReferralCode } from '@/lib/referral-code';
+import { sendProviderStartEmail } from '@/lib/email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -86,6 +87,12 @@ export async function POST(request) {
     } catch (e) {
       inviteError = e.message || String(e);
       console.error('[provider invite]', inviteError);
+    }
+
+    // 無料モニターとして登録した時は、ログイン案内とは別にモニター開始の案内（期間・紹介制度）を送る（2026-11-19）
+    if (data.billing_status === 'monitor') {
+      try { await sendProviderStartEmail({ to: email, providerName: name, kind: 'monitor', monitorUntil: data.monitor_until }); }
+      catch (e) { console.warn('[admin monitor start email]', e?.message); }
     }
 
     return Response.json({

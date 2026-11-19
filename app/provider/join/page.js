@@ -713,9 +713,18 @@ export default async function ProviderJoinPage(props) {
               </ul>
             </div>
           </div>
-          <p className="pj-partner-note" data-reveal>
-            Finemeを他のお店に紹介すると報酬が受け取れる制度もあります。<a href="/sales-partner">営業パートナー制度について</a>
+        </div>
+      </section>
+
+      {/* 紹介だけの参加（2026-11-19）：パートナー制度は自店が使っていなくても参加できる。金額は /sales-partner と同じ */}
+      <section className="pj-paper pj-paper-tight" id="partner">
+        <div className="pj-container pj-narrow pj-center">
+          <div className="pj-eyebrow pj-center" data-reveal>Partner</div>
+          <h2 className="pj-h2" data-reveal>使うかどうかは、別として。<br className="pj-br-pc" />紹介だけでも参加できます。</h2>
+          <p className="pj-sec-lead pj-narrow" data-reveal style={{ marginBottom: 28 }}>
+            Finemeのパートナー制度は、Finemeを使っていないお店の方でも参加できます。お知り合いのお店に紹介して、そのお店が契約すると初月最大9,000円、その後も契約が続く間は月500円ずつ積み上がります。
           </p>
+          <a className="pj-btn pj-btn-ghost pj-btn-lg pj-partner-btn" href="/sales-partner" data-reveal>パートナー制度の詳細を見る</a>
         </div>
       </section>
 

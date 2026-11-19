@@ -9,8 +9,8 @@ import { PLANS, FIRST_RATE, STOCK_PER_STORE } from './reward';
 // 構成はセールスレター12ステップ（各ブロックに番号を付記）。実績が無い段階なので数字や声は捏造しない。
 
 export const metadata = {
-  title: '営業パートナー募集（完全歩合・完全リモート）｜店舗向けリピート支援SaaS Fineme',
-  description: '紹介した店舗が使い続ける限り、毎月の報酬が積み上がる。来店したお客様を常連に変える店舗向けSaaS「Fineme」の営業パートナーを募集しています。初月は月額利用料の90%、その後は1店舗につき毎月500円。',
+  title: 'パートナー制度（紹介だけで参加できます）｜外見磨きの専門店のための「Fineme」',
+  description: '紹介した店舗が使い続ける限り、毎月の報酬が積み上がる。外見磨きの専門店のリピーターづくりを仕組み化する運営システム「Fineme」のパートナー制度です。Finemeを使っていないお店の方も参加できます。初月は月額利用料の90%、その後は1店舗につき毎月500円。',
   alternates: { canonical: 'https://www.fineme.me/sales-partner' },
   robots: { index: true, follow: true },
   openGraph: {
@@ -158,7 +158,7 @@ export default function SalesPartnerPage() {
         <div className="pj-container">
           <div className="pj-eyebrow" data-reveal>What you introduce</div>
           <h2 className="pj-h2" data-reveal>紹介するのは、<br className="pj-br-pc" />お客様を常連に変える店舗向けシステム</h2>
-          <p className="pj-sec-lead" data-reveal>Finemeは、予約・顧客管理・来店記録・決済をひとつにまとめ、AIが「次に何をすればいいか」を店舗ごとに提案する店舗運営SaaSです。紹介しやすい理由は3つあります。</p>
+          <p className="pj-sec-lead" data-reveal>Finemeは、予約・顧客管理・来店記録・決済をひとつにまとめ、AIが「次に何をすればいいか」を店舗ごとに提案する、外見磨きの専門店のリピーターづくりを仕組み化する運営システムです。紹介しやすい理由は3つあります。</p>
           <div className="sp-sell-grid">
             {SELL_POINTS.map((x, i) => (
               <div key={x.h} className="pj-problem" data-reveal style={{ '--d': `${i * 90}ms` }}>

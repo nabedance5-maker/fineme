@@ -4,6 +4,8 @@ import { getSupabase } from '@/lib/supabase';
 import { contractActive, monitorUntilFrom } from '@/lib/provider-contract';
 import { checkReferralCode } from '@/lib/referral-code';
 import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
+import { sendProviderStartEmail } from '@/lib/email';
+import { providerRecipients } from '@/lib/provider-recipients';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -108,6 +110,12 @@ export async function PATCH(request, props) {
     } catch (e) {
       console.warn('[admin plan change upsell reward]', e);
     }
+  }
+
+  // 無料モニターを新しく始めた時だけ開始案内を送る（モニター中に保存し直した時は monitor_started_at を入れないので送らない）
+  if (updates.monitor_started_at && data?.billing_status === 'monitor') {
+    try { await sendProviderStartEmail({ to: providerRecipients(data), providerName: data.name, kind: 'monitor', monitorUntil: data.monitor_until }); }
+    catch (e) { console.warn('[admin monitor start email]', e?.message); }
   }
 
   return Response.json({ ...data, referrer_note: referrerNote });

@@ -283,6 +283,13 @@ const DASHBOARD_CSS = `
       .toggle-slider:before { content:''; position: absolute; width: 18px; height: 18px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: transform .2s; }
       .toggle-switch input:checked + .toggle-slider { background: #111; }
       .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+      .partner-invite-card { border: 1px solid rgba(201,168,76,0.45); background: rgba(201,168,76,0.08); }
+      .partner-invite-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; width: 100%; padding: 12px 16px; border-radius: 12px; cursor: pointer; font: inherit; text-align: left; color: #1a1410; }
+      .partner-invite-banner:hover { background: rgba(201,168,76,0.14); }
+      .partner-invite-banner-text { font-size: 13px; line-height: 1.6; flex: 1 1 240px; min-width: 0; }
+      .partner-invite-banner-text b { margin-right: 6px; }
+      .partner-invite-banner-link { font-size: 12.5px; font-weight: 700; color: #7a5e12; white-space: nowrap; }
+      .partner-invite-eyebrow { font-size: 12px; font-weight: 700; color: #7a5e12; letter-spacing: .3px; }
       .referral-code-box { padding: 16px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; color: #1a1410; }
       /* 機能OFFのタブ：完全に隠すと「そもそも存在しない機能」に見えてしまい発見できないという
          でお指摘（2026-09-11）を受け、常に一覧には出しつつ視覚的に区別する方式に変更。 */
@@ -1567,6 +1574,7 @@ export default function ProviderDashboardPage() {
           document.getElementById('tab-' + key)?.classList.remove('active');
         }
       });
+      if (!document.querySelector('.tab-btn[data-tab="referral"]')) document.getElementById('today-partner-banner')?.remove();
       window.__pdSyncRails?.();
       const want = new URLSearchParams(location.search).get('tab');
       if (removedActive || (want && !document.querySelector(`.tab-btn[data-tab="${want}"]`))) {
@@ -12881,6 +12889,39 @@ export default function ProviderDashboardPage() {
         navigator.clipboard.writeText(url).then(() => showToast('紹介URLをコピーしました')).catch(() => {});
       });
 
+      // 紹介QR（2026-11-19）：紹介URLと同じリンクをQRにする（紹介コードでの計測はそのまま）。店頭で知り合いの店主に見せる用
+      let wantQr = false;
+      async function showReferralQr() {
+        const box = document.getElementById('referral-qr-box');
+        if (!box || !fnCode) return;
+        const url = `https://www.fineme.me/business/fineme-referral.html?ref=${encodeURIComponent(fnCode)}`;
+        try {
+          const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+          const dataUrl = await QRCode.toDataURL(url, { width: 280, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } });
+          box.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.alt = 'Fineme紹介QRコード';
+          img.style.cssText = 'width:200px;height:200px;max-width:100%;border-radius:12px;background:#fff;padding:10px;border:1px solid #e5e7eb';
+          const note = document.createElement('p');
+          note.className = 'muted';
+          note.style.cssText = 'font-size:12px;margin:6px 0 0';
+          note.textContent = 'お知り合いの店主にこのQRを読み取ってもらうと、あなたの紹介として記録されます。';
+          box.append(img, note);
+          box.style.display = '';
+          box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch { showToast('QRコードを作れませんでした'); }
+      }
+      document.getElementById('partner-card-qr-btn')?.addEventListener('click', () => {
+        const contentEl = document.getElementById('referral-registered-content');
+        if (fnCode && contentEl && contentEl.style.display !== 'none') { showReferralQr(); return; }
+        // まだパートナー登録していない時は登録の案内へ（登録すると紹介コードとQRが出る）
+        wantQr = true;
+        const promptEl = document.getElementById('referral-optin-prompt');
+        showToast('紹介QRは、パートナー登録（無料）をすると表示されます');
+        promptEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
       // 営業パートナー登録のopt-in状態を見て、未登録なら登録導線だけを出す
       // （でお方針2026-10-02：掲載者＝営業パートランの自動一体化を廃止）
       async function checkRegistrationAndLoad() {
@@ -12897,6 +12938,7 @@ export default function ProviderDashboardPage() {
             if (portalLink && data.partner?.access_token) portalLink.href = `/partner/${data.partner.access_token}`;
             if (promptEl) promptEl.style.display = 'none';
             if (contentEl) contentEl.style.display = '';
+            if (wantQr) { wantQr = false; showReferralQr(); }
             loadReferrals();
           } else {
             if (promptEl) promptEl.style.display = '';
@@ -17329,6 +17371,11 @@ export default function ProviderDashboardPage() {
                 today-blocks-listの中に動的に構築する（並び替え・非表示・表示方法の設定は
                 provider_today_blocksで管理）。日常使いの邪魔にならないよう、並び替え等の
                 操作UIは「⚙ このページをカスタマイズ」を押した時だけ表示する。 */}
+            {/* パートナー制度の小さな案内（2026-11-19）：押すと「紹介報酬」タブへ。紹介報酬タブを使えないスタッフには出さない（applyMemberPerms） */}
+            <button type="button" id="today-partner-banner" className="partner-invite-card partner-invite-banner" data-goto-tab="referral">
+              <span className="partner-invite-banner-text"><b>お知り合いのお店に、紹介するだけ。</b>契約されると初月最大9,000円、その後も月500円ずつ。</span>
+              <span className="partner-invite-banner-link">紹介のしかたを見る</span>
+            </button>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost" id="today-customize-toggle" style={{ fontSize: '12px' }}>⚙ このページをカスタマイズ</button>
             </div>
@@ -20621,7 +20668,7 @@ export default function ProviderDashboardPage() {
             </div>
             <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
               <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.7)', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
-              <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が課金を始めた月は初回課金額の90%、その後は掲載を継続している限り¥500/月の報酬を受け取れます。</p>
+              <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が課金を始めた月は初回課金額の90%、その後は契約が続く間、1店舗につき月500円の報酬を受け取れます（初月は最大9,000円）。</p>
               <div className="referral-code-box" id="referral-code">—</div>
               <button className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '10px', width: '100%' }} id="copy-referral">コードをコピー</button>
             </div>
@@ -20834,6 +20881,18 @@ export default function ProviderDashboardPage() {
             契約者も「希望すれば」別途sales_partnersへ登録するopt-in方式に変更。
             登録していない契約者には紹介コードを出さず、登録導線のみ出す） */}
         <div className="tab-pane" id="tab-referral">
+          {/* パートナー制度の条件を、使っている店主が毎日目にする場所に出す（2026-11-19）。金額は /sales-partner（app/sales-partner/reward.js）と同じ。
+              デモ店舗でもそのまま出す（実際の制度） */}
+          <div className="card stack partner-invite-card" style={{ padding: '20px 24px', gap: '10px', marginBottom: '14px' }}>
+            <div className="partner-invite-eyebrow">外見磨きの専門店のための「Fineme」 パートナー制度</div>
+            <h2 style={{ margin: 0, fontSize: '17px' }}>お知り合いのお店に、紹介するだけ。</h2>
+            <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.8, color: '#1a1410' }}>紹介したお店がFinemeを契約すると、初月はプラン料金の90%（最大9,000円）、翌月以降も契約が続く間ずっと月500円をお支払いします。</p>
+            <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.7, color: 'rgba(26,20,16,0.7)' }}>初月の報酬：ライト 4,500円 ／ スタンダード 6,300円 ／ プレミアム 9,000円。ご自身のお店の契約は対象外です。</p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className="btn" id="partner-card-qr-btn" style={{ fontSize: '13px' }}>紹介QRを表示</button>
+              <a href="/sales-partner" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px' }}>条件の詳細</a>
+            </div>
+          </div>
           <div id="referral-optin-prompt" className="card stack" style={{ padding: '24px', gap: '14px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬（営業パートナー）</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
@@ -20857,6 +20916,7 @@ export default function ProviderDashboardPage() {
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-code-btn">コードをコピー</button>
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-url-btn">紹介URLをコピー</button>
               </div>
+              <div id="referral-qr-box" style={{ display: 'none', marginTop: '12px', textAlign: 'center' }}></div>
               <a id="referral-portal-link" href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: '12px', color: '#6366f1' }}>専用の営業パートナー管理画面を開く ↗</a>
             </div>
 
