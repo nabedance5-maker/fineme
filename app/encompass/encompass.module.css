@@ -1,0 +1,158 @@
+/* ENCOMPASS メニューボード（Fineme の店舗SaaSとは別商品）。スマホが苦手な方・タブレット置きっぱなし前提で、
+   文字は大きく、押せる所は 56px 以上、操作はタップだけ（スワイプ・長押し・ドラッグを使わない）。 */
+.shell {
+  --ink: #16202a;
+  --sub: #4a5866;
+  --line: #d5dde4;
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --accent: #0f5e8c;
+  --accent-ink: #ffffff;
+  --ok: #1f7a4d;
+  --warn-bg: #fff4e0;
+  --warn-ink: #7a4b00;
+  --stop-bg: #fde8e8;
+  --stop-ink: #8a1f1f;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.7;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; font-size: 20px; color: var(--ink); text-decoration: none; }
+.brandSub { display: block; font-size: 13px; font-weight: 400; color: var(--sub); }
+.headerLink { color: var(--accent); font-size: 17px; text-decoration: none; padding: 10px 4px; }
+
+.main { max-width: 880px; margin: 0 auto; padding: 24px 16px 80px; }
+.h1 { font-size: 28px; line-height: 1.4; margin: 8px 0 12px; }
+.h2 { font-size: 22px; margin: 28px 0 10px; }
+.lead { color: var(--sub); margin: 0 0 20px; }
+.note { font-size: 15px; color: var(--sub); }
+
+.bigButtons { display: grid; gap: 14px; margin: 20px 0; }
+.bigButton {
+  display: block;
+  padding: 22px 20px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.bigButton strong { display: block; font-size: 22px; }
+.bigButton span { color: var(--sub); font-size: 16px; }
+.bigButtonPrimary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.bigButtonPrimary span { color: #d7e9f5; }
+
+.btn, .btnPrimary, .btnGhost {
+  min-height: 56px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid var(--accent);
+}
+.btn { background: var(--card); color: var(--accent); }
+.btnPrimary { background: var(--accent); color: var(--accent-ink); }
+.btnGhost { background: transparent; color: var(--sub); border-color: var(--line); }
+.btn:disabled, .btnPrimary:disabled { opacity: .45; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+.choice {
+  min-height: 64px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.choiceOn { border-color: var(--accent); background: #e3f0f8; color: var(--accent); }
+
+.field { display: block; margin: 0 0 18px; }
+.field span { display: block; font-weight: 700; margin-bottom: 6px; }
+.input {
+  width: 100%;
+  max-width: 240px;
+  min-height: 56px;
+  font: inherit;
+  font-size: 22px;
+  padding: 8px 14px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.inputWide { max-width: 100%; }
+
+.step { font-size: 15px; color: var(--sub); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.card {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cardOn { border-color: var(--accent); }
+.thumb { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #dfe5ea; display: block; }
+.cardBody { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.cardName { font-weight: 700; font-size: 18px; line-height: 1.4; }
+.cardMeta { font-size: 15px; color: var(--sub); }
+
+.list { display: grid; gap: 10px; margin: 12px 0; padding: 0; list-style: none; }
+.listItem {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+.num { font-size: 22px; font-weight: 700; color: var(--accent); text-align: center; }
+.small { min-height: 48px; padding: 6px 14px; font-size: 16px; }
+
+.warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 12px; padding: 12px 16px; margin: 12px 0; }
+.stop { background: var(--stop-bg); color: var(--stop-ink); border-radius: 12px; padding: 12px 16px; margin: 12px 0; font-weight: 700; }
+.safety { font-size: 16px; color: var(--sub); border-top: 1px solid var(--line); margin-top: 32px; padding-top: 14px; }
+
+.tabs { display: flex; gap: 10px; margin: 12px 0 18px; }
+
+/* 再生：スクロール */
+.playCard { background: var(--card); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; margin: 0 0 22px; }
+.frameBox { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.frameBox iframe, .frameBox img { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; }
+.playBody { padding: 14px 18px 18px; }
+.playName { font-size: 26px; font-weight: 700; line-height: 1.35; margin: 2px 0 6px; }
+.playMeta { font-size: 20px; }
+
+/* 再生：おまかせ（タイマーで自動で進む） */
+.auto { display: grid; gap: 16px; }
+.phase { font-size: 22px; font-weight: 700; }
+.phaseWork { color: var(--ok); }
+.phaseRest { color: var(--warn-ink); }
+.clock { font-size: 88px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.next { font-size: 19px; color: var(--sub); }
+.controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+@media (min-width: 900px) {
+  .autoWide { grid-template-columns: 3fr 2fr; align-items: start; }
+}
