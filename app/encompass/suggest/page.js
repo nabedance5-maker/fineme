@@ -1,7 +1,7 @@
 'use client';
 
 // 条件からメニューを作る。1画面に質問1つ。年齢・身長・体重はこの端末の中だけで使い、送らない・URLにも入れない。
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
@@ -27,6 +27,14 @@ export default function Suggest() {
   const [weight, setWeight] = useState('');
   const [pains, setPains] = useState([]);
   const [savedMsg, setSavedMsg] = useState('');
+  // お店の画面から来た時（?store=1・&customer=）は、案をお店のメニューとして保存する方へ進める
+  const [storeQs, setStoreQs] = useState('');
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('store') !== '1') return;
+    const c = p.get('customer');
+    setStoreQs(`store=1${c && /^[um]:[0-9a-f-]{36}$/.test(c) ? `&customer=${encodeURIComponent(c)}` : ''}`);
+  }, []);
 
   const toggle = (list, setList, key) => setList(list.includes(key) ? list.filter(x => x !== key) : [...list, key]);
   const next = () => setStep(n => Math.min(n + 1, STEPS.length - 1));
@@ -123,8 +131,14 @@ export default function Suggest() {
               <p className={s.note}>レベル（傾斜）と負荷は目安です。最初は低い方から始め、トレーナーが調整してください。</p>
               <div className={s.row} style={{ marginTop: 16 }}>
                 <button type="button" className={s.btnPrimary} onClick={() => router.push(`/encompass/play?m=${encodeMenu(result.menu)}`)}>このメニューで始める</button>
-                <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?m=${encodeMenu(result.menu)}`)}>種目を入れ替える</button>
-                <button type="button" className={s.btn} onClick={() => { saveMenu(result.menu); setSavedMsg('この端末に保存しました。'); }}>この端末に保存する</button>
+                {storeQs ? (
+                  <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?${storeQs}&m=${encodeMenu(result.menu)}`)}>見直してお店に保存する</button>
+                ) : (
+                  <>
+                    <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?m=${encodeMenu(result.menu)}`)}>種目を入れ替える</button>
+                    <button type="button" className={s.btn} onClick={() => { saveMenu(result.menu); setSavedMsg('この端末に保存しました。'); }}>この端末に保存する</button>
+                  </>
+                )}
               </div>
               {savedMsg && <p className={s.note} role="status">{savedMsg}</p>}
             </>

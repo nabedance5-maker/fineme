@@ -24,6 +24,10 @@ export default function EncompassTop() {
           <strong>保存したメニューを開く</strong>
           <span>この端末に保存したメニューの一覧</span>
         </Link>
+        <Link href="/encompass/store" className={s.bigButton}>
+          <strong>お店の方はこちら</strong>
+          <span>お店のメニュー・お客様ごとのメニューと記録・ジムのタブレット用のリンク（ログイン）</span>
+        </Link>
       </div>
 
       <p className={s.safety}>

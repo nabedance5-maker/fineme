@@ -17,7 +17,7 @@ export default function EncompassLayout({ children }) {
           メニューボード
           <span className={s.brandSub}>ENCOMPASS 用（試作）</span>
         </Link>
-        <Link href="/encompass/saved" className={s.headerLink}>保存したメニュー</Link>
+        <Link href="/encompass/store" className={s.headerLink}>お店の画面</Link>
       </header>
       {children}
       <footer className={s.main} style={{ paddingTop: 0 }}>

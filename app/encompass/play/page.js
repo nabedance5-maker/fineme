@@ -3,12 +3,14 @@
 // メニューを見せる画面。タブレットを置きっぱなしにする前提。
 //   おまかせ：タイマーで次の種目へ自動で進む（触らなくてよい）。画面が消えないようにする。
 //   一覧　　：縦に並べ、画面に入った種目の動画だけ音なしで自動再生（スクロールだけで見られる）。
+// 開き方：?m=（リンク・端末に保存）／?id=（お店に保存したメニュー。ログイン中なら「記録する」が出る）／&board=（ジムのタブレットから。戻り先だけに使う）
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PART_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
 import { CHANGE_SEC, REST_SEC, decodeMenu, encodeMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
+import { BOARD_TOKEN, api } from '@/lib/encompass/client';
 
 function buildTimeline(items) {
   const t = [];
@@ -156,36 +158,87 @@ function AutoMode({ items }) {
   );
 }
 
+function RecordBox({ menu, menuId, customerName }) {
+  const [memo, setMemo] = useState('');
+  const [state, setState] = useState('');
+  const save = async () => {
+    setState('saving');
+    const r = await api('/logs', { method: 'POST', body: { menu_id: menuId, customer_ref: menu.customerRef || null, title: menu.title, items: menu.items, memo } });
+    setState(r.ok ? 'done' : (r.data.error || '記録できませんでした'));
+  };
+  return (
+    <section style={{ marginTop: 28 }}>
+      <h2 className={s.h2}>やった内容を記録する{customerName ? `（${customerName} 様）` : ''}</h2>
+      {state === 'done' ? <p className={s.note} role="status">記録しました。お店の画面の「お客様ごと」で見られます。</p> : (
+        <>
+          <label className={s.field}><span>ひとこと（任意。例：レベル5は楽そう、次は6）</span><input className={`${s.input} ${s.inputWide}`} maxLength={300} value={memo} onChange={e => setMemo(e.target.value)} /></label>
+          <div className={s.row}>
+            <button type="button" className={s.btnPrimary} disabled={state === 'saving'} onClick={save}>{state === 'saving' ? '記録しています' : '記録する'}</button>
+          </div>
+          {state && state !== 'saving' && <p className={s.stop} role="alert">{state}</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Play() {
   const [menu, setMenu] = useState(undefined);
   const [mode, setMode] = useState('auto');
+  const [src, setSrc] = useState({ kind: 'link' }); // link / store / board
 
   useEffect(() => {
-    const m = new URLSearchParams(window.location.search).get('m');
+    const p = new URLSearchParams(window.location.search);
+    const board = p.get('board');
+    const id = p.get('id');
+    if (id) {
+      (async () => {
+        const r = await api(`/menus/${encodeURIComponent(id)}`);
+        if (!r.ok) { setMenu(null); return; }
+        const x = r.data.menu;
+        let customerName = null;
+        if (x.customer_ref) {
+          const c = await api('/customers');
+          customerName = c.ok ? c.data.customers.find(v => v.ref === x.customer_ref)?.name || null : null;
+        }
+        setSrc({ kind: 'store', id: x.id, customerName });
+        setMenu({ title: x.title, items: x.items, customerRef: x.customer_ref });
+      })();
+      return;
+    }
+    if (board && BOARD_TOKEN.test(board)) setSrc({ kind: 'board', token: board });
+    const m = p.get('m');
     setMenu(m ? decodeMenu(m) : null);
   }, []);
+
+  const backHref = src.kind === 'board' ? `/encompass/board/${src.token}` : src.kind === 'store' ? '/encompass/store' : '/encompass';
+  const backLabel = src.kind === 'board' ? 'メニューの一覧へ戻る' : src.kind === 'store' ? 'お店の画面へ戻る' : '最初の画面へ';
 
   if (menu === undefined) return <main className={s.main} />;
   if (!menu || !menu.items.length) {
     return (
       <main className={s.main}>
         <h1 className={s.h1}>メニューが開けませんでした</h1>
-        <p className={s.lead}>リンクが途中で切れているかもしれません。</p>
-        <Link href="/encompass" className={s.btnPrimary} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>最初の画面へ</Link>
+        <p className={s.lead}>{src.kind === 'link' ? 'リンクが途中で切れているかもしれません。' : 'ログインが切れているか、メニューが消されたかもしれません。'}</p>
+        <Link href={backHref} className={s.btnPrimary} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>{backLabel}</Link>
       </main>
     );
   }
 
   return (
     <main className={s.main}>
+      {src.customerName && <p className={s.step}>{src.customerName} 様のメニュー</p>}
       <h1 className={s.h1}>{menu.title || 'メニュー'}（{menu.items.length}種目・約{totalMinutes(menu.items)}分）</h1>
       <div className={s.tabs} role="group" aria-label="見せ方">
         <button type="button" className={`${s.choice} ${mode === 'auto' ? s.choiceOn : ''}`} aria-pressed={mode === 'auto'} onClick={() => setMode('auto')} style={{ flex: 1 }}>おまかせで進む</button>
         <button type="button" className={`${s.choice} ${mode === 'scroll' ? s.choiceOn : ''}`} aria-pressed={mode === 'scroll'} onClick={() => setMode('scroll')} style={{ flex: 1 }}>一覧で見る</button>
       </div>
       {mode === 'auto' ? <AutoMode items={menu.items} /> : <ScrollMode items={menu.items} />}
+      {src.kind === 'store' && <RecordBox menu={menu} menuId={src.id} customerName={src.customerName} />}
       <div className={s.row} style={{ marginTop: 24 }}>
-        <Link href={`/encompass/builder?m=${encodeMenu(menu)}`} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>メニューを直す</Link>
+        <Link href={backHref} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>{backLabel}</Link>
+        {src.kind === 'store' && <Link href={`/encompass/builder?id=${src.id}`} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>メニューを直す</Link>}
+        {src.kind === 'link' && <Link href={`/encompass/builder?m=${encodeMenu(menu)}`} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>メニューを直す</Link>}
       </div>
       <p className={s.safety}>胸の痛み・めまい・息切れなどが出たら、すぐに止めてください。レベルと負荷は目安です。</p>
     </main>

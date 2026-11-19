@@ -2,12 +2,14 @@
 
 // 種目を選んでメニューを作る。押すだけで並ぶ（ドラッグ・スワイプは使わない）。
 // ?m= でメニューを受け取ると、その続きから直せる（条件からの提案・保存したメニューから来る）。
+// お店のメニュー：?id=（お店に保存したメニューを直す）・?store=1（お店に新しく保存する）・&customer=（そのお客様用）。
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISES, EXERCISE_BY_ID, PARTS, PART_LABEL, thumbUrl, watchUrl } from '@/lib/encompass/exercises';
 import { DEFAULT_ITEM, LIMITS, decodeMenu, encodeMenu, saveMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
+import { api } from '@/lib/encompass/client';
 
 export default function Builder() {
   const router = useRouter();
@@ -15,12 +17,50 @@ export default function Builder() {
   const [title, setTitle] = useState('');
   const [items, setItems] = useState([]);
   const [savedMsg, setSavedMsg] = useState('');
+  // お店のメニューとして作る・直す時
+  const [store, setStore] = useState(null); // null=この端末だけ / { id, customerRef, customerName, onBoard }
+  const [loadErr, setLoadErr] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const m = new URLSearchParams(window.location.search).get('m');
+    const p = new URLSearchParams(window.location.search);
+    const m = p.get('m');
     const menu = m ? decodeMenu(m) : null;
     if (menu) { setTitle(menu.title); setItems(menu.items); }
+    const id = p.get('id');
+    const customerRef = p.get('customer');
+    if (!id && p.get('store') !== '1') return;
+    const nameOf = async ref => {
+      if (!ref) return null;
+      const r = await api('/customers');
+      return r.ok ? (r.data.customers.find(c => c.ref === ref)?.name || null) : null;
+    };
+    (async () => {
+      if (id) {
+        const r = await api(`/menus/${encodeURIComponent(id)}`);
+        if (!r.ok) { setLoadErr(r.data.error || 'メニューを開けませんでした'); return; }
+        const x = r.data.menu;
+        setTitle(x.title); setItems(x.items);
+        setStore({ id: x.id, customerRef: x.customer_ref, customerName: await nameOf(x.customer_ref), onBoard: x.on_board });
+      } else {
+        const me = await api('/me');
+        if (!me.ok) { setLoadErr(me.data.error || 'ログインしてください'); return; }
+        const name = await nameOf(customerRef);
+        setStore({ id: null, customerRef: name ? customerRef : null, customerName: name, onBoard: false });
+      }
+    })();
   }, []);
+
+  const saveToStore = async () => {
+    setBusy(true); setSavedMsg('');
+    const body = { title: title.trim() || '名前なし', items, on_board: !store.customerRef && store.onBoard, customer_ref: store.customerRef || null };
+    const r = store.id
+      ? await api(`/menus/${store.id}`, { method: 'PATCH', body })
+      : await api('/menus', { method: 'POST', body });
+    setBusy(false);
+    if (!r.ok) { setSavedMsg(r.data.error || '保存できませんでした'); return; }
+    router.push('/encompass/store');
+  };
 
   const shown = useMemo(() => EXERCISES.filter(e => e.part === part), [part]);
   const count = id => items.filter(x => x.id === id).length;
@@ -44,7 +84,9 @@ export default function Builder() {
 
   return (
     <main className={s.main}>
-      <h1 className={s.h1}>種目を選んでメニューを作る</h1>
+      <h1 className={s.h1}>{store?.id ? 'お店のメニューを直す' : store ? 'お店のメニューを作る' : '種目を選んでメニューを作る'}</h1>
+      {store?.customerName && <p className={s.warn}>{store.customerName} 様のメニューです。</p>}
+      {loadErr && <p className={s.stop} role="alert">{loadErr}</p>}
       <p className={s.lead}>部位を選び、種目の「追加する」を押すと、下のメニューに順番に並びます。</p>
 
       <div className={s.choices} role="group" aria-label="部位">
@@ -112,9 +154,25 @@ export default function Builder() {
         </ol>
       )}
 
+      {store && !store.customerRef && (
+        <label className={s.row} style={{ marginTop: 16, fontSize: 19 }}>
+          <input type="checkbox" style={{ width: 28, height: 28 }} checked={store.onBoard} onChange={e => setStore({ ...store, onBoard: e.target.checked })} />
+          ジムのタブレットに出す
+        </label>
+      )}
       <div className={s.row} style={{ marginTop: 20 }}>
-        <button type="button" className={s.btnPrimary} disabled={!items.length} onClick={() => router.push(`/encompass/play?m=${encodeMenu(menu)}`)}>このメニューで始める</button>
-        <button type="button" className={s.btn} disabled={!items.length} onClick={() => { saveMenu(menu); setSavedMsg('この端末に保存しました。'); }}>この端末に保存する</button>
+        {store ? (
+          <>
+            <button type="button" className={s.btnPrimary} disabled={!items.length || busy} onClick={saveToStore}>{busy ? '保存しています' : 'お店に保存する'}</button>
+            <button type="button" className={s.btn} disabled={!items.length} onClick={() => router.push(`/encompass/play?m=${encodeMenu(menu)}`)}>保存せずに試す</button>
+            <button type="button" className={s.btnGhost} onClick={() => router.push('/encompass/store')}>やめる</button>
+          </>
+        ) : (
+          <>
+            <button type="button" className={s.btnPrimary} disabled={!items.length} onClick={() => router.push(`/encompass/play?m=${encodeMenu(menu)}`)}>このメニューで始める</button>
+            <button type="button" className={s.btn} disabled={!items.length} onClick={() => { saveMenu(menu); setSavedMsg('この端末に保存しました。'); }}>この端末に保存する</button>
+          </>
+        )}
       </div>
       {savedMsg && <p className={s.note} role="status">{savedMsg}</p>}
     </main>
