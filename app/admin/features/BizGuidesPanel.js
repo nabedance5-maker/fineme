@@ -45,12 +45,24 @@ export default function BizGuidesPanel() {
   const [form, setForm] = useState(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [state, setState] = useState('loading'); // loading | ok | auth | error
 
   async function load() {
-    const r = await fetch('/api/admin/biz-guides', { headers: h() });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) { setMsg(j.error || '読み込めませんでした'); return; }
-    setList(j.guides || []); if (j.base) setBase(j.base);
+    setState((s) => (s === 'ok' ? s : 'loading'));
+    try {
+      const r = await fetch('/api/admin/biz-guides', { headers: h(), cache: 'no-store' });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) { setState('auth'); return; }
+      if (!r.ok) { setState('error'); setMsg(`読み込めませんでした（${r.status}${j.error ? `：${j.error}` : ''}）`); return; }
+      setList(j.guides || []); if (j.base) setBase(j.base); setState('ok');
+    } catch (e) {
+      setState('error'); setMsg(`読み込めませんでした（${e.message}）`);
+    }
+  }
+  function reenterKey() {
+    sessionStorage.removeItem('fineme:admin:key');
+    adminKey();
+    load();
   }
   useEffect(() => { load(); }, []);
 
@@ -71,6 +83,7 @@ export default function BizGuidesPanel() {
       if (confirm(`次の点が気になります。このまま保存しますか？\n\n・${j.warns.join('\n・')}`)) return save(true);
       setMsg(`保存していません：${j.warns.join(' / ')}`); return;
     }
+    if (r.status === 401) { setMsg('管理APIキーが正しくないため保存できませんでした。一覧に戻って「管理APIキーを入れ直す」から入れ直してください。'); return; }
     if (!r.ok) { setMsg(j.error || '保存できませんでした'); return; }
     setMsg(`保存しました（本文${j.len}字）。サイトにはすぐ反映されます。`);
     setForm((f) => ({ ...f, isNew: false, source: 'db' }));
@@ -170,8 +183,21 @@ export default function BizGuidesPanel() {
         <span style={{ flex: 1 }} />
         <button style={btnMain} onClick={() => { setForm({ ...EMPTY, audience: aud }); setMsg(''); }}>記事を足す</button>
       </div>
-      {msg && <p role="status" style={{ margin: 0, fontSize: 13 }}>{msg}</p>}
-      <div style={{ overflowX: 'auto' }}>
+      {state === 'loading' && <p role="status" style={{ margin: 0, fontSize: 14 }}>読み込んでいます…</p>}
+      {state === 'auth' && (
+        <div role="alert" style={{ ...box, background: '#fef2f2', borderColor: '#fecaca', fontSize: 14, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>管理APIキーが正しくないため、記事を読み込めませんでした。</span>
+          <button style={btnMain} onClick={reenterKey}>管理APIキーを入れ直す</button>
+        </div>
+      )}
+      {state === 'error' && (
+        <div role="alert" style={{ ...box, background: '#fef2f2', borderColor: '#fecaca', fontSize: 14, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>{msg}</span>
+          <button style={btn} onClick={load}>もう一度読み込む</button>
+        </div>
+      )}
+      {state === 'ok' && msg && <p role="status" style={{ margin: 0, fontSize: 13 }}>{msg}</p>}
+      {state === 'ok' && <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead><tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}><th style={{ padding: 8 }}>タイトル</th><th>状態</th><th>更新</th><th></th></tr></thead>
           <tbody>
@@ -189,10 +215,10 @@ export default function BizGuidesPanel() {
                 </td>
               </tr>
             ))}
-            {!shown.length && <tr><td colSpan={4} style={{ padding: 12, color: '#6b7280' }}>記事がありません</td></tr>}
+            {!shown.length && <tr><td colSpan={4} style={{ padding: 12, color: '#6b7280' }}>{q ? '一致する記事がありません' : '記事がありません'}</td></tr>}
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   );
 }
