@@ -1,7 +1,8 @@
 // Claude Code が書いた店舗運営ガイド・営業パートナーガイドの記事（JSON）を検査して biz_guides に入れる。
 // 2026-11-18 渡邉指示：記事は API（無料モデル・Claude API）ではなく Claude Code が直接書く。
 //
-// 使い方：set -a; source .env.local; set +a; node scripts/insert-biz-guides.mjs <articles.json> [--dry]
+// 使い方：set -a; source .env.local; set +a; node scripts/insert-biz-guides.mjs <articles.json> [--dry|--draft]
+// --draft：非公開で入れる（2026-11-19 渡邉指示：画像は運営が管理画面で設定してから公開する）。IndexNow にも送らない。
 // JSON は配列。各要素 { slug, audience: 'shop'|'partner', topic_key, title, description, lead,
 //   sections: [{ h, p: [..], list: [..] }], fineme, faq: [[q, a], ..], related: [slug, ..] }
 // 同じ slug が既にあれば飛ばす。公開後に IndexNow へ送る（ページは1時間以内に作り直される）。
@@ -26,6 +27,7 @@ function validate(a) {
 const [file, flag] = process.argv.slice(2);
 if (!file) { console.error('usage: node scripts/insert-biz-guides.mjs <articles.json> [--dry]'); process.exit(1); }
 const dry = flag === '--dry';
+const draft = flag === '--draft';
 const articles = JSON.parse(fs.readFileSync(file, 'utf8'));
 
 const c = new Client({ connectionString: process.env.SUPABASE_DB_URL });
@@ -41,14 +43,14 @@ for (const a of articles) {
   const { errs, len } = validate(a);
   if (errs.length) { bad++; console.log('NG', a.slug, errs.join(' / ')); continue; }
   if (existing.has(a.slug)) { console.log('SKIP (exists)', a.slug); continue; }
-  console.log(dry ? 'OK(dry)' : 'INSERT', a.slug, `${len}字`, a.title);
+  console.log(dry ? 'OK(dry)' : draft ? 'INSERT(draft)' : 'INSERT', a.slug, `${len}字`, a.title);
   if (dry) continue;
   await c.query(
     `insert into biz_guides (slug, audience, topic_key, title, description, lead, sections, fineme, faq, related, status)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'published')`,
-    [a.slug, a.audience, a.topic_key || a.slug, a.title, a.description, a.lead, JSON.stringify(a.sections), a.fineme, JSON.stringify(a.faq), JSON.stringify(a.related || [])],
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    [a.slug, a.audience, a.topic_key || a.slug, a.title, a.description, a.lead, JSON.stringify(a.sections), a.fineme, JSON.stringify(a.faq), JSON.stringify(a.related || []), draft ? 'draft' : 'published'],
   );
-  urls.push(`${SITE}${BASE[a.audience]}/${a.slug}`);
+  if (!draft) urls.push(`${SITE}${BASE[a.audience]}/${a.slug}`);
 }
 await c.end();
 
