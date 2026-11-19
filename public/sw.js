@@ -1,85 +1,32 @@
 /**
- * Fineme Service Worker
- * 戦略:
- * - Shell (HTML/CSS/JS/fonts): Cache First → オフラインでも基本画面を表示
- * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
- * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
+ * Fineme Service Worker（2026-11-19 作り直し）
+ *
+ * 通知（Web Push）の受け取りと、通知を押した時にページを開くことだけを行う。
+ * 通信の横取り・保存（キャッシュ）はしない。
+ *
+ * 経緯：2026-07-10 からサイトの CSP（worker-src blob:）でこのファイルの登録が止められていて、
+ * マイページの通知の登録が動いていなかった。止められている間、サイトは「Service Worker なし」で動いていたので、
+ * 作り直しでも通信には一切触らず、今の動きを変えない。
+ * 旧版はログイン中の API の結果まで端末に保存していた（個人情報が端末に残る）ため、保存の仕組みは入れ直さない。
+ * 旧版が残っている端末では、ここで古い保存を消す。
  */
-const CACHE_NAME = 'fineme-v8';
-const SHELL_URLS = [
-  '/',
-  '/search',
-  '/diagnosis',
-  '/mypage/navi',
-  '/mypage/log',
-];
 
-// ---- インストール: Shellをキャッシュ ----
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(SHELL_URLS).catch(err => {
-        console.warn('[SW] Shell pre-cache failed (some assets may not exist yet):', err);
-      });
-    })
-  );
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-// ---- アクティベート: 古いキャッシュ削除 ----
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('fineme-')).map(k => caches.delete(k))))
+      .catch(() => {})
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// ---- フェッチ: リクエスト種別ごとに戦略を選択 ----
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
+// fetch は扱わない（ブラウザがそのまま通信する）
 
-  // POST等はCache APIに入れられず（cache.putがTypeError）、catchでオフライン用503に化ける。
-  // Supabaseのログイン・トークン更新（別オリジンへのPOST）もここを通るため、成功しているのに
-  // 「ログインエラー: {}」になっていた。GET以外・他オリジンの画像以外は一切触らない。
-  if (request.method !== 'GET') return;
-  if (url.origin !== self.location.origin && request.destination !== 'image') return;
-
-  // APIリクエスト → Network First
-  if (url.hostname === 'localhost' || url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // HTML ドキュメント → Network First（常に最新を返す、オフライン時はキャッシュ）
-  if (request.destination === 'document') {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // 画像 → Stale While Revalidate
-  if (request.destination === 'image') {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-
-  // /_next/static/ 配下はコンテンツハッシュ付きファイル名（内容が変わればURLも変わる）
-  // なのでCache Firstで問題ない。それ以外（App RouterのRSCペイロード取得など、
-  // destinationが'document'でもハッシュ付きURLでもない中間fetch）を同じ扱いにすると、
-  // 一度キャッシュした古いページの中身がデプロイ後も永久に返り続けるバグになる
-  // （でお報告2026-09-18「更新しても直ってない」系の一部はこれが原因と判明）。
-  if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  // その他（CSS/JS/fonts含む、非ハッシュURL）→ Network First
-  event.respondWith(networkFirst(request));
-});
-
-// ---- Web Push受信 ----
+// ---- Web Push 受信 ----
 self.addEventListener('push', event => {
   if (!event.data) return;
   let payload = {};
@@ -95,67 +42,25 @@ self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// ---- 通知タップ ----
+// ---- 通知を押した時：Fineme の中のページだけを開く ----
+function safePath(u) {
+  try {
+    const url = new URL(String(u || '/'), self.location.origin);
+    return url.origin === self.location.origin ? url.pathname + url.search + url.hash : '/';
+  } catch {
+    return '/';
+  }
+}
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+  const path = safePath(event.notification.data?.url);
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes(url) && 'focus' in client) return client.focus();
+        if (client.url.includes(path) && 'focus' in client) return client.focus();
       }
-      if (clients.openWindow) return clients.openWindow(url);
+      if (clients.openWindow) return clients.openWindow(path);
     })
   );
 });
-
-// ---- 戦略実装 ----
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone()).catch(() => {});
-    }
-    return response;
-  } catch {
-    // オフライン時フォールバック（HTMLリクエストのみ）
-    if (request.destination === 'document') {
-      const fallback = await caches.match('/');
-      if (fallback) return fallback;
-    }
-    return new Response('オフラインです。ネットワーク接続を確認してください。', {
-      status: 503,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
-  }
-}
-
-async function networkFirst(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone()).catch(() => {});
-    }
-    return response;
-  } catch {
-    const cached = await caches.match(request);
-    return cached || new Response(JSON.stringify({ error: 'offline' }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-}
-
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
-  const networkFetch = fetch(request).then(response => {
-    if (response.ok) cache.put(request, response.clone()).catch(() => {});
-    return response;
-  }).catch(() => null);
-  return cached || networkFetch;
-}
