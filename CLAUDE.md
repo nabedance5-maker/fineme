@@ -24,7 +24,7 @@ Fineme は「外見を起点に自信を再設計するための、地図と羅�
 
 
 **ENCOMPASS メニューボード（別商品・2026-11-19〜）**：`/encompass`・`/api/encompass/`・`lib/encompass/`・`encompass_` の表。店舗SaaSとDB・ログイン・お店の登録は共通で、契約だけ別（`encompass_stores`）。
-- ⚠️ **店舗SaaSを絶対に壊さない（渡邉指示）**：足すだけで作る。既存の表の列・RLS、既存APIの返す形、`providers.plan` / feature-flags の判定は変えない（読むだけは可）
+- ⚠️ **店舗SaaSを絶対に壊さない（渡邉指示）**：基本は足すだけで作る（既存の表の列・RLS、既存APIの返す形、`providers.plan` / feature-flags の判定は読むだけ）。ENCOMPASS に必要なら変えてよいが、その時は影響する SaaS の画面・APIを先に洗い出し、手元と本番で SaaS 側を実際に動かして壊れていないか必ず確かめ、何を変え・どこを確かめたかを報告する
 - コミット前に `node scripts/encompass-guard.mjs`、公開後に `node scripts/encompass-guard.mjs --smoke` を必ず通す（共通ファイルを触る時は理由を確かめて `--allow <path>`）
 ---
 
