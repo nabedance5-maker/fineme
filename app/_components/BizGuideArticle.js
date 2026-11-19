@@ -6,7 +6,7 @@ import { GUIDE_UPDATED } from '@/lib/biz-guide';
 
 const SITE = 'https://www.fineme.me';
 
-export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
+export default function BizGuideArticle({ article, base, hubLabel, all, cta, cover, industry, photoOf }) {
   const url = `${SITE}${base}/${article.slug}`;
   const updated = article.updated || GUIDE_UPDATED;
   const related = (article.related || []).map((s) => all.find((a) => a.slug === s)).filter(Boolean);
@@ -20,6 +20,7 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
       dateModified: updated,
       inLanguage: 'ja',
       mainEntityOfPage: url,
+      ...(cover ? { image: cover } : {}),
       author: { '@type': 'Organization', name: 'Fineme', url: SITE },
       publisher: { '@type': 'Organization', name: 'Fineme', url: SITE },
     },
@@ -45,13 +46,14 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
       <header className="bg-head">
         <div className="bg-wrap">
           <p className="bg-crumb"><Link href="/">Fineme</Link> / <Link href={base}>{hubLabel}</Link></p>
-          <p className="bg-eyebrow">{hubLabel}</p>
+          <p className="bg-eyebrow">{hubLabel}{industry && <span className="bg-industry">{industry}</span>}</p>
           <h1 className="bg-h1">{article.title}</h1>
           <p className="bg-meta">更新日 {updated.replace(/-/g, '.')}・Fineme 編集部</p>
         </div>
       </header>
       <div className="bg-body">
         <article className="bg-wrap">
+          {cover && <figure className="bg-cover"><img src={cover} alt="" width="960" height="540" /></figure>}
           <p className="bg-lead">{article.lead}</p>
           {article.sections.map((s) => (
             <section key={s.h} className="bg-sec">
@@ -78,9 +80,9 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta }) {
           {related.length > 0 && (
             <nav className="bg-related" aria-label="関連する記事">
               <h2>あわせて読みたい</h2>
-              <ul className="bg-list">
+              <ul className={photoOf ? 'bg-list bg-grid' : 'bg-list'}>
                 {related.map((r) => (
-                  <li key={r.slug}><Link className="bg-card" href={`${base}/${r.slug}`}><b>{r.title}</b><span>{r.description}</span></Link></li>
+                  <li key={r.slug}><Link className={photoOf ? 'bg-card bg-card-ph' : 'bg-card'} href={`${base}/${r.slug}`}>{photoOf && <img src={photoOf(r.slug, 640)} alt="" loading="lazy" width="640" height="360" />}<b>{r.title}</b><span>{r.description}</span></Link></li>
                 ))}
               </ul>
             </nav>

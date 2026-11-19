@@ -27,6 +27,15 @@ const MENU_GROUPS = [
       { href: '/belle/diagnosis/types', label: 'タイプ図鑑' },
     ],
   },
+  {
+    label: '店舗の方へ',
+    accent: '#9fb8cf',
+    full: true,
+    links: [
+      { href: '/shop-guide',    label: '店舗運営ガイド' },
+      { href: '/provider/join', label: 'Fineme 店舗向けのご案内' },
+    ],
+  },
 ];
 
 export default function Navbar() {
@@ -112,6 +121,8 @@ export default function Navbar() {
         .menu-group-label { font-size: 11px; font-weight: 800; letter-spacing: .06em; margin: 2px 0 6px; }
         .menu-group a { display: block; color: #e8e4dc; text-decoration: none; font-size: 14px; padding: 8px 6px; border-radius: 6px; }
         .menu-group a:hover { background: rgba(232,228,220,0.08); color: #fff; }
+        .menu-group-full { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid rgba(232,228,220,0.12); }
+        .menu-group-full a { display: inline-block; margin-right: 6px; }
         .menu-foot { grid-column: 1 / -1; margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(232,228,220,0.12); }
         .menu-foot a { color: rgba(232,228,220,0.75); text-decoration: none; font-size: 13px; padding: 6px; }
         .menu-foot a:hover { color: #fff; }
@@ -167,7 +178,7 @@ export default function Navbar() {
           {menuOpen && (
             <div className="menu-panel" role="menu">
               {MENU_GROUPS.map(group => (
-                <div className="menu-group" key={group.label}>
+                <div className={group.full ? 'menu-group menu-group-full' : 'menu-group'} key={group.label}>
                   <div className="menu-group-label" style={{ color: group.accent }}>{group.label}</div>
                   {group.links.map(l => (
                     <Link key={l.href} href={l.href} onClick={closeMenu}>{l.label}</Link>
