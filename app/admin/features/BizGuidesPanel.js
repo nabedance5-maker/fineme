@@ -16,43 +16,25 @@ const fmt = (s) => (s ? new Date(s).toLocaleDateString('ja-JP', { timeZone: 'Asi
 function toForm(g) {
   return {
     ...g,
-    sections: (g.sections || []).map((s) => ({ h: s.h || '', p: (s.p || []).join('\n\n'), list: (s.list || []).join('\n'), listFirst: !!s.listFirst })),
+    sections: (g.sections || []).map((s) => ({ h: s.h || '', p: (s.p || []).join('\n\n'), list: (s.list || []).join('\n'), listFirst: !!s.listFirst, img: s.img || '' })),
     faq: (g.faq || []).map(([q, a]) => ({ q, a })),
     related: (g.related || []).join(', '),
   };
 }
 function fromForm(f) {
   return {
-    slug: f.slug.trim(), audience: f.audience, cover: (f.cover || '').trim(), title: f.title, description: f.description, lead: f.lead, fineme: f.fineme, status: f.status,
-    sections: f.sections.map((s) => ({ h: s.h, p: s.p.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean), list: s.list.split('\n').map((x) => x.trim()).filter(Boolean), ...(s.listFirst ? { listFirst: true } : {}) })),
+    slug: f.slug.trim(), audience: f.audience, title: f.title, description: f.description, lead: f.lead, fineme: f.fineme, status: f.status,
+    sections: f.sections.map((s) => ({ h: s.h, p: s.p.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean), list: s.list.split('\n').map((x) => x.trim()).filter(Boolean), ...(s.listFirst ? { listFirst: true } : {}), ...(s.img ? { img: s.img } : {}) })),
     faq: f.faq.map((x) => [x.q, x.a]),
     related: f.related.split(/[,、\s]+/).map((x) => x.trim()).filter(Boolean),
   };
 }
-const EMPTY = { slug: '', audience: 'shop', cover: '', title: '', description: '', lead: '', fineme: '', status: 'published', sections: [{ h: '', p: '', list: '' }], faq: [{ q: '', a: '' }], related: '', isNew: true };
+const EMPTY = { slug: '', audience: 'shop', title: '', description: '', lead: '', fineme: '', status: 'published', sections: [{ h: '', p: '', list: '' }], faq: [{ q: '', a: '' }], related: '', isNew: true };
 
 const box = { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16 };
 const inp = { width: '100%', padding: '8px 10px', border: '1.5px solid #e5e7eb', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' };
 const btn = { padding: '8px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: 13 };
 const btnMain = { ...btn, border: 'none', background: '#111', color: '#fff', fontWeight: 700 };
-// 端末の画像を横1600pxまでに縮めて WebP にする（記事の画像は3MBまで）
-function shrink(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const src = URL.createObjectURL(file);
-    img.onload = () => {
-      const scale = Math.min(1, 1600 / img.width);
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(src);
-      c.toBlob((b) => (b ? resolve(b) : reject(new Error('画像を変換できませんでした'))), 'image/webp', 0.85);
-    };
-    img.onerror = () => { URL.revokeObjectURL(src); reject(new Error('画像を読めませんでした')); };
-    img.src = src;
-  });
-}
-
 const lbl = { display: 'grid', gap: 4, fontSize: 12.5, fontWeight: 700, color: '#374151' };
 
 export default function BizGuidesPanel() {
@@ -90,21 +72,6 @@ export default function BizGuidesPanel() {
   const setFaq = (i, k, v) => setForm((f) => ({ ...f, faq: f.faq.map((s, j) => (j === i ? { ...s, [k]: v } : s)) }));
   const move = (key, i, d) => setForm((f) => { const a = [...f[key]]; const t = i + d; if (t < 0 || t >= a.length) return f; [a[i], a[t]] = [a[t], a[i]]; return { ...f, [key]: a }; });
   const drop = (key, i) => setForm((f) => ({ ...f, [key]: f[key].filter((_, j) => j !== i) }));
-
-  async function upload(file) {
-    if (!file) return;
-    setBusy(true); setMsg('画像を上げています…');
-    try {
-      const fd = new FormData();
-      fd.append('file', await shrink(file), 'cover.webp');
-      const r = await fetch('/api/admin/biz-guides/image', { method: 'POST', headers: { 'x-admin-key': adminKey() }, body: fd });
-      const j = await r.json().catch(() => ({}));
-      if (r.status === 401) setMsg('管理APIキーが正しくないため画像を上げられませんでした。');
-      else if (!r.ok) setMsg(j.error || '画像を上げられませんでした');
-      else { set('cover', j.url); setMsg('画像を入れました。「保存する」で記事に反映されます。'); }
-    } catch (e) { setMsg(e.message); }
-    setBusy(false);
-  }
 
   async function save(force = false) {
     if (busy) return;
@@ -148,19 +115,6 @@ export default function BizGuidesPanel() {
                 <option value="published">公開する</option><option value="draft">非公開にする</option>
               </select>
             </label>
-          </div>
-          <div style={{ display: 'grid', gap: 6 }}>
-            <span style={lbl}>画像（一覧のカード・記事の先頭・SNSで共有した時に出る。空なら業種の写真を自動で使う）</span>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              {form.cover
-                ? <img src={form.cover} alt="" style={{ width: 240, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }} />
-                : <div style={{ width: 240, aspectRatio: '16/9', borderRadius: 8, border: '1px dashed #d1d5db', display: 'grid', placeItems: 'center', fontSize: 12, color: '#6b7280' }}>未設定（自動の写真）</div>}
-              <div style={{ display: 'grid', gap: 8, flex: 1, minWidth: 220 }}>
-                <label style={{ ...btn, textAlign: 'center' }}>端末から選ぶ<input type="file" accept="image/*" style={{ display: 'none' }} disabled={busy} onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} /></label>
-                <input style={inp} value={form.cover || ''} onChange={(e) => set('cover', e.target.value)} placeholder="または画像のURL（https://〜）" />
-                {form.cover && <button style={btn} onClick={() => set('cover', '')}>画像を外す</button>}
-              </div>
-            </div>
           </div>
           <label style={lbl}>タイトル（15〜60字・今{form.title.length}字）<input style={inp} value={form.title} onChange={(e) => set('title', e.target.value)} /></label>
           <label style={lbl}>要約（検索結果・一覧に出る文。60字以上）<textarea style={{ ...inp, minHeight: 70 }} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
@@ -245,7 +199,7 @@ export default function BizGuidesPanel() {
       {state === 'ok' && msg && <p role="status" style={{ margin: 0, fontSize: 13 }}>{msg}</p>}
       {state === 'ok' && <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead><tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}><th style={{ padding: 8 }}>タイトル</th><th>状態</th><th>画像</th><th>更新</th><th></th></tr></thead>
+          <thead><tr style={{ textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}><th style={{ padding: 8 }}>タイトル</th><th>状態</th><th>更新</th><th></th></tr></thead>
           <tbody>
             {shown.map((g) => (
               <tr key={`${g.audience}:${g.slug}`} style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -254,7 +208,6 @@ export default function BizGuidesPanel() {
                   <div style={{ color: '#6b7280', fontSize: 12 }}>{g.slug}{g.source === 'static' ? '・最初に用意した記事' : ''}</div>
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>{g.status === 'published' ? '公開中' : <span style={{ color: '#b45309' }}>非公開</span>}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{g.cover ? '設定済み' : <span style={{ color: '#6b7280' }}>未設定</span>}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>{fmt(g.updated_at || g.created_at)}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <button style={btn} onClick={() => { setForm(toForm(g)); setMsg(''); window.scrollTo(0, 0); }}>直す</button>
@@ -262,10 +215,11 @@ export default function BizGuidesPanel() {
                 </td>
               </tr>
             ))}
-            {!shown.length && <tr><td colSpan={5} style={{ padding: 12, color: '#6b7280' }}>{q ? '一致する記事がありません' : '記事がありません'}</td></tr>}
+            {!shown.length && <tr><td colSpan={4} style={{ padding: 12, color: '#6b7280' }}>{q ? '一致する記事がありません' : '記事がありません'}</td></tr>}
           </tbody>
         </table>
       </div>}
     </div>
   );
 }
+

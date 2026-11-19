@@ -20,8 +20,6 @@ function checkAdmin(request) {
 }
 
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-// 画像は https の URL だけ（空なら業種の写真を自動で使う）
-const coverUrl = (v) => { const u = str(v, 1000); return /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ''; };
 const strList = (v, max) => (Array.isArray(v) ? v.map((x) => str(x, max)).filter(Boolean) : []);
 
 // 受け取った記事を、保存してよい形・長さだけに絞る
@@ -37,11 +35,11 @@ function clean(b) {
       p: strList(s?.p, 3000).slice(0, 20),
       list: strList(s?.list, 500).slice(0, 30),
       ...(s?.listFirst ? { listFirst: true } : {}),
+      ...(typeof s?.img === 'string' && /^https:\/\/images\.unsplash\.com\/[^\s"']+$/.test(s.img.trim()) ? { img: s.img.trim().slice(0, 300) } : {}),
     })),
     fineme: str(b.fineme, 1500),
     faq: (Array.isArray(b.faq) ? b.faq : []).slice(0, 15).map((f) => [str(f?.[0], 300), str(f?.[1], 1500)]),
     related: strList(b.related, 80).slice(0, 6),
-    cover: coverUrl(b.cover),
     status: b.status === 'draft' ? 'draft' : 'published',
   };
 }
@@ -50,7 +48,7 @@ export async function GET(request) {
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { data, error } = await db()
     .from('biz_guides')
-    .select('slug, audience, topic_key, title, description, lead, sections, fineme, faq, related, cover, status, created_at, updated_at')
+    .select('slug, audience, topic_key, title, description, lead, sections, fineme, faq, related, status, created_at, updated_at')
     .order('created_at', { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const rows = data || [];
@@ -88,15 +86,6 @@ export async function PUT(request) {
   const base = BASE[a.audience];
   revalidatePath(base);
   revalidatePath(`${base}/${a.slug}`);
-  // 公開した時は検索エンジンに知らせる（非公開で入れた記事を、画像を付けて公開に切り替えた時など）
-  if (a.status === 'published') {
-    const site = 'https://www.fineme.me';
-    const key = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504'; // 公開ファイル（/<key>.txt）と同じ値
-    await fetch('https://api.indexnow.org/indexnow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ host: 'www.fineme.me', key, keyLocation: `${site}/${key}.txt`, urlList: [`${site}${base}/${a.slug}`, `${site}${base}`] }),
-    }).catch(() => {});
-  }
   return Response.json({ ok: true, url: `${base}/${a.slug}`, len });
 }
+

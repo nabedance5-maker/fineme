@@ -66,7 +66,10 @@
 .bg-card-ph span { margin: 0 18px 18px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .bg-cover { margin: 0 0 28px; border-radius: 8px; overflow: hidden; background: var(--paper-2); }
 .bg-cover img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.bg-fig { margin: 28px 0 8px; border-radius: 8px; overflow: hidden; background: var(--paper-2); }
+.bg-fig img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
 .bg-industry { display: inline-block; margin: 0 0 12px 10px; font-size: 12px; color: rgba(243, 239, 230, 0.75); }
 @media (max-width: 520px) {
   .bg-cta-sub { display: block; margin: 12px 0 0; }
 }
+
