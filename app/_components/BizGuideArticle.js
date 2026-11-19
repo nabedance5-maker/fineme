@@ -61,6 +61,7 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta, cov
               {s.listFirst && s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
               {(s.p || []).map((x) => <p key={x}>{x}</p>)}
               {!s.listFirst && s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
+              {s.img && <figure className="bg-fig"><img src={s.img} alt="" loading="lazy" width="960" height="540" /></figure>}
             </section>
           ))}
           <aside className="bg-fineme">
@@ -92,3 +93,4 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta, cov
     </main>
   );
 }
+
