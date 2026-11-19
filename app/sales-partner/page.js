@@ -9,7 +9,7 @@ import { PLANS, FIRST_RATE, STOCK_PER_STORE } from './reward';
 // 構成はセールスレター12ステップ（各ブロックに番号を付記）。実績が無い段階なので数字や声は捏造しない。
 
 export const metadata = {
-  title: 'パートナー制度（紹介だけで参加できます）｜外見磨きの専門店のための「Fineme」',
+  title: { absolute: 'パートナー制度（紹介だけで参加できます）｜外見磨きの専門店のための「Fineme」' },
   description: '紹介した店舗が使い続ける限り、毎月の報酬が積み上がる。外見磨きの専門店のリピーターづくりを仕組み化する運営システム「Fineme」のパートナー制度です。Finemeを使っていないお店の方も参加できます。初月は月額利用料の90%、その後は1店舗につき毎月500円。',
   alternates: { canonical: 'https://www.fineme.me/sales-partner' },
   robots: { index: true, follow: true },
