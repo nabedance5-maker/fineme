@@ -1,8 +1,16 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import BizGuidesPanel from './BizGuidesPanel';
 
 export default function AdminFeaturesPage() {
   const initialized = useRef(false);
+  // 一般向け（features：男性 Fineme・女性 Belle）と店舗向け（biz_guides：店舗運営ガイド・営業パートナーガイド）をタブで切り替える
+  const [tab, setTab] = useState('general');
+  useEffect(() => { try { if (new URL(location.href).searchParams.get('tab') === 'shop') setTab('shop'); } catch {} }, []);
+  const pickTab = (t) => {
+    setTab(t);
+    try { const u = new URL(location.href); if (t === 'shop') u.searchParams.set('tab', 'shop'); else u.searchParams.delete('tab'); history.replaceState(null, '', u); } catch {}
+  };
 
   useEffect(() => {
     if (initialized.current) return;
@@ -966,8 +974,16 @@ export default function AdminFeaturesPage() {
   return (
     <main className="section" style={{textShadow:'none',color:'#111'}}>
       <div>
-        <section className="stack">
-          <h1 className="section-title">特集管理</h1>
+        <h1 className="section-title">特集管理</h1>
+        <div role="tablist" style={{display:'flex',gap:'8px',margin:'0 0 16px',flexWrap:'wrap'}}>
+          {[['general','一般向けの記事（男性・女性）'],['shop','店舗向けの記事']].map(([k,label]) => (
+            <button key={k} type="button" role="tab" aria-selected={tab===k} onClick={() => pickTab(k)}
+              style={{padding:'8px 16px',borderRadius:'999px',border:'1px solid #e5e7eb',cursor:'pointer',fontSize:'14px',fontWeight:700,
+                background: tab===k ? '#111' : '#fff', color: tab===k ? '#fff' : '#111'}}>{label}</button>
+          ))}
+        </div>
+        {tab === 'shop' && <BizGuidesPanel />}
+        <section className="stack" style={{display: tab === 'shop' ? 'none' : undefined}}>
           <section id="features-list-section" className="stack">
             <div style={{display:'flex',alignItems:'center'}}>
               <h2 className="section-title" style={{fontSize:'22px',margin:'0'}}>特集一覧</h2>

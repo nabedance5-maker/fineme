@@ -31,7 +31,6 @@ const CATEGORIES = [
   // （キュレーション済みの投稿は New Me Navi の生成と Mirror の分析で今も使っている）
   { key: 'content', label: '記事', items: [
     { href: '/admin/features', label: '特集管理' },
-    { href: '/admin/biz-guides', label: '店舗向けの記事' },
     { href: '/admin/stories', label: '体験談管理' },
   ] },
   { key: 'analytics', label: '分析\n・集客', items: [
