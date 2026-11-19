@@ -42,7 +42,7 @@ export default function BizGuideArticle({ article, base, hubLabel, all, cta, cov
 
   return (
     <main className="bg">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <header className="bg-head">
         <div className="bg-wrap">
           <p className="bg-crumb"><Link href="/">Fineme</Link> / <Link href={base}>{hubLabel}</Link></p>
