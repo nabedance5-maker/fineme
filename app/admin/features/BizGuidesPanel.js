@@ -64,6 +64,7 @@ export default function BizGuidesPanel() {
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState('loading'); // loading | ok | auth | error
+  const [role, setRole] = useState('admin'); // admin | image（画像と公開だけを扱うキー・Muse 用）
 
   async function load() {
     setState((s) => (s === 'ok' ? s : 'loading'));
@@ -72,7 +73,7 @@ export default function BizGuidesPanel() {
       const j = await r.json().catch(() => ({}));
       if (r.status === 401) { setState('auth'); return; }
       if (!r.ok) { setState('error'); setMsg(`読み込めませんでした（${r.status}${j.error ? `：${j.error}` : ''}）`); return; }
-      setList(j.guides || []); if (j.base) setBase(j.base); setState('ok');
+      setList(j.guides || []); if (j.base) setBase(j.base); setRole(j.role === 'image' ? 'image' : 'admin'); setState('ok');
     } catch (e) {
       setState('error'); setMsg(`読み込めませんでした（${e.message}）`);
     }
@@ -118,8 +119,8 @@ export default function BizGuidesPanel() {
     }
     if (r.status === 401) { setMsg('管理APIキーが正しくないため保存できませんでした。一覧に戻って「管理APIキーを入れ直す」から入れ直してください。'); return; }
     if (!r.ok) { setMsg(j.error || '保存できませんでした'); return; }
-    setMsg(`保存しました（本文${j.len}字）。サイトにはすぐ反映されます。`);
-    setForm((f) => ({ ...f, isNew: false, source: 'db' }));
+    setMsg(j.imageOnly ? '画像と公開の設定を保存しました。サイトにはすぐ反映されます。' : `保存しました（本文${j.len}字）。サイトにはすぐ反映されます。`);
+    setForm((f) => ({ ...f, isNew: false, source: 'db', cover: j.cover ?? f.cover }));
     load();
   }
 
@@ -132,6 +133,7 @@ export default function BizGuidesPanel() {
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, flex: 1 }}>{form.isNew ? '記事を足す' : '記事を直す'}</h1>
           {!form.isNew && <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 13 }}>サイトで見る</a>}
         </div>
+        {role === 'image' && <p style={{ ...box, margin: 0, fontSize: 13, background: '#eff6ff', borderColor: '#bfdbfe' }}>このキーで変えられるのは「画像」と「公開」だけです。本文やタイトルを直しても保存されません。</p>}
         {form.source === 'static' && <p style={{ ...box, margin: 0, fontSize: 13, background: '#fffbeb', borderColor: '#fde68a' }}>最初に用意した記事です。保存すると、以後はここで直した内容が表示されます。</p>}
         <div style={{ ...box, display: 'grid', gap: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -227,7 +229,7 @@ export default function BizGuidesPanel() {
         ))}
         <input style={{ ...inp, maxWidth: 260 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="タイトルで探す" />
         <span style={{ flex: 1 }} />
-        <button style={btnMain} onClick={() => { setForm({ ...EMPTY, audience: aud }); setMsg(''); }}>記事を足す</button>
+        {role === 'admin' && <button style={btnMain} onClick={() => { setForm({ ...EMPTY, audience: aud }); setMsg(''); }}>記事を足す</button>}
       </div>
       {state === 'loading' && <p role="status" style={{ margin: 0, fontSize: 14 }}>読み込んでいます…</p>}
       {state === 'auth' && (
