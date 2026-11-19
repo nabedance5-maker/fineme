@@ -92,20 +92,20 @@ function placeholderFor(category){
 
 function categoryPhotoFor(category){
   const map = {
-    consulting: 'https://images.unsplash.com/photo-1529336953121-ad5a0d43d0d2?q=80&w=1400&auto=format&fit=crop',
+    consulting: 'https://images.unsplash.com/photo-1765648496288-e1760f547711?q=80&w=1400&auto=format&fit=crop',
     gym: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1400&auto=format&fit=crop',
     makeup: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1400&auto=format&fit=crop',
-    hair: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1400&auto=format&fit=crop',
+    hair: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=1400&auto=format&fit=crop',
     diagnosis: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1400&auto=format&fit=crop',
-    fashion: 'https://images.unsplash.com/photo-1520975657288-4e3b66f3c54a?q=80&w=1400&auto=format&fit=crop',
+    fashion: 'https://images.unsplash.com/photo-1669889848523-864c6b0e2020?q=80&w=1400&auto=format&fit=crop',
     photo: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?q=80&w=1400&auto=format&fit=crop',
     marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop',
-    eyebrow: 'https://images.unsplash.com/photo-1556228720-6d4d7f4b5a74?q=80&w=1400&auto=format&fit=crop',
-    hairremoval: 'https://images.unsplash.com/photo-1542317854-6e68f2d3d2c8?q=80&w=1400&auto=format&fit=crop',
-    esthetic: 'https://images.unsplash.com/photo-1502720705749-3c09d3b0d87f?q=80&w=1400&auto=format&fit=crop',
-    whitening: 'https://images.unsplash.com/photo-1536305030011-7f7b7e4a3b8c?q=80&w=1400&auto=format&fit=crop',
-    orthodontics: 'https://images.unsplash.com/photo-1588776814546-1f0b7f9c3a88?q=80&w=1400&auto=format&fit=crop',
-    nail: 'https://images.unsplash.com/photo-1503342452485-86a5f6d8e2b6?q=80&w=1400&auto=format&fit=crop'
+    eyebrow: 'https://images.unsplash.com/photo-1551187319-5bcfdebac5b9?q=80&w=1400&auto=format&fit=crop',
+    hairremoval: 'https://images.unsplash.com/photo-1761718209794-e0588aafbcc4?q=80&w=1400&auto=format&fit=crop',
+    esthetic: 'https://images.unsplash.com/photo-1552693673-1bf958298935?q=80&w=1400&auto=format&fit=crop',
+    whitening: 'https://images.unsplash.com/photo-1569925444984-9e2e5fc3d1fb?q=80&w=1400&auto=format&fit=crop',
+    orthodontics: 'https://images.unsplash.com/photo-1526080652727-5b77f74eacd2?q=80&w=1400&auto=format&fit=crop',
+    nail: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=1400&auto=format&fit=crop'
   };
   return map[category] || '';
 }
