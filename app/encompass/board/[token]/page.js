@@ -1,7 +1,7 @@
 'use client';
 
 // ジムに置くタブレットの画面（ログインなし）。お店が「タブレットに出す」にしたメニューを大きく並べる。
-// お客様の名前・記録は出さない。5分ごとに並びを読み直す（お店がメニューを足したら自然に出る）。
+// お客様の名前・記録は出さない。1分ごと・画面に戻った時に並びを読み直す（お店がメニューを足したり名前を変えたりしたら、すぐ出る）。
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -26,8 +26,10 @@ export default function Board() {
       } catch {}
     };
     load();
-    const id = setInterval(load, 5 * 60 * 1000);
-    return () => { alive = false; clearInterval(id); };
+    const id = setInterval(load, 60 * 1000);
+    const onVis = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
   }, [token]);
 
   if (data === undefined) return <main className={s.main}><p className={s.note}>読み込んでいます</p></main>;
