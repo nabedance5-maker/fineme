@@ -8,6 +8,7 @@ import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
 import { EXPERIENCE, GENDERS, GOALS, PAINS, PRESETS, doseText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
+import { api } from '@/lib/encompass/client';
 
 const MINUTES = [15, 30, 45, 60];
 const STEPS = ['minutes', 'goal', 'parts', 'experience', 'body', 'pains', 'result'];
@@ -34,7 +35,11 @@ export default function Suggest() {
   const [storeQs, setStoreQs] = useState('');
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('store') !== '1') return;
+    if (p.get('store') !== '1') {
+      // お店の方がログインしている時は、お店に保存する方へ（保存先をひとつにする）
+      api('/me').then(me => { if (me.ok) setStoreQs(q => q || 'store=1'); });
+      return;
+    }
     const c = p.get('customer');
     setStoreQs(`store=1${c && /^[um]:[0-9a-f-]{36}$/.test(c) ? `&customer=${encodeURIComponent(c)}` : ''}`);
   }, []);

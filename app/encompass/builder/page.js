@@ -32,7 +32,12 @@ export default function Builder() {
     if (menu && p.get('from') === 'saved') setSavedKey(m);
     const id = p.get('id');
     const customerRef = p.get('customer');
-    if (!id && p.get('store') !== '1') return;
+    if (!id && p.get('store') !== '1') {
+      // お店の方がログインしている時は、どこから来てもお店に保存する（保存先が2つあると、名前を直したのにお店に出ない等で迷うため。2026-11-20 実機）
+      if (p.get('from') === 'saved') return;
+      api('/me').then(me => { if (me.ok) setStore(cur => cur || { id: null, customerRef: null, customerName: null, onBoard: false }); });
+      return;
+    }
     const nameOf = async ref => {
       if (!ref) return null;
       const r = await api('/customers');
