@@ -53,6 +53,9 @@ export default function Suggest() {
   const addMinutes = d => setMinutes(m => Math.min(MAX_MIN, Math.max(MIN_MIN, m + d)));
 
   const weightKg = toNum(weight);
+  // 年齢は必ず入れる（空だと年齢による上限がかからず、高齢の方に高いレベルが出るため。渡邉判断 2026-11-20）
+  const ageNum = toNum(age);
+  const ageOk = ageNum >= 5 && ageNum <= 110;
   const result = name === 'result'
     ? suggestMenu({ minutes, parts, goal, experience, age: toNum(age), gender, heightCm: toNum(height), weightKg, pains })
     : null;
@@ -117,8 +120,9 @@ export default function Suggest() {
       {name === 'body' && (
         <>
           <h1 className={s.h1}>年齢・性別・身長・体重</h1>
-          <p className={s.lead}>レベルを決めるのに使います。わからない所は空けたままで大丈夫です。このタブレットの外には送りません。</p>
-          <label className={s.field}><span>年齢（歳）</span><input className={s.input} inputMode="numeric" value={age} maxLength={3} onChange={e => setAge(e.target.value)} /></label>
+          <p className={s.lead}>レベルを決めるのに使います。年齢は必ず入れてください。身長・体重はわからなければ空けたままで大丈夫です。このタブレットの外には送りません。</p>
+          <label className={s.field}><span>年齢（歳）<span style={{ color: '#c0392b', marginLeft: 8 }}>必ず入れてください</span></span><input className={s.input} inputMode="numeric" value={age} maxLength={3} onChange={e => setAge(e.target.value)} /></label>
+          {age !== '' && !ageOk && <p className={s.stop} role="alert">年齢は数字で入れてください（例：58）。</p>}
           <div className={s.field}><span>性別</span></div>
           <div className={s.choices}>
             {GENDERS.map(g => (
@@ -188,7 +192,7 @@ export default function Suggest() {
 
       <div className={s.row} style={{ marginTop: 28 }}>
         {step > 0 && <button type="button" className={s.btnGhost} onClick={back}>戻る</button>}
-        {name !== 'result' && <button type="button" className={s.btnPrimary} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
+        {name !== 'result' && <button type="button" className={s.btnPrimary} disabled={name === 'body' && !ageOk} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
         {name === 'result' && <button type="button" className={s.btnGhost} onClick={() => setStep(0)}>最初からやり直す</button>}
       </div>
     </main>
