@@ -6,7 +6,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
-import { EXERCISES, EXERCISE_BY_ID, PARTS, PART_LABEL, thumbUrl, watchUrl } from '@/lib/encompass/exercises';
+import { EXERCISES, EXERCISE_BY_ID, PARTS, PART_COLOR, thumbUrl, watchUrl } from '@/lib/encompass/exercises';
+import PartTag from '../PartTag';
 import { DEFAULT_ITEM, LIMITS, REST_SEC, autoTitle, secText, decodeMenu, encodeMenu, newItem, saveMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
@@ -113,18 +114,22 @@ export default function Builder() {
 
       <div className={s.choices} role="group" aria-label="部位">
         {PARTS.map(p => (
-          <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${selParts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={selParts.includes(p.key)} onClick={() => togglePart(p.key)}>
+          <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${selParts.includes(p.key) ? s.choiceOn : ''}`} style={{ borderLeft: `10px solid ${PART_COLOR[p.key]}` }} aria-pressed={selParts.includes(p.key)} onClick={() => togglePart(p.key)}>
             {p.label}
           </button>
         ))}
       </div>
 
+      {PARTS.filter(p => selParts.includes(p.key)).map(p => (
+      <section key={p.key} style={{ marginBottom: 20 }}>
+      {selParts.length > 1 && <h3 className={s.h2} style={{ fontSize: 20, margin: '16px 0 8px', paddingLeft: 10, borderLeft: `8px solid ${PART_COLOR[p.key]}` }}>{p.label}</h3>}
       <div className={s.grid}>
-        {shown.map(e => (
-          <div key={e.id} className={`${s.card} ${count(e.id) ? s.cardOn : ''}`}>
+        {shown.filter(e => e.part === p.key).map(e => (
+          <div key={e.id} className={`${s.card} ${count(e.id) ? s.cardOn : ''}`} style={{ borderTop: `8px solid ${PART_COLOR[e.part]}` }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className={s.thumb} src={thumbUrl(e.yt)} alt="" loading="lazy" />
             <div className={s.cardBody}>
+              <div><PartTag part={e.part} /></div>
               <div className={s.cardName}>{e.name}</div>
               {count(e.id) > 0 && <div className={s.cardMeta}>{count(e.id)}回 入っています</div>}
               <div className={s.row} style={{ marginTop: 'auto' }}>
@@ -135,6 +140,8 @@ export default function Builder() {
           </div>
         ))}
       </div>
+      </section>
+      ))}
 
       <h2 className={s.h2}>今のメニュー（{items.length}種目・約{totalMinutes(items)}分）</h2>
       <label className={s.field}>
@@ -153,7 +160,7 @@ export default function Builder() {
                 <div className={s.num}>{i + 1}</div>
                 <div>
                   <div className={s.cardName}>{e.name}</div>
-                  <div className={s.cardMeta}>{PART_LABEL[e.part]}{it.level ? `・${levelText(it.level)}` : ''}</div>
+                  <div className={s.cardMeta}><PartTag part={e.part} style={{ marginRight: 8 }} />{it.level ? levelText(it.level) : ''}</div>
                   <div className={s.row} style={{ marginTop: 8 }}>
                     <span style={{ minWidth: 150 }}>セット数　{it.sets}</span>
                     <button type="button" className={`${s.btn} ${s.small}`} aria-label="セットを減らす" onClick={() => change(i, 'sets', -1, LIMITS.sets)}>－</button>

@@ -5,7 +5,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
-import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
+import { EXERCISE_BY_ID, PARTS, PART_COLOR } from '@/lib/encompass/exercises';
+import PartTag from '../PartTag';
 import { EXPERIENCE, GENDERS, GOALS, PAINS, doseText, secText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
@@ -100,7 +101,7 @@ export default function Suggest() {
           <p className={s.lead}>いくつでも選べます。選ばないと全身になります。</p>
           <div className={s.choices}>
             {PARTS.map(p => (
-              <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${parts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={parts.includes(p.key)} onClick={() => toggle(parts, setParts, p.key)}>{p.label}</button>
+              <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${parts.includes(p.key) ? s.choiceOn : ''}`} style={{ borderLeft: `10px solid ${PART_COLOR[p.key]}` }} aria-pressed={parts.includes(p.key)} onClick={() => toggle(parts, setParts, p.key)}>{p.label}</button>
             ))}
           </div>
         </>
@@ -165,7 +166,7 @@ export default function Suggest() {
                       <div className={s.num}>{i + 1}</div>
                       <div>
                         <div className={s.cardName}>{e.name}</div>
-                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休み{secText(it.rest)}</div>
+                        <div className={s.cardMeta}><PartTag part={e.part} style={{ marginRight: 8 }} />{doseText(it)}・休み{secText(it.rest)}</div>
                         <div className={s.cardMeta}>{levelText(it.level, weightKg)}</div>
                       </div>
                     </li>

@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import s from '../encompass.module.css';
-import { EXERCISE_BY_ID, PART_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
+import { EXERCISE_BY_ID, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
+import PartTag from '../PartTag';
 import { CHANGE_SEC, REST_SEC, TEMPOS, secText, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { BOARD_TOKEN, api } from '@/lib/encompass/client';
@@ -101,7 +102,7 @@ function ScrollMode({ items }) {
       <section key={`${it.id}-${i}`} className={s.playCard} data-idx={i} ref={el => { refs.current[i] = el; }}>
         <Video yt={e.yt} active={visible === i} title={e.name} />
         <div className={s.playBody}>
-          <div className={s.step}>{i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
+          <div className={s.step}>{i + 1} / {items.length}　<PartTag part={e.part} /></div>
           <div className={s.playName}>{e.name}</div>
           <div className={s.playMeta}>{doseText(it)}・休み{secText(it.rest ?? REST_SEC)}</div>
           {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
@@ -271,7 +272,7 @@ function AutoMode({ items }) {
     <div className={`${s.auto} ${s.autoWide}`}>
       <Video yt={e.yt} active title={e.name} />
       <div>
-        <div className={s.step}>{cur.i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
+        <div className={s.step}>{cur.i + 1} / {items.length}　<PartTag part={e.part} /></div>
         <div className={s.playName}>{e.name}</div>
         <div className={s.playMeta}>{doseText(it)}</div>
         {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
