@@ -92,7 +92,7 @@ function ScrollMode({ items }) {
         <div className={s.playBody}>
           <div className={s.step}>{i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
           <div className={s.playName}>{e.name}</div>
-          <div className={s.playMeta}>{doseText(it)}（セットの間の休憩{it.rest ?? REST_SEC}秒）</div>
+          <div className={s.playMeta}>{doseText(it)}・休み{it.rest ?? REST_SEC}秒</div>
           {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         </div>
       </section>
@@ -103,27 +103,32 @@ function ScrollMode({ items }) {
 // 声で言う文（数字は読み上げに任せる）
 const spokenDose = it => `${it.reps ? `${it.reps}回` : `${it.sec}秒`}を${it.sets}セット`;
 const spokenLevel = lv => (lv ? (lv[0] === lv[1] ? `レベル${lv[0]}` : `レベル${lv[0]}から${lv[1]}`) : '');
+// 回数はかなで言う（数字のままだと読まない・読み方がぶれる端末があるため）
+const COUNT_WORDS = ['', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう',
+  'じゅういち', 'じゅうに', 'じゅうさん', 'じゅうよん', 'じゅうご', 'じゅうろく', 'じゅうなな', 'じゅうはち', 'じゅうきゅう', 'にじゅう'];
+const countWord = n => COUNT_WORDS[n] || String(n);
 
 function Settings({ prefs, setPrefs }) {
   const set = patch => { const p = { ...prefs, ...patch }; setPrefs(p); savePrefs(p); };
   const can = voiceAvailable();
   return (
     <div style={{ marginTop: 20, textAlign: 'left' }}>
-      <div className={s.field}><span>声で案内する（次の種目・休憩・あと何秒）</span></div>
+      <div className={s.field}><span>声で教える</span></div>
       <div className={s.choices}>
         <button type="button" className={`${s.choice} ${prefs.voice ? s.choiceOn : ''}`} aria-pressed={prefs.voice} disabled={!can} onClick={() => set({ voice: true })}>声あり</button>
         <button type="button" className={`${s.choice} ${!prefs.voice ? s.choiceOn : ''}`} aria-pressed={!prefs.voice} onClick={() => set({ voice: false })}>声なし</button>
+        {can && <button type="button" className={s.choice} onClick={() => { unlock('いち、に、さん'); }}>声をためす</button>}
       </div>
-      {!can && <p className={s.note}>この端末は読み上げに対応していないため、画面だけで進みます。</p>}
+      {can ? <p className={s.note}>声が出ない時は、音量と、マナーモード（消音）を確かめてください。</p> : <p className={s.note}>このタブレットは声が出せません。画面だけで進みます。</p>}
       <div className={s.field}><span>回数を声で数える</span></div>
       <div className={s.choices}>
         <button type="button" className={`${s.choice} ${prefs.count ? s.choiceOn : ''}`} aria-pressed={prefs.count} disabled={!prefs.voice || !can} onClick={() => set({ count: true })}>数える</button>
         <button type="button" className={`${s.choice} ${!prefs.count ? s.choiceOn : ''}`} aria-pressed={!prefs.count} onClick={() => set({ count: false })}>数えない</button>
       </div>
-      <div className={s.field}><span>1回の速さ（回数を数える間隔）</span></div>
+      <div className={s.field}><span>数える速さ</span></div>
       <div className={s.choices}>
         {TEMPOS.map(t => (
-          <button key={t.key} type="button" className={`${s.choice} ${prefs.tempo === t.key ? s.choiceOn : ''}`} aria-pressed={prefs.tempo === t.key} onClick={() => set({ tempo: t.key })}>{t.label}（{t.sec}秒に1回）</button>
+          <button key={t.key} type="button" className={`${s.choice} ${prefs.tempo === t.key ? s.choiceOn : ''}`} aria-pressed={prefs.tempo === t.key} onClick={() => set({ tempo: t.key })}>{t.label}（{t.sec}秒で1回）</button>
         ))}
       </div>
     </div>
@@ -164,7 +169,13 @@ function AutoMode({ items }) {
     const key = `${pos}:${left}`;
     if (spoken.current === key) return;
     spoken.current = key;
-    if (done) { say('おつかれさまでした。', { interrupt: true }); return; }
+    if (done) {
+      const last = timeline[timeline.length - 1];
+      const lastCount = prefs.count && !jumped.current && last?.kind === 'work' && last.reps ? `${countWord(last.reps)}。` : '';
+      jumped.current = false;
+      say(`${lastCount}おつかれさまでした。`, { interrupt: true });
+      return;
+    }
     const cur = timeline[pos];
     if (!cur) return;
     const it = items[cur.i];
@@ -172,10 +183,10 @@ function AutoMode({ items }) {
     const prev = timeline[pos - 1];
     if (left === cur.sec) {
       // 区切りに入った時
-      const lastCount = prefs.count && !jumped.current && prev?.kind === 'work' && prev.reps ? `${prev.reps}。` : '';
+      const lastCount = prefs.count && !jumped.current && prev?.kind === 'work' && prev.reps ? `${countWord(prev.reps)}。` : '';
       jumped.current = false;
       if (cur.kind === 'prep') say([lastCount + (pos === 0 ? '' : 'おつかれさまです。') + `次は、${e.name}`, spokenDose(it), spokenLevel(it.level), '準備してください'].filter(Boolean).join('。') + '。', { interrupt: true });
-      else if (cur.kind === 'rest') say(`${lastCount}休憩、${cur.sec}秒。`, { interrupt: true });
+      else if (cur.kind === 'rest') say(`${lastCount}休み、${cur.sec}秒。`, { interrupt: true });
       else say(cur.reps ? `${cur.set}セット目、はじめ。` : `${cur.set}セット目、${cur.sec}秒、はじめ。`, { interrupt: true });
       return;
     }
@@ -184,12 +195,12 @@ function AutoMode({ items }) {
       const elapsed = cur.sec - left;
       if (elapsed > 0 && elapsed % tempo === 0) {
         const n = elapsed / tempo;
-        if (n < cur.reps) say(n === cur.reps - 1 ? `${n}、ラスト` : `${n}`, { interrupt: true });
+        if (n < cur.reps) say(n === cur.reps - 1 ? `${countWord(n)}、ラスト` : countWord(n), { interrupt: true });
       }
       return;
     }
     if (cur.kind === 'work' && left === 10 && cur.sec > 15) { say('あと10秒', { interrupt: true }); return; }
-    if (left <= 3) say(`${left}`, { interrupt: true });
+    if (left <= 3) say(countWord(left), { interrupt: true });
   }, [started, paused, done, pos, left, timeline, items, prefs.count, voiceOn, tempo]);
 
   useEffect(() => () => hush(), []);
@@ -198,8 +209,8 @@ function AutoMode({ items }) {
   if (!started) {
     return (
       <div className={s.auto}>
-        <p className={s.lead}>「始める」を押すと、準備{CHANGE_SEC}秒 → セット → 休憩 の順に自動で進みます。途中で触らなくてかまいません。</p>
-        <button type="button" className={s.btnPrimary} style={{ minHeight: 80, fontSize: 26 }} onClick={() => { if (voiceOn) unlock(); setClock({ pos: 0, left: timeline[0]?.sec ?? 0 }); setStarted(true); }}>始める</button>
+        <p className={s.lead}>「はじめる」を押すと、自動で進みます。さわらなくて大丈夫です。</p>
+        <button type="button" className={s.btnPrimary} style={{ minHeight: 80, fontSize: 26 }} onClick={() => { if (voiceOn) unlock(); setClock({ pos: 0, left: timeline[0]?.sec ?? 0 }); setStarted(true); }}>はじめる</button>
         <Settings prefs={prefs} setPrefs={setPrefs} />
       </div>
     );
@@ -222,7 +233,7 @@ function AutoMode({ items }) {
   const nextItemPos = timeline.findIndex((x, k) => k > pos && x.i !== cur.i);
   const prevItemPos = timeline.findIndex(x => x.i === Math.max(cur.i - (cur.kind === 'prep' ? 1 : 0), 0));
   const nextName = nextItemPos >= 0 ? EXERCISE_BY_ID[items[timeline[nextItemPos].i].id].name : null;
-  const phase = cur.kind === 'prep' ? '準備してください' : cur.kind === 'rest' ? '休憩' : `${cur.set}セット目（全${it.sets}セット）`;
+  const phase = cur.kind === 'prep' ? '準備してください' : cur.kind === 'rest' ? '休み' : `${cur.set}セット目 ／ ${it.sets}セット`;
   const counting = cur.kind === 'work' && cur.reps;
   const doneReps = counting ? Math.min(cur.reps, Math.floor((cur.sec - left) / tempo)) : 0;
   const mm = Math.floor(left / 60);
@@ -245,10 +256,10 @@ function AutoMode({ items }) {
         <div className={s.next}>{nextName ? `次は ${nextName}` : 'これが最後の種目です'}</div>
       </div>
       <div className={s.controls} style={{ gridColumn: '1 / -1' }}>
-        <button type="button" className={s.btn} onClick={() => go(prevItemPos)}>前の種目</button>
-        <button type="button" className={s.btnPrimary} onClick={() => setPaused(p => !p)}>{paused ? '再開する' : '一時停止'}</button>
-        <button type="button" className={s.btn} onClick={() => go(pos + 1)}>{cur.kind === 'work' ? 'このセットを終える' : '次へ進む'}</button>
-        <button type="button" className={s.btn} onClick={() => go(nextItemPos >= 0 ? nextItemPos : timeline.length)}>次の種目</button>
+        <button type="button" className={s.btn} onClick={() => go(prevItemPos)}>前の種目へ</button>
+        <button type="button" className={s.btnPrimary} onClick={() => setPaused(p => !p)}>{paused ? 'つづける' : 'とめる'}</button>
+        <button type="button" className={s.btn} onClick={() => go(pos + 1)}>{cur.kind === 'work' ? 'このセットは終わり' : '次へ'}</button>
+        <button type="button" className={s.btn} onClick={() => go(nextItemPos >= 0 ? nextItemPos : timeline.length)}>次の種目へ</button>
       </div>
     </div>
   );
@@ -264,12 +275,12 @@ function RecordBox({ menu, menuId, customerName }) {
   };
   return (
     <section style={{ marginTop: 28 }}>
-      <h2 className={s.h2}>やった内容を記録する{customerName ? `（${customerName} 様）` : ''}</h2>
-      {state === 'done' ? <p className={s.note} role="status">記録しました。お店の画面の「お客様ごと」で見られます。</p> : (
+      <h2 className={s.h2}>今日やったことを残す{customerName ? `（${customerName} 様）` : ''}</h2>
+      {state === 'done' ? <p className={s.note} role="status">残しました。お店の画面の「お客様ごと」で見られます。</p> : (
         <>
-          <label className={s.field}><span>ひとこと（任意。例：レベル5は楽そう、次は6）</span><input className={`${s.input} ${s.inputWide}`} maxLength={300} value={memo} onChange={e => setMemo(e.target.value)} /></label>
+          <label className={s.field}><span>メモ（なくても大丈夫。例：レベル5は楽そう。次は6）</span><input className={`${s.input} ${s.inputWide}`} maxLength={300} value={memo} onChange={e => setMemo(e.target.value)} /></label>
           <div className={s.row}>
-            <button type="button" className={s.btnPrimary} disabled={state === 'saving'} onClick={save}>{state === 'saving' ? '記録しています' : '記録する'}</button>
+            <button type="button" className={s.btnPrimary} disabled={state === 'saving'} onClick={save}>{state === 'saving' ? '残しています' : '残す'}</button>
           </div>
           {state && state !== 'saving' && <p className={s.stop} role="alert">{state}</p>}
         </>
@@ -326,8 +337,8 @@ export default function Play() {
       {src.customerName && <p className={s.step}>{src.customerName} 様のメニュー</p>}
       <h1 className={s.h1}>{menu.title || 'メニュー'}（{menu.items.length}種目・約{totalMinutes(menu.items)}分）</h1>
       <div className={s.tabs} role="group" aria-label="見せ方">
-        <button type="button" className={`${s.choice} ${mode === 'auto' ? s.choiceOn : ''}`} aria-pressed={mode === 'auto'} onClick={() => setMode('auto')} style={{ flex: 1 }}>おまかせで進む</button>
-        <button type="button" className={`${s.choice} ${mode === 'scroll' ? s.choiceOn : ''}`} aria-pressed={mode === 'scroll'} onClick={() => setMode('scroll')} style={{ flex: 1 }}>一覧で見る</button>
+        <button type="button" className={`${s.choice} ${mode === 'auto' ? s.choiceOn : ''}`} aria-pressed={mode === 'auto'} onClick={() => setMode('auto')} style={{ flex: 1 }}>自動で進む</button>
+        <button type="button" className={`${s.choice} ${mode === 'scroll' ? s.choiceOn : ''}`} aria-pressed={mode === 'scroll'} onClick={() => setMode('scroll')} style={{ flex: 1 }}>全部を見る</button>
       </div>
       {mode === 'auto' ? <AutoMode items={menu.items} /> : <ScrollMode items={menu.items} />}
       {src.kind === 'store' && <RecordBox menu={menu} menuId={src.id} customerName={src.customerName} />}
@@ -336,7 +347,7 @@ export default function Play() {
         {src.kind === 'store' && <Link href={`/encompass/builder?id=${src.id}`} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>メニューを直す</Link>}
         {src.kind === 'link' && <Link href={`/encompass/builder?m=${encodeMenu(menu)}`} className={s.btnGhost} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>メニューを直す</Link>}
       </div>
-      <p className={s.safety}>胸の痛み・めまい・息切れなどが出たら、すぐに止めてください。レベルと負荷は目安です。</p>
+      <p className={s.safety}>胸が痛い・めまい・息が苦しい時は、すぐにやめてください。レベルは目安です。</p>
     </main>
   );
 }

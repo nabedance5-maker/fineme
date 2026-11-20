@@ -56,14 +56,14 @@ export default function Suggest() {
 
       {name === 'minutes' && (
         <>
-          <h1 className={s.h1}>よく使うメニューから選ぶ</h1>
-          <p className={s.lead}>押すと、時間・目的・部位が決まります。このあと、慣れ・年齢・体のことを聞きます。</p>
+          <h1 className={s.h1}>かんたんに選ぶ</h1>
+          <p className={s.lead}>どれかを押してください。そのあと、年齢や体のことを少し聞きます。</p>
           <div className={s.choices}>
             {PRESETS.map(p => (
               <button key={p.key} type="button" className={s.choice} onClick={() => usePreset(p)}>{p.label}</button>
             ))}
           </div>
-          <h2 className={s.h2}>自分で決める：何分のメニューにしますか？</h2>
+          <h2 className={s.h2}>自分で決める（時間を選んで「次へ」）</h2>
           <div className={s.choices}>
             {MINUTES.map(m => (
               <button key={m} type="button" className={`${s.choice} ${minutes === m ? s.choiceOn : ''}`} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>{m}分</button>
@@ -74,8 +74,7 @@ export default function Suggest() {
 
       {name === 'goal' && (
         <>
-          <h1 className={s.h1}>目的はどれですか？</h1>
-          <p className={s.lead}>目的に合わせて、回数・セット数・休憩・レベルを決めます。</p>
+          <h1 className={s.h1}>何のためにやりますか？</h1>
           <div className={s.choices}>
             {GOALS.map(g => (
               <button key={g.key} type="button" className={`${s.choice} ${goal === g.key ? s.choiceOn : ''}`} aria-pressed={goal === g.key} onClick={() => setGoal(g.key)}>
@@ -88,8 +87,8 @@ export default function Suggest() {
 
       {name === 'parts' && (
         <>
-          <h1 className={s.h1}>どこを鍛えますか？</h1>
-          <p className={s.lead}>いくつ選んでもかまいません。選ばなければ全身にします。</p>
+          <h1 className={s.h1}>どこをきたえますか？</h1>
+          <p className={s.lead}>いくつでも選べます。選ばないと全身になります。</p>
           <div className={s.choices}>
             {PARTS.map(p => (
               <button key={p.key} type="button" className={`${s.choice} ${parts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={parts.includes(p.key)} onClick={() => toggle(parts, setParts, p.key)}>{p.label}</button>
@@ -100,7 +99,7 @@ export default function Suggest() {
 
       {name === 'experience' && (
         <>
-          <h1 className={s.h1}>ENCOMPASS は使ったことがありますか？</h1>
+          <h1 className={s.h1}>このマシンを使ったことはありますか？</h1>
           <div className={s.choices}>
             {EXPERIENCE.map(e => (
               <button key={e.key} type="button" className={`${s.choice} ${experience === e.key ? s.choiceOn : ''}`} aria-pressed={experience === e.key} onClick={() => setExperience(e.key)}>{e.label}</button>
@@ -111,8 +110,8 @@ export default function Suggest() {
 
       {name === 'body' && (
         <>
-          <h1 className={s.h1}>年齢・性別・身長・体重を教えてください</h1>
-          <p className={s.lead}>レベル（傾斜）の目安を決めるのに使います。分からない所は空けたままでかまいません。この端末の中だけで使い、どこにも送りません。</p>
+          <h1 className={s.h1}>年齢・性別・身長・体重</h1>
+          <p className={s.lead}>レベルを決めるのに使います。わからない所は空けたままで大丈夫です。このタブレットの外には送りません。</p>
           <label className={s.field}><span>年齢（歳）</span><input className={s.input} inputMode="numeric" value={age} maxLength={3} onChange={e => setAge(e.target.value)} /></label>
           <div className={s.field}><span>性別</span></div>
           <div className={s.choices}>
@@ -127,8 +126,8 @@ export default function Suggest() {
 
       {name === 'pains' && (
         <>
-          <h1 className={s.h1}>痛みや不安のある所はありますか？</h1>
-          <p className={s.lead}>選んだ所に負担がかかりやすい種目を外します。無ければそのまま次へ。</p>
+          <h1 className={s.h1}>痛い所はありますか？</h1>
+          <p className={s.lead}>選んだ所に負担がかかる種目を外します。なければ、そのまま「メニューを作る」へ。</p>
           <div className={s.choices}>
             {PAINS.map(p => (
               <button key={p.key} type="button" className={`${s.choice} ${pains.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={pains.includes(p.key)} onClick={() => toggle(pains, setPains, p.key)}>{p.label}</button>
@@ -145,7 +144,7 @@ export default function Suggest() {
           {result.menu.items.length > 0 && (
             <>
               <details style={{ margin: '12px 0' }}>
-                <summary style={{ cursor: 'pointer', fontSize: 18 }}>レベル・回数の決め方{result.bmi ? `（BMI ${result.bmi}）` : ''}</summary>
+                <summary style={{ cursor: 'pointer', fontSize: 18 }}>なぜこのレベル・回数なの？{result.bmi ? `（BMI ${result.bmi}）` : ''}</summary>
                 <ul className={s.note}>{result.reasons.map(t => <li key={t}>{t}</li>)}</ul>
               </details>
               <ol className={s.list}>
@@ -156,22 +155,22 @@ export default function Suggest() {
                       <div className={s.num}>{i + 1}</div>
                       <div>
                         <div className={s.cardName}>{e.name}</div>
-                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休憩{it.rest}秒</div>
+                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休み{it.rest}秒</div>
                         <div className={s.cardMeta}>{levelText(it.level, weightKg)}</div>
                       </div>
                     </li>
                   );
                 })}
               </ol>
-              <p className={s.note}>レベル（傾斜）と負荷は目安です。最初は低い方から始め、トレーナーが調整してください。</p>
+              <p className={s.note}>レベルは目安です。最初は低い方から。最後はトレーナーが決めてください。</p>
               <div className={s.row} style={{ marginTop: 16 }}>
-                <button type="button" className={s.btnPrimary} onClick={() => router.push(`/encompass/play?m=${encodeMenu(result.menu)}`)}>このメニューで始める</button>
+                <button type="button" className={s.btnPrimary} onClick={() => router.push(`/encompass/play?m=${encodeMenu(result.menu)}`)}>はじめる</button>
                 {storeQs ? (
-                  <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?${storeQs}&m=${encodeMenu(result.menu)}`)}>見直してお店に保存する</button>
+                  <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?${storeQs}&m=${encodeMenu(result.menu)}`)}>直してからお店に保存</button>
                 ) : (
                   <>
-                    <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?m=${encodeMenu(result.menu)}`)}>種目を入れ替える</button>
-                    <button type="button" className={s.btn} onClick={() => { saveMenu(result.menu); setSavedMsg('この端末に保存しました。'); }}>この端末に保存する</button>
+                    <button type="button" className={s.btn} onClick={() => router.push(`/encompass/builder?m=${encodeMenu(result.menu)}`)}>種目を入れかえる</button>
+                    <button type="button" className={s.btn} onClick={() => { saveMenu(result.menu); setSavedMsg('このタブレットに保存しました。'); }}>このタブレットに保存</button>
                   </>
                 )}
               </div>

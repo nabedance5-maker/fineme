@@ -21,7 +21,7 @@ function MenuRow({ m, onToggleBoard, onDelete, showCustomer }) {
         {showCustomer && m.customer_name ? `・${m.customer_name} 様用` : ''}
       </div>
       <div className={s.row}>
-        <Link href={`/encompass/play?id=${m.id}`} className={`${s.btnPrimary} ${s.small}`} style={linkBtn}>始める</Link>
+        <Link href={`/encompass/play?id=${m.id}`} className={`${s.btnPrimary} ${s.small}`} style={linkBtn}>はじめる</Link>
         <Link href={`/encompass/builder?id=${m.id}`} className={`${s.btn} ${s.small}`} style={linkBtn}>直す</Link>
         {!m.customer_ref && (
           <button type="button" className={`${s.btn} ${s.small}`} onClick={() => onToggleBoard(m)}>{m.on_board ? 'タブレットから外す' : 'タブレットに出す'}</button>
@@ -187,8 +187,8 @@ export default function Store() {
       <p className={s.step}>{me.store.name}{me.staffName ? `（${me.staffName}）` : ''}{me.store.status === 'trial' ? '・試用中' : ''}</p>
       <h1 className={s.h1}>お店のメニューボード</h1>
       <div className={s.row}>
-        <Link href="/encompass/suggest?store=1" className={s.btnPrimary} style={linkBtn}>条件からメニューを作る</Link>
-        <Link href="/encompass/builder?store=1" className={s.btn} style={linkBtn}>種目を選んで作る</Link>
+        <Link href="/encompass/suggest?store=1" className={s.btnPrimary} style={linkBtn}>おまかせで作る</Link>
+        <Link href="/encompass/builder?store=1" className={s.btn} style={linkBtn}>自分で選んで作る</Link>
       </div>
 
       <div className={s.tabs} role="group" aria-label="表示" style={{ marginTop: 24 }}>

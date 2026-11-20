@@ -22,8 +22,8 @@ export default function EncompassLayout({ children }) {
       {children}
       <footer className={s.main} style={{ paddingTop: 0 }}>
         <p className={s.note}>
-          ENCOMPASS は米 Total Gym 社の製品です。このサービスは Total Gym 社・日本総代理店の公式サービスではありません。
-          動画は Total Gym 社などが YouTube に公開しているものを、YouTube のプレイヤーでそのまま表示しています。
+          ENCOMPASS は Total Gym 社（アメリカ）の製品です。このサービスは Total Gym 社や日本の代理店の公式のものではありません。
+          動画は YouTube に公開されているものを、そのまま出しています。
         </p>
       </footer>
     </div>
