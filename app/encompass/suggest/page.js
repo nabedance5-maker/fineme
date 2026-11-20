@@ -63,7 +63,12 @@ export default function Suggest() {
 
   return (
     <main className={s.main}>
-      {preset && name !== 'start' && <p className={s.step}>選んだもの：{preset}</p>}
+      {preset && name !== 'start' && name !== 'result' && (
+        <div className={s.row} style={{ marginBottom: 8 }}>
+          <span className={s.step} style={{ margin: 0 }}>選んだもの：{preset}</span>
+          <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => { setPreset(null); setStep(STEPS.indexOf('minutes')); }}>時間や場所を変える</button>
+        </div>
+      )}
       {name === 'result' && <p className={s.step}>メニューの案</p>}
 
       {name === 'start' && (
@@ -111,7 +116,7 @@ export default function Suggest() {
           <p className={s.lead}>いくつでも選べます。選ばないと全身になります。</p>
           <div className={s.choices}>
             {PARTS.map(p => (
-              <button key={p.key} type="button" className={`${s.choice} ${parts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={parts.includes(p.key)} onClick={() => toggle(parts, setParts, p.key)}>{p.label}</button>
+              <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${parts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={parts.includes(p.key)} onClick={() => toggle(parts, setParts, p.key)}>{p.label}</button>
             ))}
           </div>
         </>
@@ -147,10 +152,10 @@ export default function Suggest() {
       {name === 'pains' && (
         <>
           <h1 className={s.h1}>痛い所はありますか？</h1>
-          <p className={s.lead}>選んだ所に負担がかかる種目を外します。なければ、そのまま「メニューを作る」へ。</p>
+          <p className={s.lead}>いくつでも選べます。選んだ所に負担がかかる種目を外します。なければ、そのまま「メニューを作る」へ。</p>
           <div className={s.choices}>
             {PAINS.map(p => (
-              <button key={p.key} type="button" className={`${s.choice} ${pains.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={pains.includes(p.key)} onClick={() => toggle(pains, setPains, p.key)}>{p.label}</button>
+              <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${pains.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={pains.includes(p.key)} onClick={() => toggle(pains, setPains, p.key)}>{p.label}</button>
             ))}
           </div>
         </>

@@ -156,3 +156,19 @@
 @media (min-width: 900px) {
   .autoWide { grid-template-columns: 3fr 2fr; align-items: start; }
 }
+
+/* いくつでも選べるボタン：左に四角を出し、選ぶとチェックが入る（線画。2026-11-20 実機で複数選べると分からなかった） */
+.multi { position: relative; padding-left: 52px; text-align: left; }
+.multi::before {
+  content: '';
+  position: absolute; left: 16px; top: 50%; width: 24px; height: 24px; margin-top: -12px;
+  border: 2px solid var(--line); border-radius: 6px; background: #fff;
+}
+.multi.choiceOn::before { border-color: var(--accent); background: var(--accent); }
+.multi.choiceOn::after {
+  content: '';
+  position: absolute; left: 24px; top: 50%; width: 7px; height: 13px; margin-top: -9px;
+  border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg);
+}
+.confirmBox { margin-top: 10px; padding: 12px 14px; border: 2px solid #c0392b; border-radius: 12px; background: #fdecea; }
+.btnDanger { background: #c0392b; color: #fff; border: 2px solid #c0392b; }

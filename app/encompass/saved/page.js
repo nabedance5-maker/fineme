@@ -10,6 +10,7 @@ const linkBtn = { display: 'inline-flex', alignItems: 'center', textDecoration: 
 
 export default function Saved() {
   const [list, setList] = useState(null);
+  const [asking, setAsking] = useState(null); // 「本当に消しますか？」を出しているメニュー
   useEffect(() => { setList(loadSaved()); }, []);
 
   return (
@@ -29,8 +30,17 @@ export default function Saved() {
                 <div className={s.row}>
                   <Link href={`/encompass/play?m=${x.m}`} className={`${s.btnPrimary} ${s.small}`} style={linkBtn}>はじめる</Link>
                   <Link href={`/encompass/builder?from=saved&m=${x.m}`} className={`${s.btn} ${s.small}`} style={linkBtn}>直す</Link>
-                  <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => { removeSaved(x.m); setList(loadSaved()); }}>消す</button>
+                  <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => setAsking(x.m)}>消す</button>
                 </div>
+                {asking === x.m && (
+                  <div className={s.confirmBox} role="alertdialog" aria-label="消す確認">
+                    <div style={{ fontWeight: 700 }}>「{m.title || '名前なし'}」を本当に消しますか？消すと元に戻せません。</div>
+                    <div className={s.row} style={{ marginTop: 8 }}>
+                      <button type="button" className={`${s.btnPrimary} ${s.btnDanger} ${s.small}`} onClick={() => { removeSaved(x.m); setAsking(null); setList(loadSaved()); }}>消す</button>
+                      <button type="button" className={`${s.btn} ${s.small}`} onClick={() => setAsking(null)}>やめる</button>
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}

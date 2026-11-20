@@ -56,11 +56,22 @@ function useWakeLock(on) {
   }, [on]);
 }
 
+// 動画は音なしで流す。URL の mute だけでは音が出る端末があったため、YouTube の公式の命令（mute）も何度か送る
+const YT_ORIGIN = 'https://www.youtube-nocookie.com';
+function muteFrame(frame) {
+  try { frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), YT_ORIGIN); } catch {}
+}
 function Video({ yt, active, title }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!active) return undefined;
+    const id = setInterval(() => muteFrame(ref.current), 2000);
+    return () => clearInterval(id);
+  }, [active, yt]);
   return (
     <div className={s.frameBox}>
       {active ? (
-        <iframe src={embedUrl(yt, { autoplay: true })} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+        <iframe ref={ref} onLoad={() => { muteFrame(ref.current); setTimeout(() => muteFrame(ref.current), 800); }} src={embedUrl(yt, { autoplay: true })} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={thumbUrl(yt)} alt="" loading="lazy" />
@@ -108,9 +119,21 @@ const COUNT_WORDS = ['', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', '
   'じゅういち', 'じゅうに', 'じゅうさん', 'じゅうよん', 'じゅうご', 'じゅうろく', 'じゅうなな', 'じゅうはち', 'じゅうきゅう', 'にじゅう'];
 const countWord = n => COUNT_WORDS[n] || String(n);
 
+// LINE の中のブラウザは読み上げが使えないことが多い。openExternalBrowser=1 を付けると LINE が外のブラウザで開く
+const isLineApp = () => typeof navigator !== 'undefined' && /\bLine\//i.test(navigator.userAgent || '');
+function externalUrl() {
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('openExternalBrowser', '1');
+    return u.href;
+  } catch { return '#'; }
+}
+
 function Settings({ prefs, setPrefs }) {
   const set = patch => { const p = { ...prefs, ...patch }; setPrefs(p); savePrefs(p); };
-  const can = voiceAvailable();
+  const [can, setCan] = useState(true);
+  const [inLine, setInLine] = useState(false);
+  useEffect(() => { setCan(voiceAvailable()); setInLine(isLineApp()); }, []);
   return (
     <div style={{ marginTop: 20, textAlign: 'left' }}>
       <div className={s.field}><span>声で教える</span></div>
@@ -119,7 +142,12 @@ function Settings({ prefs, setPrefs }) {
         <button type="button" className={`${s.choice} ${!prefs.voice ? s.choiceOn : ''}`} aria-pressed={!prefs.voice} onClick={() => set({ voice: false })}>声なし</button>
         {can && <button type="button" className={s.choice} onClick={() => { unlock('いち、に、さん'); }}>声をためす</button>}
       </div>
-      {can ? <p className={s.note}>声が出ない時は、音量と、マナーモード（消音）を確かめてください。</p> : <p className={s.note}>このタブレットは声が出せません。画面だけで進みます。</p>}
+      {inLine ? (
+        <div className={s.warn}>
+          LINE の中で開いていると、声が出ないことがあります。
+          <div style={{ marginTop: 8 }}><a href={externalUrl()} className={s.btn} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>ブラウザで開く</a></div>
+        </div>
+      ) : can ? <p className={s.note}>声が出ない時は、音量と、マナーモード（消音）を確かめてください。</p> : <p className={s.note}>このブラウザは声が出せません。画面だけで進みます。Chrome や Safari で開くと声が出ます。</p>}
       <div className={s.field}><span>回数を声で数える</span></div>
       <div className={s.choices}>
         <button type="button" className={`${s.choice} ${prefs.count ? s.choiceOn : ''}`} aria-pressed={prefs.count} disabled={!prefs.voice || !can} onClick={() => set({ count: true })}>数える</button>

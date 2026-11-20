@@ -13,7 +13,9 @@ import { api } from '@/lib/encompass/client';
 
 export default function Builder() {
   const router = useRouter();
-  const [part, setPart] = useState(PARTS[0].key);
+  // きたえる場所はいくつでも選べる（選んだ場所の種目をまとめて出す）
+  const [selParts, setSelParts] = useState([PARTS[0].key]);
+  const togglePart = k => setSelParts(cur => (cur.includes(k) ? (cur.length > 1 ? cur.filter(x => x !== k) : cur) : [...cur, k]));
   const [title, setTitle] = useState('');
   const [items, setItems] = useState([]);
   const [savedMsg, setSavedMsg] = useState('');
@@ -75,7 +77,7 @@ export default function Builder() {
     router.push('/encompass/store');
   };
 
-  const shown = useMemo(() => EXERCISES.filter(e => e.part === part), [part]);
+  const shown = useMemo(() => EXERCISES.filter(e => selParts.includes(e.part)), [selParts]);
   const count = id => items.filter(x => x.id === id).length;
 
   const add = id => {
@@ -107,11 +109,11 @@ export default function Builder() {
       <h1 className={s.h1}>{store?.id ? 'メニューを直す' : 'メニューを作る'}</h1>
       {store?.customerName && <p className={s.warn}>{store.customerName} 様のメニューです。</p>}
       {loadErr && <p className={s.stop} role="alert">{loadErr}</p>}
-      <p className={s.lead}>きたえる場所を選んで、「入れる」を押してください。下に順番に並びます。</p>
+      <p className={s.lead}>きたえる場所を選んで（いくつでも）、種目の「入れる」を押してください。下に順番に並びます。</p>
 
       <div className={s.choices} role="group" aria-label="部位">
         {PARTS.map(p => (
-          <button key={p.key} type="button" className={`${s.choice} ${part === p.key ? s.choiceOn : ''}`} aria-pressed={part === p.key} onClick={() => setPart(p.key)}>
+          <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${selParts.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={selParts.includes(p.key)} onClick={() => togglePart(p.key)}>
             {p.label}
           </button>
         ))}

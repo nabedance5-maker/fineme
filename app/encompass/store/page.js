@@ -12,6 +12,7 @@ const linkBtn = { display: 'inline-flex', alignItems: 'center', textDecoration: 
 const fmtDate = iso => { try { return new Date(iso).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' }); } catch { return ''; } };
 
 function MenuRow({ m, onToggleBoard, onDelete, showCustomer }) {
+  const [asking, setAsking] = useState(false); // 「本当に消しますか？」を画面の中に出す（端末の確認窓は見落としやすいため）
   return (
     <li className={s.listItem} style={{ gridTemplateColumns: '1fr' }}>
       <div className={s.cardName}>{m.title || '名前なし'}</div>
@@ -26,8 +27,17 @@ function MenuRow({ m, onToggleBoard, onDelete, showCustomer }) {
         {!m.customer_ref && (
           <button type="button" className={`${s.btn} ${s.small}`} onClick={() => onToggleBoard(m)}>{m.on_board ? 'タブレットから外す' : 'タブレットに出す'}</button>
         )}
-        <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => onDelete(m)}>消す</button>
+        <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => setAsking(true)}>消す</button>
       </div>
+      {asking && (
+        <div className={s.confirmBox} role="alertdialog" aria-label="消す確認">
+          <div style={{ fontWeight: 700 }}>「{m.title || '名前なし'}」を本当に消しますか？消すと元に戻せません。</div>
+          <div className={s.row} style={{ marginTop: 8 }}>
+            <button type="button" className={`${s.btnPrimary} ${s.btnDanger} ${s.small}`} onClick={() => { setAsking(false); onDelete(m); }}>消す</button>
+            <button type="button" className={`${s.btn} ${s.small}`} onClick={() => setAsking(false)}>やめる</button>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
@@ -158,7 +168,6 @@ export default function Store() {
     else window.alert(r.data.error || '変えられませんでした');
   };
   const remove = async m => {
-    if (!window.confirm(`「${m.title || '名前なし'}」を消しますか？`)) return;
     const r = await api(`/menus/${m.id}`, { method: 'DELETE' });
     if (r.ok) setMenus(list => list.filter(x => x.id !== m.id));
     else window.alert(r.data.error || '消せませんでした');
