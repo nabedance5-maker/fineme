@@ -1,15 +1,16 @@
 'use client';
 
-// 条件からメニューを作る。1画面に質問1つ。年齢・身長・体重はこの端末の中だけで使い、送らない・URLにも入れない。
+// 条件からメニューを作る。1画面に質問1つ。よく使う組み合わせ（60分 下半身・30分 追い込み 等）は1回押すだけ。
+// 年齢・性別・身長・体重はこの端末の中だけで使い、送らない・URLにも入れない。
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
-import { EXPERIENCE, PAINS, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
+import { EXPERIENCE, GENDERS, GOALS, PAINS, PRESETS, doseText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 
 const MINUTES = [15, 30, 45, 60];
-const STEPS = ['minutes', 'parts', 'experience', 'body', 'pains', 'result'];
+const STEPS = ['minutes', 'goal', 'parts', 'experience', 'body', 'pains', 'result'];
 
 const toNum = v => {
   const n = Number(String(v).replace(/[^\d.]/g, ''));
@@ -20,9 +21,11 @@ export default function Suggest() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [minutes, setMinutes] = useState(30);
+  const [goal, setGoal] = useState('health');
   const [parts, setParts] = useState([]);
   const [experience, setExperience] = useState('first');
   const [age, setAge] = useState('');
+  const [gender, setGender] = useState('none');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [pains, setPains] = useState([]);
@@ -40,10 +43,11 @@ export default function Suggest() {
   const next = () => setStep(n => Math.min(n + 1, STEPS.length - 1));
   const back = () => setStep(n => Math.max(n - 1, 0));
   const name = STEPS[step];
+  const usePreset = p => { setMinutes(p.minutes); setParts(p.parts); setGoal(p.goal); setStep(STEPS.indexOf('experience')); };
 
   const weightKg = toNum(weight);
   const result = name === 'result'
-    ? suggestMenu({ minutes, parts, experience, age: toNum(age), heightCm: toNum(height), weightKg, pains })
+    ? suggestMenu({ minutes, parts, goal, experience, age: toNum(age), gender, heightCm: toNum(height), weightKg, pains })
     : null;
 
   return (
@@ -52,10 +56,31 @@ export default function Suggest() {
 
       {name === 'minutes' && (
         <>
-          <h1 className={s.h1}>何分のメニューにしますか？</h1>
+          <h1 className={s.h1}>よく使うメニューから選ぶ</h1>
+          <p className={s.lead}>押すと、時間・目的・部位が決まります。このあと、慣れ・年齢・体のことを聞きます。</p>
+          <div className={s.choices}>
+            {PRESETS.map(p => (
+              <button key={p.key} type="button" className={s.choice} onClick={() => usePreset(p)}>{p.label}</button>
+            ))}
+          </div>
+          <h2 className={s.h2}>自分で決める：何分のメニューにしますか？</h2>
           <div className={s.choices}>
             {MINUTES.map(m => (
               <button key={m} type="button" className={`${s.choice} ${minutes === m ? s.choiceOn : ''}`} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>{m}分</button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {name === 'goal' && (
+        <>
+          <h1 className={s.h1}>目的はどれですか？</h1>
+          <p className={s.lead}>目的に合わせて、回数・セット数・休憩・レベルを決めます。</p>
+          <div className={s.choices}>
+            {GOALS.map(g => (
+              <button key={g.key} type="button" className={`${s.choice} ${goal === g.key ? s.choiceOn : ''}`} aria-pressed={goal === g.key} onClick={() => setGoal(g.key)}>
+                {g.label}<span style={{ display: 'block', fontSize: 15, fontWeight: 400 }}>{g.sub}</span>
+              </button>
             ))}
           </div>
         </>
@@ -86,9 +111,15 @@ export default function Suggest() {
 
       {name === 'body' && (
         <>
-          <h1 className={s.h1}>年齢・身長・体重を教えてください</h1>
-          <p className={s.lead}>分からない所は空けたままでかまいません。この端末の中だけで使い、どこにも送りません。</p>
+          <h1 className={s.h1}>年齢・性別・身長・体重を教えてください</h1>
+          <p className={s.lead}>レベル（傾斜）の目安を決めるのに使います。分からない所は空けたままでかまいません。この端末の中だけで使い、どこにも送りません。</p>
           <label className={s.field}><span>年齢（歳）</span><input className={s.input} inputMode="numeric" value={age} maxLength={3} onChange={e => setAge(e.target.value)} /></label>
+          <div className={s.field}><span>性別</span></div>
+          <div className={s.choices}>
+            {GENDERS.map(g => (
+              <button key={g.key} type="button" className={`${s.choice} ${gender === g.key ? s.choiceOn : ''}`} aria-pressed={gender === g.key} onClick={() => setGender(g.key)}>{g.label}</button>
+            ))}
+          </div>
           <label className={s.field}><span>身長（cm）</span><input className={s.input} inputMode="decimal" value={height} maxLength={5} onChange={e => setHeight(e.target.value)} /></label>
           <label className={s.field}><span>体重（kg）</span><input className={s.input} inputMode="decimal" value={weight} maxLength={5} onChange={e => setWeight(e.target.value)} /></label>
         </>
@@ -113,6 +144,10 @@ export default function Suggest() {
           {result.warnings.map(t => <p key={t} className={s.warn}>{t}</p>)}
           {result.menu.items.length > 0 && (
             <>
+              <details style={{ margin: '12px 0' }}>
+                <summary style={{ cursor: 'pointer', fontSize: 18 }}>レベル・回数の決め方{result.bmi ? `（BMI ${result.bmi}）` : ''}</summary>
+                <ul className={s.note}>{result.reasons.map(t => <li key={t}>{t}</li>)}</ul>
+              </details>
               <ol className={s.list}>
                 {result.menu.items.map((it, i) => {
                   const e = EXERCISE_BY_ID[it.id];
@@ -121,7 +156,7 @@ export default function Suggest() {
                       <div className={s.num}>{i + 1}</div>
                       <div>
                         <div className={s.cardName}>{e.name}</div>
-                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{it.sets}セット×{it.sec}秒</div>
+                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休憩{it.rest}秒</div>
                         <div className={s.cardMeta}>{levelText(it.level, weightKg)}</div>
                       </div>
                     </li>

@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISES, EXERCISE_BY_ID, PARTS, PART_LABEL, thumbUrl, watchUrl } from '@/lib/encompass/exercises';
-import { DEFAULT_ITEM, LIMITS, decodeMenu, encodeMenu, saveMenu, totalMinutes } from '@/lib/encompass/menu';
+import { DEFAULT_ITEM, LIMITS, REST_SEC, decodeMenu, encodeMenu, newItem, saveMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
 
@@ -67,7 +67,7 @@ export default function Builder() {
 
   const add = id => {
     if (items.length >= LIMITS.items) return;
-    setItems(prev => [...prev, { id, ...DEFAULT_ITEM, level: null }]);
+    setItems(prev => [...prev, newItem(id)]);
     setSavedMsg('');
   };
   const move = (i, d) => setItems(prev => {
@@ -78,7 +78,9 @@ export default function Builder() {
     return next;
   });
   const remove = i => setItems(prev => prev.filter((_, k) => k !== i));
-  const change = (i, key, d, [lo, hi]) => setItems(prev => prev.map((x, k) => (k === i ? { ...x, [key]: Math.min(Math.max(x[key] + d, lo), hi) } : x)));
+  const change = (i, key, d, [lo, hi]) => setItems(prev => prev.map((x, k) => (k === i ? { ...x, [key]: Math.min(Math.max((x[key] ?? (key === 'rest' ? REST_SEC : 0)) + d, lo), hi) } : x)));
+  // 回数で数える ⇔ 秒で数える
+  const switchMode = i => setItems(prev => prev.map((x, k) => (k === i ? { ...x, reps: x.reps ? null : DEFAULT_ITEM.reps } : x)));
 
   const menu = { title: title || '名前なし', items };
 
@@ -137,10 +139,24 @@ export default function Builder() {
                     <button type="button" className={`${s.btn} ${s.small}`} aria-label="セットを減らす" onClick={() => change(i, 'sets', -1, LIMITS.sets)}>減らす</button>
                     <button type="button" className={`${s.btn} ${s.small}`} aria-label="セットを増やす" onClick={() => change(i, 'sets', 1, LIMITS.sets)}>増やす</button>
                   </div>
+                  {it.reps ? (
+                    <div className={s.row} style={{ marginTop: 8 }}>
+                      <span>1セット{it.reps}回</span>
+                      <button type="button" className={`${s.btn} ${s.small}`} aria-label="回数を減らす" onClick={() => change(i, 'reps', -1, LIMITS.reps)}>1回減らす</button>
+                      <button type="button" className={`${s.btn} ${s.small}`} aria-label="回数を増やす" onClick={() => change(i, 'reps', 1, LIMITS.reps)}>1回増やす</button>
+                    </div>
+                  ) : (
+                    <div className={s.row} style={{ marginTop: 8 }}>
+                      <span>1セット{it.sec}秒</span>
+                      <button type="button" className={`${s.btn} ${s.small}`} aria-label="秒を減らす" onClick={() => change(i, 'sec', -5, LIMITS.sec)}>5秒減らす</button>
+                      <button type="button" className={`${s.btn} ${s.small}`} aria-label="秒を増やす" onClick={() => change(i, 'sec', 5, LIMITS.sec)}>5秒増やす</button>
+                    </div>
+                  )}
                   <div className={s.row} style={{ marginTop: 8 }}>
-                    <span>1セット{it.sec}秒</span>
-                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="秒を減らす" onClick={() => change(i, 'sec', -5, LIMITS.sec)}>5秒減らす</button>
-                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="秒を増やす" onClick={() => change(i, 'sec', 5, LIMITS.sec)}>5秒増やす</button>
+                    <span>休憩{it.rest ?? REST_SEC}秒</span>
+                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休憩を減らす" onClick={() => change(i, 'rest', -5, LIMITS.rest)}>5秒減らす</button>
+                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休憩を増やす" onClick={() => change(i, 'rest', 5, LIMITS.rest)}>5秒増やす</button>
+                    <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => switchMode(i)}>{it.reps ? '秒で数えるに変える' : '回数で数えるに変える'}</button>
                   </div>
                   <div className={s.row} style={{ marginTop: 8 }}>
                     <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => move(i, -1)} disabled={i === 0}>上へ</button>

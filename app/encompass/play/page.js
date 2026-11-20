@@ -1,24 +1,37 @@
 'use client';
 
 // メニューを見せる画面。タブレットを置きっぱなしにする前提。
-//   おまかせ：タイマーで次の種目へ自動で進む（触らなくてよい）。画面が消えないようにする。
+//   おまかせ：準備 → セット → 休憩 を自動で進める（触らなくてよい）。回数で数える種目は、決めた速さで回数を数える。
+//             声で「次は○○です」「1、2、3…」「休憩、30秒」と案内する（タブレットを見なくてよい）。画面が消えないようにする。
 //   一覧　　：縦に並べ、画面に入った種目の動画だけ音なしで自動再生（スクロールだけで見られる）。
 // 開き方：?m=（リンク・端末に保存）／?id=（お店に保存したメニュー。ログイン中なら「記録する」が出る）／&board=（ジムのタブレットから。戻り先だけに使う）
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PART_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
-import { CHANGE_SEC, REST_SEC, decodeMenu, encodeMenu, totalMinutes } from '@/lib/encompass/menu';
+import { CHANGE_SEC, REST_SEC, TEMPOS, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { BOARD_TOKEN, api } from '@/lib/encompass/client';
+import { hush, say, unlock, voiceAvailable } from '@/lib/encompass/voice';
 
-function buildTimeline(items) {
+// 声・数える速さの設定（この端末だけ。消えても既定で動く）
+const PREF_KEY = 'encompass:play';
+const DEFAULT_PREFS = { voice: true, count: true, tempo: 'normal' };
+function loadPrefs() {
+  try { return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') }; } catch { return DEFAULT_PREFS; }
+}
+function savePrefs(p) {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch {}
+}
+const tempoSec = key => (TEMPOS.find(t => t.key === key) || TEMPOS[1]).sec;
+
+function buildTimeline(items, tempo) {
   const t = [];
   items.forEach((it, i) => {
     t.push({ i, kind: 'prep', sec: CHANGE_SEC });
     for (let k = 1; k <= it.sets; k++) {
-      t.push({ i, kind: 'work', set: k, sec: it.sec });
-      if (k < it.sets) t.push({ i, kind: 'rest', sec: REST_SEC });
+      t.push({ i, kind: 'work', set: k, sec: workSeconds(it, tempo), reps: it.reps || null });
+      if (k < it.sets) t.push({ i, kind: 'rest', sec: it.rest ?? REST_SEC });
     }
   });
   return t;
@@ -79,7 +92,7 @@ function ScrollMode({ items }) {
         <div className={s.playBody}>
           <div className={s.step}>{i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
           <div className={s.playName}>{e.name}</div>
-          <div className={s.playMeta}>{it.sets}セット × {it.sec}秒（間の休憩{REST_SEC}秒）</div>
+          <div className={s.playMeta}>{doseText(it)}（セットの間の休憩{it.rest ?? REST_SEC}秒）</div>
           {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         </div>
       </section>
@@ -87,15 +100,51 @@ function ScrollMode({ items }) {
   });
 }
 
-function AutoMode({ items }) {
-  const timeline = useMemo(() => buildTimeline(items), [items]);
-  const [started, setStarted] = useState(false);
-  const [{ pos, left }, setClock] = useState({ pos: 0, left: timeline[0]?.sec ?? 0 });
-  const [paused, setPaused] = useState(false);
-  const done = pos >= timeline.length;
-  useWakeLock(started && !done);
+// 声で言う文（数字は読み上げに任せる）
+const spokenDose = it => `${it.reps ? `${it.reps}回` : `${it.sec}秒`}を${it.sets}セット`;
+const spokenLevel = lv => (lv ? (lv[0] === lv[1] ? `レベル${lv[0]}` : `レベル${lv[0]}から${lv[1]}`) : '');
 
+function Settings({ prefs, setPrefs }) {
+  const set = patch => { const p = { ...prefs, ...patch }; setPrefs(p); savePrefs(p); };
+  const can = voiceAvailable();
+  return (
+    <div style={{ marginTop: 20, textAlign: 'left' }}>
+      <div className={s.field}><span>声で案内する（次の種目・休憩・あと何秒）</span></div>
+      <div className={s.choices}>
+        <button type="button" className={`${s.choice} ${prefs.voice ? s.choiceOn : ''}`} aria-pressed={prefs.voice} disabled={!can} onClick={() => set({ voice: true })}>声あり</button>
+        <button type="button" className={`${s.choice} ${!prefs.voice ? s.choiceOn : ''}`} aria-pressed={!prefs.voice} onClick={() => set({ voice: false })}>声なし</button>
+      </div>
+      {!can && <p className={s.note}>この端末は読み上げに対応していないため、画面だけで進みます。</p>}
+      <div className={s.field}><span>回数を声で数える</span></div>
+      <div className={s.choices}>
+        <button type="button" className={`${s.choice} ${prefs.count ? s.choiceOn : ''}`} aria-pressed={prefs.count} disabled={!prefs.voice || !can} onClick={() => set({ count: true })}>数える</button>
+        <button type="button" className={`${s.choice} ${!prefs.count ? s.choiceOn : ''}`} aria-pressed={!prefs.count} onClick={() => set({ count: false })}>数えない</button>
+      </div>
+      <div className={s.field}><span>1回の速さ（回数を数える間隔）</span></div>
+      <div className={s.choices}>
+        {TEMPOS.map(t => (
+          <button key={t.key} type="button" className={`${s.choice} ${prefs.tempo === t.key ? s.choiceOn : ''}`} aria-pressed={prefs.tempo === t.key} onClick={() => set({ tempo: t.key })}>{t.label}（{t.sec}秒に1回）</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AutoMode({ items }) {
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS);
+  useEffect(() => { setPrefs(loadPrefs()); }, []);
+  const tempo = tempoSec(prefs.tempo);
+  const timeline = useMemo(() => buildTimeline(items, tempo), [items, tempo]);
+  const [started, setStarted] = useState(false);
+  const [{ pos, left }, setClock] = useState({ pos: 0, left: 0 });
+  const [paused, setPaused] = useState(false);
+  const done = started && pos >= timeline.length;
+  useWakeLock(started && !done);
+  const voiceOn = prefs.voice && voiceAvailable();
+
+  const jumped = useRef(false); // ボタンで飛ばした時は「12。」のような最後の数を言わない
   const go = useCallback(p => {
+    jumped.current = true;
     const q = Math.max(0, Math.min(p, timeline.length));
     setClock({ pos: q, left: timeline[q]?.sec ?? 0 });
   }, [timeline]);
@@ -108,11 +157,50 @@ function AutoMode({ items }) {
     return () => clearInterval(id);
   }, [started, paused, done, timeline]);
 
+  // 声の案内：時計が1つ進むたびに、その時に言うことがあれば言う
+  const spoken = useRef('');
+  useEffect(() => {
+    if (!started || paused || !voiceOn) return;
+    const key = `${pos}:${left}`;
+    if (spoken.current === key) return;
+    spoken.current = key;
+    if (done) { say('おつかれさまでした。', { interrupt: true }); return; }
+    const cur = timeline[pos];
+    if (!cur) return;
+    const it = items[cur.i];
+    const e = EXERCISE_BY_ID[it.id];
+    const prev = timeline[pos - 1];
+    if (left === cur.sec) {
+      // 区切りに入った時
+      const lastCount = prefs.count && !jumped.current && prev?.kind === 'work' && prev.reps ? `${prev.reps}。` : '';
+      jumped.current = false;
+      if (cur.kind === 'prep') say([lastCount + (pos === 0 ? '' : 'おつかれさまです。') + `次は、${e.name}`, spokenDose(it), spokenLevel(it.level), '準備してください'].filter(Boolean).join('。') + '。', { interrupt: true });
+      else if (cur.kind === 'rest') say(`${lastCount}休憩、${cur.sec}秒。`, { interrupt: true });
+      else say(cur.reps ? `${cur.set}セット目、はじめ。` : `${cur.set}セット目、${cur.sec}秒、はじめ。`, { interrupt: true });
+      return;
+    }
+    if (cur.kind === 'work' && cur.reps) {
+      if (!prefs.count) return;
+      const elapsed = cur.sec - left;
+      if (elapsed > 0 && elapsed % tempo === 0) {
+        const n = elapsed / tempo;
+        if (n < cur.reps) say(n === cur.reps - 1 ? `${n}、ラスト` : `${n}`, { interrupt: true });
+      }
+      return;
+    }
+    if (cur.kind === 'work' && left === 10 && cur.sec > 15) { say('あと10秒', { interrupt: true }); return; }
+    if (left <= 3) say(`${left}`, { interrupt: true });
+  }, [started, paused, done, pos, left, timeline, items, prefs.count, voiceOn, tempo]);
+
+  useEffect(() => () => hush(), []);
+  useEffect(() => { if (paused) hush(); }, [paused]);
+
   if (!started) {
     return (
       <div className={s.auto}>
         <p className={s.lead}>「始める」を押すと、準備{CHANGE_SEC}秒 → セット → 休憩 の順に自動で進みます。途中で触らなくてかまいません。</p>
-        <button type="button" className={s.btnPrimary} style={{ minHeight: 80, fontSize: 26 }} onClick={() => setStarted(true)}>始める</button>
+        <button type="button" className={s.btnPrimary} style={{ minHeight: 80, fontSize: 26 }} onClick={() => { if (voiceOn) unlock(); setClock({ pos: 0, left: timeline[0]?.sec ?? 0 }); setStarted(true); }}>始める</button>
+        <Settings prefs={prefs} setPrefs={setPrefs} />
       </div>
     );
   }
@@ -122,7 +210,7 @@ function AutoMode({ items }) {
       <div className={s.auto}>
         <h2 className={s.h1}>おつかれさまでした</h2>
         <div className={s.row}>
-          <button type="button" className={s.btnPrimary} onClick={() => go(0)}>もう一度はじめから</button>
+          <button type="button" className={s.btnPrimary} onClick={() => { spoken.current = ''; go(0); }}>もう一度はじめから</button>
         </div>
       </div>
     );
@@ -135,6 +223,8 @@ function AutoMode({ items }) {
   const prevItemPos = timeline.findIndex(x => x.i === Math.max(cur.i - (cur.kind === 'prep' ? 1 : 0), 0));
   const nextName = nextItemPos >= 0 ? EXERCISE_BY_ID[items[timeline[nextItemPos].i].id].name : null;
   const phase = cur.kind === 'prep' ? '準備してください' : cur.kind === 'rest' ? '休憩' : `${cur.set}セット目（全${it.sets}セット）`;
+  const counting = cur.kind === 'work' && cur.reps;
+  const doneReps = counting ? Math.min(cur.reps, Math.floor((cur.sec - left) / tempo)) : 0;
   const mm = Math.floor(left / 60);
   const ss = String(left % 60).padStart(2, '0');
 
@@ -144,14 +234,20 @@ function AutoMode({ items }) {
       <div>
         <div className={s.step}>{cur.i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
         <div className={s.playName}>{e.name}</div>
+        <div className={s.playMeta}>{doseText(it)}</div>
         {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         <div className={`${s.phase} ${cur.kind === 'work' ? s.phaseWork : s.phaseRest}`} aria-live="polite">{phase}</div>
-        <div className={s.clock}>{mm}:{ss}</div>
+        {counting ? (
+          <div className={s.clock}>{doneReps}<span style={{ fontSize: 32 }}> / {cur.reps}回</span></div>
+        ) : (
+          <div className={s.clock}>{mm}:{ss}</div>
+        )}
         <div className={s.next}>{nextName ? `次は ${nextName}` : 'これが最後の種目です'}</div>
       </div>
       <div className={s.controls} style={{ gridColumn: '1 / -1' }}>
         <button type="button" className={s.btn} onClick={() => go(prevItemPos)}>前の種目</button>
         <button type="button" className={s.btnPrimary} onClick={() => setPaused(p => !p)}>{paused ? '再開する' : '一時停止'}</button>
+        <button type="button" className={s.btn} onClick={() => go(pos + 1)}>{cur.kind === 'work' ? 'このセットを終える' : '次へ進む'}</button>
         <button type="button" className={s.btn} onClick={() => go(nextItemPos >= 0 ? nextItemPos : timeline.length)}>次の種目</button>
       </div>
     </div>
