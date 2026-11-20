@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISES, EXERCISE_BY_ID, PARTS, PART_LABEL, thumbUrl, watchUrl } from '@/lib/encompass/exercises';
-import { DEFAULT_ITEM, LIMITS, REST_SEC, autoTitle, decodeMenu, encodeMenu, newItem, saveMenu, totalMinutes } from '@/lib/encompass/menu';
+import { DEFAULT_ITEM, LIMITS, REST_SEC, autoTitle, secText, decodeMenu, encodeMenu, newItem, saveMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
 
@@ -171,9 +171,9 @@ export default function Builder() {
                     </div>
                   )}
                   <div className={s.row} style={{ marginTop: 8 }}>
-                    <span style={{ minWidth: 150 }}>休み　{it.rest ?? REST_SEC}秒</span>
-                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休みを5秒へらす" onClick={() => change(i, 'rest', -5, LIMITS.rest)}>－</button>
-                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休みを5秒ふやす" onClick={() => change(i, 'rest', 5, LIMITS.rest)}>＋</button>
+                    <span style={{ minWidth: 150 }}>休み　{secText(it.rest ?? REST_SEC)}</span>
+                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休みを10秒へらす" onClick={() => change(i, 'rest', -10, LIMITS.rest)}>－</button>
+                    <button type="button" className={`${s.btn} ${s.small}`} aria-label="休みを10秒ふやす" onClick={() => change(i, 'rest', 10, LIMITS.rest)}>＋</button>
                   </div>
                   <div className={s.row} style={{ marginTop: 8 }}>
                     <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => switchMode(i)}>{it.reps ? '回数ではなく時間で数える' : '時間ではなく回数で数える'}</button>

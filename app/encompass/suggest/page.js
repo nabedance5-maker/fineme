@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
-import { EXPERIENCE, GENDERS, GOALS, PAINS, PRESETS, doseText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
+import { EXPERIENCE, GENDERS, GOALS, PAINS, PRESETS, doseText, secText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
 
@@ -175,7 +175,7 @@ export default function Suggest() {
                       <div className={s.num}>{i + 1}</div>
                       <div>
                         <div className={s.cardName}>{e.name}</div>
-                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休み{it.rest}秒</div>
+                        <div className={s.cardMeta}>{PART_LABEL[e.part]}・{doseText(it)}・休み{secText(it.rest)}</div>
                         <div className={s.cardMeta}>{levelText(it.level, weightKg)}</div>
                       </div>
                     </li>

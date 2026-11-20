@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PART_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
-import { CHANGE_SEC, REST_SEC, TEMPOS, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
+import { CHANGE_SEC, REST_SEC, TEMPOS, secText, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { BOARD_TOKEN, api } from '@/lib/encompass/client';
 import { hush, say, unlock, voiceAvailable } from '@/lib/encompass/voice';
@@ -92,7 +92,7 @@ function ScrollMode({ items }) {
         <div className={s.playBody}>
           <div className={s.step}>{i + 1} / {items.length}・{PART_LABEL[e.part]}</div>
           <div className={s.playName}>{e.name}</div>
-          <div className={s.playMeta}>{doseText(it)}・休み{it.rest ?? REST_SEC}秒</div>
+          <div className={s.playMeta}>{doseText(it)}・休み{secText(it.rest ?? REST_SEC)}</div>
           {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         </div>
       </section>
@@ -186,7 +186,7 @@ function AutoMode({ items }) {
       const lastCount = prefs.count && !jumped.current && prev?.kind === 'work' && prev.reps ? `${countWord(prev.reps)}。` : '';
       jumped.current = false;
       if (cur.kind === 'prep') say([lastCount + (pos === 0 ? '' : 'おつかれさまです。') + `次は、${e.name}`, spokenDose(it), spokenLevel(it.level), '準備してください'].filter(Boolean).join('。') + '。', { interrupt: true });
-      else if (cur.kind === 'rest') say(`${lastCount}休み、${cur.sec}秒。`, { interrupt: true });
+      else if (cur.kind === 'rest') say(`${lastCount}休み、${secText(cur.sec)}。`, { interrupt: true });
       else say(cur.reps ? `${cur.set}セット目、はじめ。` : `${cur.set}セット目、${cur.sec}秒、はじめ。`, { interrupt: true });
       return;
     }
