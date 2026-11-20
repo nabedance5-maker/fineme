@@ -1,18 +1,19 @@
 'use client';
 
-// 条件からメニューを作る。1画面に質問1つ。よく使う組み合わせ（60分 下半身・30分 追い込み 等）は1回押すだけ。
+// 条件からメニューを作る。1画面に質問1つ。時間（5分ずつ）→ きたえる場所（いくつでも）→ 目的 → 慣れ → 体 → 痛い所。
 // 年齢・性別・身長・体重はこの端末の中だけで使い、送らない・URLにも入れない。
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, PARTS, PART_LABEL } from '@/lib/encompass/exercises';
-import { EXPERIENCE, GENDERS, GOALS, PAINS, PRESETS, doseText, secText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
+import { EXPERIENCE, GENDERS, GOALS, PAINS, doseText, secText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
 
-const MINUTES = [15, 30, 45, 60];
-// start＝最初の画面（よく使う組み合わせを押す か「自分で決める」）。時間を選ぶ画面とは分ける（同じ画面だと、両方押せて何が選ばれたか分からない。2026-11-20 実機）
-const STEPS = ['start', 'minutes', 'goal', 'parts', 'experience', 'body', 'pains', 'result'];
+const MINUTES = [15, 30, 45, 60];   // よく使う時間（すぐ押せる）
+const MIN_MIN = 5, MAX_MIN = 90;      // －＋は5分ずつ（渡邉指定 2026-11-20）
+// 時間と場所は別々に選ぶ（渡邉 2026-11-20：「60分 下半身」のような組み合わせより、別々に選べる方がいい）
+const STEPS = ['minutes', 'parts', 'goal', 'experience', 'body', 'pains', 'result'];
 
 const toNum = v => {
   const n = Number(String(v).replace(/[^\d.]/g, ''));
@@ -47,14 +48,9 @@ export default function Suggest() {
 
   const toggle = (list, setList, key) => setList(list.includes(key) ? list.filter(x => x !== key) : [...list, key]);
   const next = () => setStep(n => Math.min(n + 1, STEPS.length - 1));
-  const [preset, setPreset] = useState(null); // よく使う組み合わせで来た時は、その名前（戻るで最初の画面へ戻す）
+  const back = () => setStep(n => Math.max(n - 1, 0));
   const name = STEPS[step];
-  const back = () => {
-    if (preset && name === 'experience') { setPreset(null); setStep(0); return; }
-    setStep(n => Math.max(n - 1, 0));
-  };
-  const usePreset = p => { setPreset(p.label); setMinutes(p.minutes); setParts(p.parts); setGoal(p.goal); setStep(STEPS.indexOf('experience')); };
-  const custom = () => { setPreset(null); setParts([]); setGoal('health'); setStep(STEPS.indexOf('minutes')); };
+  const addMinutes = d => setMinutes(m => Math.min(MAX_MIN, Math.max(MIN_MIN, m + d)));
 
   const weightKg = toNum(weight);
   const result = name === 'result'
@@ -63,32 +59,17 @@ export default function Suggest() {
 
   return (
     <main className={s.main}>
-      {preset && name !== 'start' && name !== 'result' && (
-        <div className={s.row} style={{ marginBottom: 8 }}>
-          <span className={s.step} style={{ margin: 0 }}>選んだもの：{preset}</span>
-          <button type="button" className={`${s.btnGhost} ${s.small}`} onClick={() => { setPreset(null); setStep(STEPS.indexOf('minutes')); }}>時間や場所を変える</button>
-        </div>
-      )}
-      {name === 'result' && <p className={s.step}>メニューの案</p>}
-
-      {name === 'start' && (
-        <>
-          <h1 className={s.h1}>どんなメニューにしますか？</h1>
-          <p className={s.lead}>どれかひとつを押してください。そのあと、年齢や体のことを少し聞きます。</p>
-          <div className={s.choices}>
-            {PRESETS.map(p => (
-              <button key={p.key} type="button" className={s.choice} onClick={() => usePreset(p)}>{p.label}</button>
-            ))}
-          </div>
-          <div className={s.row} style={{ marginTop: 20 }}>
-            <button type="button" className={s.btn} onClick={custom}>この中にない（自分で決める）</button>
-          </div>
-        </>
-      )}
+      <p className={s.step}>{name === 'result' ? 'メニューの案' : `質問 ${step + 1} / ${STEPS.length - 1}`}</p>
 
       {name === 'minutes' && (
         <>
           <h1 className={s.h1}>何分にしますか？</h1>
+          <p className={s.lead}>－ ＋ で5分ずつ変えられます。</p>
+          <div className={s.row} style={{ alignItems: 'center', gap: 16, margin: '8px 0 16px' }}>
+            <button type="button" className={s.btn} style={{ minWidth: 88, fontSize: 24 }} aria-label="5分へらす" disabled={minutes <= MIN_MIN} onClick={() => addMinutes(-5)}>－</button>
+            <div style={{ fontSize: 44, fontWeight: 800, minWidth: 130, textAlign: 'center' }} aria-live="polite">{minutes}分</div>
+            <button type="button" className={s.btn} style={{ minWidth: 88, fontSize: 24 }} aria-label="5分ふやす" disabled={minutes >= MAX_MIN} onClick={() => addMinutes(5)}>＋</button>
+          </div>
           <div className={s.choices}>
             {MINUTES.map(m => (
               <button key={m} type="button" className={`${s.choice} ${minutes === m ? s.choiceOn : ''}`} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>{m}分</button>
@@ -207,8 +188,8 @@ export default function Suggest() {
 
       <div className={s.row} style={{ marginTop: 28 }}>
         {step > 0 && <button type="button" className={s.btnGhost} onClick={back}>戻る</button>}
-        {name !== 'result' && name !== 'start' && <button type="button" className={s.btnPrimary} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
-        {name === 'result' && <button type="button" className={s.btnGhost} onClick={() => { setPreset(null); setStep(0); }}>最初からやり直す</button>}
+        {name !== 'result' && <button type="button" className={s.btnPrimary} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
+        {name === 'result' && <button type="button" className={s.btnGhost} onClick={() => setStep(0)}>最初からやり直す</button>}
       </div>
     </main>
   );
