@@ -11,7 +11,8 @@ import { levelText } from '@/lib/encompass/resistance';
 import { api } from '@/lib/encompass/client';
 
 const MINUTES = [15, 30, 45, 60];
-const STEPS = ['minutes', 'goal', 'parts', 'experience', 'body', 'pains', 'result'];
+// start＝最初の画面（よく使う組み合わせを押す か「自分で決める」）。時間を選ぶ画面とは分ける（同じ画面だと、両方押せて何が選ばれたか分からない。2026-11-20 実機）
+const STEPS = ['start', 'minutes', 'goal', 'parts', 'experience', 'body', 'pains', 'result'];
 
 const toNum = v => {
   const n = Number(String(v).replace(/[^\d.]/g, ''));
@@ -46,9 +47,14 @@ export default function Suggest() {
 
   const toggle = (list, setList, key) => setList(list.includes(key) ? list.filter(x => x !== key) : [...list, key]);
   const next = () => setStep(n => Math.min(n + 1, STEPS.length - 1));
-  const back = () => setStep(n => Math.max(n - 1, 0));
+  const [preset, setPreset] = useState(null); // よく使う組み合わせで来た時は、その名前（戻るで最初の画面へ戻す）
   const name = STEPS[step];
-  const usePreset = p => { setMinutes(p.minutes); setParts(p.parts); setGoal(p.goal); setStep(STEPS.indexOf('experience')); };
+  const back = () => {
+    if (preset && name === 'experience') { setPreset(null); setStep(0); return; }
+    setStep(n => Math.max(n - 1, 0));
+  };
+  const usePreset = p => { setPreset(p.label); setMinutes(p.minutes); setParts(p.parts); setGoal(p.goal); setStep(STEPS.indexOf('experience')); };
+  const custom = () => { setPreset(null); setParts([]); setGoal('health'); setStep(STEPS.indexOf('minutes')); };
 
   const weightKg = toNum(weight);
   const result = name === 'result'
@@ -57,18 +63,27 @@ export default function Suggest() {
 
   return (
     <main className={s.main}>
-      <p className={s.step}>{name === 'result' ? 'メニューの案' : `質問 ${step + 1} / ${STEPS.length - 1}`}</p>
+      {preset && name !== 'start' && <p className={s.step}>選んだもの：{preset}</p>}
+      {name === 'result' && <p className={s.step}>メニューの案</p>}
 
-      {name === 'minutes' && (
+      {name === 'start' && (
         <>
-          <h1 className={s.h1}>かんたんに選ぶ</h1>
-          <p className={s.lead}>どれかを押してください。そのあと、年齢や体のことを少し聞きます。</p>
+          <h1 className={s.h1}>どんなメニューにしますか？</h1>
+          <p className={s.lead}>どれかひとつを押してください。そのあと、年齢や体のことを少し聞きます。</p>
           <div className={s.choices}>
             {PRESETS.map(p => (
               <button key={p.key} type="button" className={s.choice} onClick={() => usePreset(p)}>{p.label}</button>
             ))}
           </div>
-          <h2 className={s.h2}>自分で決める（時間を選んで「次へ」）</h2>
+          <div className={s.row} style={{ marginTop: 20 }}>
+            <button type="button" className={s.btn} onClick={custom}>この中にない（自分で決める）</button>
+          </div>
+        </>
+      )}
+
+      {name === 'minutes' && (
+        <>
+          <h1 className={s.h1}>何分にしますか？</h1>
           <div className={s.choices}>
             {MINUTES.map(m => (
               <button key={m} type="button" className={`${s.choice} ${minutes === m ? s.choiceOn : ''}`} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>{m}分</button>
@@ -187,8 +202,8 @@ export default function Suggest() {
 
       <div className={s.row} style={{ marginTop: 28 }}>
         {step > 0 && <button type="button" className={s.btnGhost} onClick={back}>戻る</button>}
-        {name !== 'result' && <button type="button" className={s.btnPrimary} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
-        {name === 'result' && <button type="button" className={s.btnGhost} onClick={() => setStep(0)}>最初からやり直す</button>}
+        {name !== 'result' && name !== 'start' && <button type="button" className={s.btnPrimary} onClick={next}>{name === 'pains' ? 'メニューを作る' : '次へ'}</button>}
+        {name === 'result' && <button type="button" className={s.btnGhost} onClick={() => { setPreset(null); setStep(0); }}>最初からやり直す</button>}
       </div>
     </main>
   );
