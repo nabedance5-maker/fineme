@@ -9,6 +9,7 @@
 // 画像生成AIは使わない。
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { isCreditError } from '@/lib/ai';
 import { buildReportPrompt } from '@/lib/mirror-report-prompt';
 import { validateReportContent, validateAxesPayload, alignAxesWithScores, REPORT_SCHEMA_VERSION, VISUAL_TIERS } from '@/lib/mirror-report-content';
 import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
@@ -209,10 +210,14 @@ export async function POST(request) {
         .from('mirror_sessions')
         .update({ report_status: 'failed', report_error: String(genError.message || genError).slice(0, 500) })
         .eq('id', session_id);
-      return Response.json({ error: 'レポート生成に失敗しました。もう一度お試しください。' }, { status: 500 });
+      if (isCreditError(genError)) {
+        return Response.json({ error: 'ただいまレポートの作成を一時的に止めています。お支払い済みの分は残っているので、少し時間をおいて開き直してください。', code: 'ai_unavailable', retryable: true }, { status: 503 });
+      }
+      return Response.json({ error: 'レポート生成に失敗しました。もう一度お試しください。', code: 'report_failed', retryable: true }, { status: 500 });
     }
   } catch (e) {
     console.error('mirror report route error:', e);
-    return Response.json({ error: `レポート生成エラー: ${e.message}` }, { status: 500 });
+    // 生のエラー文は利用者に出さない（2026-11-22）
+    return Response.json({ error: 'レポート生成に失敗しました。もう一度お試しください。', code: 'report_failed', retryable: true }, { status: 500 });
   }
 }

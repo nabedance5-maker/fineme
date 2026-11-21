@@ -60,6 +60,7 @@ export async function POST(request) {
     return Response.json({ url: checkout.url });
   } catch (e) {
     console.error('mirror purchase error:', e);
-    return Response.json({ error: e.message }, { status: 500 });
+    // 生のエラー文（決済サービスの内部の文言）は利用者に出さない（2026-11-22）
+    return Response.json({ error: '決済画面を開けませんでした。少し時間をおいて、もう一度お試しください。' }, { status: 500 });
   }
 }

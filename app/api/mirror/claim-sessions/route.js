@@ -41,7 +41,7 @@ export async function POST(request) {
     .is('user_id', null)
     .select('id');
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) { console.error('claim-sessions error:', error); return Response.json({ error: '読み込みに失敗しました。もう一度お試しください。' }, { status: 500 }); }
 
   // ゲスト時に月1無料お試しを使っていた場合、登録直後の同月内二重取得を防ぐため
   // profiles.mirror_trial_month に引き継ぐ（既存の値より新しい月のみ上書き）

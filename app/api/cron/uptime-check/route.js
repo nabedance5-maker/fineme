@@ -18,6 +18,31 @@ async function check(name, url, init = {}, ok = r => r.ok) {
   }
 }
 
+// Anthropic のクレジット残高が尽きていないか（2026-11-22：残高不足で Mirror の写真分析が全員失敗していたのに、
+// 渡邉が自分で試すまで分からなかった）。1トークンだけの最小の呼び出しで確かめる（10分ごとで月に数円）。
+// 残高不足の時だけ「止まっている」とし、混雑・一時的な失敗では知らせない。
+async function checkAnthropicCredit() {
+  const name = 'AIの残高（Anthropic・Mirror の写真分析ほか）';
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return { name, ok: true, status: 'skip', ms: 0 };
+  const t0 = Date.now();
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1, messages: [{ role: 'user', content: '.' }] }),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.ok) return { name, ok: true, status: r.status, ms: Date.now() - t0 };
+    const body = await r.text().catch(() => '');
+    const credit = /credit balance is too low/i.test(body) || (r.status === 400 && /billing/i.test(body));
+    return { name, ok: !credit, status: credit ? '残高不足' : r.status, ms: Date.now() - t0 };
+  } catch {
+    return { name, ok: true, status: 'unreachable', ms: Date.now() - t0 };
+  }
+}
+
 export async function GET(request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
@@ -33,6 +58,7 @@ export async function GET(request) {
     check('ログイン画面', `${SITE}/login`),
     check('管理画面', `${SITE}/provider/dashboard`),
     check('マイページ', `${SITE}/mypage`),
+    checkAnthropicCredit(),
   ]);
   // 1回のつまずきでは知らせない。失敗があれば20秒おいて確かめ直し、2回とも止まっていた所だけ知らせる（2026-10-29）
   let results = await run();
@@ -50,7 +76,9 @@ export async function GET(request) {
       `【Fineme 障害の検知】${jst}`,
       ...down.map(r => `・${r.name}：応答なし（${r.status}・${r.ms}ms）`),
       '',
-      down.some(r => r.name.includes('Supabase'))
+      down.some(r => r.name.startsWith('AIの残高'))
+        ? 'Anthropic のクレジット残高が不足しています。Mirror の写真分析・レポートが全員失敗します（他のAI機能は無料・別のAIに切り替えて動いています）。https://console.anthropic.com/settings/billing でクレジットを追加してください。'
+        : down.some(r => r.name.includes('Supabase'))
         ? 'Supabase（ログインとデータの置き場）が応答していません。https://status.supabase.com と https://supabase.com/dashboard/project/qsfpzlvucqzmjldshwwd を確認してください。'
         : 'サイトのページが応答していません。Vercel のデプロイを確認してください。',
       '止まっている間は10分ごとにお知らせします。',

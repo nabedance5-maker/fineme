@@ -88,6 +88,7 @@ export default function MirrorPage() {
   const [analysis, setAnalysis] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [error, setError] = useState('');
+  const [errorRetryable, setErrorRetryable] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [pastSessions, setPastSessions] = useState([]);
@@ -113,6 +114,9 @@ export default function MirrorPage() {
   const [reportPhotoUrl, setReportPhotoUrl] = useState(null);
   const [tierComparison, setTierComparison] = useState(null);
   const fileInputRef = useRef(null);
+  // 直前に分析へ送った写真（圧縮済み）。失敗した時に「同じ写真でもう一度試す」で選び直さずに送り直す
+  // （分析中の表示に切り替わる時に写真の選択欄が作り直され、選んだファイルが消えるため）
+  const lastPhotoRef = useRef(null);
   const dropRef = useRef(null);
 
   // Stripe支払い完了後のリダイレクト処理 + 過去セッション読み込み
@@ -304,6 +308,9 @@ export default function MirrorPage() {
       return;
     }
     setPreviewFile(URL.createObjectURL(file));
+    // 写真を選び直したら、前の写真での「もう一度試す」は出さない
+    lastPhotoRef.current = null;
+    setErrorRetryable(false);
     setError('');
   }, []);
 
@@ -353,21 +360,28 @@ export default function MirrorPage() {
     }
   }, []);
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (opts) => {
+    const reuse = opts?.reuse === true && lastPhotoRef.current;
     const file = fileInputRef.current?.files[0];
-    if (!file) { setError('写真を選択してください'); return; }
+    if (!file && !reuse) { setError('写真を選択してください'); return; }
     setError('');
-    setCompressing(true);
+    setErrorRetryable(false);
 
     let base64, media_type;
-    try {
-      ({ base64, media_type } = await compressImage(file));
-    } catch {
-      setError('画像の読み込みに失敗しました。別の画像をお試しください。');
+    if (reuse) {
+      ({ base64, media_type } = lastPhotoRef.current);
+    } else {
+      setCompressing(true);
+      try {
+        ({ base64, media_type } = await compressImage(file));
+      } catch {
+        setError('画像の読み込みに失敗しました。別の画像をお試しください。');
+        setCompressing(false);
+        return;
+      }
       setCompressing(false);
-      return;
+      lastPhotoRef.current = { base64, media_type };
     }
-    setCompressing(false);
     setState('analyzing');
 
     try {
@@ -400,8 +414,12 @@ export default function MirrorPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, photo_type: photoType, age_band: getLocalAttributes()?.age_band || null }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '分析に失敗しました');
+      // 応答が JSON でない時（時間切れ等）にブラウザの英語のエラー文が出ないようにする（2026-11-22）
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorRetryable(true);
+        throw new Error(data.error || '分析中にエラーが起きました。料金はかかっていません。もう一度お試しください。');
+      }
 
       setSessionId(data.session_id);
       setAnalysis(data.analysis);
@@ -423,7 +441,10 @@ export default function MirrorPage() {
         setState('preview');
       }
     } catch (e) {
-      setError(e.message);
+      // 通信が切れた時などの英語のエラー文は出さない
+      const msg = /[ぁ-んァ-ン一-龥]/.test(e?.message || '') ? e.message : '通信が途切れました。料金はかかっていません。もう一度お試しください。';
+      setError(msg);
+      setErrorRetryable(true);
       setState('idle');
     }
   };
@@ -726,6 +747,17 @@ export default function MirrorPage() {
             {compressing ? '画像を最適化中…' : '変容余地を分析する'}
           </button>
           {error && <p className="error-msg">{error}</p>}
+          {error && errorRetryable && lastPhotoRef.current && (
+            <button
+              type="button"
+              className="retry-btn"
+              style={{ marginTop: '12px' }}
+              onClick={() => handleAnalyze({ reuse: true })}
+              disabled={compressing || !mirrorConsent}
+            >
+              同じ写真でもう一度試す
+            </button>
+          )}
 
           <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.3)', textAlign: 'center', marginTop: '16px', lineHeight: '1.6' }}>
             Me Scanを受けた方は、Compassとの連動アクション提案も表示されます。

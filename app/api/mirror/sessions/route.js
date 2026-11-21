@@ -40,7 +40,7 @@ export async function GET(request) {
   if (error?.code === 'PGRST204' || /report_status/.test(error?.message || '')) {
     ({ data, error } = await buildQuery('id, created_at, paid, analysis'));
   }
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) { console.error('sessions error:', error); return Response.json({ error: '読み込みに失敗しました。もう一度お試しください。' }, { status: 500 }); }
 
   const includeAxes = searchParams.get('include_axes') === '1';
   const sessions = (data || []).map(s => ({

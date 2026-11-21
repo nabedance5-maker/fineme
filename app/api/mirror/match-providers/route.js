@@ -39,7 +39,7 @@ export async function POST(request) {
     .eq('published', true)
     .in('billing_status', ['active', 'monitor']);
   const { data: providers, error } = await query;
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) { console.error('match-providers error:', error); return Response.json({ error: '読み込みに失敗しました。もう一度お試しください。' }, { status: 500 }); }
   if (!providers?.length) return Response.json({ providers: [] });
 
   const providerIds = providers.map(p => p.id);

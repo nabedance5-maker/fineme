@@ -1,7 +1,7 @@
 // POST /api/mirror/analyze
 // 写真をClaude Visionで分析し、New Me Logを生成
 // 写真はサーバーに保存しない。分析結果（テキスト）のみSupabaseに保存。
-import { claudeClient } from '@/lib/ai';
+import { claudeClient, isCreditError } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import {
@@ -354,6 +354,11 @@ export async function POST(request) {
     return Response.json({ session_id: session.id, analysis, paid: isPaidBypass, trial_applied: trialApplied });
   } catch (e) {
     console.error('mirror analyze error:', e);
-    return Response.json({ error: `分析エラー: ${e.message}` }, { status: 500 });
+    // API の生のエラー文（英語・残高・内部の情報）は利用者に出さない（渡邉の確認 2026-11-22：
+    // クレジット残高不足の英文がそのまま画面に出ていた）。理由は code で返し、画面側で言い方と再試行を決める
+    if (isCreditError(e)) {
+      return Response.json({ error: 'ただいま写真の分析を一時的に止めています。料金はかかっていません。少し時間をおいて、もう一度お試しください。', code: 'ai_unavailable', retryable: true }, { status: 503 });
+    }
+    return Response.json({ error: '分析中にエラーが起きました。料金はかかっていません。もう一度お試しください。', code: 'analyze_failed', retryable: true }, { status: 500 });
   }
 }
