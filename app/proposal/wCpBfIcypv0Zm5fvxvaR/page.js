@@ -23,7 +23,7 @@ const COVER = {
 const JOIN_URL = 'https://www.fineme.me/provider/join';
 const CONTACT_EMAIL = 'h_watanabe@fineme.me';
 // PDF（渡邉から受け取ったものを public/proposal/wCpBfIcypv0Zm5fvxvaR/ に置く）。置いたら PDF_READY を true にする
-const PDF_READY = false;
+const PDF_READY = true;
 const PDF_NAME = 'Fineme提案資料_店舗向け_2026-11-21.pdf';
 const PDF_HREF = `/proposal/wCpBfIcypv0Zm5fvxvaR/${encodeURIComponent(PDF_NAME)}`;
 
