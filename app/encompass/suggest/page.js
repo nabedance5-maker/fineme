@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import s from '../encompass.module.css';
-import { EXERCISE_BY_ID, PARTS, PART_COLOR } from '@/lib/encompass/exercises';
+import { EXERCISE_BY_ID, PARTS, PART_COLOR, POSTURE_LABEL } from '@/lib/encompass/exercises';
 import PartTag from '../PartTag';
 import { EXPERIENCE, GENDERS, GOALS, PAINS, doseText, secText, encodeMenu, saveMenu, suggestMenu, totalMinutes } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
@@ -33,6 +33,7 @@ export default function Suggest() {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [pains, setPains] = useState([]);
+  const [wobbly, setWobbly] = useState(false); // ふらつきやすい（バランスに不安がある）
   const [savedMsg, setSavedMsg] = useState('');
   // お店の画面から来た時（?store=1・&customer=）は、案をお店のメニューとして保存する方へ進める
   const [storeQs, setStoreQs] = useState('');
@@ -58,7 +59,7 @@ export default function Suggest() {
   const ageNum = toNum(age);
   const ageOk = ageNum >= 5 && ageNum <= 110;
   const result = name === 'result'
-    ? suggestMenu({ minutes, parts, goal, experience, age: toNum(age), gender, heightCm: toNum(height), weightKg, pains })
+    ? suggestMenu({ minutes, parts, goal, experience, age: toNum(age), gender, heightCm: toNum(height), weightKg, pains, wobbly })
     : null;
 
   return (
@@ -144,6 +145,10 @@ export default function Suggest() {
               <button key={p.key} type="button" className={`${s.choice} ${s.multi} ${pains.includes(p.key) ? s.choiceOn : ''}`} aria-pressed={pains.includes(p.key)} onClick={() => toggle(pains, setPains, p.key)}>{p.label}</button>
             ))}
           </div>
+          <p className={s.lead} style={{ marginTop: 20 }}>ふらつきやすい方は、こちらも選んでください。座る・寝る姿勢の種目だけにします。</p>
+          <div className={s.choices}>
+            <button type="button" className={`${s.choice} ${s.multi} ${wobbly ? s.choiceOn : ''}`} aria-pressed={wobbly} onClick={() => setWobbly(w => !w)}>ふらつきやすい・バランスに不安がある</button>
+          </div>
         </>
       )}
 
@@ -166,7 +171,7 @@ export default function Suggest() {
                       <div className={s.num}>{i + 1}</div>
                       <div>
                         <div className={s.cardName}>{e.name}</div>
-                        <div className={s.cardMeta}><PartTag part={e.part} style={{ marginRight: 8 }} />{doseText(it)}・休み{secText(it.rest)}</div>
+                        <div className={s.cardMeta}><PartTag part={e.part} style={{ marginRight: 8 }} />{doseText(it)}{POSTURE_LABEL[e.pos] ? `・${POSTURE_LABEL[e.pos]}` : ''}・セットの間 休み{secText(it.rest)}</div>
                         <div className={s.cardMeta}>{levelText(it.level, weightKg)}</div>
                       </div>
                     </li>

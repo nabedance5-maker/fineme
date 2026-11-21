@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import s from '../encompass.module.css';
-import { EXERCISE_BY_ID, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
+import { EXERCISE_BY_ID, POSTURE_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
 import PartTag from '../PartTag';
 import { CHANGE_SEC, REST_SEC, TEMPOS, secText, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
@@ -29,7 +29,8 @@ const tempoSec = key => (TEMPOS.find(t => t.key === key) || TEMPOS[1]).sec;
 function buildTimeline(items, tempo) {
   const t = [];
   items.forEach((it, i) => {
-    t.push({ i, kind: 'prep', sec: CHANGE_SEC });
+    // 最初の種目の前は準備の時間。2つ目からは、前の種目で決めた「次の種目までの休み」
+    t.push({ i, kind: 'prep', sec: i === 0 ? CHANGE_SEC : (items[i - 1].change ?? CHANGE_SEC) });
     for (let k = 1; k <= it.sets; k++) {
       t.push({ i, kind: 'work', set: k, sec: workSeconds(it, tempo), reps: it.reps || null });
       if (k < it.sets) t.push({ i, kind: 'rest', sec: it.rest ?? REST_SEC });
@@ -104,7 +105,7 @@ function ScrollMode({ items }) {
         <div className={s.playBody}>
           <div className={s.step}>{i + 1} / {items.length}　<PartTag part={e.part} /></div>
           <div className={s.playName}>{e.name}</div>
-          <div className={s.playMeta}>{doseText(it)}・休み{secText(it.rest ?? REST_SEC)}</div>
+          <div className={s.playMeta}>{doseText(it)}{POSTURE_LABEL[e.pos] ? `・${POSTURE_LABEL[e.pos]}` : ''}・セットの間 休み{secText(it.rest ?? REST_SEC)}{i < items.length - 1 ? `・次の種目まで ${secText(it.change ?? CHANGE_SEC)}` : ''}</div>
           {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         </div>
       </section>
@@ -262,7 +263,7 @@ function AutoMode({ items }) {
   const nextItemPos = timeline.findIndex((x, k) => k > pos && x.i !== cur.i);
   const prevItemPos = timeline.findIndex(x => x.i === Math.max(cur.i - (cur.kind === 'prep' ? 1 : 0), 0));
   const nextName = nextItemPos >= 0 ? EXERCISE_BY_ID[items[timeline[nextItemPos].i].id].name : null;
-  const phase = cur.kind === 'prep' ? '準備してください' : cur.kind === 'rest' ? '休み' : `${cur.set}セット目 ／ ${it.sets}セット`;
+  const phase = cur.kind === 'prep' ? (cur.i === 0 ? '準備してください' : '休み・次の準備') : cur.kind === 'rest' ? '休み' : `${cur.set}セット目 ／ ${it.sets}セット`;
   const counting = cur.kind === 'work' && cur.reps;
   const doneReps = counting ? Math.min(cur.reps, Math.floor((cur.sec - left) / tempo)) : 0;
   const mm = Math.floor(left / 60);
@@ -274,7 +275,7 @@ function AutoMode({ items }) {
       <div>
         <div className={s.step}>{cur.i + 1} / {items.length}　<PartTag part={e.part} /></div>
         <div className={s.playName}>{e.name}</div>
-        <div className={s.playMeta}>{doseText(it)}</div>
+        <div className={s.playMeta}>{doseText(it)}{POSTURE_LABEL[e.pos] ? `・${POSTURE_LABEL[e.pos]}` : ''}</div>
         {it.level && <div className={s.playMeta}>{levelText(it.level)}</div>}
         <div className={`${s.phase} ${cur.kind === 'work' ? s.phaseWork : s.phaseRest}`} aria-live="polite">{phase}</div>
         {counting ? (
