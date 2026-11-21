@@ -10,7 +10,7 @@ import Link from 'next/link';
 import s from '../encompass.module.css';
 import { EXERCISE_BY_ID, POSTURE_LABEL, embedUrl, thumbUrl } from '@/lib/encompass/exercises';
 import PartTag from '../PartTag';
-import { CHANGE_SEC, REST_SEC, TEMPOS, secText, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
+import { CHANGE_SEC, PREP_SEC, REST_SEC, TEMPOS, secText, decodeMenu, doseText, encodeMenu, totalMinutes, workSeconds } from '@/lib/encompass/menu';
 import { levelText } from '@/lib/encompass/resistance';
 import { BOARD_TOKEN, api } from '@/lib/encompass/client';
 import { hush, say, unlock, voiceAvailable } from '@/lib/encompass/voice';
@@ -30,7 +30,7 @@ function buildTimeline(items, tempo) {
   const t = [];
   items.forEach((it, i) => {
     // 最初の種目の前は準備の時間。2つ目からは、前の種目で決めた「次の種目までの休み」
-    t.push({ i, kind: 'prep', sec: i === 0 ? CHANGE_SEC : (items[i - 1].change ?? CHANGE_SEC) });
+    t.push({ i, kind: 'prep', sec: i === 0 ? PREP_SEC : (items[i - 1].change ?? CHANGE_SEC) });
     for (let k = 1; k <= it.sets; k++) {
       t.push({ i, kind: 'work', set: k, sec: workSeconds(it, tempo), reps: it.reps || null });
       if (k < it.sets) t.push({ i, kind: 'rest', sec: it.rest ?? REST_SEC });
