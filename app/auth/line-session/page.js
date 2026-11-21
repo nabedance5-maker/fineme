@@ -52,7 +52,7 @@ export default function LineSessionPage() {
       const params = new URLSearchParams(window.location.search);
       const rawNext = params.get('next') || '';
       // オープンリダイレクト防止: 相対パスのみ許可
-      const next = (rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : '/mypage';
+      const next = (rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\')) ? rawNext : '/mypage';
       setStatus('マイページへ移動します...');
       window.location.href = next;
     }

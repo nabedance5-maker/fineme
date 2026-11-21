@@ -1,6 +1,7 @@
 // GET  /api/me/profile - 自分のプロフィールを取得
 // PUT  /api/me/profile - 自分のプロフィールを保存
 import { getSupabase } from '@/lib/supabase';
+import { normalizeUserArea } from '@/lib/user-area';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -75,8 +76,25 @@ export async function PUT(request) {
   if (phone !== undefined) upsertData.phone = String(phone).trim();
   if (axis_progress !== undefined) upsertData.axis_progress = axis_progress;
   if (step_done !== undefined) upsertData.step_done = step_done;
-  if (area !== undefined) upsertData.area = String(area).trim();
-  if (city !== undefined) upsertData.city = String(city).trim();
+  // お住まいの地域：空（消す）か、一覧にある都道府県＋40文字までの市区町村だけ受ける（lib/user-area.js）
+  if (area !== undefined || city !== undefined) {
+    const a = String(area ?? '').trim();
+    const c = String(city ?? '').trim();
+    if (a && c) {
+      const loc = normalizeUserArea(a, c);
+      if (!loc) return Response.json({ error: 'お住まいの地域が正しくありません' }, { status: 400 });
+      upsertData.area = loc.area;
+      upsertData.city = loc.city;
+    } else if (a) {
+      const loc = normalizeUserArea(a, '-');
+      if (!loc) return Response.json({ error: 'お住まいの地域が正しくありません' }, { status: 400 });
+      upsertData.area = loc.area;
+      if (city !== undefined) upsertData.city = '';
+    } else {
+      if (area !== undefined) upsertData.area = '';
+      if (city !== undefined) upsertData.city = '';
+    }
+  }
   if (body_data !== undefined) upsertData.body_data = body_data;
   if (birthday !== undefined) upsertData.birthday = birthday || null;
   if (mirror_privacy_consent) upsertData.mirror_privacy_consent_at = new Date().toISOString();

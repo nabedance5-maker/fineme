@@ -22,7 +22,8 @@ export default function PrivacyPage() {
 
           <p style={{ ...sub, marginTop: 4 }}>● 一般ユーザー（診断・Mirror・記録・予約などを使う方）</p>
           <ul className="stack" style={list}>
-            <li>アカウント登録情報（メールアドレス、パスワードハッシュ）</li>
+            <li>アカウント登録情報（メールアドレス、パスワードハッシュ、お住まいの地域（都道府県・市区町村））</li>
+            <li>診断結果ページなどで現在地から地域を設定した場合の、都道府県・市区町村（位置の座標は地名に変換するためだけに使い、保存しません）</li>
             <li>LINEで連携・ログインした場合のLINEのユーザー識別子と表示名</li>
             <li>外見診断（Me Scan）の回答・結果データ（悩みの種類、変わりたい方向性、現状スコア等）</li>
             <li>Fineme Mirror（AI写真診断）にアップロードした写真と分析結果、選択した性別（詳細は2-2）</li>
@@ -129,6 +130,8 @@ export default function PrivacyPage() {
             <li>アカウントの作成・認証・本人確認のため</li>
             <li>予約・問い合わせの管理、日程調整、連絡（LINE・メールでの通知を含みます）のため</li>
             <li>診断結果に基づくサービスのパーソナライズ・ロードマップ生成のため</li>
+            <li>お住まいの地域に近い店舗・サービスのご案内と、検索結果の並び替えのため</li>
+            <li>地域ごとの利用者数などの統計情報を作成し、店舗への当サービスのご案内やサービスの改善に使うため（個人を特定できない形にしてから使います）</li>
             <li>契約者（店舗）が店舗運営機能（顧客管理・カルテ・決済・シフト管理・AI専属コンサル等）を使うため</li>
             <li>掲載プランの課金管理・請求・決済処理、店舗のお客様の決済処理のため</li>
             <li>営業パートナーの紹介実績の記録、報酬の計算・支払いのため</li>
@@ -153,6 +156,7 @@ export default function PrivacyPage() {
             <li><strong>Google Analytics（Google LLC）</strong>：サイトの利用状況の分析<br /><a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://policies.google.com/privacy</a></li>
             <li><strong>Meta ピクセル（Meta Platforms, Inc.）</strong>：サイトの閲覧・購入の計測と広告効果の測定<br /><a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://www.facebook.com/privacy/policy/</a></li>
             <li><strong>Sentry</strong>：エラーの検知・不具合の調査<br /><a href="https://sentry.io/privacy/" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://sentry.io/privacy/</a></li>
+            <li><strong>OpenStreetMap（Nominatim）</strong>：現在地から地域を設定する場合の、位置の座標から都道府県・市区町村名への変換<br /><a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://osmfoundation.org/wiki/Privacy_Policy</a></li>
             <li><strong>Vercel（Vercel Inc.）</strong>：ホスティング・インフラ<br /><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://vercel.com/legal/privacy-policy</a></li>
             <li><strong>Cloudflare（Cloudflare, Inc.）</strong>：DNS・CDN・メール転送<br /><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://www.cloudflare.com/privacypolicy/</a></li>
           </ul>
@@ -164,6 +168,7 @@ export default function PrivacyPage() {
           <ul className="stack" style={{ gap: 6 }}>
             <li><strong>予約が成立した場合</strong>、予約対応に必要な範囲（氏名・連絡先・希望日時等）を該当の契約者（店舗）に提供します。契約者はこの情報を予約対応と、そのお客様へのサービス提供以外の目的に使用することはできません。</li>
             <li><strong>営業パートナーには</strong>、本人が紹介した契約者（店舗）の名称と課金の状況を、本人専用のページで表示します。</li>
+            <li><strong>お住まいの地域</strong>は、個人ごとの値を契約者（店舗）や他の利用者に表示・提供しません。店舗へのご案内には、市区町村ごとの利用者数など、個人を特定できない統計情報のみを使います。</li>
             <li>上記と法令に基づく場合を除き、ご本人の同意なく第三者に個人情報を提供することはありません。</li>
           </ul>
         </section>
@@ -201,7 +206,7 @@ export default function PrivacyPage() {
           <p>本ポリシーに関するお問い合わせ：<a href="mailto:contact@fineme.me">contact@fineme.me</a></p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09 / 改定日: 2026-08-12（Mirror写真保存に関する条項を追加） / 改定日: 2026-10-10（店舗運営機能・AIの利用・営業パートナー・計測ツールに関する条項を追加） / 改定日: 2026-10-26（事業者へのご案内、店舗からのメッセージ配信・アンケート、出退勤の記録、プッシュ通知に関する記載を追加） / 改定日: 2026-11-06（当サービス自身による閲覧の記録を追記）</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09 / 改定日: 2026-08-12（Mirror写真保存に関する条項を追加） / 改定日: 2026-10-10（店舗運営機能・AIの利用・営業パートナー・計測ツールに関する条項を追加） / 改定日: 2026-10-26（事業者へのご案内、店舗からのメッセージ配信・アンケート、出退勤の記録、プッシュ通知に関する記載を追加） / 改定日: 2026-11-06（当サービス自身による閲覧の記録を追記） / 改定日: 2026-11-21（アカウント登録時のお住まいの地域、その利用目的と取り扱い、位置情報の変換サービスを追記）</p>
       </div>
     </main>
   );

@@ -6,11 +6,24 @@ import { timedFetch } from '@/lib/browser-auth';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
 import { syncLocalLogsToServer } from '@/lib/log-store';
 import { syncLocalAttributesToServer } from '@/lib/attributes';
+import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
+import { normalizeUserArea, getLocalUserArea, saveLocalUserArea } from '@/lib/user-area';
 
 const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { global: { fetch: timedFetch } }); // 応答しない時は15秒で打ち切る（2026-10-28 の障害）
 const SITE_URL = 'https://www.fineme.me';
+
+// ?next= / ?redirect= の戻り先は自サイト内のパスだけにする（外部サイトや javascript: へ飛ばさない）。
+// 2026-11-21 セキュリティ確認で、ログイン・登録後にこの値をそのまま location に入れていたのを修正。
+function safeNext(v) {
+  if (!v || typeof v !== 'string') return null;
+  if (!v.startsWith('/') || v.startsWith('//') || v.startsWith('/\\')) return null;
+  return v;
+}
+
+// 一覧にない市区町村を自分で入力する時の選択肢の値
+const CITY_OTHER = '__other__';
 
 // Android Chromeなど一部ブラウザは、<form>のsubmitイベントを検知できないと
 // パスワードマネージャーの「保存しますか？」プロンプト自体が出ない（でお報告
@@ -87,6 +100,10 @@ export default function LoginPage() {
   const [signupError, setSignupError] = useState('');
   const [signupOk, setSignupOk] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
+  // お住まいの地域（2026-11-21〜 登録時に必須。診断結果で選んでいれば最初から入れておく）
+  const [signupArea, setSignupArea] = useState('');
+  const [signupCitySel, setSignupCitySel] = useState('');
+  const [signupCityText, setSignupCityText] = useState('');
 
   // パスワード再設定フォームの状態
   const [resetEmail, setResetEmail] = useState('');
@@ -100,7 +117,17 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'signup') setView('signup');
     if (params.get('type') === 'provider') setIsProvider(true);
+    const loc = getLocalUserArea();
+    if (loc) {
+      setSignupArea(loc.area);
+      const listed = (JAPAN_CITIES[loc.area] || []).some(c => c.name === loc.city);
+      setSignupCitySel(listed ? loc.city : CITY_OTHER);
+      if (!listed) setSignupCityText(loc.city);
+    }
   }, []);
+
+  const signupCityOptions = signupArea ? (JAPAN_CITIES[signupArea] || []) : [];
+  const signupLoc = normalizeUserArea(signupArea, signupCitySel === CITY_OTHER ? signupCityText : signupCitySel);
 
   // 掲載者向けログインは、遷移先の掲載者管理画面（白背景＋ネイビー/ゴールドの
   // 業務ツールの見た目）と統一する（でお要望2026-09-15：「ビジュアルデザインを
@@ -175,7 +202,7 @@ export default function LoginPage() {
     // 意図した元のページではなく掲載者判定のフォールバック（/mypage等）に飛ばされて
     // いた（でお報告2026-09-14：「何故かユーザーマイページに飛ばされた」）。両対応する。
     const params = new URLSearchParams(window.location.search);
-    const next = params.get('next') || params.get('redirect');
+    const next = safeNext(params.get('next') || params.get('redirect'));
 
     // 契約者ログイン（?type=provider）からは、一般のお客様のマイページへは絶対に移らない（渡邉指摘 2026-10-31・2回目）。
     // 同じメール・パスワードで一般のお客様としても使っている契約者がいるため、判定に失敗しても管理画面へ進め、
@@ -218,11 +245,18 @@ export default function LoginPage() {
       setSignupError('パスワードが一致しません');
       return;
     }
+    if (!signupLoc) {
+      setSignupError('お住まいの都道府県と市区町村を選んでください');
+      return;
+    }
     setSignupLoading(true);
+    // 端末にも残す（ログイン後の引き継ぎ・診断結果の近くのお店表示で使う）
+    saveLocalUserArea(signupLoc.area, signupLoc.city);
     const { data, error } = await sb.auth.signUp({
       email: signupEmail,
       password: signupPassword,
-      options: { emailRedirectTo: `${SITE_URL}/auth/callback` },
+      // area / city は DB の handle_new_user がプロフィールへ写す（supabase-signup-area-20261121.sql）
+      options: { emailRedirectTo: `${SITE_URL}/auth/callback`, data: { area: signupLoc.area, city: signupLoc.city } },
     });
     if (error) {
       setSignupError('登録エラー: ' + error.message);
@@ -234,7 +268,7 @@ export default function LoginPage() {
       await maybeStoreCredential(signupEmail, signupPassword);
       await syncLocalDiagnosis(data.session.access_token);
       const params = new URLSearchParams(window.location.search);
-      const next = params.get('next') || params.get('redirect');
+      const next = safeNext(params.get('next') || params.get('redirect'));
       window.location.href = next || '/mypage';
       return;
     }
@@ -454,6 +488,46 @@ export default function LoginPage() {
               診断結果をクラウドに保存して、どのデバイスからでも続きを見られます。
             </p>
 
+            {/* お住まいの地域（メール登録・LINE登録のどちらも必須） */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>お住まいの地域</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <select
+                  name="address-level1"
+                  autoComplete="address-level1"
+                  value={signupArea}
+                  onChange={e => { setSignupArea(e.target.value); setSignupCitySel(''); setSignupCityText(''); }}
+                  style={{ padding: '12px 10px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', flex: '1 1 120px', minWidth: 0, boxSizing: 'border-box' }}
+                >
+                  <option value="">都道府県</option>
+                  {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <select
+                  value={signupCitySel}
+                  onChange={e => setSignupCitySel(e.target.value)}
+                  disabled={!signupArea}
+                  style={{ padding: '12px 10px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', flex: '2 1 160px', minWidth: 0, boxSizing: 'border-box' }}
+                >
+                  <option value="">{signupArea ? '市区町村' : '都道府県を先に選ぶ'}</option>
+                  {signupCityOptions.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                  {signupArea && <option value={CITY_OTHER}>一覧にない（入力する）</option>}
+                </select>
+              </div>
+              {signupCitySel === CITY_OTHER && (
+                <input
+                  type="text"
+                  name="address-level2"
+                  autoComplete="address-level2"
+                  value={signupCityText}
+                  onChange={e => setSignupCityText(e.target.value)}
+                  maxLength={40}
+                  placeholder="例：〇〇町"
+                  style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
+                />
+              )}
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>近くのお店を出すために使います。ほかの利用者やお店に、あなたのお住まいの地域が見えることはありません。</p>
+            </div>
+
             <form onSubmit={handleSignup}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
@@ -519,7 +593,14 @@ export default function LoginPage() {
             {/* LINE 登録ボタン */}
             <a
               href="/api/auth/line-login?type=signup"
+              aria-disabled={!signupLoc}
+              onClick={e => {
+                // LINE で登録する人はフォームを通らないので、選んだ地域を端末に残し、ログイン後に引き継ぐ
+                if (!signupLoc) { e.preventDefault(); setSignupError('お住まいの都道府県と市区町村を選んでから、LINEで登録してください'); return; }
+                saveLocalUserArea(signupLoc.area, signupLoc.city);
+              }}
               style={{
+                opacity: signupLoc ? 1 : 0.45,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -541,6 +622,9 @@ export default function LoginPage() {
               </svg>
               LINEで登録する
             </a>
+            {!signupLoc && (
+              <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0', textAlign: 'center' }}>上でお住まいの地域を選ぶと、LINEでも登録できます</p>
+            )}
 
             <div style={{ textAlign: 'center', marginTop: '14px' }}>
               <button
