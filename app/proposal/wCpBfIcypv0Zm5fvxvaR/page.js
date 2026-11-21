@@ -1,7 +1,7 @@
 // 店舗オーナー向けの提案資料（2026-11-21・渡邉依頼）。営業メールのリンクからだけ開く前提のページ。
 // - URL は推測できない文字列（このフォルダ名）。サイト内のどこからもリンクしない・sitemap に入れない
 // - noindex, nofollow（metadata ＋ next.config.mjs の X-Robots-Tag）。共通のナビ・フッターは出さない（Navbar.js / Footer.js）
-// - ?s=xxxxx（店舗ごとの計測用）が付いても普通に表示する。GA4 は app/layout.js の共通タグ＋ProposalFx のイベント
+// - URL は全員共通（店舗ごとの番号は付けない・2026-11-21 渡邉判断：手で番号を振る運用は使いづらい）。GA4 は app/layout.js の共通タグ＋ProposalFx のイベント
 // 2026-11-21 改訂：Museの初稿をベースに、構成をセールスレター12ステップに組み直し、実際の機能・プラン区分・料金と照らして直した。
 //   - 機能のプラン区分は lib/feature-flags.js と /provider/join の FEATURE_GROUPS に合わせる（休眠の個別声かけ＝B、カルテAI＝C 等）
 //   - 「登録は無料で画面を触ってから」は事実と違う（月額は申込日から）。画面を見るのはオンライン相談・デモ・無料モニターで案内する
@@ -212,23 +212,20 @@ const FAQ = [
   ['機能が多くて、難しくなりませんか？', '最初の質問に答えると、お店に合う機能だけがオンの状態で始まります。使わない機能はいつでもオフにでき、必要になったら後から足せます。'],
 ];
 
-const cleanS = v => (typeof v === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(v) ? v : '');
-
 export default async function ProposalPage(props) {
   const sp = (await props.searchParams) || {};
-  const s = cleanS(Array.isArray(sp.s) ? sp.s[0] : sp.s);
   const print = sp.print === '1';
   const monitorOpen = isMonitorOpen() && !print;
   const monitorPlan = PROVIDER_PLANS.find(p => p.label === MONITOR_CAMPAIGN.planLabel);
   const stdPlan = PROVIDER_PLANS.find(p => p.key === 'B');
   const mailSubject = encodeURIComponent('Fineme提案資料を読みました');
-  const mailBody = encodeURIComponent(`Fineme 渡邉様\n\n提案資料を拝見しました。\n\n店舗名：\nお名前：\nご相談したいこと：\n\n${s ? `（資料番号：${s}）\n` : ''}`);
+  const mailBody = encodeURIComponent(`Fineme 渡邉様\n\n提案資料を拝見しました。\n\n店舗名：\nお名前：\nご相談したいこと：\n`);
   const mailHref = `mailto:${CONTACT_EMAIL}?subject=${mailSubject}&body=${mailBody}`;
   const demoHref = DEMO_CODE ? `${SITE}/demo?code=${encodeURIComponent(DEMO_CODE)}` : '';
 
   return (
     <main className={`pp${print ? ' pp-print' : ''}`}>
-      <ProposalFx s={s} />
+      <ProposalFx />
 
       {/* 表紙 */}
       <header className="pp-cover" data-track-section="cover">

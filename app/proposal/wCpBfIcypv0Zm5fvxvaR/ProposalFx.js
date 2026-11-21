@@ -2,7 +2,7 @@
 // 提案資料ページの動き（2026-11-21）。
 // - スクロールで要素を出す（JSが動くまでは全部見えている＝SSR時に隠さない。印刷・PDFでも全部見える）
 // - GA4（app/_components/GoogleAnalytics.js が読み込む gtag）に、どのボタンを押したか（proposal_cta）と、
-//   どこまで読んだか（proposal_section）を、資料番号 s 付きで送る。送るのは資料番号（英数字）とボタン・セクション名だけ。個人情報は送らない。
+//   どこまで読んだか（proposal_section）を送る。URL は全員共通で、送るのはボタン名・セクション名だけ。個人情報は送らない。
 // - 画面イメージの小さなデモ（気づく・声をかける・AI）と、費用の試算。どれも作り物の画面で、本物のデータには触らない。
 import { useEffect, useRef, useState } from 'react';
 
@@ -10,10 +10,10 @@ const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(pre
 // PDF の書き出し（?print=1）では動かさず、最後の状態のまま止めておく
 const printing = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('print') === '1';
 
-export default function ProposalFx({ s }) {
+export default function ProposalFx() {
   useEffect(() => {
     const send = (name, params) => {
-      try { if (typeof window.gtag === 'function') window.gtag('event', name, { proposal_s: s || '(none)', ...params }); } catch {}
+      try { if (typeof window.gtag === 'function') window.gtag('event', name, params); } catch {}
     };
     const onClick = (e) => {
       const el = e.target?.closest?.('[data-cta]');
@@ -54,7 +54,7 @@ export default function ProposalFx({ s }) {
       }
     }
     return () => { document.removeEventListener('click', onClick); ios.forEach(io => io.disconnect()); };
-  }, [s]);
+  }, []);
   return null;
 }
 
