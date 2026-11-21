@@ -426,7 +426,7 @@ export default function HomePage() {
                   </Link>
                   <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
                     <span className="hero-nav-cta-main">Me Scan</span>
-                    <span className="hero-nav-cta-sub">女性向け外見診断</span>
+                    <span className="hero-nav-cta-sub">女性向け外見磨きタイプ診断</span>
                   </Link>
                 </div>
                 <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,100,140,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme Belle</p>
@@ -799,8 +799,8 @@ export default function HomePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
                 { q: 'Finemeとは何ですか？', a: 'Finemeは外見を起点に自信を再設計するプラットフォームです。男性向けのFinemeと女性向けのBelleの2トラックで構成され、診断・AI分析・ガイドマッチングを提供しています。' },
-                { q: 'Fineme Belleとは何ですか？', a: 'Fineme Belleは女性向けの外見診断・変容ロードマップサービスです。眉・ヘア・ファッション・スキンなど8軸のMe Scanから、あなただけのBelleコンパス（最初の一手）を生成します。/belleからアクセスできます。' },
-                { q: 'Me Scanとは何ですか？料金はかかりますか？', a: 'Me Scanは無料の外見診断です。複数軸の問診形式でスキャンし、あなたの「最優先の一手（コンパス）」を特定します。男性版・女性版Belle それぞれに用意しています（どちらも8軸）。無料でご利用いただけます。' },
+                { q: 'Fineme Belleとは何ですか？', a: 'Fineme Belleは女性向けの外見磨きタイプ診断・変容ロードマップサービスです。眉・ヘア・ファッション・スキンなど8軸のMe Scanから、あなただけのBelleコンパス（最初の一手）を生成します。/belleからアクセスできます。' },
+                { q: 'Me Scanとは何ですか？料金はかかりますか？', a: 'Me Scanは無料の外見磨きタイプ診断です。複数軸の問診形式でスキャンし、あなたの「最優先の一手（コンパス）」を特定します。男性版・女性版Belle それぞれに用意しています（どちらも8軸）。無料でご利用いただけます。' },
                 { q: 'Fineme Mirrorとは何ですか？', a: '写真1枚でAIが外見を最大7軸で分析するサービスです。眉・目元／肌・清潔感／ヘア／表情・雰囲気／姿勢／体型／服装などの改善点を具体的にフィードバックします。写真は保存されません（分析結果のテキストのみ保存）。' },
                 { q: 'Fineme Mirrorの料金は？', a: '¥500（単発）または¥780/月（月額）でご利用いただけます。' },
                 { q: '外見を改善するには何から始めればいいですか？', a: 'まずはMe Scan（無料診断）で自分の「コンパス（最優先の一手）」を把握することをおすすめします。一般的には眉毛の整えが最もコストパフォーマンスが高く、最初の一手に最適です。' },

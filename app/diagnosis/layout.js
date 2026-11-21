@@ -4,7 +4,7 @@ export const metadata = {
   alternates: { canonical: 'https://www.fineme.me/diagnosis' },
   openGraph: {
     title: 'Me Scan — 外見変容診断 | Fineme',
-    description: '8軸の外見診断で、あなただけの変容ロードマップを生成します。無料・コア約3分で完了。',
+    description: '8軸の外見磨きタイプ診断で、あなただけの変容ロードマップを生成します。無料・コア約3分で完了。',
     url: 'https://www.fineme.me/diagnosis',
     images: [{ url: 'https://www.fineme.me/assets/images/og-image.png', width: 1200, height: 630 }],
     locale: 'ja_JP',
@@ -13,7 +13,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Me Scan — 外見変容診断 | Fineme',
-    description: '8軸の外見診断で、あなただけの変容ロードマップを生成します。無料・コア約3分で完了。',
+    description: '8軸の外見磨きタイプ診断で、あなただけの変容ロードマップを生成します。無料・コア約3分で完了。',
     images: ['https://www.fineme.me/assets/images/og-image.png'],
   },
 };

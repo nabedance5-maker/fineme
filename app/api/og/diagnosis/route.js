@@ -149,7 +149,7 @@ export async function GET(request) {
               fontSize: '17px', color: 'rgba(255,255,255,0.5)',
               textAlign: 'center', marginBottom: '36px', display: 'flex',
             }}>
-              8軸の外見診断で、今の自分に最も効く変容ルートが見つかった。
+              8軸の外見磨きタイプ診断で、今の自分に最も効く変容ルートが見つかった。
             </div>
           </>
         )}

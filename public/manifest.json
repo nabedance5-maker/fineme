@@ -38,7 +38,7 @@
       "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "外見診断",
+      "name": "外見磨きタイプ診断",
       "short_name": "診断",
       "url": "/diagnosis",
       "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]

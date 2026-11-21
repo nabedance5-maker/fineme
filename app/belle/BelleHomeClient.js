@@ -346,7 +346,7 @@ export default function BellePage() {
       {/* ── フッターリンク ── */}
       <section style={{ padding: '24px 20px 48px', textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.28)', marginBottom: 8 }}>
-          男性向け外見診断・分析をお探しの方
+          男性向け外見磨きタイプ診断・分析をお探しの方
         </p>
         <Link href="/" style={{ fontSize: 13, color: 'rgba(210,140,170,0.5)', textDecoration: 'underline' }}>
           Finemeトップページへ →
