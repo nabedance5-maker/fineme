@@ -22,7 +22,7 @@ export default function SiteFaqJsonLd() {
           { '@type': 'Question', name: 'Fineme Mirrorとは何ですか？どんな分析ができますか？', acceptedAnswer: { '@type': 'Answer', text: 'Fineme Mirrorは写真1枚でAIが外見を最大7軸で分析するサービスです。眉・目元／肌・清潔感／ヘアスタイル／表情・雰囲気／姿勢／体型・シルエット／服装・フィット感の観点で改善点を具体的にフィードバックします（分析する軸は顔写真か全身写真かで変わります）。写真はサーバーに保存されず、残るのは分析結果のテキストのみです。' } },
           { '@type': 'Question', name: 'AIで外見を分析するにはどうすればいいですか？', acceptedAnswer: { '@type': 'Answer', text: 'Fineme Mirrorをご利用ください。写真を1枚アップロードするだけで、AIが外見を最大7軸（眉・目元／肌／ヘア／表情／姿勢／体型／服装）で分析し、改善点を具体的に提案します。' } },
           { '@type': 'Question', name: 'Fineme Mirrorの料金は？', acceptedAnswer: { '@type': 'Answer', text: '¥500（単発）または¥780/月（月額）でご利用いただけます。' } },
-          { '@type': 'Question', name: '外見を改善するには何から始めればいいですか？', acceptedAnswer: { '@type': 'Answer', text: 'まずはMe Scan（無料診断）で自分の「コンパス（最優先の一手）」を把握することをおすすめします。一般的には眉毛の整えが最もコストパフォーマンスが高く、最初の一手に最適です。' } },
+          { '@type': 'Question', name: '外見を改善するには何から始めればいいですか？', acceptedAnswer: { '@type': 'Answer', text: 'まずはMe Scan（無料の外見磨きタイプ診断）で自分の「コンパス（最優先の一手）」を把握することをおすすめします。一般的には眉毛の整えが最もコストパフォーマンスが高く、最初の一手に最適です。' } },
           { '@type': 'Question', name: '外見改善の正しい順番はありますか？', acceptedAnswer: { '@type': 'Answer', text: 'Finemeでは8軸をTier分類しています。Tier1（即効性高）：体型・眉毛・服・髪 → Tier2：肌・脱毛 → Tier3：歯・口元 → Tier4：爪。眉毛がコスト・時間・効果のコスパで最優先です。' } },
           { '@type': 'Question', name: '清潔感を出すにはどうすればいいですか？', acceptedAnswer: { '@type': 'Answer', text: '清潔感の土台は眉毛・髪・肌の3つです。特に眉毛は最も即効性が高く、1〜2回のサロン施術で劇的に印象が変わります。次に髪型を整え、肌のスキンケアを日課にすることをおすすめします。' } },
           { '@type': 'Question', name: '垢抜けるとはどういうことですか？', acceptedAnswer: { '@type': 'Answer', text: '垢抜けとは「清潔感のある外見 + 自分の体型・顔に合ったスタイルの確立」です。特定のトレンドを追うのではなく、自分に似合う形・色を把握することが重要です。' } },

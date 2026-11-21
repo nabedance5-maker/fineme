@@ -50,7 +50,7 @@ supabase-*.sql     # DBマイグレーションSQL
 
 ## 主要実装済み機能
 
-- **Me Scan**: 7軸（体型/眉/服/髪/肌/歯/爪）× 4フェーズの外見診断
+- **Me Scan**: 7軸（体型/眉/服/髪/肌/歯/爪）× 4フェーズの外見磨きタイプ診断
 - **New Me Map**: 診断結果から生成する行動ロードマップ（Fineme Compass付き）
 - **Fineme Mirror**: 写真→Claude Vision→7軸変容余地マップ（¥500 Stripe決済）
 - **掲載者マッチング**: Claude Haiku生成のai_match_profile + Haversine距離スコアリング

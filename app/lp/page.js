@@ -40,7 +40,7 @@ export default function LpPage() {
           <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(200,164,90,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '640px', margin: '0 auto' }}>
             <div className="lp-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '16px' }}>
-              Fineme — 外見変容診断
+              Fineme — 外見磨きタイプ診断
             </div>
             <h1 className="lp-fade lp-fade-d1" style={{ fontSize: 'clamp(24px,6vw,42px)', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1.35, color: '#fff', marginBottom: '20px' }}>
               「何から変えればいい？」<br />

@@ -9,7 +9,7 @@ Finemeは男性向け・女性向けの2トラックで展開しています。�
 - **Fineme（男性トラック）**：恋愛・婚活・自信回復を動機に外見を改善したい20〜30代男性向け
 - **Fineme Belle（女性トラック）**：恋愛・自信回復を動機に外見を改善したい女性向け。URL: https://www.fineme.me/belle
 
-Me Scan（8軸診断）・136タイプ体系・Fineme Compass・New Me Map・Fineme Mirrorは両トラック共通の仕組みです。
+Me Scan（8軸の外見磨きタイプ診断）・136タイプ体系・Fineme Compass・New Me Map・Fineme Mirrorは両トラック共通の仕組みです。
 
 ## 運営者
 - 名前：渡邉英雄
@@ -55,13 +55,13 @@ Fineme 店舗向けを店舗に紹介する営業パートナーを募集して�
 - 営業パートナー募集: https://www.fineme.me/sales-partner
 
 ### 男性向け（Fineme）
-- Me Scan（無料診断）: https://www.fineme.me/diagnosis
+- Me Scan（無料の外見磨きタイプ診断）: https://www.fineme.me/diagnosis
 - Fineme Mirror（AI写真分析）: https://www.fineme.me/lp/mirror
 - 特集記事一覧: https://www.fineme.me/feature
 
 ### 女性向け（Fineme Belle）
 - Belleトップ: https://www.fineme.me/belle
-- Me Scan（無料診断）: https://www.fineme.me/belle/diagnosis
+- Me Scan（無料の外見磨きタイプ診断）: https://www.fineme.me/belle/diagnosis
 - Fineme Mirror（AI写真分析）: https://www.fineme.me/belle/lp/mirror
 - Belle Journal（特集記事一覧）: https://www.fineme.me/belle/journal
 

@@ -3,7 +3,7 @@ import typesData from '@/data/types.json';
 
 export const metadata = {
   title: '診断タイプ一覧 | Fineme',
-  description: 'Finemeの外見タイプ診断（Me Scan）で出現する全16タイプの一覧。あなたのタイプを確認したり、他のタイプを知ることができます。',
+  description: 'Finemeの外見磨きタイプ診断（Me Scan）で出現する全16タイプの一覧。あなたのタイプを確認したり、他のタイプを知ることができます。',
 };
 
 export default function DiagnosisTypesPage() {
@@ -18,7 +18,7 @@ export default function DiagnosisTypesPage() {
             全 {maleTypes.length} タイプ一覧
           </h1>
           <p style={{ fontSize: '15px', color: '#6b7280', lineHeight: 1.7, margin: '0 auto 24px', maxWidth: 540 }}>
-            Finemeの診断（Me Scan）で出現する外見タイプを一覧で確認できます。<br />
+            Finemeの外見磨きタイプ診断（Me Scan）で出現する外見タイプを一覧で確認できます。<br />
             あなたのタイプを知って、変容の方向性を見つけましょう。
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>

@@ -1,6 +1,6 @@
 export const metadata = {
   title: '全136タイプ一覧 — New Me Type Map | Fineme',
-  description: 'Finemeの外見変容診断が出力する全136タイプを一覧表示。体型・眉・ヘア・肌・脱毛・服・歯・爪の8軸ごとにタイプコードの意味を解説。自分のタイプを他のタイプと比較して、変容の旅の地図を俯瞰できます。',
+  description: 'Finemeの外見磨きタイプ診断が出力する全136タイプを一覧表示。体型・眉・ヘア・肌・脱毛・服・歯・爪の8軸ごとにタイプコードの意味を解説。自分のタイプを他のタイプと比較して、変容の旅の地図を俯瞰できます。',
   alternates: { canonical: 'https://www.fineme.me/types' },
   openGraph: {
     title: '全136タイプ一覧 — New Me Type Map | Fineme',

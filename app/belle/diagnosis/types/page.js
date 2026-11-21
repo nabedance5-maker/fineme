@@ -4,7 +4,7 @@ import Image from 'next/image';
 export const metadata = {
   alternates: { canonical: 'https://www.fineme.me/belle/diagnosis/types' },
   title: 'Belle タイプ一覧 | Fineme Belle',
-  description: 'Fineme Belleの診断（Me Scan）で出現する全136タイプの一覧。8軸×17花タイプ。あなたのタイプを確認できます。',
+  description: 'Fineme Belleの外見磨きタイプ診断（Me Scan）で出現する全136タイプの一覧。8軸×17花タイプ。あなたのタイプを確認できます。',
 };
 
 const TYPE_CREATURE = {

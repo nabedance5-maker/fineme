@@ -1711,7 +1711,7 @@ async function startArticleGen() {
       .map(e => e.title);
 
     const prompt = buildPrompt(article, sameCatTitles);
-    const systemPrompt = `あなたはFineme（男性向け外見変容診断ポータル）の記事ライターです。
+    const systemPrompt = `あなたはFineme（男性向け外見磨きタイプ診断ポータル）の記事ライターです。
 以下のJSON形式のみで出力してください。前置き・説明・マークダウンコードブロック（\`\`\`json等）は一切不要。
 JSONオブジェクトだけをそのまま出力してください。
 

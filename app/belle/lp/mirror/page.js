@@ -554,7 +554,7 @@ export default async function BelleMirrorLpPage() {
             </h2>
             <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9, marginTop: '14px' }}>
               Mirror の7軸分析データは、行動ロードマップ「New Me Map」に直結しています。<br />
-              Me Scan（無料診断）を受けていなくても、Mirror だけで Map を生成できます。
+              Me Scan（無料の外見磨きタイプ診断）を受けていなくても、Mirror だけで Map を生成できます。
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>

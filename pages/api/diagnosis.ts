@@ -111,7 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Build prompt safely (JSON-encode values)
     const userData = JSON.stringify(sanitized);
     const hintText = axesHintLabels.length ? `\n事前選択された軸（軽く考慮）: ${axesHintLabels.join(', ')}` : '';
-    const prompt = `あなたは「Fineme」という外見診断サービスのAIアシスタントです。\n以下のユーザー回答(JSON)をもとに、32タイプのうち最も適切な1つを判定してください。${hintText}\n出力は必ず厳密なJSONのみで行ってください。\n\n入力(JSON):\n${userData}\n\n出力フォーマット：\n{\n  "type_name": "(タイプ名)",\n  "type_description": "(2〜3行の説明)",\n  "recommendation": "(おすすめ施策・カテゴリへの一言誘導)"\n}\n\n方針：事前選択された軸は“軽く”考慮し、整合性と妥当性を最優先してください。\n注意：余分な説明や注釈を付けず、必ず JSON のみ返してください。`;
+    const prompt = `あなたは「Fineme」という外見磨きタイプ診断サービスのAIアシスタントです。\n以下のユーザー回答(JSON)をもとに、32タイプのうち最も適切な1つを判定してください。${hintText}\n出力は必ず厳密なJSONのみで行ってください。\n\n入力(JSON):\n${userData}\n\n出力フォーマット：\n{\n  "type_name": "(タイプ名)",\n  "type_description": "(2〜3行の説明)",\n  "recommendation": "(おすすめ施策・カテゴリへの一言誘導)"\n}\n\n方針：事前選択された軸は“軽く”考慮し、整合性と妥当性を最優先してください。\n注意：余分な説明や注釈を付けず、必ず JSON のみ返してください。`;
 
     const content = await callOpenAI(prompt);
     // extract JSON safely

@@ -1028,7 +1028,7 @@ export default function NewMeNaviPage() {
           <h2 class="no-data-title">Mirrorのデータがあります</h2>
           <p class="no-data-text">Mirror分析の変容余地データから、<br>あなた専用の New Me Map を生成できます。</p>
           <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border:none;border-radius:10px;color:#0d1117;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,0.36)">Mirrorデータでマップを生成 →</button>
-          <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料診断）を受けるとさらに精度が上がります</p>
+          <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料の外見磨きタイプ診断）を受けるとさらに精度が上がります</p>
           <a href="${TRACK.diagnosis}" style="display:block;margin-top:8px;font-size:12px;color:rgba(200,164,90,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
         </div>`;
         document.getElementById('mirror-map-gen-btn')?.addEventListener('click', async (e) => {
@@ -1872,7 +1872,7 @@ export default function NewMeNaviPage() {
           <span style="font-size:22px;flex-shrink:0"></span>
           <div style="flex:1">
             <p style="font-size:11px;font-weight:800;color:rgba(100,160,255,0.8);margin:0 0 3px;letter-spacing:.06em">MIRROR データから生成</p>
-            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.6">Me Scan（無料診断）を受けるとさらに精度の高いマップに更新されます</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.6">Me Scan（無料の外見磨きタイプ診断）を受けるとさらに精度の高いマップに更新されます</p>
           </div>
           <a href="${TRACK.diagnosis}" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
         </div>` : '';

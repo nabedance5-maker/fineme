@@ -18727,7 +18727,7 @@ export default function ProviderDashboardPage() {
               <label>予約の開始時刻の刻み<select id="bu-interval"><option value="10">10分ごと</option><option value="15">15分ごと</option><option value="20">20分ごと</option><option value="30">30分ごと</option><option value="60">1時間ごと</option></select></label>
             </div>
             <div className="bu-row">
-              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontWeight: 400 }}><input type="checkbox" id="bu-mescan" style={{ marginTop: '4px' }} /><span><b>予約の時に、お客様の外見の診断結果（Me Scan）を表示する</b><br /><span style={{ fontSize: '12.5px' }}>オンにすると、診断を受けたお客様が予約する時に結果を見て、お店に送るか選べます。送られた結果は予約のメモに入ります。</span></span></label>
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', fontWeight: 400 }}><input type="checkbox" id="bu-mescan" style={{ marginTop: '4px' }} /><span><b>予約の時に、お客様の外見磨きタイプ診断結果（Me Scan）を表示する</b><br /><span style={{ fontSize: '12.5px' }}>オンにすると、診断を受けたお客様が予約する時に結果を見て、お店に送るか選べます。送られた結果は予約のメモに入ります。</span></span></label>
             </div>
             <p id="bu-note" className="bu-note"></p>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -19249,7 +19249,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field">
                 <label>初回セッションの内容説明</label>
-                <textarea name="first_session_desc" placeholder="例: 初回は60分のカウンセリングから始まります。現状ヒアリング・外見診断・今後のプラン提案を行います。見学・話を聞くだけでも歓迎です。"></textarea>
+                <textarea name="first_session_desc" placeholder="例: 初回は60分のカウンセリングから始まります。現状ヒアリング・外見磨きタイプ診断・今後のプラン提案を行います。見学・話を聞くだけでも歓迎です。"></textarea>
                 <small className="muted">相談フォームの直前にユーザーへ表示されます。「何が起きるかわからない不安」を解消する文章を書いてください。</small>
               </div>
 
