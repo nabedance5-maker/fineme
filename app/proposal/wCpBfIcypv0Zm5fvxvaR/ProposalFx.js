@@ -81,85 +81,92 @@ function useLoop(total, ms) {
   return [ref, (n) => step >= n];
 }
 
-// 仕組み1「気づく」：お客様一覧が「来店の目安を過ぎた」で絞り込まれる
+// 実物の管理画面と同じ見た目・同じ流れにそろえる（2026-11-21 渡邉指摘「資料と実物が違ったら終わり」）。
+// 文言・ボタン名は app/provider/dashboard/page.js（来店の目安を過ぎたお客様の欄・まとめて声かけ・新しい予約の知らせ）と
+// lib/log-rebook.js（LINEの予約ボタン「前回と同じで予約」と「前回：〇〇」）、ConsultantWidget.js（AI専属コンサル）に合わせている。
+// 実物を変えたら、ここも合わせて直す。
+
+// 仕組み1「気づく」：顧客管理タブの上に「来店の目安を過ぎたお客様」が並び、まとめて声かけのボタン
 const CUSTOMERS = [
-  { n: '佐藤 様', d: 52, m: '眉スタイリング', hit: true },
-  { n: '高橋 様', d: 14, m: 'まつげパーマ', hit: false },
-  { n: '田中 様', d: 96, m: '眉スタイリング', hit: true, dormant: true },
-  { n: '伊藤 様', d: 23, m: 'ワックス', hit: false },
-  { n: '山本 様', d: 61, m: '眉スタイリング', hit: true },
+  { n: '田中 様', last: 96, over: 54, m: '眉スタイリング' },
+  { n: '山本 様', last: 61, over: 19, m: '眉スタイリング' },
+  { n: '佐藤 様', last: 52, over: 10, m: 'まつげパーマ' },
 ];
 export function NoticeDemo() {
-  const [ref, at] = useLoop(4, 1500);
-  const filtered = at(1);
+  const [ref, at] = useLoop(4, 1300);
   return (
-    <div className="pp-mock pp-mock-list" ref={ref} aria-label="お客様一覧を「来店の目安を過ぎた」で絞り込む画面イメージ">
-      <div className="pp-mock-bar"><i /><i /><i /><span>お客様一覧</span></div>
-      <div className="pp-chips">
-        <span className="pp-chip">すべて</span>
-        <span className={`pp-chip ${filtered ? 'on' : ''} ${at(0) && !at(1) ? 'tap' : ''}`}>来店の目安を過ぎた</span>
-        <span className="pp-chip">休眠</span>
-        <span className="pp-chip">今月が誕生月</span>
+    <div className="pp-mock pp-mock-list" ref={ref} aria-label="顧客管理の画面で、来店の目安を過ぎたお客様が並ぶ画面イメージ">
+      <div className="pp-mock-bar"><i /><i /><i /><span>顧客管理</span></div>
+      <div className="pp-od">
+        <div className="pp-od-head"><b>来店の目安を過ぎたお客様 3名</b><small>目安を大きく過ぎた順。声かけはLINEで届きます</small></div>
+        <ul className="pp-rows">
+          {CUSTOMERS.map((c, i) => (
+            <li key={c.n} className={at(i) ? 'in' : 'pre'}>
+              <span className="pp-av">{c.n[0]}</span>
+              <span className="pp-row-main"><b>{c.n}</b><small>最終来店 {c.last}日前・{c.m}</small></span>
+              <span className="pp-row-right"><em className="pp-over">目安を{c.over}日超過</em><span className="pp-pill">声かけ</span></span>
+            </li>
+          ))}
+        </ul>
+        <div className={`pp-mock-act ${at(3) ? 'on' : ''}`}><b>3名にまとめて声をかける</b><span>文案はAIが下書き・予約ボタン付きでLINEに届きます</span></div>
       </div>
-      <ul className="pp-rows">
-        {CUSTOMERS.map(c => (
-          <li key={c.n} className={`${filtered && !c.hit ? 'out' : ''} ${filtered && c.hit ? 'hit' : ''}`}>
-            <span className="pp-av">{c.n[0]}</span>
-            <span className="pp-row-main"><b>{c.n}</b><small>{c.m}</small></span>
-            <span className="pp-row-days">{c.d}日前{c.dormant && <em>休眠</em>}</span>
-          </li>
-        ))}
-      </ul>
-      <div className={`pp-mock-act ${at(2) ? 'on' : ''}`}>3名に声をかける<span>文案はAIが下書き</span></div>
       <div className="pp-mock-tag">画面イメージ</div>
     </div>
   );
 }
 
-// 仕組み2「声をかける」：お客様のLINEに予約ボタン付きの声かけ → そのまま予約
+// 仕組み2「声をかける」：お客様のLINEに声かけ＋「前回と同じで予約」ボタン → 予約画面 → お店の管理画面にお知らせ
 export function ReachDemo() {
   const [ref, at] = useLoop(5, 1500);
   return (
-    <div className="pp-reach" ref={ref} aria-label="お客様のLINEに届く声かけから予約までの画面イメージ">
+    <div className="pp-reach" ref={ref} aria-label="お客様のLINEに届く声かけから予約、お店へのお知らせまでの画面イメージ">
       <div className="pp-phone">
         <div className="pp-phone-notch" />
         <div className="pp-phone-head"><span className="pp-av pp-av-gold">店</span><b>お店の公式アカウント</b></div>
         <div className="pp-chat">
-          <div className={`pp-msg pp-msg-card ${at(0) ? 'on' : ''}`}>
-            <p>佐藤様、前回のご来店から6週間がたちました。眉の形がくずれはじめる頃です。</p>
-            <span className={`pp-msg-btn ${at(1) && !at(2) ? 'tap' : ''} ${at(2) ? 'done' : ''}`}>空き時間を見て予約する</span>
+          <div className={`pp-msg ${at(0) ? 'on' : ''}`}>
+            <p>佐藤様、前回のご来店から少し間が空きましたね。眉の形がくずれはじめる頃です。ご都合のよい日時を、下のボタンからお選びいただけます。</p>
           </div>
-          <div className={`pp-msg pp-msg-me ${at(2) ? 'on' : ''}`}>12月3日（水）19:00 で予約しました</div>
-          <div className={`pp-msg pp-msg-sys ${at(3) ? 'on' : ''}`}>前日18時にリマインドが届きます</div>
+          <div className={`pp-msg pp-msg-card ${at(0) ? 'on' : ''}`}>
+            <p className="pp-msg-cap">前回：眉スタイリング・担当 中村</p>
+            <span className={`pp-msg-btn ${at(1) && !at(2) ? 'tap' : ''} ${at(2) ? 'done' : ''}`}>前回と同じで予約</span>
+          </div>
+          <div className={`pp-msg pp-msg-sys ${at(2) ? 'on' : ''}`}>予約画面が開き、前回のメニューと担当が選ばれた状態から日時を選んで予約</div>
+          <div className={`pp-msg pp-msg-sys ${at(3) ? 'on' : ''}`}>前日18時にLINEでリマインドが届きます</div>
         </div>
       </div>
       <div className={`pp-toast ${at(3) ? 'on' : ''}`}>
         <span className="pp-toast-dot" />
-        <div><b>予約が入りました</b><small>佐藤様・12/3 19:00・声かけから</small></div>
+        <div><b>予約が入りました</b><small>佐藤様・12/3 19:00・眉スタイリング</small><em>声かけから戻ってきたお客様です</em></div>
       </div>
-      <div className="pp-mock-tag pp-mock-tag-dark">画面イメージ</div>
+      <div className="pp-mock-tag pp-mock-tag-dark">画面イメージ（下の白いカードは、お店の管理画面に出るお知らせ）</div>
     </div>
   );
 }
 
-// AI専属コンサル：相談 → 指標と期限 → 今日やること
+// AI専属コンサル：上にいつも「指標 今→目標（期限）」、今日やることをチェック、相談には文章で返事
 export function AiDemo() {
   const [ref, at] = useLoop(6, 1300);
   const tasks = ['来店の目安を過ぎた3名に声かけ（文案あり）', '明日の予約5件へリマインド（自動）', '回数券の残りが1回の2名へご案内'];
+  const done = [3, 4, 5].filter(n => at(n)).length;
   return (
-    <div className="pp-ai" ref={ref} aria-label="AI専属コンサルとのやりとりの画面イメージ">
-      <div className="pp-ai-head"><span className="fm-seal pp-seal-sm">談</span><b>AI専属コンサル</b></div>
-      <div className={`pp-ai-q ${at(0) ? 'on' : ''}`}>今月は、何から手をつければいい？</div>
-      <div className={`pp-ai-typing ${at(1) && !at(2) ? 'on' : ''}`}><i /><i /><i /></div>
-      <div className={`pp-ai-kpi ${at(2) ? 'on' : ''}`}>
-        <div className="pp-ai-kpi-h">いちばん効く指標</div>
-        <div className="pp-ai-kpi-name">2回目の来店率</div>
-        <div className="pp-ai-kpi-nums"><span>今<b>38%</b></span><i /><span>目標<b>50%</b></span><span className="pp-ai-kpi-due">2月末まで</span></div>
+    <div className="pp-ai" ref={ref} aria-label="AI専属コンサルの画面イメージ">
+      <div className="pp-ai-head"><b>AI専属コンサル</b><span>今日やること {done}/3</span></div>
+      <div className="pp-ai-body">
+        <div className="pp-ai-kpi">
+          <div className="pp-ai-kpi-h">いま追いかけている指標</div>
+          <div className="pp-ai-kpi-name">2回目の来店率</div>
+          <div className="pp-ai-kpi-nums"><span>今 <b>38%</b></span><i /><span>目標 <b>50%</b></span><span className="pp-ai-kpi-due">2月末まで</span></div>
+        </div>
+        <div className="pp-ai-prog"><span style={{ width: `${(done / 3) * 100}%` }} /></div>
+        <ul className="pp-ai-tasks">
+          {tasks.map((t, i) => <li key={t} className={at(3 + i) ? 'checked' : ''}><i />{t}</li>)}
+        </ul>
+        <div className={`pp-ai-q ${at(0) ? 'on' : ''}`}>今月は、何から手をつければいい？</div>
+        <div className={`pp-ai-typing ${at(1) && !at(2) ? 'on' : ''}`}><i /><i /><i /></div>
+        <div className={`pp-ai-a ${at(2) ? 'on' : ''}`}>見えている範囲では、1回来たきりで間隔を過ぎた方が3名います。まずこの3名への声かけからです。文案は用意してあります。</div>
       </div>
-      <ul className={`pp-ai-tasks ${at(2) ? 'on' : ''}`}>
-        {tasks.map((t, i) => <li key={t} className={at(3 + i) ? 'checked' : ''}><i />{t}</li>)}
-      </ul>
-      <div className="pp-mock-tag pp-mock-tag-dark">画面イメージ・数値は例</div>
+      <div className="pp-mock-tag">画面イメージ・数値は例</div>
     </div>
   );
 }

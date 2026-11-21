@@ -8739,6 +8739,7 @@ export default function ProviderDashboardPage() {
         }));
       }
 
+      const BULK_NUDGE_MAX = 50; // まとめて声かけで一度に送れる人数（API と同じ）
       // 顧客管理タブ上部：来店の目安を過ぎたお客様（超過が大きい順に最大5名）
       function renderOverduePanel() {
         const box = document.getElementById('customers-overdue-panel');
@@ -8753,9 +8754,92 @@ export default function ProviderDashboardPage() {
               <p class="fx-overdue-note">目安を大きく過ぎた順。声かけはLINEで届きます</p>
             </div>
             ${list.slice(0, 5).map(c => custRowHtml(c, false)).join('')}
+            ${list.some(c => c.user_id) ? `<button type="button" class="fx-overdue-bulk" data-overdue-bulk>
+              <b>${Math.min(list.filter(c => c.user_id).length, BULK_NUDGE_MAX)}名にまとめて声をかける</b><span>文案はAIが下書き・予約ボタン付きでLINEに届きます</span>
+            </button>` : ''}
           </div>`;
         bindCustRows(box);
+        box.querySelector('[data-overdue-bulk]')?.addEventListener('click', () => openBulkNudge(list.filter(c => c.user_id).slice(0, BULK_NUDGE_MAX)));
       }
+
+      // まとめて声かけ（2026-11-21 渡邉判断：提案資料の見本どおり「来店の目安を過ぎた〇名に、AIの文案で声をかける」を実物に）。
+      // 送信は /api/provider/customers/overdue-nudge（相手はサーバー側でもこの店舗のお客様に絞り、7日以内に送った方は除く）。
+      // 文案は /draft（AIに渡すのは店舗名・業種・前回のメニュー名と人数だけ）。{name} は送る時にお名前へ置き換わる
+      let bulkNudgeList = [];
+      function bulkNudgeEls() {
+        return {
+          modal: document.getElementById('bulk-nudge-modal'), list: document.getElementById('bulk-nudge-list'),
+          text: document.getElementById('bulk-nudge-text'), status: document.getElementById('bulk-nudge-status'),
+          preview: document.getElementById('bulk-nudge-preview'), send: document.getElementById('bulk-nudge-send'),
+          count: document.getElementById('bulk-nudge-count'), msg: document.getElementById('bulk-nudge-msg'),
+        };
+      }
+      function bulkNudgeChecked() {
+        const { list } = bulkNudgeEls();
+        return [...(list?.querySelectorAll('input[data-bn-uid]:checked') || [])].map(i => i.dataset.bnUid);
+      }
+      function syncBulkNudge() {
+        const e = bulkNudgeEls();
+        const ids = bulkNudgeChecked();
+        const first = bulkNudgeList.find(c => ids.includes(c.user_id));
+        if (e.preview) e.preview.textContent = (e.text?.value || '').replace(/\{name\}/g, first?.customer_name || 'お客様');
+        if (e.count) e.count.textContent = `送る相手：${ids.length}名（LINEがつながっている方にだけ届きます）`;
+        if (e.send) { e.send.disabled = !ids.length; e.send.textContent = `${ids.length}名に送る`; }
+      }
+      async function openBulkNudge(list) {
+        if ((window.__providerLocks || {}).dormant_outreach) {
+          showPlanUpsell('dormant_outreach', { lead: `いま来店の目安を過ぎたお客様が${list.length}名います` });
+          return;
+        }
+        const e = bulkNudgeEls();
+        if (!e.modal) return;
+        bulkNudgeList = list;
+        e.list.innerHTML = list.map(c => {
+          const od = overdueDays(c);
+          return `<label class="fx-bn-row"><input type="checkbox" data-bn-uid="${esc(c.user_id)}" ${c.line_any ? 'checked' : ''}>
+            <span class="fx-avatar">${esc((c.customer_name || '客').trim().charAt(0))}</span>
+            <span class="fx-bn-main"><b>${esc(c.customer_name || 'お客様')}</b><small>${od != null ? `目安を${Math.abs(od)}日過ぎ` : ''}${c.line_any ? '' : '・LINE未連携（届きません）'}</small></span></label>`;
+        }).join('');
+        e.list.querySelectorAll('input').forEach(i => i.addEventListener('change', syncBulkNudge));
+        if (e.msg) e.msg.textContent = '';
+        e.text.value = '';
+        e.text.disabled = true;
+        e.status.textContent = 'AIが文案を下書きしています…';
+        e.modal.style.display = 'flex';
+        syncBulkNudge();
+        try {
+          const r = await fetch('/api/provider/customers/overdue-nudge/draft', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_ids: list.map(c => c.user_id) }) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(d.error || '');
+          e.text.value = d.text || '';
+          e.status.textContent = d.ai ? 'AIの下書きです。お店の言葉に直してから送れます。{name} はお客様ごとのお名前に変わります' : '下書きを用意しました。お店の言葉に直してから送れます。{name} はお客様ごとのお名前に変わります';
+        } catch (err) {
+          e.text.value = '{name}様、前回のご来店から少し間が空きましたね。その後お変わりありませんか？\nご都合のよい日時を、下のボタンからお選びいただけます。';
+          e.status.textContent = err?.message || 'AIの下書きを作れなかったため、基本の文面を入れています';
+        }
+        e.text.disabled = false;
+        syncBulkNudge();
+      }
+      document.getElementById('bulk-nudge-text')?.addEventListener('input', syncBulkNudge);
+      document.getElementById('bulk-nudge-cancel')?.addEventListener('click', () => { const m = document.getElementById('bulk-nudge-modal'); if (m) m.style.display = 'none'; });
+      document.getElementById('bulk-nudge-send')?.addEventListener('click', async () => {
+        const e = bulkNudgeEls();
+        const ids = bulkNudgeChecked();
+        const message = (e.text?.value || '').trim();
+        if (!message) { showToast('本文を入力してください'); return; }
+        if (!ids.length) { showToast('送る相手を選んでください'); return; }
+        if (!confirm(`${ids.length}名にLINEで送ります。よろしいですか？（取り消せません）`)) return;
+        e.send.disabled = true;
+        if (e.msg) e.msg.textContent = '送っています…';
+        const r = await fetch('/api/provider/customers/overdue-nudge', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ message, user_ids: ids }) });
+        const d = await r.json().catch(() => ({}));
+        e.send.disabled = false;
+        if (!r.ok) { if (e.msg) e.msg.textContent = d.error || '送れませんでした'; return; }
+        e.modal.style.display = 'none';
+        const rest = [d.no_line ? `LINE未連携 ${d.no_line}名` : '', d.skipped_recent ? `7日以内に送った ${d.skipped_recent}名` : '', d.failed ? `送れなかった ${d.failed}名` : ''].filter(Boolean).join('・');
+        showToast(`${d.sent}名に送りました${rest ? `（${rest}は除きました）` : ''}`);
+        try { loadBroadcastHistory(); } catch {}
+      });
 
       // ── メッセージ配信（でお要望 2026-10-19：hacomono差分 #6。旧「一斉メール配信」を拡張）
       //    LINE優先・LINEのみ・メールのみ、今すぐ／日時指定、宛先ごとの到達・開封・クリックを残す ──
@@ -17187,7 +17271,67 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'scripts') open();
     })();
 
+    // 新しい予約の知らせ（2026-11-21 渡邉判断：提案資料の見本どおり、予約が入ったら管理画面に出す）。
+    // 1分ごと（画面を見ている時だけ）に /api/provider/new-reservations を聞く。声かけを送ったお客様の予約には「声かけから」を付ける。
+    // 出すのは名前・日時・メニューだけ。押すと予約カレンダーを開く
+    let newResvSince = new Date().toISOString();
+    const shownResv = new Set();
+    function showNewResvCard(it) {
+      let wrap = document.getElementById('new-resv-stack');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'new-resv-stack';
+        wrap.style.cssText = 'position:fixed;left:16px;bottom:16px;z-index:190;display:flex;flex-direction:column;gap:8px;max-width:min(340px,calc(100vw - 32px))';
+        document.body.appendChild(wrap);
+      }
+      const card = document.createElement('div');
+      card.setAttribute('role', 'status');
+      card.style.cssText = 'display:flex;gap:10px;align-items:flex-start;background:#fff;color:#1a1410;border:1px solid rgba(201,168,76,.45);border-radius:14px;padding:12px 14px;box-shadow:0 12px 32px rgba(10,15,30,.18);cursor:pointer;font-size:13px;line-height:1.5';
+      const md = it.date ? `${Number(it.date.slice(5, 7))}/${Number(it.date.slice(8, 10))}` : '';
+      const sub = [it.name ? `${it.name}様` : '', [md, it.time].filter(Boolean).join(' '), it.menu].filter(Boolean).join('・');
+      const dot = document.createElement('span');
+      dot.style.cssText = 'flex-shrink:0;width:10px;height:10px;margin-top:5px;border-radius:50%;background:#5ec98b;box-shadow:0 0 0 4px rgba(94,201,139,.2)';
+      const body = document.createElement('div');
+      const h = document.createElement('b');
+      h.style.cssText = 'display:block;font-size:13.5px';
+      h.textContent = it.instant ? '予約が入りました' : '予約リクエストが届きました';
+      const s = document.createElement('span');
+      s.style.cssText = 'display:block;font-size:12px;color:rgba(26,20,16,.65)';
+      s.textContent = sub;
+      body.append(h, s);
+      if (it.from_outreach) {
+        const tag = document.createElement('span');
+        tag.style.cssText = 'display:inline-block;margin-top:4px;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#faf2d8;color:#84651a';
+        tag.textContent = '声かけから戻ってきたお客様です';
+        body.append(tag);
+      }
+      const x = document.createElement('button');
+      x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', '閉じる');
+      x.style.cssText = 'margin-left:auto;background:none;border:none;font-size:16px;line-height:1;color:rgba(26,20,16,.45);cursor:pointer;padding:0 2px';
+      x.addEventListener('click', (ev) => { ev.stopPropagation(); card.remove(); });
+      card.append(dot, body, x);
+      card.addEventListener('click', () => { card.remove(); document.querySelector(`.tab-btn[data-tab="${it.instant ? 'calendar' : 'requests'}"]`)?.click(); });
+      wrap.appendChild(card);
+      setTimeout(() => card.remove(), 20000);
+    }
+    async function pollNewResv() {
+      if (document.visibilityState !== 'visible') return;
+      const tk = getSupabaseToken();
+      if (!tk) return;
+      try {
+        const r = await fetch(`/api/provider/new-reservations?since=${encodeURIComponent(newResvSince)}`, { headers: { Authorization: `Bearer ${tk}` } });
+        if (!r.ok) return;
+        const d = await r.json();
+        (d.items || []).forEach(it => { if (!shownResv.has(it.id)) { shownResv.add(it.id); showNewResvCard(it); } });
+        const last = (d.items || []).map(i => i.created_at).filter(Boolean).sort().pop();
+        if (last) newResvSince = last;
+      } catch {}
+    }
+    const newResvTimer = setInterval(pollNewResv, 60 * 1000);
+
     return () => {
+      clearInterval(newResvTimer);
+      document.getElementById('new-resv-stack')?.remove();
       clearInterval(sessionKeepAlive);
       window.fetch = rawFetch;
       window.removeEventListener('online', onOnline);
@@ -19482,6 +19626,28 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button type="button" className="btn" id="nudge-send-btn">送信する</button>
               <button type="button" className="btn btn-ghost" id="nudge-cancel-btn">キャンセル</button>
+            </div>
+          </div>
+        </div>
+
+        {/* まとめて声かけ（2026-11-21）：来店の目安を過ぎたお客様へ、AIの文案を確認してLINEで送る */}
+        <div id="bulk-nudge-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card" style={{ maxWidth: '460px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 2px', fontSize: '15px' }}>来店の目安を過ぎたお客様に声をかける</h3>
+            <p id="bulk-nudge-count" style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#84651a' }}></p>
+            <div id="bulk-nudge-list" className="fx-bn-list"></div>
+            <textarea id="bulk-nudge-text" style={{ width: '100%', minHeight: '110px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box', marginTop: '10px' }} placeholder="メッセージ"></textarea>
+            <p id="bulk-nudge-status" className="muted" style={{ fontSize: '12px', margin: '4px 0 0' }}></p>
+            <div className="fx-line-preview">
+              <div className="fx-line-preview-head">LINEで届く内容（1人目の例）</div>
+              <div className="fx-line-preview-body" id="bulk-nudge-preview"></div>
+              <div className="fx-line-preview-btn">前回と同じで予約</div>
+              <p className="fx-line-preview-note">お一人ずつ、前回のメニュー・担当が選ばれた予約画面へのボタンが付きます（オンライン予約・リクエスト受付、または外部の予約ページを設定している場合）。この7日以内に同じ声かけを送った方には送りません。</p>
+            </div>
+            <p id="bulk-nudge-msg" style={{ fontSize: '12.5px', margin: '8px 0 0', color: '#b42318' }}></p>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+              <button type="button" className="btn" id="bulk-nudge-send">送る</button>
+              <button type="button" className="btn btn-ghost" id="bulk-nudge-cancel">キャンセル</button>
             </div>
           </div>
         </div>

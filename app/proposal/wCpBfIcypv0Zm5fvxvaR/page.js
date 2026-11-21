@@ -311,10 +311,11 @@ export default async function ProposalPage(props) {
       <section className="pp-sec pp-paper" id="notice" data-track-section="notice">
         <div className="pp-wrap pp-trio">
             <Head no="05" kicker="仕組み1　気づく" title="「来ていないお客様」が、一覧で見える"
-              lead="条件を押すだけ。前回の施術や会話のメモも残るので、久しぶりの方にも前回の続きから話せます。" />
+              lead="顧客管理を開くと、目安を過ぎた方がいちばん上に並びます。そのままAIの文案でまとめて声をかけられます。" />
             <div className="pp-trio-vis" data-reveal><NoticeDemo /></div>
             <Feats items={[
               ['来店の目安を過ぎた・休眠・誕生月・回数券ありで絞り込み', 'A'],
+              ['目安を過ぎた方へ、AIの文案でまとめて声かけ（予約ボタン付き）', 'B'],
               ['カルテに来店履歴・施術・会話のメモ（項目は自由）', 'A'],
               ['休眠とみなす日数をお店ごとに設定（はじめは90日）', 'B'],
               ['カルテから、AIがお客様ごとの傾向と次回の提案', 'C'],
@@ -327,13 +328,14 @@ export default async function ProposalPage(props) {
       <section className="pp-sec" id="reach" data-track-section="reach">
         <div className="pp-wrap pp-trio pp-trio-rev">
             <Head no="06" kicker="仕組み2　声をかける" title="届いたメッセージから、そのまま予約"
-              lead="「思い出したけど、予約は面倒」をなくします。予約までは1タップです。" />
+              lead="「思い出したけど、予約は面倒」をなくします。ボタンを押すと、前回のメニューと担当が選ばれた予約画面が開きます。" />
             <div className="pp-trio-vis" data-reveal><ReachDemo /></div>
             <Feats items={[
               ['LINE・メールの一斉配信（日時指定・開封とクリックも分かる）', 'A'],
               ['宛先を「休眠」「目安を過ぎた」「誕生月」などで選ぶ', 'A'],
               ['休眠のお客様お一人ずつに、予約ボタン付きの声かけ', 'B'],
               ['来店後のクチコミのお願いを自動で', 'B'],
+              ['予約が入ると管理画面にお知らせ。声かけから戻った方は分かるように', 'A'],
             ]} />
 
         </div>
