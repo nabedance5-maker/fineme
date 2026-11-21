@@ -756,6 +756,7 @@ export default function BelleDiagnosisPage() {
         MBTI_OPTIONS.map(v => ({ v, t: v })), state.mbti,
         v => { state.mbti = v; }
       ));
+      if (typeof updateProfileBasicsProceedLabel === 'function') updateProfileBasicsProceedLabel();
     }
 
     function buildCareLevelCard(area) {
@@ -953,10 +954,22 @@ export default function BelleDiagnosisPage() {
       screenHistory.push('attr_register');
       showScreen('attr_register');
     });
-    document.getElementById('btn-profile-basics-proceed')?.addEventListener('click', function() {
+    function proceedFromProfileBasics() {
       screenHistory.push('q3');
       showScreen('q3');
-    });
+    }
+    document.getElementById('btn-profile-basics-proceed')?.addEventListener('click', proceedFromProfileBasics);
+    // 何か入れたら下のボタンを「この内容で次へ」、何も入れていなければ「答えずに次へ」にする
+    function updateProfileBasicsProceedLabel() {
+      const btn = document.getElementById('btn-profile-basics-proceed');
+      if (!btn) return;
+      const filled = [state.height_cm, state.weight_kg, state.body_fat_pct].some(v => v != null && v !== '' && !Number.isNaN(v))
+        || [state.personal_color, state.face_type, state.skeletal_type, state.mbti].some(v => isMeaningfulProfileValue(v));
+      btn.textContent = filled ? 'この内容で次へ →' : '答えずに次へ →';
+    }
+    const profileBasicsBox = document.getElementById('profile-basics-content');
+    profileBasicsBox?.addEventListener('click', updateProfileBasicsProceedLabel);
+    profileBasicsBox?.addEventListener('input', updateProfileBasicsProceedLabel);
 
 
     // ─── 軸ごとの描き込み（?deepen=<axisId>）───
@@ -1161,8 +1174,12 @@ export default function BelleDiagnosisPage() {
             <p className="diag-step-label">基本情報（任意）</p>
             <h2 className="diag-q">分かる範囲でだけ<br />教えてください</h2>
             <p className="diag-hint">すべて任意です。答えなくても診断は進められます。あとからマイページでも変更できます。</p>
+            {/* 選択肢を押しても画面は進まない（選び直せる）。進むボタンが長い一覧の一番下にしかなく、
+                「この内容で進む」では何も選んでいない人に分かりにくかったため（渡邉の通し確認 2026-11-22）、
+                進むボタンを画面下に固定し、何も入れていない時は「答えずに次へ」と出す */}
+            <p style={{fontSize:'12px',color:'#6b7280',margin:'0 0 12px'}}>分かるものだけ選んで、画面下の「次へ」で進みます。選ばなくても進めます。</p>
             <div id="profile-basics-content">{/* JSで生成 */}</div>
-            <button className="diag-nav-next" id="btn-profile-basics-proceed" style={{width:'100%',marginTop:'16px'}}>この内容で進む →</button>
+            <button className="diag-nav-next" id="btn-profile-basics-proceed" style={{width:'100%',marginTop:'16px',position:'sticky',bottom:'12px',zIndex:5,boxShadow:'0 6px 18px rgba(13,17,23,0.18)'}}>答えずに次へ →</button>
           </div>
         </div>
 

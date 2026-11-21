@@ -8,6 +8,12 @@ export async function GET(req) {
   const levelParam = searchParams.get('level');
   const priceParam = searchParams.get('price_range');
   const adminMode  = searchParams.get('admin') === '1';
+  // 非公開（is_active=false）の商品まで返す管理モードは、管理キーがある時だけ（2026-11-22 セキュリティ確認で、
+  // ?admin=1 を付ければ誰でも非公開の商品を読めたのを修正）
+  if (adminMode) {
+    const k = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET || '';
+    if (!k || req.headers.get('x-admin-key') !== k) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
 
   const supabase = getSupabase();
   let query = supabase.from('affiliate_products').select('*').order('sort_order').order('created_at');
@@ -28,7 +34,13 @@ export async function GET(req) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  // 公開中の商品は誰が見ても同じなので、CDNで10分キャッシュする（Me Scan の結果ページの表示待ちを短くする。
+  // 2026-11-22 渡邉の通し確認で結果まで10〜15秒かかった）。管理モードはキャッシュしない
+  return NextResponse.json(data, {
+    headers: adminMode
+      ? { 'Cache-Control': 'no-store' }
+      : { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' },
+  });
 }
 
 // POST — 管理者のみ

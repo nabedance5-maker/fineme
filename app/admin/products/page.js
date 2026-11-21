@@ -82,7 +82,7 @@ export default function AdminProductsPage() {
   async function fetchProducts() {
     setLoading(true);
     try {
-      const res = await fetch('/api/products?admin=1');
+      const res = await fetch('/api/products?admin=1', { headers: { 'x-admin-key': getAdminKey() } });
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch { setProducts([]); }
