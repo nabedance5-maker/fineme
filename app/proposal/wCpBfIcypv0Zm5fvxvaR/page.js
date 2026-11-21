@@ -35,6 +35,9 @@ const DEMO_CODE = '';
 const PDF_NAME = 'Fineme提案資料_店舗向け_2026-11-21.pdf';
 const PDF_HREF = `/proposal/wCpBfIcypv0Zm5fvxvaR/${encodeURIComponent(PDF_NAME)}`;
 
+// サイトのナビと同じ公式ロゴ（透過PNG・真鍮色。暗い面の上に置く）
+const LOGO = '/assets/images/fineme-logo-final.png';
+
 const PLAN_TAG = { A: '全プラン', B: 'スタンダード〜', C: 'プレミアム' };
 const Tag = ({ p }) => <span className={`pp-tag pp-tag-${p}`}>{PLAN_TAG[p]}</span>;
 
@@ -231,7 +234,7 @@ export default async function ProposalPage(props) {
       <header className="pp-cover" data-track-section="cover">
         <div className="pp-wrap pp-cover-grid">
           <div>
-            <div className="pp-brand pp-rise">Fineme<span>ご提案資料</span></div>
+            <div className="pp-brand pp-rise"><img src={LOGO} alt="Fineme" width="1408" height="768" className="pp-logo" /><span>ご提案資料</span></div>
             <h1 className="pp-h1 pp-rise" style={{ '--d': '120ms' }}>いま通ってくれているお客様を、<br className="pp-br" /><em>離さない</em>仕組み。</h1>
             <p className="pp-cover-sub pp-rise" style={{ '--d': '240ms' }}>外見磨きの専門店のための、リピーターづくりの運営システム</p>
             <ul className="pp-facts pp-rise" style={{ '--d': '360ms' }}>
@@ -488,7 +491,7 @@ export default async function ProposalPage(props) {
       {/* ご相談 */}
       <section className="pp-cta" id="contact" data-track-section="contact">
         <div className="pp-wrap pp-narrow pp-center">
-          <span className="fm-seal pp-seal pp-seal-lg" data-reveal>談</span>
+          <img src={LOGO} alt="Fineme" width="1408" height="768" className="pp-logo-cta" data-reveal />
           <h2 className="pp-cta-h" data-reveal>まずは、30分だけ<br className="pp-br" />お話ししませんか</h2>
           <p className="pp-cta-body" data-reveal>実際の画面をお見せしながら、貴店の場合の使い方をご説明します。日時はご都合に合わせます。</p>
           <div className="pp-cta-btns" data-reveal>
@@ -506,7 +509,7 @@ export default async function ProposalPage(props) {
         </div>
       </section>
 
-      <footer className="pp-foot">Fineme</footer>
+      <footer className="pp-foot"><img src={LOGO} alt="Fineme" width="1408" height="768" className="pp-logo-foot" /></footer>
 
       <div className="pp-sticky">
         <a className="pp-btn pp-btn-gold" href={INQUIRY_URL} data-cta="sticky_inquiry">30分のオンライン相談（無料）</a>

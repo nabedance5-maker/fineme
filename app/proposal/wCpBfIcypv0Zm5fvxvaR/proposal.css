@@ -104,7 +104,10 @@
 }
 .pp-cover::after { content: ''; position: absolute; right: -120px; top: -80px; width: 420px; height: 420px; z-index: -1; border-radius: 50%; background: radial-gradient(circle, rgba(201,168,76,.16), transparent 65%); }
 .pp-cover-grid { display: grid; gap: 34px; align-items: center; }
-.pp-brand { font-family: var(--serif); font-size: 22px; font-weight: 800; letter-spacing: .04em; color: var(--brass-hi); display: flex; align-items: baseline; gap: 12px; margin-bottom: 26px; }
+.pp-brand { font-family: var(--serif); font-size: 22px; font-weight: 800; letter-spacing: .04em; color: var(--brass-hi); display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.pp-logo { display: block; width: 168px; height: auto; margin: -22px -14px -22px -18px; }
+.pp-logo-cta { display: block; width: 260px; max-width: 70%; height: auto; margin: -30px auto -10px; }
+.pp-logo-foot { display: block; width: 130px; height: auto; margin: -12px auto; opacity: .85; }
 .pp-brand span { font-family: var(--sans); font-size: 12px; font-weight: 700; letter-spacing: .2em; color: var(--dim); padding-left: 12px; border-left: 1px solid var(--line-2); }
 .pp-h1 { font-family: var(--serif); font-weight: 800; font-size: clamp(30px, 6.2vw, 52px); line-height: 1.38; letter-spacing: .01em; text-wrap: balance; }
 .pp-h1 em { font-style: normal; color: var(--brass-hi); background: linear-gradient(transparent 72%, rgba(201,168,76,.28) 72%); }
