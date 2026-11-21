@@ -110,6 +110,13 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      // 営業メールからだけ開く提案資料（2026-11-21）：検索に出さない（外部へ URL を渡さないのはページの meta referrer で）
+      {
+        source: '/proposal/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
       // API routes: CORS（静的HTMLページからの fetch を許可）
       {
         source: '/api/:path*',
