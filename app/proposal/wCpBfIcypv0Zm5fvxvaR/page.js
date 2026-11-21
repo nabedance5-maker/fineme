@@ -20,6 +20,13 @@ const COVER = {
   body: 'この資料は、美容室・パーソナルジム・眉毛／まつげサロン・エステ・ネイルなど、外見磨きの専門店のオーナー様に向けて作りました。オンラインでお話ししなくても、この資料を読むだけでFinemeの全体像が分かるよう、一つひとつ順を追ってご説明します。読み終わるころには「自分の店でどう使えるか」が具体的にイメージできるはずです。',
 };
 
+const JOIN_URL = 'https://www.fineme.me/provider/join';
+const CONTACT_EMAIL = 'h_watanabe@fineme.me';
+// PDF（渡邉から受け取ったものを public/proposal/wCpBfIcypv0Zm5fvxvaR/ に置く）。置いたら PDF_READY を true にする
+const PDF_READY = false;
+const PDF_NAME = 'Fineme提案資料_店舗向け_2026-11-21.pdf';
+const PDF_HREF = `/proposal/wCpBfIcypv0Zm5fvxvaR/${encodeURIComponent(PDF_NAME)}`;
+
 const SECTIONS = [
   {
     h: '「一度来てくれたお客様が、気づいたら来なくなっていた」',
@@ -99,7 +106,45 @@ const SECTIONS = [
     ],
     body: '「今の予約サイトをやめるのは不安」というお声はよく分かります。Finemeは移行を前提にしていません。まずは顧客情報とリピートの仕組みだけをFinemeに置き、予約の窓口は今のまま。無理のない範囲から始めて、必要を感じた部分だけ広げていただけます。',
   },
-  // 「料金プラン（初期費用なし・登録は無料です）」以降：受け取った文面が「Bプラン」の途中で切れていたため、全文を受け取ってから追加する
+  {
+    h: '料金プラン（初期費用なし・登録は無料です）',
+    points: [
+      'Aプラン ¥5,000／月：予約・顧客管理・カルテ・メッセージ配信・AIコンサルなど、基本の機能',
+      'Bプラン（標準）¥7,000／月：Aプランの内容に加えて、回数券・月額プランの管理、オンライン入会、出欠確認、クチコミ依頼の自動化、シフト・勤怠、友達紹介など',
+      'Cプラン ¥10,000／月：Bプランの内容に加えて、POS・在庫管理、ロッカー管理、店舗自身の公式LINEとの連携など',
+    ],
+    body: '料金は月額のみで、初期費用はかかりません。まずは小さく始めたいお店はAプラン、回数券や月額プランを扱うお店は標準のBプランが目安です。どのプランでも登録は無料で始められますので、実際の画面を触ってから判断していただけます。',
+  },
+  {
+    h: '始め方は3ステップ。登録は無料です',
+    ordered: true,
+    points: [
+      <>詳細ページから無料登録（<a href={JOIN_URL}>{JOIN_URL}</a>）</>,
+      '店舗情報とメニュー、予約の受付方法を設定',
+      '運用スタート。まずは「来ていないお客様」の確認から',
+    ],
+    body: '始めるのに大がかりな準備はいりません。登録は無料で、初期費用もかかりません。設定の進め方で分からないところがあれば、お問い合わせいただければご案内します。いきなり全部を変える必要はなく、まずは「今、来ていないお客様は誰か」を確認するところからで十分です。',
+  },
+  {
+    h: 'よくあるご不安にお答えします',
+    faq: [
+      ['小さな店（ひとりサロン）でも使えますか？', 'はい。Finemeは小規模な専門店を想定して作っています。お客様が少ないうちからカルテを貯めておくほど、リピートの仕組みが効いてきます。'],
+      ['今の予約サイトと併用できますか？', 'できます。乗り換え・移行は前提ではありません。予約の窓口は今のままお使いいただけます。'],
+      ['料金は月額以外にもかかりますか？', '初期費用はありません。料金は月額のみです。解約手続きの詳細は、ご契約前に必ずご案内します。'],
+      ['電話予約には対応していますか？', '電話予約を受ける機能はありません。ご予約は、予約カレンダー／予約リクエスト／LINE予約の3方式からお選びいただけます。'],
+    ],
+    body: '不安な点は、始める前にすべて潰しておきたいところです。ここにない疑問も含めて、気になることがあれば、このメールへの返信でお気軽にお尋ねください。分かる範囲で、正直にお答えします。',
+  },
+  {
+    h: 'まずは、無料登録で画面を触ってみてください',
+    cta: true,
+    points: [
+      <>詳細・ご登録：<a href={JOIN_URL}>{JOIN_URL}</a></>,
+      <>お問い合わせ：<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>（Fineme 代表 渡邉英雄）</>,
+      'この資料の内容についてのご質問は、このメールへの返信でお気軽にどうぞ',
+    ],
+    body: '最後までお読みいただき、ありがとうございます。Finemeは、新しいお客様を追い続けるのではなく、一度来てくださったお客様との関係を大切にするお店のための仕組みです。ご興味があれば、このメールに一言ご返信ください。オンラインで画面をお見せしながら、貴店の場合の使い方をご説明します。日時はご都合に合わせます。',
+  },
 ];
 
 export default function ProposalPage() {
@@ -110,17 +155,34 @@ export default function ProposalPage() {
         <h1 className="pp-title">{COVER.title}</h1>
         <p className="pp-sub">{COVER.sub}</p>
         <p className="pp-body">{COVER.body}</p>
+        {PDF_READY && <a className="pp-pdf" href={PDF_HREF} download={PDF_NAME}>PDFで保存する</a>}
       </header>
       {SECTIONS.map((s, i) => (
-        <section className="pp-sec" key={s.h}>
+        <section className={`pp-sec${s.cta ? ' pp-sec-cta' : ''}`} key={s.h}>
           <div className="pp-num">{String(i + 1).padStart(2, '0')}</div>
           <h2 className="pp-h">{s.h}</h2>
-          <ul className="pp-points">
-            {s.points.map(p => <li key={p}>{p}</li>)}
-          </ul>
+          {s.faq ? (
+            <dl className="pp-faq">
+              {s.faq.map(([q, a]) => (
+                <div key={q} className="pp-faq-item">
+                  <dt>Q．{q}</dt>
+                  <dd>A．{a}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : s.ordered ? (
+            <ol className="pp-points pp-steps">
+              {s.points.map((p, j) => <li key={j}>{p}</li>)}
+            </ol>
+          ) : (
+            <ul className="pp-points">
+              {s.points.map((p, j) => <li key={j}>{p}</li>)}
+            </ul>
+          )}
           <p className="pp-body">{s.body}</p>
         </section>
       ))}
+      {PDF_READY && <a className="pp-pdf pp-pdf-bottom" href={PDF_HREF} download={PDF_NAME}>PDFで保存する</a>}
       <footer className="pp-foot">Fineme</footer>
     </main>
   );

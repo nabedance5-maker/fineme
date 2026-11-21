@@ -53,6 +53,26 @@
   background: var(--pp-teal);
 }
 .pp-body { font-size: 15px; margin: 0; color: var(--pp-dim); overflow-wrap: anywhere; }
+.pp-points a, .pp-body a { color: var(--pp-teal); font-weight: 700; overflow-wrap: anywhere; }
+.pp-steps { counter-reset: step; }
+.pp-steps li { counter-increment: step; padding-left: 34px; }
+.pp-steps li::before {
+  content: counter(step);
+  width: 22px; height: 22px; top: .15em; left: 0;
+  color: #fff; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center;
+}
+.pp-faq { margin: 0 0 16px; }
+.pp-faq-item { background: var(--pp-teal-soft); border-radius: 12px; padding: 14px; }
+.pp-faq-item + .pp-faq-item { margin-top: 10px; }
+.pp-faq dt { font-weight: 800; color: var(--pp-navy); font-size: 14.5px; line-height: 1.7; }
+.pp-faq dd { margin: 6px 0 0; font-size: 14.5px; line-height: 1.75; color: var(--pp-ink); }
+.pp-sec-cta { border: 2px solid var(--pp-teal); }
+.pp-pdf {
+  display: block; text-align: center; margin-top: 20px;
+  padding: 13px 16px; border-radius: 10px;
+  background: var(--pp-teal); color: #fff; font-weight: 800; font-size: 15px; text-decoration: none;
+}
+.pp-pdf-bottom { margin-top: 8px; margin-bottom: 8px; }
 .pp-foot { text-align: center; font-size: 12px; letter-spacing: 3px; color: var(--pp-dim); margin-top: 28px; }
 @media (min-width: 720px) {
   .pp { padding-top: 48px; }
