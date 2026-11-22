@@ -120,9 +120,92 @@ function currentMonthJST() {
   return `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export async function POST(request) {
+// ログインの印（Bearer）から本人を決める。本文の user_id は信じない
+// （2026-11-22：本文の user_id をそのまま使っていたため、他人のIDを送ればその人の
+// サブスク無料枠・お試し枠を消費したり、オーナーのIDでオーナー無料扱いを受けられた）。
+async function resolveUserId(request) {
+  const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return null;
   try {
-    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender, photo_type, age_band } = await request.json();
+    const { data: { user } } = await getSupabase().auth.getUser(token);
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+// 有料扱いになるか（オーナー → サブスク月3回 → 月1回お試し → 紹介チケット）を、
+// 書き込みをせずに判定する。消費の書き込みは commitEntitlement で行う。
+async function resolveEntitlement({ userId, clientIp, currentMonth }) {
+  const db = getSupabase();
+
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (userId && ownerEmail) {
+    try {
+      const { data: { user } } = await db.auth.admin.getUserById(userId);
+      if (user?.email === ownerEmail) return { paid: true, reason: 'owner' };
+    } catch {}
+  }
+
+  let profile = null;
+  if (userId) {
+    try {
+      const { data } = await db
+        .from('profiles')
+        .select('subscription_status, mirror_monthly_free_count, mirror_monthly_free_month, mirror_trial_month, mirror_referral_credits')
+        .eq('id', userId)
+        .single();
+      profile = data || null;
+    } catch {}
+  }
+
+  if (profile?.subscription_status === 'active') {
+    const storedCount = profile.mirror_monthly_free_month === currentMonth ? (profile.mirror_monthly_free_count || 0) : 0;
+    if (storedCount < 3) return { paid: true, reason: 'subscriber', storedCount };
+  } else {
+    try {
+      if (userId) {
+        if (profile?.mirror_trial_month !== currentMonth) return { paid: true, reason: 'trial' };
+      } else if (clientIp) {
+        const { data: priorTrial } = await db
+          .from('mirror_sessions')
+          .select('id')
+          .eq('client_ip', clientIp)
+          .eq('trial_month', currentMonth)
+          .limit(1);
+        if (!priorTrial?.length) return { paid: true, reason: 'trial' };
+      } else {
+        return { paid: true, reason: 'trial' };
+      }
+    } catch {}
+  }
+
+  const credits = profile?.mirror_referral_credits || 0;
+  if (userId && credits > 0) return { paid: true, reason: 'referral', credits };
+
+  return { paid: false, reason: null };
+}
+
+async function commitEntitlement(ent, { userId, currentMonth }) {
+  if (!userId) return;
+  const db = getSupabase();
+  try {
+    if (ent.reason === 'subscriber') {
+      await db.from('profiles').update({ mirror_monthly_free_count: ent.storedCount + 1, mirror_monthly_free_month: currentMonth }).eq('id', userId);
+    } else if (ent.reason === 'trial') {
+      await db.from('profiles').update({ mirror_trial_month: currentMonth }).eq('id', userId);
+    } else if (ent.reason === 'referral') {
+      await db.from('profiles').update({ mirror_referral_credits: ent.credits - 1 }).eq('id', userId);
+    }
+  } catch {}
+}
+
+export async function POST(request) {
+  let uploadedPhotoPath = null;
+  let sessionSaved = false;
+  try {
+    const { photo_base64, media_type, user_state, diagnosis_info, ref, gender, photo_type, age_band } = await request.json();
+    const user_id = await resolveUserId(request);
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -134,130 +217,11 @@ export async function POST(request) {
       return Response.json({ error: '写真サイズが大きすぎます。圧縮してから再試行してください。' }, { status: 400 });
     }
 
-    const client = claudeClient({ personal: true });
-
-    // キュレーション済みInstagram/TikTok投稿プール（New Me Mapと同じ仕組み。
-    // 軸の観察内容に本当に合う場合だけAIがrelated_post_idを付ける）
-    const curatedPostsPrompt = await fetchCuratedPostsPrompt(gender);
-
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null, age_band || null, curatedPostsPrompt);
-
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 8000,
-      system: systemPrompt,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type, data: photo_base64 },
-          },
-          {
-            type: 'text',
-            text: 'この写真を分析して、Fineme Mirror のNew Me LogをJSON形式で出力してください。',
-          },
-        ],
-      }],
-    });
-
-    const raw = message.content[0]?.text?.trim() || '{}';
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    let analysis;
-    try {
-      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-    } catch {
-      console.error('Mirror JSON parse error. stop_reason:', message.stop_reason, 'raw length:', raw.length);
-      return Response.json({ error: '分析結果の生成に失敗しました。もう一度お試しください。' }, { status: 500 });
-    }
-
-    if (!analysis.axes || !Array.isArray(analysis.axes)) {
-      return Response.json({ error: '分析結果の形式が不正です。もう一度試してください。' }, { status: 500 });
-    }
-
-    // paid判定: オーナーバイパス → サブスク月3回無料 → 月1回無料お試し（非サブスク）→ 紹介クレジット → 通常（未払い）の順で評価
-    let isPaidBypass = false;
-    let trialApplied = false;
     const clientIp = getClientIp(request);
     const currentMonth = currentMonthJST();
+    const sessionId = crypto.randomUUID();
 
-    // オーナーバイパス
-    const ownerEmail = process.env.OWNER_EMAIL;
-    if (user_id && ownerEmail) {
-      try {
-        const { data: { user: authUser } } = await getSupabase().auth.admin.getUserById(user_id);
-        if (authUser?.email === ownerEmail) isPaidBypass = true;
-      } catch {}
-    }
-
-    // ログイン済みユーザーのプロフィールを一度だけ取得（サブスク3回無料・月1トライアル判定の両方で使う）
-    let profile = null;
-    if (!isPaidBypass && user_id) {
-      try {
-        const { data } = await getSupabase()
-          .from('profiles')
-          .select('subscription_status, mirror_monthly_free_count, mirror_monthly_free_month, mirror_trial_month')
-          .eq('id', user_id)
-          .single();
-        profile = data || null;
-      } catch {}
-    }
-
-    // サブスク会員の月3回無料判定
-    if (!isPaidBypass && profile?.subscription_status === 'active') {
-      const MAX_FREE = 3;
-      const storedMonth = profile.mirror_monthly_free_month;
-      const storedCount = storedMonth === currentMonth ? (profile.mirror_monthly_free_count || 0) : 0;
-
-      if (storedCount < MAX_FREE) {
-        isPaidBypass = true;
-        try {
-          await getSupabase()
-            .from('profiles')
-            .update({
-              mirror_monthly_free_count: storedCount + 1,
-              mirror_monthly_free_month: currentMonth,
-            })
-            .eq('id', user_id);
-        } catch {}
-      }
-    }
-
-    // 月1回無料お試し（非サブスク・登録有無を問わず全員が対象）
-    // フリーミアム化: 課金前にまるごと1回、無料で体験できるようにする
-    if (!isPaidBypass && profile?.subscription_status !== 'active') {
-      try {
-        if (user_id) {
-          // 登録済み: profiles.mirror_trial_month で判定
-          if (profile?.mirror_trial_month !== currentMonth) {
-            isPaidBypass = true;
-            trialApplied = true;
-            await getSupabase()
-              .from('profiles')
-              .update({ mirror_trial_month: currentMonth })
-              .eq('id', user_id);
-          }
-        } else if (clientIp) {
-          // 未登録: 同一IPからの当月お試し使用歴を mirror_sessions で確認（簡易チェック）
-          const { data: priorTrial } = await getSupabase()
-            .from('mirror_sessions')
-            .select('id')
-            .eq('client_ip', clientIp)
-            .eq('trial_month', currentMonth)
-            .limit(1);
-          if (!priorTrial?.length) {
-            isPaidBypass = true;
-            trialApplied = true;
-          }
-        } else {
-          // IPすら取得できない場合はクライアント側のlocalStorage判定に委ねて許可
-          isPaidBypass = true;
-          trialApplied = true;
-        }
-      } catch {}
-    }
-
-    // リファラル付与：被紹介者の初回分析時に、紹介者・被紹介者の双方へ無料チケット+1
+    // 紹介の付与（被紹介者の初回分析時に双方へ無料チケット+1）。referrals の UNIQUE で二重付与は起きない
     if (user_id && ref && ref !== user_id) {
       try {
         const { count: priorCount } = await getSupabase()
@@ -269,7 +233,6 @@ export async function POST(request) {
             .from('referrals')
             .insert({ referrer_id: ref, referee_id: user_id });
           if (!refErr) {
-            // UNIQUE違反でない＝初回紹介成立 → 双方+1
             await getSupabase().rpc('increment_referral_credit', { uid: ref });
             await getSupabase().rpc('increment_referral_credit', { uid: user_id });
           }
@@ -277,82 +240,90 @@ export async function POST(request) {
       } catch {}
     }
 
-    // リファラル無料チケット消費（サブスク無料枠で未バイパスのときのみ）
-    if (!isPaidBypass && user_id) {
-      try {
-        const { data: prof } = await getSupabase()
-          .from('profiles')
-          .select('mirror_referral_credits')
-          .eq('id', user_id)
-          .single();
-        const credits = prof?.mirror_referral_credits || 0;
-        if (credits > 0) {
-          isPaidBypass = true;
-          await getSupabase()
-            .from('profiles')
-            .update({ mirror_referral_credits: credits - 1 })
-            .eq('id', user_id);
-        }
-      } catch {}
+    // 写真を先に保存する（レポート生成に使う。失敗しても分析自体は止めない）。
+    // 未購入セッションの写真は cleanup-unpaid-mirror-photos が7日で自動削除する。
+    try {
+      const ext = media_type === 'image/png' ? 'png' : media_type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `${sessionId}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('mirror-photos')
+        .upload(path, Buffer.from(photo_base64, 'base64'), { contentType: media_type, upsert: true });
+      if (!uploadError) uploadedPhotoPath = path;
+    } catch (e) {
+      console.error('mirror photo upload error:', e);
     }
 
+    const ent = await resolveEntitlement({ userId: user_id, clientIp, currentMonth });
+
+    // 有料扱い＋写真保存済みなら、軽い分析（Haiku）を飛ばして本分析（/api/mirror/report）だけにする。
+    // 本分析が軸データも作り直して analysis を上書きするため、軽い分析は二度手間だった
+    // （2026-11-22：分析30〜60秒＋レポート1〜2分で合計3分近く待たせていた）。
+    let analysis;
+    if (ent.paid && uploadedPhotoPath) {
+      analysis = {
+        photo_type: photo_type === 'body' ? 'fullbody' : photo_type === 'face' ? 'face' : null,
+        first_impression: '',
+        axes: [],
+        overall_message: '',
+        pending_report: true,
+      };
+    } else {
+      const client = claudeClient({ personal: true });
+      const curatedPostsPrompt = await fetchCuratedPostsPrompt(gender);
+      const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null, age_band || null, curatedPostsPrompt);
+      const message = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type, data: photo_base64 } },
+            { type: 'text', text: 'この写真を分析して、Fineme Mirror のNew Me LogをJSON形式で出力してください。' },
+          ],
+        }],
+      });
+      const raw = message.content[0]?.text?.trim() || '{}';
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      try {
+        analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+      } catch {
+        console.error('Mirror JSON parse error. stop_reason:', message.stop_reason, 'raw length:', raw.length);
+        throw new Error('analysis_parse_failed');
+      }
+      if (!analysis.axes || !Array.isArray(analysis.axes)) throw new Error('analysis_shape_invalid');
+    }
+
+    // 無料枠の消費は、軽い分析を使う経路ではAIが成功した後に行う（失敗時に枠を消費しない）。
+    // 軽い分析を飛ばす経路では本分析の前に消費するが、本分析が失敗しても同じセッションで再試行できる。
+    if (ent.paid) await commitEntitlement(ent, { userId: user_id, currentMonth });
+    const trialApplied = ent.reason === 'trial';
+
     const insertRow = {
+      id: sessionId,
       user_id: user_id || null,
       analysis,
-      paid: isPaidBypass,
+      paid: ent.paid,
       gender: gender || null,
       age_band: age_band || null,
       photo_type: photo_type || null,
       client_ip: clientIp,
       trial_month: trialApplied ? currentMonth : null,
-      photo_path: null,
+      photo_path: uploadedPhotoPath,
     };
-    let { data: session, error: dbError } = await supabase
-      .from('mirror_sessions')
-      .insert(insertRow)
-      .select('id')
-      .single();
-
-    // 後方互換: 本番に新カラム（gender/age_band/photo_type/client_ip/trial_month/photo_path）未適用でも分析を失敗させない。
-    // 該当のマイグレーションSQL適用後は通常経路でフル保存される。
-    if (dbError && dbError.code === 'PGRST204') {
-      let legacyRow = insertRow;
-      for (const col of ['gender', 'age_band', 'photo_type', 'client_ip', 'trial_month', 'photo_path']) {
-        if (new RegExp(col).test(dbError.message || '')) {
-          const { [col]: _omit, ...rest } = legacyRow;
-          legacyRow = rest;
-        }
-      }
-      ({ data: session, error: dbError } = await supabase
-        .from('mirror_sessions')
-        .insert(legacyRow)
-        .select('id')
-        .single());
-    }
-
+    const { error: dbError } = await supabase.from('mirror_sessions').insert(insertRow);
     if (dbError) {
       console.error('mirror_sessions insert error:', dbError);
-      return Response.json({ error: 'セッション保存エラー' }, { status: 500 });
+      throw new Error('session_insert_failed');
     }
+    sessionSaved = true;
 
-    // 写真をStorageに保存（ビジュアルレポート生成用。失敗しても分析結果自体はブロックしない）。
-    // 未購入セッションの写真は app/api/cron/cleanup-unpaid-mirror-photos が数日で自動削除する。
-    try {
-      const ext = media_type === 'image/png' ? 'png' : media_type === 'image/webp' ? 'webp' : 'jpg';
-      const photoPath = `${session.id}.${ext}`;
-      const buffer = Buffer.from(photo_base64, 'base64');
-      const { error: uploadError } = await supabase.storage
-        .from('mirror-photos')
-        .upload(photoPath, buffer, { contentType: media_type, upsert: true });
-      if (!uploadError) {
-        await supabase.from('mirror_sessions').update({ photo_path: photoPath }).eq('id', session.id);
-      }
-    } catch (e) {
-      console.error('mirror photo upload error:', e);
-    }
-
-    return Response.json({ session_id: session.id, analysis, paid: isPaidBypass, trial_applied: trialApplied });
+    return Response.json({ session_id: sessionId, analysis, paid: ent.paid, trial_applied: trialApplied });
   } catch (e) {
+    // セッションが残らない失敗では、先に保存した写真を消す（行の無い写真は掃除の対象外になるため）
+    if (uploadedPhotoPath && !sessionSaved) {
+      try { await supabase.storage.from('mirror-photos').remove([uploadedPhotoPath]); } catch {}
+    }
     console.error('mirror analyze error:', e);
     // API の生のエラー文（英語・残高・内部の情報）は利用者に出さない（渡邉の確認 2026-11-22：
     // クレジット残高不足の英文がそのまま画面に出ていた）。理由は code で返し、画面側で言い方と再試行を決める

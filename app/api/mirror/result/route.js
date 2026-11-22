@@ -24,8 +24,9 @@ export async function GET(request) {
   }
 
   // すでに paid ならそのまま返す
+  // trial_applied：再読み込みで「今月の無料お試し」表示が「フル版」に変わるブレを防ぐ（2026-11-22）
   if (mirrorSession.paid) {
-    return Response.json({ paid: true, analysis: mirrorSession.analysis });
+    return Response.json({ paid: true, analysis: mirrorSession.analysis, trial_applied: !!mirrorSession.trial_month });
   }
 
   // Stripeで支払状態を確認（checkout session経由）
@@ -60,7 +61,7 @@ export async function GET(request) {
           );
         }
 
-        return Response.json({ paid: true, analysis: mirrorSession.analysis });
+        return Response.json({ paid: true, analysis: mirrorSession.analysis, trial_applied: false });
       }
     } catch (e) {
       console.error('Stripe verify error:', e);

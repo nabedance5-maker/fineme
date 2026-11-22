@@ -113,6 +113,10 @@ export default function MirrorPage() {
   const [reportContent, setReportContent] = useState(null);
   const [reportPhotoUrl, setReportPhotoUrl] = useState(null);
   const [tierComparison, setTierComparison] = useState(null);
+  // 再読み込み・過去の結果を開いた時は「分析中」でなく「前回の結果を表示中」と出す（2026-11-22）
+  const [restoring, setRestoring] = useState(false);
+  // レポート生成が失敗した時に何も出ない穴を塞ぐ（2026-11-22）
+  const [reportFailed, setReportFailed] = useState(false);
   const fileInputRef = useRef(null);
   // 直前に分析へ送った写真（圧縮済み）。失敗した時に「同じ写真でもう一度試す」で選び直さずに送り直す
   // （分析中の表示に切り替わる時に写真の選択欄が作り直され、選んだファイルが消えるため）
@@ -131,6 +135,7 @@ export default function MirrorPage() {
 
     if (sid && purchased === '1') {
       setState('analyzing');
+      setRestoring(true);
       setSessionId(sid);
       saveSessionToLocal(sid);
       fetch(`/api/mirror/result?session_id=${sid}`)
@@ -138,6 +143,7 @@ export default function MirrorPage() {
         .then(data => {
           if (data.paid && data.analysis) {
             setAnalysis(data.analysis);
+            setTrialApplied(!!data.trial_applied);
             // state='analyzing'のまま維持し、レポート生成完了で初めて'full'にする
             // （コンテナが切り替わって表示が途切れて見えるのを防ぐ）
             triggerReportGeneration(sid).then(() => setState('full'));
@@ -154,6 +160,7 @@ export default function MirrorPage() {
     if (sid) {
       // ログイン後のリダイレクト等でsession_idが付いている場合、プレビューを復元
       setState('analyzing');
+      setRestoring(true);
       setSessionId(sid);
       saveSessionToLocal(sid);
       fetch(`/api/mirror/result?session_id=${sid}`)
@@ -161,6 +168,7 @@ export default function MirrorPage() {
         .then(data => {
           if (data.analysis) {
             setAnalysis(data.analysis);
+            setTrialApplied(!!data.trial_applied);
             if (data.paid) {
               triggerReportGeneration(sid).then(() => setState('full'));
             } else {
@@ -184,12 +192,14 @@ export default function MirrorPage() {
       const lastId = lastActiveRecent ? getLocalSessionIds()[0] : null;
       if (lastId) {
         setState('analyzing');
+        setRestoring(true);
         setSessionId(lastId);
         fetch(`/api/mirror/result?session_id=${lastId}`)
           .then(r => r.json())
           .then(data => {
             if (data.analysis) {
               setAnalysis(data.analysis);
+              setTrialApplied(!!data.trial_applied);
               if (data.paid) {
                 triggerReportGeneration(lastId).then(() => setState('full'));
               } else {
@@ -343,6 +353,8 @@ export default function MirrorPage() {
     setReportPhotoUrl(null);
     setTierComparison(null);
     setReportLoading(true);
+    setReportFailed(false);
+    let ok = false;
     try {
       const res = await fetch('/api/mirror/report', {
         method: 'POST',
@@ -354,9 +366,12 @@ export default function MirrorPage() {
         setReportContent(data.report_content);
         setReportPhotoUrl(data.photo_url);
         setTierComparison(data.tier_comparison || null);
+        ok = true;
       }
     } catch {} finally {
+      if (!ok) setReportFailed(true);
       setReportLoading(false);
+      setRestoring(false);
     }
   }, []);
 
@@ -383,13 +398,15 @@ export default function MirrorPage() {
       lastPhotoRef.current = { base64, media_type };
     }
     setState('analyzing');
+    setRestoring(false);
 
     try {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-      let userId = null;
+      let userId = null, accessToken = null;
       if (sbKey) {
         const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
         userId = obj?.user?.id || null;
+        accessToken = obj?.access_token || null;
       }
 
       // Me Scan診断データ確認（ユーザー状態の判定）
@@ -411,8 +428,9 @@ export default function MirrorPage() {
 
       const res = await fetch('/api/mirror/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, photo_type: photoType, age_band: getLocalAttributes()?.age_band || null }),
+        // 本人はログインの印から決める（本文の user_id は送らない・サーバー側も見ない）
+        headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+        body: JSON.stringify({ photo_base64: base64, media_type, user_state: userState, diagnosis_info: diagnosisInfo, ref, photo_type: photoType, age_band: getLocalAttributes()?.age_band || null }),
       });
       // 応答が JSON でない時（時間切れ等）にブラウザの英語のエラー文が出ないようにする（2026-11-22）
       const data = await res.json().catch(() => ({}));
@@ -774,6 +792,7 @@ export default function MirrorPage() {
                   key={s.id}
                   onClick={() => {
                     setState('analyzing');
+                    setRestoring(true);
                     const endpoint = s.paid
                       ? `/api/mirror/result?session_id=${s.id}`
                       : null;
@@ -789,6 +808,7 @@ export default function MirrorPage() {
                       .then(data => {
                         if (data.paid && data.analysis) {
                           setAnalysis(data.analysis);
+                          setTrialApplied(!!data.trial_applied);
                           setSessionId(s.id);
                           triggerReportGeneration(s.id).then(() => setState('full'));
                         } else {
@@ -833,7 +853,16 @@ export default function MirrorPage() {
       {state === 'analyzing' && (
         <div className="analyzing-wrap">
           <div className="analyzing-spinner" />
-          {!reportLoading ? (
+          {restoring ? (
+            <>
+              <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
+                前回の結果を表示しています…
+              </p>
+              <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '12px' }}>
+                保存済みの分析を読み込んでいます。新しく分析し直すことはありません。
+              </p>
+            </>
+          ) : !reportLoading ? (
             <>
               <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
                 AIが外見を分析中…
@@ -873,7 +902,25 @@ export default function MirrorPage() {
             </p>
           )}
 
-          {state === 'full' && (
+          {state === 'full' && !reportContent && (
+            <div style={{ margin: '8px 0 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,228,220,0.14)', borderRadius: '14px', padding: '24px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 8px' }}>
+                {reportLoading ? 'レポートを作り直しています…' : 'レポートの作成が途中で止まりました'}
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: 1.7 }}>
+                写真と今回の分析枠はそのまま残っています。追加の料金はかかりません。
+              </p>
+              <button
+                onClick={() => triggerReportGeneration(sessionId)}
+                disabled={reportLoading || !sessionId}
+                style={{ padding: '12px 28px', background: reportLoading ? 'rgba(232,228,220,0.12)' : '#c8a45a', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: reportLoading ? 'rgba(232,228,220,0.5)' : '#0d1117', cursor: reportLoading ? 'wait' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {reportLoading ? '作成中…（1〜2分）' : 'もう一度レポートを作る'}
+              </button>
+            </div>
+          )}
+
+          {state === 'full' && reportContent && (
             <div style={{ textAlign: 'center', margin: '20px 0 8px' }}>
               <span className="full-badge">
                 {trialApplied ? '今月の無料お試し — 全軸の詳細分析' : 'フル版 — 全軸の詳細分析'}
@@ -1090,85 +1137,18 @@ export default function MirrorPage() {
             );
           })()}
 
-          {/* シェア（preview / full 共通・sessionIdがある時） */}
-          {sessionId && (
-            <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '20px', textAlign: 'center' }}>
-              <p style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
-                この結果をシェアする
-              </p>
-              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.4)', margin: '0 0 16px', lineHeight: 1.6 }}>
-                共有されるのは概要のみ。写真や詳細分析は表示されません。
-              </p>
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button onClick={shareX} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.18)', borderRadius: '10px', color: 'rgba(232,228,220,0.85)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  𝕏 でシェア
-                </button>
-                <button onClick={shareLINE} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(6,199,85,0.12)', border: '1px solid rgba(6,199,85,0.4)', borderRadius: '10px', color: '#06c755', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  LINEで送る
-                </button>
-                <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '10px', color: '#c8a45a', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {linkCopied ? '✓ コピーしました' : 'リンクをコピー'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* New Me Map 生成CTA（fullのみ） */}
-          {state === 'full' && (
-            <div style={{ marginTop: '24px', background: 'rgba(200,164,90,0.05)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '16px', padding: '28px 24px', textAlign: 'center' }}>
-              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(200,164,90,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
-                次のステップ
-              </p>
-              <p style={{ fontFamily: "Georgia, serif", fontSize: '17px', fontWeight: '800', color: '#e8e4dc', marginBottom: '8px' }}>
-                このデータで New Me Map を生成する
-              </p>
-              <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', marginBottom: '20px', lineHeight: '1.7' }}>
-                Mirror の変容余地データが、あなた専用の行動ロードマップに変わります。
-              </p>
+          {/* 結果はここまで、を明示する区切り。ここから下は結果を活かす案内（2026-11-22：
+              スクロールすると結果が消えて売り込みが主役に見える、という指摘への対応） */}
+          {state === 'full' && reportContent && (
+            <div style={{ margin: '28px 0 4px', textAlign: 'center' }}>
               <button
-                onClick={() => {
-                  let loggedIn = false;
-                  try {
-                    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-                    if (sbKey) loggedIn = !!JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
-                  } catch {}
-                  window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/login?redirect=/mypage/navi?from=mirror';
-                }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', boxShadow: '0 0 24px rgba(0,0,0,0.3)' }}
+                onClick={() => { try { document.querySelector('.results-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {} }}
+                style={{ background: 'none', border: '1px solid rgba(232,228,220,0.18)', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', color: 'rgba(232,228,220,0.6)', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                New Me Map を生成する →
+                レポートの最初に戻る
               </button>
-            </div>
-          )}
-
-          {/* サブスク upsell（full・非サブスク加入者のみ） */}
-          {state === 'full' && !subStatus?.isActive && (
-            <div style={{ marginTop: '16px', background: 'rgba(10,30,20,0.7)', border: '1px solid rgba(80,200,140,0.3)', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(80,200,140,0.6)', textTransform: 'uppercase', margin: '0 0 10px' }}>
-                毎月続ける
-              </p>
-              <p style={{ fontSize: '16px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 6px' }}>
-                写真もレポートも、ちゃんと残る。いつでも止められる。
-              </p>
-              <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: 1.7 }}>
-                変化を「感覚」でなく「記録」で知りたいから。<br />
-                毎月、前の自分の写真と並べて見る——それだけで、少し前に進める気がした。
-              </p>
-              <div style={{ display: 'inline-flex', gap: '12px', alignItems: 'center', background: 'rgba(80,200,140,0.08)', border: '1px solid rgba(80,200,140,0.2)', borderRadius: '10px', padding: '8px 16px', marginBottom: '20px', fontSize: '12px', color: 'rgba(232,228,220,0.7)' }}>
-                <span>¥500 × 3回 = ¥1,500</span>
-                <span style={{ color: 'rgba(232,228,220,0.3)' }}>vs</span>
-                <span style={{ color: '#50c88c', fontWeight: 800 }}>¥780/月 で3回</span>
-              </div>
-              <br />
-              <button
-                onClick={handleSubscribeCheckout}
-                disabled={subscribing}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: subscribing ? 'rgba(80,200,140,0.3)' : 'linear-gradient(135deg,#50c88c,#3aaa78)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, color: '#0d1117', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-              >
-                {subscribing ? '処理中…' : '¥780/月 のサブスクに切り替える'}
-              </button>
-              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: '12px 0 0' }}>
-                ¥780/月 ・ いつでも解約 ・ 写真はレポート表示のため保存 ・ Stripe で安全決済
+              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: '18px 0 0', letterSpacing: '.08em' }}>
+                ここまでがあなたの分析結果です
               </p>
             </div>
           )}
@@ -1228,6 +1208,76 @@ export default function MirrorPage() {
             </div>
           )}
 
+          {/* シェア（preview / full 共通・sessionIdがある時） */}
+          {sessionId && (
+            <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
+                この結果をシェアする
+              </p>
+              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.4)', margin: '0 0 16px', lineHeight: 1.6 }}>
+                共有されるのは概要のみ。写真や詳細分析は表示されません。
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={shareX} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.18)', borderRadius: '10px', color: 'rgba(232,228,220,0.85)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  𝕏 でシェア
+                </button>
+                <button onClick={shareLINE} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(6,199,85,0.12)', border: '1px solid rgba(6,199,85,0.4)', borderRadius: '10px', color: '#06c755', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  LINEで送る
+                </button>
+                <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '10px', color: '#c8a45a', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {linkCopied ? '✓ コピーしました' : 'リンクをコピー'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* New Me Map 生成CTA（fullのみ） */}
+          {state === 'full' && (
+            <div style={{ marginTop: '24px', background: 'rgba(200,164,90,0.05)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '16px', padding: '28px 24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(200,164,90,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
+                次のステップ
+              </p>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: '17px', fontWeight: '800', color: '#e8e4dc', marginBottom: '8px' }}>
+                このデータで New Me Map を生成する
+              </p>
+              <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', marginBottom: '20px', lineHeight: '1.7' }}>
+                Mirror の変容余地データが、あなた専用の行動ロードマップに変わります。
+              </p>
+              <button
+                onClick={() => {
+                  let loggedIn = false;
+                  try {
+                    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+                    if (sbKey) loggedIn = !!JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
+                  } catch {}
+                  window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/login?redirect=/mypage/navi?from=mirror';
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', boxShadow: '0 0 24px rgba(0,0,0,0.3)' }}
+              >
+                New Me Map を生成する →
+              </button>
+            </div>
+          )}
+
+          {/* サブスク案内（full・非サブスク加入者のみ）。結果より目立たないよう小さく置く（2026-11-22） */}
+          {state === 'full' && !subStatus?.isActive && (
+            <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '18px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.85)', margin: '0 0 6px' }}>
+                来月の自分と比べたくなったら
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 12px', lineHeight: 1.7 }}>
+                ¥780/月で毎月3回まで分析でき、前回の写真と並べて変化を記録できます。いつでも解約できます。
+              </p>
+              <button
+                onClick={handleSubscribeCheckout}
+                disabled={subscribing}
+                style={{ padding: '9px 20px', background: 'none', border: '1px solid rgba(80,200,140,0.4)', borderRadius: '10px', fontSize: '13px', fontWeight: 700, color: '#50c88c', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {subscribing ? '処理中…' : '毎月続けるプランを見る'}
+              </button>
+            </div>
+          )}
+
           {/* 友達紹介（ログイン済み・fullのみ） */}
           {state === 'full' && myUserId && (
             <div style={{ marginTop: '20px', background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.138)', borderRadius: '14px', padding: '22px 20px', textAlign: 'center' }}>
@@ -1282,6 +1332,8 @@ export default function MirrorPage() {
               setReportContent(null);
               setReportPhotoUrl(null);
               setReportLoading(false);
+              setReportFailed(false);
+              setRestoring(false);
               setError('');
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
