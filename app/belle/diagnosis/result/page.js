@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LocationPrompt } from '@/app/_components/LocationPrompt';
+import { habitItemLabel, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
+import { GOAL_SCENES, GOAL_CHANGES, GOAL_VISIONS, goalScenesOf, hasGoal, goalPickerHtml, bindGoalPicker, GOAL_PICKER_CSS } from '@/lib/goal';
 
 export default function BelleDiagnosisResultPage() {
   const initialized = useRef(false);
@@ -196,6 +198,7 @@ export default function BelleDiagnosisResultPage() {
       .type-hero-share-btn { padding: 9px 20px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(232,228,220,0.65); font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
       .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(200,164,90,0.3),transparent); margin: 24px 0 0; }
     `;
+    style.textContent += GOAL_PICKER_CSS;
     document.head.appendChild(style);
 
     // ─── ユーティリティ ───
@@ -652,28 +655,16 @@ export default function BelleDiagnosisResultPage() {
 
     // ─── ゴール4層テキスト ───
     function buildGoalLayers() {
-      const SCENE_MAP = {
-        first_impression: '初対面の瞬間、相手の反応が変わる',
-        date_confidence:  '好きな人といる時間、外見を気にせず相手に集中できる',
-        photo_self:       '写真や動画の自分が、気にならなくなる',
-        morning_mirror:   '毎朝鏡を見て、気分が上がる',
-        approach:         '自分から積極的に動けるようになる',
-      };
-      const CHANGE_MAP = {
-        others_perception: '他の人からの見られ方・評価が変わる',
-        self_confidence:   '自分の気持ち・自己肯定感が変わる',
-        action_ease:       '行動のしやすさ・動けるようになること',
-        life_options:      '外見を理由に諦めることが減ること',
-      };
-      const VISION_MAP = {
-        love_active:      '恋愛で、躊躇せず動けるようになっている',
-        no_give_up:       '外見を理由に何かを諦めることが減っている',
-        like_self:        '自分のことを、もう少し好きになっている',
-        natural_confident:'自信が「自然な状態」になっている',
-      };
+      // 選択肢は lib/goal.js に一本化（結果ページ・Map で同じ言葉を使う）
+      const SCENE_MAP = GOAL_SCENES, CHANGE_MAP = GOAL_CHANGES, VISION_MAP = GOAL_VISIONS;
+      // 目指す場所がまだ無い人には、ここで選んでもらう（以前は設定する場所が無く常に空だった）
+      if (!hasGoal(p)) {
+        return `<p class="sec-label" style="margin-top:28px">Your Goal</p>${goalPickerHtml(p)}`;
+      }
       const layers = [];
-      if (p.goal_scene && SCENE_MAP[p.goal_scene])
-        layers.push({ icon:'', label:'Layer 2 — 場面・行動のゴール', text: SCENE_MAP[p.goal_scene] });
+      goalScenesOf(p).forEach(id => {
+        layers.push({ icon:'', label:'Layer 2 — 場面・行動のゴール', text: SCENE_MAP[id] });
+      });
       if (p.goal_change && CHANGE_MAP[p.goal_change])
         layers.push({ icon:'', label:'Layer 3 — 感情・状態のゴール', text: CHANGE_MAP[p.goal_change] });
       if (p.goal_vision && VISION_MAP[p.goal_vision])
@@ -694,6 +685,7 @@ export default function BelleDiagnosisResultPage() {
               </div>
             `).join('')}
           </div>
+          <details class="goal-edit"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(200,164,90,0.85);margin-top:12px">目指す場所を変える</summary>${goalPickerHtml(p, { title: '目指す場所を変える' })}</details>
         </div>
       `;
     }
@@ -919,6 +911,15 @@ export default function BelleDiagnosisResultPage() {
           <div class="compass-main">${esc(def.label)}</div>
           ${overrideNote}
           <div class="compass-reason" style="margin-top:12px">${COMPASS_REASONS[compassFirst] || ''}${urgencyNote}${pathActionNote}</div>
+          ${(() => {
+            // 一手の根拠を本人の回答から1行で（§2-2）
+            const a = answerOf(compassFirst);
+            const v = tv[compassFirst] || {};
+            if (!a && v.current == null) return '';
+            // 「やっていること」を聞いていない古い受検では、していないと決めつけない
+            const doing = !a ? '' : a.items.length ? `、「${esc(a.items[0])}」${a.items.length > 1 ? `など${a.items.length}項目` : ''}をやっている` : '、まだ特に手を付けていない';
+            return `<p style="font-size:12px;line-height:1.7;color:rgba(232,228,220,0.7);margin:10px 0 0">根拠：「${esc(def.label)}」は今 ${Number(v.current) || 0}／理想 ${Number(v.ideal) || 0}${a?.want ? `（変えたい度：${esc(a.want)}）` : ''}${doing}と回答しています。</p>`;
+          })()}
           ${typeVsCompassNote}
           <a href="${isLoggedIn ? '/mypage/navi' : '/login?mode=signup&next=/mypage/navi'}" class="compass-cta">${isLoggedIn ? '変容ロードマップを見る →' : '変容ロードマップを見る（無料登録） →'}</a>
           <a href="/search?category=${esc(def.catLink)}&diag=1" style="display:inline-block;margin-top:8px;font-size:12px;color:#6b7280;text-decoration:none;" onmouseover="this.style.color='#c8a45a'" onmouseout="this.style.color='#6b7280'">このカテゴリのプロを探すなら →</a>
@@ -996,6 +997,25 @@ export default function BelleDiagnosisResultPage() {
     }
 
     // ─── 変容ベクトルリスト ───
+    // 本人の回答をそのまま返す（Muse指示書 2026-11-22 §2-2）。結果ページは回答（やっていること・
+    // 変えたい度）を一切使わず、聞いたことが本人の画面に返ってきていなかった
+    function answerOf(id) {
+      const h = (p.axis_habits || {})[id];
+      if (!h) return null;
+      const items = (h.items || []).filter(k => k !== 'other').map(k => habitItemLabel(id, k, p.gender));
+      if ((h.items || []).includes('other') && h.other_note) items.push(String(h.other_note).slice(0, 40));
+      const want = WANT_CHANGE_OPTIONS.find(o => o.v === String(h.want_change))?.t || null;
+      return { items, want };
+    }
+    function answerHtml(id) {
+      const a = answerOf(id);
+      if (!a) return '';
+      const shown = a.items.slice(0, 3).map(t => `「${esc(t)}」`).join('');
+      const more = a.items.length > 3 ? `ほか${a.items.length - 3}件` : '';
+      const doing = a.items.length ? `${shown}${more}` : 'まだ特になし';
+      return `<div style="font-size:11.5px;line-height:1.7;color:rgba(232,228,220,0.66);margin:6px 0 2px;padding:7px 10px;background:rgba(255,255,255,0.03);border-radius:8px"><span style="font-weight:700;color:rgba(200,164,90,0.8)">あなたの回答</span>　やっていること：${doing}${a.want ? `　／　変えたい度：${esc(a.want)}` : ''}</div>`;
+    }
+
     function buildVectorList() {
       if (!priorityOrder.length) return '';
       // 全軸を優先度順で表示（上位5件に絞らない）
@@ -1058,6 +1078,7 @@ export default function BelleDiagnosisResultPage() {
                 <div class="vector-bar-labels"><span>現在地</span><span>理想 ★</span></div>
               </div>
             </div>
+            ${answerHtml(id)}
             ${baseCardsHtml}
           </div>
         `;
@@ -1592,6 +1613,9 @@ export default function BelleDiagnosisResultPage() {
         <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;">シェアするとあなたのタイプが表示されます</p>
       `;
     }
+
+    // 目指す場所を決める／変える（lib/goal.js）。保存したら見出し等に反映するため読み直す
+    bindGoalPicker(document, { storageKey: 'fineme:diagnosis:belle', track: 'belle', token: authToken, onSaved: () => setTimeout(() => location.reload(), 600) });
 
     // Compass override チップ
     document.querySelectorAll('.compass-override-chip').forEach(btn => {

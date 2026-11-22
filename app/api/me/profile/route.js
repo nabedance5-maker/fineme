@@ -21,6 +21,7 @@ function cleanCheckins(v) {
     weekStart: c.weekStart,
     axisId: String(c.axisId || '').slice(0, 32),
     stepText: String(c.stepText || '').slice(0, 200),
+    reason: c.reason ? String(c.reason).slice(0, 160) : null,
     status: CHECKIN_STATUS.has(c.status) ? c.status : 'todo',
     continuityAsked: !!c.continuityAsked,
   } : null;

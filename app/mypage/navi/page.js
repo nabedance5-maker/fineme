@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS } from '@/lib/axis-habits';
-import { FACE_TYPE_OPTIONS, FACE_TYPE_OPTIONS_BELLE } from '@/lib/profile-basics';
+import { FACE_TYPE_OPTIONS, FACE_TYPE_OPTIONS_BELLE, isMeaningfulProfileValue } from '@/lib/profile-basics';
 import MypageSideNav from '../_components/MypageSideNav';
+import { idealNextDate } from '@/lib/log-axes';
+import { goalHeadline, hasGoal, goalPickerHtml, bindGoalPicker, GOAL_PICKER_CSS } from '@/lib/goal';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
@@ -705,6 +707,7 @@ export default function NewMeNaviPage() {
       .axis-habit-banner-desc { font-size: 10px; color: rgba(232,228,220,0.4); margin: 0; }
       .axis-habit-banner-btn { font-size: 11px; font-weight: 700; padding: 7px 12px; background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.3); color: #c8a45a; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
     `;
+    style.textContent += GOAL_PICKER_CSS;
     document.head.appendChild(style);
 
     // ── データ（Supabase優先 → localStorage fallback）──
@@ -2363,20 +2366,10 @@ export default function NewMeNaviPage() {
     };
 
     // ── ゴール文 ──
+    // 見出しのゴール：本人が選んだ目指す場所を主表示にし、ブランド文句は副次的な一文として残す
+    // （Muse指示書 2026-11-22 §2-1。以前は設定する場所が無く、全員に固定文が出ていた）
     function getOverallGoal() {
-      const VISION_MAP = {
-        love_active:      '恋愛で、躊躇せず動けるようになっている',
-        no_give_up:       '外見を理由に何かを諦めることが減っている',
-        like_self:        '自分のことを、もう少し好きになっている',
-        natural_confident:'自信が「自然な状態」になっている',
-      };
-      const CHANGE_MAP = {
-        others_perception: '他の人からの見られ方・評価が変わる',
-        self_confidence:   '自分の気持ち・自己肯定感が変わる',
-        action_ease:       '行動のしやすさ・動けるようになること',
-        life_options:      '外見を理由に諦めることが減ること',
-      };
-      return VISION_MAP[p.goal_vision] || CHANGE_MAP[p.goal_change] || '外見を起点に、自信を再設計する';
+      return goalHeadline(p).main;
     }
 
     const tv = p.transform_vectors || {};
@@ -2503,6 +2496,36 @@ export default function NewMeNaviPage() {
     // ステップだけ（例32件）、一覧は行動習慣＋基礎＋AIの合算（例141件）、AIが無い時は静的98件を
     // 分母にしていて、同じ画面で数字が食い違っていた。表示はすべてここを通す。
     // 一覧と同じ並び・同じ完了判定（回答から完了扱いの行動習慣も含む）で数える。
+    // 羅針盤「今週の1点」を本人のデータから選ぶ（Muse指示書 2026-11-22 §2-3）。
+    // 以前は軸ごとの固定文（WEEKLY_STEPS）だけで、Logの来店間隔もMapの未完了ステップも見ていなかった。
+    //   1. 最初の一手の軸で、New Me Log の記録が目安の時期を過ぎている → その予約
+    //   2. 最初の一手の軸で、Mapの未完了ステップ → その一手
+    //   3. データが無い時だけ固定文（新規の人向け）
+    function pickWeeklyPoint(axisId, fallbackText) {
+      const label = AREA_DEFS[axisId]?.label || '';
+      const todayStr = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      const overdue = (serviceLogs || [])
+        .filter(l => l.axis === axisId && l.entry_type !== 'purchase')
+        .map(l => ({ l, due: l.next_visit || idealNextDate(l) }))
+        .filter(x => x.due && x.due < todayStr)
+        .sort((a, b) => (a.due < b.due ? -1 : 1))[0];
+      if (overdue) {
+        const weeks = overdue.l.last_visit ? Math.floor((Date.now() - new Date(overdue.l.last_visit).getTime()) / (7 * 86400000)) : null;
+        return {
+          text: `「${overdue.l.name}」の次の予約を入れる`,
+          reason: `New Me Logの記録で、${weeks != null ? `前回から${weeks}週たち、` : ''}目安の時期（${overdue.due}）を過ぎているため`,
+        };
+      }
+      if (naviStepsData?.steps?.length) {
+        const isDone = (s) => (s.id in stepDone) ? !!stepDone[s.id] : !!s._autoDone;
+        const next = [...computeBaselineItems(), ...naviStepsData.steps].find(s => s.axis === axisId && !isDone(s));
+        if (next?.text) {
+          return { text: String(next.text).replace(/^✓\s*/, ''), reason: `Mapで次に控えている「${label}」の一手から選んでいます` };
+        }
+      }
+      return { text: fallbackText || (label + 'について、今週1つだけやってみる'), reason: null };
+    }
+
     function computeMapProgress() {
       if (naviStepsData?.steps?.length) {
         const combined = [...computeHabitStatusItems(), ...computeBaselineItems(), ...naviStepsData.steps];
@@ -3648,8 +3671,8 @@ export default function NewMeNaviPage() {
         }
       }
       if (!cd) {
-        const stepText = WEEKLY_STEPS[compassFirst] || (AREA_DEFS[compassFirst].label + 'について、今週1つだけやってみる');
-        cd = { axisId: compassFirst, weekStart: thisWeek, stepText, status: 'todo', prev };
+        const pick = pickWeeklyPoint(compassFirst, WEEKLY_STEPS[compassFirst]);
+        cd = { axisId: compassFirst, weekStart: thisWeek, stepText: pick.text, reason: pick.reason, status: 'todo', prev };
         try { localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd)); } catch {}
         pushCheckinsToServer();
       }
@@ -3690,6 +3713,7 @@ export default function NewMeNaviPage() {
           <div class="wcw-body">
             <p class="wcw-axis-name">${esc(def.label)}</p>
             <p class="wcw-step-text">${esc(cd.stepText)}</p>
+            ${cd.reason ? `<p class="wcw-step-reason" style="font-size:11px;line-height:1.6;color:rgba(232,228,220,0.55);margin:4px 0 0">${esc(cd.reason)}</p>` : ''}
           </div>
           ${checkHtml}
         </div>
@@ -3725,12 +3749,31 @@ export default function NewMeNaviPage() {
         <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(200,164,90,0.6);text-decoration:none;border:1px solid rgba(236,232,223,0.121);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">部位マップ</a></p>
         <div class="navi-header-badge">${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
+        ${goalHeadline(p).isOwn ? `<p class="navi-header-sub" style="margin-top:-4px;opacity:.75">${esc(goalHeadline(p).sub ? goalHeadline(p).sub + '　／　' : '')}外見を起点に、自信を再設計する</p>` : ''}
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
+        ${(() => {
+          // AIの生成に渡している基本情報を本人にも見せる（Muse指示書 2026-11-22 §2-2）。
+          // MBTIは言い回しの調整だけに使い、本文では触れない設計
+          if (!naviStepsData) return '';
+          const parts = [
+            p.height_cm ? `身長${p.height_cm}cm` : null,
+            p.weight_kg ? `体重${p.weight_kg}kg` : null,
+            p.body_fat_pct ? `体脂肪率${p.body_fat_pct}%` : null,
+            isMeaningfulProfileValue(p.personal_color) ? `パーソナルカラー：${p.personal_color}` : null,
+            isMeaningfulProfileValue(p.face_type) ? `顔タイプ：${p.face_type}` : null,
+            isMeaningfulProfileValue(p.skeletal_type) ? `骨格：${p.skeletal_type}` : null,
+          ].filter(Boolean);
+          const mbti = isMeaningfulProfileValue(p.mbti) ? '（MBTIは言葉づかいの調整だけに使っています）' : '';
+          return parts.length ? `<p class="navi-header-sub" style="font-size:11px;opacity:.65;margin-top:6px">この道の生成に使ったあなたの情報：${esc(parts.join('・'))}${mbti}</p>` : '';
+        })()}
         ${(() => { const { done: _done, total: _total, autoDone: _auto } = computeMapProgress(); const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了${_auto ? `（うち${_auto}件はMe Scanの回答から完了扱い）` : ''}</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c8a45a" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c8a45a" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c8a45a" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c8a45a" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c8a45a" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c8a45a" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c8a45a"/><polygon points="40,76 37,57 40,61 43,57" fill="#c8a45a" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c8a45a" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c8a45a" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c8a45a" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c8a45a"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(200,164,90,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
 
+      ${hasGoal(p)
+        ? `<details class="goal-edit" style="margin:0 0 14px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(200,164,90,0.85)">目指す場所を変える（受け直さずに変えられます）</summary>${goalPickerHtml(p, { title: '目指す場所を変える' })}</details>`
+        : goalPickerHtml(p, { title: 'このMapのゴールを決める', lead: '今は「外見を起点に、自信を再設計する」がゴールになっています。あなたの言葉に変えると、地図の終点に出ます。どれも任意で、あとから変えられます。' })}
       <div id="service-log-widget">
         ${buildServiceLogWidget()}
       </div>
@@ -3858,6 +3901,9 @@ export default function NewMeNaviPage() {
     });
 
     // 週次チェックイン やったボタン
+    // 目指す場所を決める／変える（lib/goal.js）。保存したら見出し・ゴールノードに反映するため読み直す
+    bindGoalPicker(document, { storageKey: STORAGE_KEY, track: TRACK_ID, token, onSaved: () => setTimeout(() => location.reload(), 600) });
+
     document.getElementById('weekly-checkin-btn')?.addEventListener('click', () => {
       try {
         const CHECKIN_KEY = 'fineme:navi:weekly-checkin';

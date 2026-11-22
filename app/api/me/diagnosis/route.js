@@ -10,6 +10,7 @@
 // 従来は user_id 単独の1行だったため、男性版のあとにBelle版を受けると上書きされていた。
 // 未適用の環境では従来どおりの1行運用にフォールバックする。
 import { getSupabase } from '@/lib/supabase';
+import { cleanGoals } from '@/lib/goal';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -121,6 +122,41 @@ export async function PATCH(request) {
   const { searchParams } = new URL(request.url);
   const track = normalizeTrack(searchParams.get('track'));
   const body = await request.json();
+
+  // 目指す場所（goal_scene / goal_change / goal_vision）だけを最新の回答データに反映する
+  // （結果ページ・Mapの「目指す場所を決める」から。Muse指示書 2026-11-22 §2-1）
+  if (body?.goals && typeof body.goals === 'object') {
+    const goals = cleanGoals(body.goals);
+    const { data: row } = await supabase
+      .from('diagnosis_results')
+      .select('raw_data')
+      .eq('user_id', user.id)
+      .eq('track', track)
+      .maybeSingle();
+    if (!row?.raw_data) return Response.json({ error: '診断結果が見つかりません' }, { status: 404 });
+    const merged = { ...row.raw_data, ...goals };
+    const { error: gErr } = await supabase
+      .from('diagnosis_results')
+      .update({ raw_data: merged })
+      .eq('user_id', user.id)
+      .eq('track', track);
+    if (gErr) return Response.json({ error: gErr.message }, { status: 500 });
+    const { data: latestSnap } = await supabase
+      .from('diagnosis_snapshots')
+      .select('id, raw_data')
+      .eq('user_id', user.id)
+      .eq('track', track)
+      .order('taken_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestSnap) {
+      await supabase.from('diagnosis_snapshots')
+        .update({ raw_data: { ...latestSnap.raw_data, ...goals } })
+        .eq('id', latestSnap.id).eq('user_id', user.id);
+    }
+    return Response.json({ ok: true, goals });
+  }
+
   const result = body?.result;
   if (!result || typeof result !== 'object') return Response.json({ error: 'result は必須です' }, { status: 400 });
 
