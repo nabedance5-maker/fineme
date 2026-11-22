@@ -608,7 +608,9 @@ export default function DiagnosisResultPage() {
     };
 
     const priorityOrder = p.priority_order || [];
-    const compassCalculated = p.compass_first || priorityOrder[0] || 'body';
+    // 選び直した時に元の推奨を compass_first_original に退避している（下の上書きチップ）。
+    // 以前は compass_first を直接上書きして元の値が消え、「診断の推奨に戻す」で戻せなかった（2026-11-22修正）
+    const compassCalculated = p.compass_first_original || p.compass_first || priorityOrder[0] || 'body';
     const compassOverride = localStorage.getItem('fineme:compass:override');
     const isOverrideActive = !!(compassOverride && AREA_DEFS[compassOverride]);
     const compassFirst = isOverrideActive ? compassOverride : compassCalculated;
@@ -800,6 +802,24 @@ export default function DiagnosisResultPage() {
     }
 
     // ─── タイプヒーロー（Naviの最初のセクション） ───
+    // 「このタイプになった理由」を回答の数値つきで出す（Muse指示書 2026-11-22 §1-8）。
+    // 決め方（今がいちばん高い軸＝タイプ）は変えず、根拠を見えるようにするだけ
+    function typeReasonHtml() {
+      const v = tv[identityAxis] || {};
+      const label = AREA_DEFS[identityAxis]?.label || '';
+      let text;
+      if (isOverrideActive) {
+        text = `あなたが選んだ方角「${label}」をタイプにも反映しています。「診断の推奨に戻す」で元のタイプに戻ります。`;
+      } else {
+        const ranks = Object.entries(tv).map(([id, x]) => ({ id, cur: Number(x.current) || 0 })).sort((a, b) => b.cur - a.cur);
+        const second = ranks.find(r => r.id !== identityAxis);
+        const tied = second && second.cur === (Number(v.current) || 0);
+        text = `8つの領域のうち、今の状態をいちばん高く答えたのが「${label}」（今 ${Number(v.current) || 0}／5）でした。タイプはここから決まります。`
+          + (tied ? `同じ高さの領域がある時は、印象への効きやすい基盤の領域を先にしています。` : '');
+      }
+      return `<p class="type-hero-reason" style="font-size:12px;line-height:1.7;color:rgba(232,228,220,0.62);margin:8px auto 14px;max-width:440px">${esc(text)}</p>`;
+    }
+
     function buildTypeHero() {
       if (!typeIdentity) return '';
       const { axisCode, creature, typeCode, displayCode, fullName } = typeIdentity;
@@ -816,6 +836,7 @@ export default function DiagnosisResultPage() {
           <h1 class="type-hero-name">～ ${esc(fullName)} ～</h1>
           <p class="type-hero-axis">（${esc(axisLabel)}軸）</p>
           <p class="type-hero-tagline">${esc(desc)}</p>
+          ${typeReasonHtml()}
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button id="share-type-card-btn" class="type-hero-share-btn"
               data-type-code="${esc(typeCode)}"
@@ -1603,6 +1624,7 @@ export default function DiagnosisResultPage() {
           const raw = localStorage.getItem('fineme:diagnosis:latest');
           if (raw) {
             const d = JSON.parse(raw);
+            if (!d.compass_first_original) d.compass_first_original = compassCalculated;
             d.compass_first = axis;
             localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
           }
@@ -1618,6 +1640,7 @@ export default function DiagnosisResultPage() {
         if (raw) {
           const d = JSON.parse(raw);
           d.compass_first = compassCalculated;
+          delete d.compass_first_original;
           localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
         }
       } catch {}

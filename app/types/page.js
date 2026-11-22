@@ -247,11 +247,21 @@ export default function TypesPage() {
         const raw = localStorage.getItem('fineme:diagnosis:latest');
         if (!raw) return null;
         const p = JSON.parse(raw);
-        const compassFirst = p.compass_first || (p.priority_order || [])[0];
-        if (!compassFirst) return null;
-        const axisCode = AXIS_TYPE_CODE[compassFirst];
+        // タイプの軸は結果ページ（computeTypeIdentity）と同じ決め方にする：選び直し（上書き）が
+        // あればその軸、無ければ「今」がいちばん高い軸（同点は基盤の層を優先）。以前は最初の一手の
+        // 軸で出していて、結果ページのタイプと食い違っていた（Muse調査 2026-11-22）
+        const tv = p.transform_vectors || {};
+        const override = localStorage.getItem('fineme:compass:override');
+        let typeAxis = override && AXIS_TYPE_CODE[override] ? override : null;
+        if (!typeAxis) {
+          const entries = Object.entries(tv).sort((a, b) =>
+            (b[1].current - a[1].current) || ((a[1].tier || 9) - (b[1].tier || 9)));
+          typeAxis = entries[0]?.[0] || p.compass_first || (p.priority_order || [])[0];
+        }
+        if (!typeAxis) return null;
+        const axisCode = AXIS_TYPE_CODE[typeAxis];
         if (!axisCode) return null;
-        const v = (p.transform_vectors || {})[compassFirst] || {};
+        const v = tv[typeAxis] || {};
         const careCode = CARE_CODE_MAP[v.care_type] || 'N';
         const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
         const cp = careCode + pathCode;
@@ -270,13 +280,14 @@ export default function TypesPage() {
       const colors = { N:'rgba(200,164,90,0.12)|#c8a45a66|#c8a45a', C:'rgba(239,68,68,0.1)|#ef444466|#ef4444', A:'rgba(59,130,246,0.1)|#3b82f666|#3b82f6', P:'rgba(16,185,129,0.1)|#10b98166|#10b981' };
       const [bg, border, color] = colors[code].split('|');
       const [lbl] = CARE_LABELS[code];
-      return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + code + ' ' + lbl + '</span>';
+      // 画面のコードは数字表記（toDisplayCode）なので、凡例も数字で示す（Muse調査 2026-11-22：凡例は英字・画面は数字で食い違っていた）
+      return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + CARE_DIGIT_MAP[code] + ' ' + lbl + '</span>';
     }
     function pathChip(code) {
       const colors = { V:'rgba(200,164,90,0.08)|#c8a45a44|#c8a45aaa', Q:'rgba(239,68,68,0.08)|#ef444444|#ef4444aa', K:'rgba(139,92,246,0.08)|#8b5cf644|#8b5cf6aa', L:'rgba(245,158,11,0.08)|#f59e0b44|#f59e0baa', D:'rgba(16,185,129,0.08)|#10b98144|#10b981aa' };
       const [bg, border, color] = colors[code].split('|');
       const [lbl] = PATH_LABELS[code];
-      return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + code + ' ' + lbl + '</span>';
+      return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + PATH_DIGIT_MAP[code] + ' ' + lbl + '</span>';
     }
 
     function buildCard(axisCode, cp) {
@@ -329,6 +340,7 @@ export default function TypesPage() {
       + '<div class="code-row"><div class="code-pos">1</div><div><div class="code-dim-label">軸（どの部位に着目するか）</div><div class="code-chips">' + axisChips + '</div></div></div>'
       + '<div class="code-row"><div class="code-pos">2</div><div><div class="code-dim-label">関心度（今どれくらい気にしているか）</div><div class="code-chips">' + ['N','C','A','P'].map(careChip).join('') + '</div></div></div>'
       + '<div class="code-row"><div class="code-pos">3</div><div><div class="code-dim-label">歩み（今どのフェーズにいるか）</div><div class="code-chips">' + ['V','Q','K','L','D'].map(pathChip).join('') + '</div></div></div>'
+      + '<div class="code-row"><div class="code-pos">4</div><div><div class="code-dim-label">末尾の文字（M＝Fineme、L＝Fineme Belle）</div></div></div>'
       + '</div>'
       + '<div class="axis-tabs">' + tabsHtml + '</div>'
       + '<div id="type-grid" class="type-grid">' + buildGrid(defaultAxis) + '</div>'

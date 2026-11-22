@@ -853,9 +853,44 @@ export default function NewMeNaviPage() {
           if (data.navi_steps?.steps?.length > 0) {
             naviStepsData = data.navi_steps;
           }
+          // ── 羅針盤のチェックイン：サーバーと端末を合わせる（新しい週・済みの方を優先、履歴は週で統合） ──
+          if (data.navi_checkins) mergeCheckinsFromServer(data.navi_checkins);
         }
       }
     } catch {}
+
+    // 羅針盤「今週の1点」のチェックインは端末だけに保存していて、別端末・保存消去で
+    // 「直近3週」の判定が消えていた（Muse指示書 2026-11-22 §1-4）。サーバーにも同じ形で持つ。
+    function mergeCheckinsFromServer(server) {
+      try {
+        const CK = 'fineme:navi:weekly-checkin';
+        const HK = 'fineme:navi:weekly-checkin-history';
+        const local = JSON.parse(localStorage.getItem(CK) || 'null');
+        const sc = server.current;
+        if (sc?.weekStart && (!local || sc.weekStart > local.weekStart || (sc.weekStart === local.weekStart && sc.status === 'done' && local.status !== 'done'))) {
+          localStorage.setItem(CK, JSON.stringify({ ...(local && local.weekStart === sc.weekStart ? local : {}), ...sc }));
+        }
+        const byWeek = {};
+        for (const h of [...JSON.parse(localStorage.getItem(HK) || '[]'), ...(server.history || [])]) {
+          if (!h?.weekStart) continue;
+          if (!byWeek[h.weekStart] || h.status === 'done') byWeek[h.weekStart] = { weekStart: h.weekStart, status: h.status };
+        }
+        const merged = Object.values(byWeek).sort((a, b) => (a.weekStart < b.weekStart ? -1 : 1)).slice(-8);
+        localStorage.setItem(HK, JSON.stringify(merged));
+      } catch {}
+    }
+    function pushCheckinsToServer() {
+      if (!token) return;
+      try {
+        const current = JSON.parse(localStorage.getItem('fineme:navi:weekly-checkin') || 'null');
+        const history = JSON.parse(localStorage.getItem('fineme:navi:weekly-checkin-history') || '[]');
+        fetch('/api/me/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ navi_checkins: { current, history } }),
+        }).catch(() => {});
+      } catch {}
+    }
 
     // ── あなたについて分かってきたこと: 過去の月次スナップショットのstep_outcomesを軸ごとに集計 ──
     let confirmedByAxis = {};
@@ -1689,7 +1724,11 @@ export default function NewMeNaviPage() {
 
         const actionLabel = { quick:'', habit:'', ongoing:'' }[step.action_type] || '';
         const baselineChip = step._isBaseline ? ' <span class="gmap-baseline-chip">基礎</span>' : '';
-        const habitStatusChip = step._isHabitStatus ? ' <span class="gmap-habit-chip">あなたの回答</span>' : '';
+        // 誰も押していないのに✓が付いて見えた（Muse調査 2026-11-22 §1-4）。回答から完了扱いに
+        // しているものは、その根拠が分かる文言にする（押して外せば以後は手動の状態が優先）
+        const habitStatusChip = step._isHabitStatus
+          ? ` <span class="gmap-habit-chip">${!(step.id in stepDone) && step._autoDone ? 'Me Scanの回答から完了扱い' : 'あなたの回答'}</span>`
+          : '';
 
         let guideBadgeHtml = '';
         if (step.guide === 'HIGH') {
@@ -2460,6 +2499,22 @@ export default function NewMeNaviPage() {
     // MeScanの行動習慣回答（axis_habits、全軸共通の複数選択items）を、New Me Mapの
     // 初期状態（実施済み／やってみる）に機械的に反映する固定ノード（AI生成に頼らない・
     // でお指摘 2026-08-06：回答内容がそのままMapの初期状態に反映されてほしい）
+    // New Me Map の進捗を1か所で数える（Muse指示書 2026-11-22 §1-3）。以前はヘッダーがAI生成
+    // ステップだけ（例32件）、一覧は行動習慣＋基礎＋AIの合算（例141件）、AIが無い時は静的98件を
+    // 分母にしていて、同じ画面で数字が食い違っていた。表示はすべてここを通す。
+    // 一覧と同じ並び・同じ完了判定（回答から完了扱いの行動習慣も含む）で数える。
+    function computeMapProgress() {
+      if (naviStepsData?.steps?.length) {
+        const combined = [...computeHabitStatusItems(), ...computeBaselineItems(), ...naviStepsData.steps];
+        const isDone = (s) => (s.id in stepDone) ? !!stepDone[s.id] : !!s._autoDone;
+        const done = combined.filter(isDone).length;
+        const autoDone = combined.filter(s => !(s.id in stepDone) && s._autoDone).length;
+        return { done, total: combined.length, autoDone };
+      }
+      const all = flattenAllSteps();
+      return { done: all.filter(s => s.isDone).length, total: all.length, autoDone: 0 };
+    }
+
     function computeHabitStatusItems() {
       const items = [];
       const axisHabits = p.axis_habits || {};
@@ -3491,9 +3546,7 @@ export default function NewMeNaviPage() {
           </g>`;
       }).join('');
 
-      const allSt = flattenAllSteps();
-      const doneCount  = allSt.filter(s => s.isDone).length;
-      const totalCount = allSt.length;
+      const { done: doneCount, total: totalCount } = computeMapProgress();
       const overallPct = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
 
       return `
@@ -3598,6 +3651,7 @@ export default function NewMeNaviPage() {
         const stepText = WEEKLY_STEPS[compassFirst] || (AREA_DEFS[compassFirst].label + 'について、今週1つだけやってみる');
         cd = { axisId: compassFirst, weekStart: thisWeek, stepText, status: 'todo', prev };
         try { localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd)); } catch {}
+        pushCheckinsToServer();
       }
       const def = AREA_DEFS[compassFirst];
       const isDone = cd.status === 'done';
@@ -3618,7 +3672,7 @@ export default function NewMeNaviPage() {
         const doneCount = recent3.filter(h => h.status === 'done').length;
         if (recent3.length === 3 && doneCount <= 1) {
           continuityHtml = `<div class="wcw-continuity" id="wcw-continuity">
-            <p class="wcw-continuity-q">直近3週、なかなかできていないみたい。継続できていますか？</p>
+            <p class="wcw-continuity-q">直近3週、羅針盤の「やった」があまり押されていないみたい。継続できていますか？</p>
             <div class="wcw-continuity-opts">
               <button class="wcw-continuity-opt" data-choice="keep">このまま続ける</button>
               <button class="wcw-continuity-opt" data-choice="slow">ペースを落とす</button>
@@ -3672,7 +3726,7 @@ export default function NewMeNaviPage() {
         <div class="navi-header-badge">${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
-        ${(() => { let _done, _total; if (naviStepsData?.steps?.length) { _total = naviStepsData.steps.length; _done = naviStepsData.steps.filter(s => stepDone[s.id]).length; } else { const _all = flattenAllSteps(); _done = _all.filter(s=>s.isDone).length; _total = _all.length; } const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
+        ${(() => { const { done: _done, total: _total, autoDone: _auto } = computeMapProgress(); const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了${_auto ? `（うち${_auto}件はMe Scanの回答から完了扱い）` : ''}</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c8a45a" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c8a45a" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c8a45a" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c8a45a" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c8a45a" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c8a45a" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c8a45a"/><polygon points="40,76 37,57 40,61 43,57" fill="#c8a45a" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c8a45a" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c8a45a" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c8a45a" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c8a45a"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(200,164,90,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
@@ -3811,6 +3865,7 @@ export default function NewMeNaviPage() {
         if (!cd) return;
         cd.status = 'done';
         localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd));
+        pushCheckinsToServer();
         const widget = document.getElementById('weekly-checkin-widget');
         const btn = document.getElementById('weekly-checkin-btn');
         if (!widget || !btn) return;
@@ -3838,6 +3893,7 @@ export default function NewMeNaviPage() {
           cd.continuityAsked = true;
           cd.continuityChoice = choice;
           localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd));
+          pushCheckinsToServer();
         }
       } catch {}
       const ACK = { keep: 'そのまま続けよう。焦らなくて大丈夫。', slow: 'ペースを落として大丈夫。少しずつでいい。', change: '次のMap更新で、別の一手に切り替えます。' };
@@ -4013,19 +4069,11 @@ export default function NewMeNaviPage() {
       const pbPct  = document.querySelector('.progress-bar-pct');
       const pbSub  = document.querySelector('.progress-bar-sub');
       if (!pbFill) return;
-      let _done, _total;
-      if (naviStepsData?.steps?.length) {
-        _total = naviStepsData.steps.length;
-        _done  = naviStepsData.steps.filter(s => stepDone[s.id]).length;
-      } else {
-        const _all = flattenAllSteps();
-        _done  = _all.filter(s => s.isDone).length;
-        _total = _all.length;
-      }
+      const { done: _done, total: _total, autoDone: _auto } = computeMapProgress();
       const _pct = _total > 0 ? Math.round(_done / _total * 100) : 0;
       pbFill.style.width = _pct + '%';
       if (pbPct) pbPct.textContent = _pct + '%';
-      if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了`;
+      if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了${_auto ? `（うち${_auto}件はMe Scanの回答から完了扱い）` : ''}`;
     }
 
     function refreshCompassOnly() {
