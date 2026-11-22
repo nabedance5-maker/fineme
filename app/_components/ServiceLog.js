@@ -350,6 +350,7 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-book-cancel-btn:hover { border-color: rgba(232,228,220,0.3); color: rgba(232,228,220,0.85); }
 
       /* 記録できたことを目に見える形で返す */
+      .ltp-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
       .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
         background: linear-gradient(135deg,#c8a45a,#e8c86a); color: #0d1117; padding: 12px 24px; border-radius: 99px;
         font-size: 13.5px; font-weight: 800; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
@@ -469,6 +470,29 @@ export default function ServiceLog({ withSideNav = false }) {
       const op = JSON.parse(localStorage.getItem('fineme:mirror:one-point') || 'null');
       if (op?.axisId) { mirrorAxis = op.axisId; hasMirror = true; }
     } catch {}
+    // ログイン中はサーバーの最新の Me Scan を正とする（Muse指示書 2026-11-22 §1-5）。
+    // 端末の保存だけを見ていたため、別端末・保存消去の後は診断済みでも「Me Scanの結果があると
+    // 出せます」と案内や見本カードが出ていた。予算は最新の受検に回答がある時だけ使う
+    // （現行の Me Scan は予算を聞かないので、無ければ予算の気づきは出さない）。
+    async function fetchDiagnosisContext() {
+      if (!isLoggedIn()) return;
+      const token = getAccessToken();
+      const kt = (() => { try { return getKnownTrackId(); } catch { return null; } })();
+      for (const t of (kt ? [kt] : ['fineme', 'belle'])) {
+        try {
+          const r = await fetch(`/api/me/diagnosis?track=${t}`, { headers: { Authorization: `Bearer ${token}` } });
+          const d = r.ok ? await r.json() : null;
+          const first = d?.compass_first || d?.priority_order?.[0] || null;
+          if (first) {
+            compassAxis = first;
+            hasDiagnosis = true;
+            budget = d.budget || null;
+            return;
+          }
+        } catch {}
+      }
+    }
+
     // one-point が無くてもMirror実施済みのことがあるためセッションでも判定する
     if (!hasMirror) {
       try { hasMirror = !!JSON.parse(localStorage.getItem('fineme:mirror:sessions') || '[]').length; } catch {}
@@ -682,11 +706,15 @@ export default function ServiceLog({ withSideNav = false }) {
         return `${rects}${totalLabel}<text x="${x + barW / 2}" y="172" text-anchor="middle" class="ltp-axis-label">${esc(m.label)}</text>`;
       }).join('');
 
+      // 金額は図の中にしか無く、読み上げ・検索では読めなかった（Muse調査 2026-11-22）。
+      // role="img" の中の文字は読まれないので、全月の金額を説明文と見えない一覧の両方で持つ。
+      const monthText = trend.months.map(m => `${m.label} ${formatYen(m.total)}`).join('、');
       const svg = `
-        <svg class="ltp-svg" viewBox="0 0 ${CHART_W} 190" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
+        <svg class="ltp-svg" viewBox="0 0 ${CHART_W} 190" role="img" aria-label="${esc(`直近6ヶ月の月別支出：${monthText}`)}">
           <line x1="0" y1="${baseline}" x2="${CHART_W}" y2="${baseline}" class="ltp-baseline" />
           ${svgBars}
-        </svg>`;
+        </svg>
+        <ul class="ltp-sr-only">${trend.months.map(m => `<li>${esc(m.label)}：${esc(formatYen(m.total))}</li>`).join('')}</ul>`;
 
       // ── 凡例 ──
       const legendItems = [
@@ -1643,31 +1671,47 @@ export default function ServiceLog({ withSideNav = false }) {
         const filename = `new-me-log-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.png`;
         const file = new File([blob], filename, { type: 'image/png' });
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'New Me Log',
-            text: `今月の自分への投資は${formatYen(s.monthly)}でした`,
-          });
-        } else {
+        const download = () => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url; a.download = filename;
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 4000);
+          showToast('画像を保存しました');
+        };
+        // PC（マウス操作）では共有シートを開かずそのまま保存する。PC版Chromeの共有は
+        // OSの別ウィンドウで開き、ブラウザの操作を受け付けない状態に見えていた
+        // （Muse調査 2026-11-22：押すと応答不能、2回とも再現）。共有シートはスマホだけ。
+        const isTouch = window.matchMedia?.('(pointer: coarse)').matches;
+        if (isTouch && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'New Me Log',
+              text: `今月の自分への投資は${formatYen(s.monthly)}でした`,
+            });
+          } catch (e) {
+            if (e?.name === 'AbortError') return; // 本人が閉じた
+            download(); // 共有できない時（操作から時間が空いて拒否された等）は保存に切り替える
+          }
+        } else {
+          download();
         }
       } catch (e) {
-        if (e?.name !== 'AbortError') alert('シェア/保存に失敗しました: ' + e.message);
+        // alert はブラウザ全体を止めるので使わない
+        showToast('画像を作れませんでした。時間をおいてもう一度お試しください');
+        console.error('[log] fv card image failed', e);
       } finally {
         btn.disabled = false; btn.textContent = label;
       }
     }
 
-    function loadImageEl(src) {
+    function loadImageEl(src, timeoutMs = 8000) {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
+        const timer = setTimeout(() => reject(new Error('image timeout')), timeoutMs);
+        img.onload = () => { clearTimeout(timer); resolve(img); };
+        img.onerror = (e) => { clearTimeout(timer); reject(e); };
         img.src = src;
       });
     }
@@ -1691,7 +1735,8 @@ export default function ServiceLog({ withSideNav = false }) {
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext('2d');
 
-      try { await document.fonts.ready; } catch {}
+      // フォントの読み込み待ちで止まらないよう上限を付ける（間に合わなければ代替フォントで描く）
+      try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch {}
       const bg = await loadImageEl('/assets/images/log-parchment-v2.webp');
       ctx.drawImage(bg, 0, 0, W, H);
 
@@ -2000,7 +2045,7 @@ export default function ServiceLog({ withSideNav = false }) {
     });
 
     root.innerHTML = `<div style="text-align:center;padding:60px 0;color:rgba(232,228,220,0.3);font-size:13px">読み込み中...</div>`;
-    Promise.all([fetchLogs(), fetchProviderRecords()]).then(() => {
+    Promise.all([fetchLogs(), fetchProviderRecords(), fetchDiagnosisContext()]).then(() => {
       render();
       // LINE通知の「予約先を登録する」から来た時（?edit=<id>&focus=action_url）は、
       // その記録の編集画面を開いてURL欄にカーソルを置く（一度登録すれば次回から1タップ）

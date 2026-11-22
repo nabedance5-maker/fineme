@@ -72,12 +72,57 @@ function getUrgencyLabel(u) {
 function getFailureLabel(f) {
   return { lost_direction: '方向がわからなくなった', no_continuation: '続かなかった', cost: 'コストが続かなかった', awkward: '関係性がうまくいかなかった', no_result: '変化が感じられなかった', ongoing: '今も継続中' }[f] || f || '—';
 }
+// 現行 Me Scan（v9_me_scan）の8軸。表示名は結果ページ（app/diagnosis/result/page.js の AREA_DEFS）と揃える
+const MESCAN_AXES = [
+  ['hair', '髪'], ['skin', '肌'], ['eyebrow', '眉'], ['body', '体型'],
+  ['fashion', '服'], ['hairremoval', '脱毛'], ['teeth', '歯'], ['nail', '爪'],
+];
+const MESCAN_AXIS_LABEL = Object.fromEntries(MESCAN_AXES);
+
+function authToken() {
+  try {
+    const k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
+    return k ? JSON.parse(localStorage.getItem(k) || 'null')?.access_token || null : null;
+  } catch { return null; }
+}
+
+// 8軸の「今」と「理想」（1〜5）。小数（0.5刻み）もそのまま扱う
+function MeScanAxes({ profile }) {
+  const tv = profile?.transform_vectors || {};
+  const rows = MESCAN_AXES.filter(([id]) => tv[id]);
+  if (!rows.length) return null;
+  return (
+    <div>
+      {rows.map(([id, label]) => {
+        const v = tv[id];
+        const cur = Math.max(0, Math.min(5, Number(v.current) || 0));
+        const ideal = Math.max(0, Math.min(5, Number(v.ideal) || 0));
+        return (
+          <div key={id} className="concern-bar-row" aria-label={`${label}：今 ${cur}／理想 ${ideal}（5段階）`}>
+            <div className="concern-bar-label">{label}</div>
+            <div className="concern-bar-track" style={{ position: 'relative' }}>
+              <div className="concern-bar-fill" style={{ width: `${(cur / 5) * 100}%`, background: '#c8a45a' }} />
+              {ideal > 0 && <div style={{ position: 'absolute', top: '-2px', bottom: '-2px', left: `calc(${(ideal / 5) * 100}% - 1px)`, width: '2px', background: 'rgba(232,228,220,0.75)' }} />}
+            </div>
+            <div className="concern-bar-value" style={{ width: '72px', color: 'rgba(232,228,220,0.7)' }}>今{cur} / 理想{ideal}</div>
+          </div>
+        );
+      })}
+      <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>金色の棒＝今、白い線＝理想（どちらも5段階）</p>
+    </div>
+  );
+}
+
 function fmtDate(ts) {
   try { return new Date(ts).toLocaleString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return ''; }
 }
 
 export default function MypageDiagnosisPage() {
-  const { track } = useTrack();
+  const { track, trackId } = useTrack();
+  // 現行 Me Scan（v9）：サーバーの最新結果＋受検履歴（Muse指示書 2026-11-22 §1-1・§1-6）
+  const [meScan, setMeScan] = useState(null);       // 最新の回答データ
+  const [meScanHistory, setMeScanHistory] = useState([]); // サーバーの受検履歴（要約）
+  const [openSnap, setOpenSnap] = useState(null);   // 開いている過去の受検 { id, raw_data }
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagProfile, setDiagProfile] = useState(null);
@@ -108,7 +153,9 @@ export default function MypageDiagnosisPage() {
             if (Array.isArray(hist) && hist.length >= 2) setDiagHistory(hist.slice().reverse().slice(0, 10));
             if (!raw) { setDiagStatus('empty'); return; }
             const p = JSON.parse(raw);
-            if (['v5', 'v6', 'v7', 'v8'].includes(p.version)) {
+            if (p.version === 'v9_me_scan') {
+              setMeScan(p); setDiagStatus('mescan');
+            } else if (['v5', 'v6', 'v7', 'v8'].includes(p.version)) {
               if (!p.concern_areas || Object.keys(p.concern_areas).length === 0) {
                 p.concern_areas = careLevelsToConcernAreas(p.care_levels);
               }
@@ -125,6 +172,36 @@ export default function MypageDiagnosisPage() {
     }
     window.location.href = '/login';
   }, []);
+
+  // サーバーの最新結果と受検履歴。端末に結果が無い（別端末・localStorage消去）時もここから表示する
+  useEffect(() => {
+    if (!session) return;
+    const token = authToken();
+    if (!token) return;
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch(`/api/me/diagnosis?track=${trackId}`, { headers })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.version === 'v9_me_scan' || d?.transform_vectors) {
+          setMeScan(cur => (!cur || Number(d.at) >= Number(cur.at) ? d : cur));
+          setDiagStatus('mescan');
+        }
+      })
+      .catch(() => {});
+    fetch(`/api/me/diagnosis?track=${trackId}&history=1`, { headers })
+      .then(r => (r.ok ? r.json() : []))
+      .then(list => setMeScanHistory(Array.isArray(list) ? list : []))
+      .catch(() => {});
+  }, [session, trackId]);
+
+  async function toggleSnapshot(id) {
+    if (openSnap?.id === id) { setOpenSnap(null); return; }
+    const token = authToken();
+    if (!token) return;
+    const r = await fetch(`/api/me/diagnosis?snapshot=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+    const d = r && r.ok ? await r.json() : null;
+    if (d) setOpenSnap({ id, raw_data: d.raw_data });
+  }
 
   if (loading) return <div style={{ textAlign: 'center', padding: '60px' }}>読み込み中...</div>;
 
@@ -160,11 +237,60 @@ export default function MypageDiagnosisPage() {
 
           {diagStatus === 'old' && (
             <div className="card" style={{ padding: '20px' }}>
-              <p style={{ fontWeight: 700, margin: '0 0 8px' }}>診断データを更新してください</p>
-              <p className="muted" style={{ margin: '0 0 14px' }}>新しい変容プロファイル診断を受けると、より詳細な分析が表示されます。</p>
-              <Link href={track.diagnosis} className="action-btn action-btn-primary" style={{ display: 'inline-block', padding: '12px 24px' }}>新しい診断を受ける</Link>
+              <p style={{ fontWeight: 700, margin: '0 0 8px' }}>以前の形式の診断結果です</p>
+              <p className="muted" style={{ margin: '0 0 14px' }}>今の Me Scan を受けると、8つの領域の今と理想、最初の一手が表示されます。</p>
+              <Link href={track.diagnosis} className="action-btn action-btn-primary" style={{ display: 'inline-block', padding: '12px 24px' }}>Me Scanを受ける</Link>
             </div>
           )}
+
+          {diagStatus === 'mescan' && meScan && (() => {
+            const latestType = meScanHistory[0]?.type || null;
+            const first = meScan.compass_first || meScan.priority_order?.[0] || null;
+            return (
+              <>
+                <div className="result-hero">
+                  <div className="result-badge">最新の Me Scan</div>
+                  {latestType?.fullName && <h2>{latestType.fullName}{latestType.displayCode ? `（${latestType.displayCode}）` : ''}</h2>}
+                  <p>{fmtDate(Number(meScan.at) || meScan.at)} 受検</p>
+                  {first && <p style={{ marginTop: '6px' }}>最初の一手：{MESCAN_AXIS_LABEL[first] || first}</p>}
+                </div>
+
+                <div className="card" style={{ padding: '20px' }}>
+                  <h2 style={{ margin: '0 0 14px' }}>8つの領域の今と理想</h2>
+                  <MeScanAxes profile={meScan} />
+                </div>
+
+                <div className="card" style={{ padding: '20px' }}>
+                  <div className="action-grid">
+                    <Link href={track.diagnosisResult} className="action-btn action-btn-primary">詳しい結果を見る</Link>
+                    <Link href="/mypage/navi" className="action-btn action-btn-secondary">New Me Mapを見る</Link>
+                    <Link href={track.diagnosis} className="action-btn action-btn-secondary">受け直す（前回の結果は履歴に残ります）</Link>
+                  </div>
+                </div>
+
+                {meScanHistory.length > 0 && (
+                  <div className="card" style={{ padding: '20px' }}>
+                    <h2 style={{ margin: '0 0 6px' }}>これまでの Me Scan</h2>
+                    <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>受け直しても、過去の結果はここに残ります。押すとその時の8領域を開きます。</p>
+                    {meScanHistory.map((h, i) => (
+                      <div key={h.id}>
+                        <button type="button" className="history-item" onClick={() => toggleSnapshot(h.id)} style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid rgba(232,228,220,0.1)', cursor: 'pointer', textAlign: 'left', color: 'inherit', font: 'inherit' }}>
+                          <div>
+                            <div className="history-type">{h.type?.fullName || 'タイプ未判定'}{h.type?.displayCode ? `（${h.type.displayCode}）` : ''}</div>
+                            <div className="history-date">{fmtDate(h.taken_at)}{h.compass_first ? `・最初の一手：${MESCAN_AXIS_LABEL[h.compass_first] || h.compass_first}` : ''}</div>
+                          </div>
+                          {i === 0 && <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', background: '#dbeafe', color: '#1d4ed8', borderRadius: '99px' }}>最新</span>}
+                        </button>
+                        {openSnap?.id === h.id && (
+                          <div style={{ padding: '12px 0 4px' }}><MeScanAxes profile={openSnap.raw_data} /></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {diagStatus === 'v4' && p && (
             <>

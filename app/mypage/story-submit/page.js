@@ -66,8 +66,10 @@ export default function StorySubmitPage() {
       })
         .then(r => r.ok ? r.json() : [])
         .then(data => {
+          // 来店済み（visited）が体験談の本命。以前は存在しない 'completed' を見ていて、
+          // 来店済みの予約が1件も候補に出なかった（Muse指示書 2026-11-22 §1-7）
           const approved = (data || []).filter(r =>
-            r.status === 'approved' || r.status === 'completed'
+            r.status === 'visited' || r.status === 'approved'
           );
           // 閲覧履歴からプロバイダー名を補完
           const enriched = approved.map(r => ({
@@ -108,6 +110,7 @@ export default function StorySubmitPage() {
           answers,
           userId,
           providerId: selectedReservation?.provider_id || '',
+          reservationId: selectedReservation?.id || null,
           serviceName: providerName.trim() || null,
           axisId: axisId || null,
           pathType: pathType || null,
@@ -117,7 +120,7 @@ export default function StorySubmitPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || '送信エラー');
-      setDone(true);
+      setDone(data.published === false ? 'pending' : true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -134,6 +137,7 @@ export default function StorySubmitPage() {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
           <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(232,228,220,0.90)', marginBottom: '10px' }}>体験談を投稿しました</h1>
           <p style={{ color: 'rgba(232,228,220,0.55)', fontSize: '14px', lineHeight: 1.7, marginBottom: '28px' }}>
+            {done === 'pending' && <>運営が確認したあとに公開されます。<br /></>}
             あなたの変容ストーリーは、同じ悩みを持つ誰かの「最初の一歩」になります。<br />
             投稿ありがとうございました。
           </p>
@@ -170,7 +174,7 @@ export default function StorySubmitPage() {
                 <div style={{ background: '#151b24', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '32px 24px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
                   <p style={{ fontSize: '32px', margin: '0 0 12px' }}></p>
                   <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '8px' }}>
-                    まだ承認済みの予約がありません
+                    まだ来店済みの予約がありません
                   </p>
                   <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', marginBottom: '20px', lineHeight: 1.6 }}>
                     体験談は、実際に利用・来店したサービスについてのみ投稿できます。<br />

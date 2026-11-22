@@ -119,9 +119,14 @@ export default function StorySubmitPage() {
   async function submitStory() {
     setSubmitting(true);
     try {
+      let token = null;
+      try {
+        const k = Object.keys(localStorage).find(x => x.startsWith('sb-') && x.endsWith('-auth-token'));
+        token = k ? JSON.parse(localStorage.getItem(k) || 'null')?.access_token || null : null;
+      } catch {}
       const res = await fetch('/api/stories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           answers: [1, 2, 3, 4].map(n => answers[n] || ''),
           tags: [...selectedTags],

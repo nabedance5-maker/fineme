@@ -60,10 +60,30 @@ export async function POST(request) {
       String(a || '').slice(0, maxLen[i]).replace(/[\x00-\x1F\x7F]/g, '')
     );
 
+    // 即公開してよいのは、店舗に紐づく体験談なら「その店舗に来店済み（または確定済み）の本人」の
+    // ものだけ。以前は未ログインでも任意の店舗に★5の体験談を即公開で投稿できた（2026-11-22修正）。
+    // 確かめられない投稿は審査待ち（/admin/stories で運営が公開する）にする。
+    let status = 'pending';
+    let verifiedReservationId = null;
+    if (resolvedUserId && providerId) {
+      let q = supabaseAdmin
+        .from('reservations')
+        .select('id')
+        .eq('user_id', resolvedUserId)
+        .eq('provider_id', String(providerId))
+        .in('status', ['visited', 'approved'])
+        .limit(1);
+      if (reservationId) q = q.eq('id', String(reservationId));
+      const { data: resv } = await q.maybeSingle();
+      if (resv) { status = 'approved'; verifiedReservationId = resv.id; }
+    } else if (resolvedUserId && !providerId) {
+      status = 'approved'; // 店舗に紐づかない本人の体験談は従来どおり公開
+    }
+
     const { data, error } = await supabaseAdmin
       .from('stories')
       .insert({
-        reservation_id: reservationId || null,
+        reservation_id: verifiedReservationId,
         user_id: resolvedUserId,
         provider_id: String(providerId || ''),
         service_name: serviceName || null,
@@ -76,14 +96,14 @@ export async function POST(request) {
         axis_id: axisId || null,
         path_type: pathType || null,
         milestone_reached: milestoneReached ? String(milestoneReached).slice(0, 200) : null,
-        status: 'approved',
-        published_at: new Date().toISOString(),
+        status,
+        published_at: status === 'approved' ? new Date().toISOString() : null,
       })
       .select('id')
       .single();
 
     if (error) throw error;
-    return Response.json({ ok: true, id: data.id, message: '投稿が公開されました。' });
+    return Response.json({ ok: true, id: data.id, published: status === 'approved', message: status === 'approved' ? '投稿が公開されました。' : '運営が確認したあとに公開されます。' });
   } catch (err) {
     console.error('[stories POST]', err);
     return Response.json({ error: '送信に失敗しました' }, { status: 500 });

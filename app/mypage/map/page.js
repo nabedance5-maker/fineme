@@ -232,7 +232,7 @@ export default function MapPage() {
             <div style={{fontSize:9,fontWeight:800,letterSpacing:'.16em',color:'rgba(200,164,90,.5)',textTransform:'uppercase',marginBottom:2}}>New Me</div>
             <div style={{fontSize:26,fontWeight:900,letterSpacing:'.02em',lineHeight:1}}>Map</div>
             <div style={{fontSize:11,color:'rgba(232,228,220,.3)',marginTop:4}}>
-              {viewMonth === 'now' ? '7つの領域を同時に探索する' : `${monthLabel(viewMonth)}時点の記録`}
+              {viewMonth === 'now' ? `${Object.keys(T).length}つの領域を同時に探索する` : `${monthLabel(viewMonth)}時点の記録`}
             </div>
           </div>
           <Link href="/mypage/navi" style={{fontSize:12,color:'rgba(200,164,90,.7)',textDecoration:'none',border:'1px solid rgba(236,232,223,0.121)',padding:'7px 14px',borderRadius:99,marginTop:6,display:'inline-block',whiteSpace:'nowrap'}}>Navi →</Link>
@@ -452,6 +452,8 @@ export default function MapPage() {
                 ? '✓ この領域の探索は完了'
                 : (selData.done ?? 0) > 0
                 ? `${selData.done}ステップ踏破済み`
+                : (selMirrorStatus || confirmedByAxis[selData.id])
+                ? 'Mirrorで現在地を確かめた領域。ステップはこれから'
                 : 'まだ足を踏み入れていない領域'}
             </div>
             {/* フェーズ2: Mirrorで確認された変化かどうかを正直に区別する */}
