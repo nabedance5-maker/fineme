@@ -3773,7 +3773,7 @@ export default function NewMeNaviPage() {
 
       ${hasGoal(p)
         ? `<details class="goal-edit" style="margin:0 0 14px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(200,164,90,0.85)">目指す場所を変える（受け直さずに変えられます）</summary>${goalPickerHtml(p, { title: '目指す場所を変える' })}</details>`
-        : goalPickerHtml(p, { title: 'このMapのゴールを決める', lead: '今は「外見を起点に、自信を再設計する」がゴールになっています。あなたの言葉に変えると、地図の終点に出ます。どれも任意で、あとから変えられます。' })}
+        : `<details class="goal-edit" style="margin:0 0 14px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(200,164,90,0.85)">このMapのゴールを決める（任意）</summary>${goalPickerHtml(p, { title: 'このMapのゴールを決める', lead: '今は「外見を起点に、自信を再設計する」がゴールになっています。あなたの言葉に変えると、地図の終点に出ます。' })}</details>`}
       <div id="service-log-widget">
         ${buildServiceLogWidget()}
       </div>

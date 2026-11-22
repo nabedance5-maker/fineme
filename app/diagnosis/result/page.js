@@ -662,9 +662,10 @@ export default function DiagnosisResultPage() {
     function buildGoalLayers() {
       // 選択肢は lib/goal.js に一本化（結果ページ・Map で同じ言葉を使う）
       const SCENE_MAP = GOAL_SCENES, CHANGE_MAP = GOAL_CHANGES, VISION_MAP = GOAL_VISIONS;
-      // 目指す場所がまだ無い人には、ここで選んでもらう（以前は設定する場所が無く常に空だった）
+      // 目指す場所は Me Scan のフローの最後で聞く（渡邉指示 2026-11-22）。そこで飛ばした人・
+      // 古い受検の人だけ、ここで折りたたんで選べるようにする（二重に聞かない）
       if (!hasGoal(p)) {
-        return `<p class="sec-label" style="margin-top:28px">Your Goal</p>${goalPickerHtml(p)}`;
+        return `<details class="goal-edit" style="margin-top:28px"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(200,164,90,0.85)">目指す場所を決める（任意）</summary>${goalPickerHtml(p)}</details>`;
       }
       const layers = [];
       goalScenesOf(p).forEach(id => {

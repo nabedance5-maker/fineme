@@ -4,6 +4,7 @@ import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS_BELLE, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
+import { renderGoalStep, previousGoals } from '@/lib/goal';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -43,6 +44,9 @@ export default function BelleDiagnosisPage() {
       .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0d1117; }
       .diag-hint { font-size: 13px; color: #5a4e45; margin: 0 0 20px; line-height: 1.6; }
       .diag-options { display: flex; flex-direction: column; gap: 10px; }
+      .diag-goal-q { font-size: 13px; font-weight: 800; color: #84651a; margin: 20px 0 10px; }
+      .diag-goal-q:first-child { margin-top: 0; }
+      #goal-step-content .diag-option.selected { border-color: #c8a45a; background: rgba(200,164,90,0.2); box-shadow: inset 0 0 0 1px #c8a45a; }
       .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid rgba(200,164,90,0.2); border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: rgba(255,255,255,0.72); width: 100%; }
       .diag-option:hover { border-color: rgba(236,232,223,0.303); background: rgba(245,240,232,0.85); }
       .diag-option.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.08); }
@@ -271,9 +275,12 @@ export default function BelleDiagnosisPage() {
       if (isMeaningfulProfileValue(existingBodyData.skeletal_type)) state.skeletal_type = existingBodyData.skeletal_type;
     } catch (e) {}
 
+    // 受け直しの時は、前回の目指す場所を初期値にする（変えたい所だけ選び直せばよい）
+    Object.assign(state, previousGoals('fineme:diagnosis:belle'));
+
     // コアフロー＝地図の骨格ができるまでの画面。残りの設問（他人からの見え方・恋愛への影響）は
-    // 結果画面から1軸ずつ deepen で導く
-    const MAIN_SCREENS = ['q3'];
+    // 結果画面から1軸ずつ deepen で導く。最後に「目指す場所」（任意）を聞く（渡邉指示 2026-11-22）
+    const MAIN_SCREENS = ['q3', 'goal'];
     const TOTAL_STEPS = MAIN_SCREENS.length;
 
     let currentScreen = 'landing';
@@ -289,10 +296,12 @@ export default function BelleDiagnosisPage() {
       document.querySelectorAll('.diag-screen').forEach(s => s.classList.remove('is-active'));
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.add('is-active');
-      if (id === 'q3') q3StepIndex = 0;
+      // 目指す場所から「戻る」で来た時は最後の軸から再開する
+      if (id === 'q3') q3StepIndex = currentScreen === 'goal' ? CONCERN_AREAS.length - 1 : 0;
       currentScreen = id;
       if (id === 'q3') renderQ3Step();
       if (id === 'profile_basics') renderProfileBasics();
+      if (id === 'goal') renderGoalStep(document.getElementById('goal-step-content'), state);
       // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'mescan_screen', { screen_id: id, track: 'belle' });
@@ -339,9 +348,10 @@ export default function BelleDiagnosisPage() {
           enabled = true;
           break;
         }
+        case 'goal': enabled = true; break; // どれも任意
       }
       btnNext.disabled = !enabled;
-      const isFinalTap = currentScreen === 'q3' && q3StepIndex === CONCERN_AREAS.length - 1;
+      const isFinalTap = currentScreen === 'goal';
       btnNext.textContent = isFinalTap ? '地図をつくる' : '次へ';
     }
 
@@ -354,12 +364,16 @@ export default function BelleDiagnosisPage() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
           }
+          screenHistory.push('goal');
+          showScreen('goal');
+          return;
+        }
+        case 'goal':
           // ここが「地図の骨格ができた」地点。残りの軸（他人からの見え方・恋愛への影響）は
           // 結果画面から1軸ずつ導く
           if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete', { track: 'belle' });
           saveAndFinish();
           return;
-        }
       }
     }
 
@@ -1204,6 +1218,17 @@ export default function BelleDiagnosisPage() {
                 </span>
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* SCREEN GOAL: 目指す場所（任意。lib/goal.js の renderGoalStep で描く） */}
+        <div className="diag-screen" id="screen-goal">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">目指す場所</p>
+            <h2 className="diag-q">最後に、変わった先の<br />あなたを教えてください</h2>
+            <p className="diag-hint">選んだ言葉が、地図のゴールになります。どれも任意で、あとから変えられます。</p>
+            <div id="goal-step-content">{/* JSで生成 */}</div>
           </div>
         </div>
 

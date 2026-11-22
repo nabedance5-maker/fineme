@@ -4,6 +4,7 @@ import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 import { AXIS_HABIT_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
+import { renderGoalStep, previousGoals } from '@/lib/goal';
 
 export default function DiagnosisPage() {
   const initialized = useRef(false);
@@ -43,6 +44,9 @@ export default function DiagnosisPage() {
       .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0d1117; }
       .diag-hint { font-size: 13px; color: #5a4e45; margin: 0 0 20px; line-height: 1.6; }
       .diag-options { display: flex; flex-direction: column; gap: 10px; }
+      .diag-goal-q { font-size: 13px; font-weight: 800; color: #84651a; margin: 20px 0 10px; }
+      .diag-goal-q:first-child { margin-top: 0; }
+      #goal-step-content .diag-option.selected { border-color: #c8a45a; background: rgba(200,164,90,0.2); box-shadow: inset 0 0 0 1px #c8a45a; }
       .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid rgba(200,164,90,0.2); border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: rgba(255,255,255,0.72); width: 100%; }
       .diag-option:hover { border-color: rgba(236,232,223,0.303); background: rgba(245,240,232,0.85); }
       .diag-option.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.08); }
@@ -273,9 +277,12 @@ export default function DiagnosisPage() {
       if (isMeaningfulProfileValue(existingBodyData.skeletal_type)) state.skeletal_type = existingBodyData.skeletal_type;
     } catch (e) {}
 
+    // 受け直しの時は、前回の目指す場所を初期値にする（変えたい所だけ選び直せばよい）
+    Object.assign(state, previousGoals('fineme:diagnosis:latest'));
+
     // コアフロー＝地図の骨格ができるまでの画面。残りの設問（他人からの見え方・恋愛への影響）は
-    // 結果画面から1軸ずつ deepen で導く
-    const MAIN_SCREENS = ['q3','q3_aga'];
+    // 結果画面から1軸ずつ deepen で導く。最後に「目指す場所」（任意）を聞く（渡邉指示 2026-11-22）
+    const MAIN_SCREENS = ['q3','q3_aga','goal'];
     const TOTAL_STEPS = MAIN_SCREENS.length;
 
     let currentScreen = 'landing';
@@ -294,11 +301,12 @@ export default function DiagnosisPage() {
       if (id === 'q3') {
         // q3_agaから「戻る」で入ってきた場合は最後に答えた軸（爪）から再開、
         // それ以外（新規到達）は1軸目から
-        q3StepIndex = (currentScreen === 'q3_aga') ? CONCERN_AREAS.length - 1 : 0;
+        q3StepIndex = (currentScreen === 'q3_aga' || currentScreen === 'goal') ? CONCERN_AREAS.length - 1 : 0;
       }
       currentScreen = id;
       if (id === 'q3') renderQ3Step();
       if (id === 'profile_basics') renderProfileBasics();
+      if (id === 'goal') renderGoalStep(document.getElementById('goal-step-content'), state);
       // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'mescan_screen', { screen_id: id });
@@ -347,9 +355,10 @@ export default function DiagnosisPage() {
           break;
         }
         case 'q3_aga': enabled = !!state.aga_status; break;
+        case 'goal': enabled = true; break; // どれも任意
       }
       btnNext.disabled = !enabled;
-      const isFinalTap = (currentScreen === 'q3' && isLastAxisStep && state.aga_concern !== 'yes') || currentScreen === 'q3_aga';
+      const isFinalTap = currentScreen === 'goal';
       btnNext.textContent = isFinalTap ? '地図をつくる' : '次へ';
     }
 
@@ -363,17 +372,15 @@ export default function DiagnosisPage() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
           }
-          if (state.aga_concern === 'yes') {
-            next = 'q3_aga';
-            break;
-          }
-          // ここが「地図の骨格ができた」地点。残りの軸（他人からの見え方・恋愛への影響）は
-          // 結果画面から1軸ずつ導く
-          if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete');
-          saveAndFinish();
-          return;
+          next = state.aga_concern === 'yes' ? 'q3_aga' : 'goal';
+          break;
         }
         case 'q3_aga':
+          next = 'goal';
+          break;
+        case 'goal':
+          // ここが「地図の骨格ができた」地点。残りの軸（他人からの見え方・恋愛への影響）は
+          // 結果画面から1軸ずつ導く
           if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete');
           saveAndFinish();
           return;
@@ -1296,6 +1303,17 @@ export default function DiagnosisPage() {
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* SCREEN GOAL: 目指す場所（任意。lib/goal.js の renderGoalStep で描く） */}
+        <div className="diag-screen" id="screen-goal">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">目指す場所</p>
+            <h2 className="diag-q">最後に、変わった先の<br />あなたを教えてください</h2>
+            <p className="diag-hint">選んだ言葉が、地図のゴールになります。どれも任意で、あとから変えられます。</p>
+            <div id="goal-step-content">{/* JSで生成 */}</div>
           </div>
         </div>
 
