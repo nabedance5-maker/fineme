@@ -4,7 +4,7 @@ import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 import { AXIS_HABIT_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
-import { renderGoalStep, previousGoals } from '@/lib/goal';
+import { renderGoalStep, previousGoals, previousDrawings } from '@/lib/goal';
 import { freshAccessToken } from '@/lib/browser-auth';
 
 export default function DiagnosisPage() {
@@ -280,6 +280,8 @@ export default function DiagnosisPage() {
 
     // 受け直しの時は、前回の目指す場所を初期値にする（変えたい所だけ選び直せばよい）
     Object.assign(state, previousGoals('fineme:diagnosis:latest'));
+    // 前回の描き込みも持ち越す（受け直してもMapの描き込みの数が0に戻らないように・2026-11-25）
+    Object.assign(state, previousDrawings('fineme:diagnosis:latest'));
 
     // コアフロー＝地図の骨格ができるまでの画面。残りの設問（他人からの見え方・恋愛への影響）は
     // 結果画面から1軸ずつ deepen で導く。最後に「目指す場所」（任意）を聞く（渡邉指示 2026-11-22）
@@ -1203,7 +1205,7 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <p className="diag-step-label">確認</p>
             <h2 className="diag-q">もう一度、Me Scanを受けますか？</h2>
-            <p className="diag-hint">すでにMe Scanを完了し、New Me Mapを作成済みです。もう一度受け直すと、今のMapの内容が変わります。</p>
+            <p className="diag-hint">すでにMe Scanを完了し、New Me Mapを作成済みです。完了したステップと描き込みは引き継がれます。タイプと最初の一手は新しい結果になります。</p>
             <button id="btn-rescan-proceed" className="diag-nav-next" style={{width:'100%',fontSize:'16px',padding:'14px',marginTop:'8px'}}>それでも受け直す →</button>
             <button id="btn-rescan-cancel" className="diag-back-btn" style={{width:'100%',textAlign:'center',marginTop:'12px',justifyContent:'center'}}>Mapに戻る</button>
           </div>

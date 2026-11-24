@@ -86,14 +86,14 @@ export async function POST(request) {
 
   let { data: profile } = await getSupabase()
     .from('profiles')
-    .select('navi_steps, body_data, age_band')
+    .select('navi_steps, body_data, age_band, step_done')
     .eq('id', user.id)
     .single();
   // 後方互換: age_band未マイグレーションのDBでも落とさない（supabase-profiles-age-band.sql 未適用時）
   if (!profile) {
     ({ data: profile } = await getSupabase()
       .from('profiles')
-      .select('navi_steps, body_data')
+      .select('navi_steps, body_data, step_done')
       .eq('id', user.id)
       .single());
   }
@@ -346,6 +346,19 @@ export async function POST(request) {
     return blocks.length ? blocks.join('\n\n') : null;
   })();
 
+  // 前のMapで完了したステップは、作り直しても「達成済み」として残す（Muse指示書 2026-11-24 §2・
+  // 渡邉承認 2026-11-25）。以前は受け直し・Mirror反映のたびに全ステップを作り直し、進んだ分が消えていた。
+  // 完了の印（profiles.step_done）はステップの id で付くため、残すステップは id をそのまま使う。
+  const prevStepDone = profile?.step_done || {};
+  const keptSteps = (Array.isArray(profile?.navi_steps?.steps) ? profile.navi_steps.steps : [])
+    .filter(st => st && typeof st.id === 'string' && prevStepDone[st.id] === true)
+    .slice(0, 40);
+  const keptSection = keptSteps.length
+    ? keptSteps.map(st => `- （${AXIS_LABELS[st.axis] || st.axis}）${String(st.text || '').slice(0, 120)}`).join('\n')
+    : null;
+  const targetMin = Math.max(10, 25 - keptSteps.length);
+  const targetMax = Math.max(15, 35 - keptSteps.length);
+
   const bodyDataSectionHeader = mirrorAxes
     ? '## 現状把握データ（本人申告）'
     : '## 現状把握データ（本人申告のみ・写真による確認なし）';
@@ -379,7 +392,12 @@ ${mirrorDataLines}` : ''}${pastOutcomesSection ? `
 
 ## 過去の変容記録（行動×結果）
 このユーザーの過去の取り組みデータ。効いたアプローチ・継続できた習慣を今月のステップ選びに活かすこと。
-${pastOutcomesSection}` : ''}`;
+${pastOutcomesSection}` : ''}${keptSection ? `
+
+## 達成済みのステップ（前のMapから引き継ぎ・生成しない）
+このユーザーがすでにやり終えたステップ。新しいMapにそのまま残すので、あなたは同じ内容・言い換えを書かないこと。
+これらを踏まえた「次の一歩」から書く。
+${keptSection}` : ''}`;
 
   const modeRules = mirrorAxes ? `
 ## ⚠️ 外見評価のルール（Mirror撮影済み）
@@ -465,7 +483,7 @@ guide別の制約:
 
 ## 生成ルール
 
-1. ステップは変容の旅の**一本の道**として25〜35件生成する
+1. ステップは変容の旅の**一本の道**として${targetMin}〜${targetMax}件生成する${keptSteps.length ? '（「達成済みのステップ」は別に残すので、その続きの未完了の分だけを書く）' : ''}
 2. 異なる軸を自然に混在させる（同じ軸を3回以上連続させない）
 3. このユーザーのデータから判断して不要・無関係なステップは省く
    例: ひげが薄い人に医療ヒゲ脱毛の高コストステップは不要
@@ -585,6 +603,19 @@ ${BRAND_PHILOSOPHY}
       if (FORCE_ACTION_AXES.has(step.axis)) step.eval_type = 'action';
       else if (!step.eval_type) step.eval_type = 'both';
     }
+    // 新しいステップの id は、前のMapと重ならない形に付け直す。AIは毎回 hair-001 のような同じ id を
+    // 返すため、そのままだと前のMapの完了の印が中身の違う新しいステップに付いていた（2026-11-25 発見）。
+    // 形は「軸名-生成ごとの印-3桁連番」。step.id を分解して使う箇所は無い（stepDone の鍵としてだけ使う）。
+    const genTag = Date.now().toString(36);
+    const usedIds = new Set(keptSteps.map(st => st.id));
+    let seq = 0;
+    for (const step of generated.steps) {
+      const axis = typeof step.axis === 'string' && /^[a-z_]+$/.test(step.axis) ? step.axis : 'step';
+      let id;
+      do { seq++; id = `${axis}-${genTag}-${String(seq).padStart(3, '0')}`; } while (usedIds.has(id) || prevStepDone[id] !== undefined);
+      usedIds.add(id);
+      step.id = id;
+    }
   } catch (e) {
     console.error('Claude navi-steps error:', e);
     return Response.json({ error: `Claude error: ${e.message}` }, { status: 500 });
@@ -611,7 +642,8 @@ ${BRAND_PHILOSOPHY}
   }
 
   const navi_steps = {
-    steps: generated.steps,
+    // 達成済み（引き継ぎ）を先頭に、続きとして新しいステップを並べる
+    steps: [...keptSteps.map(st => ({ ...st, carried_over: true })), ...generated.steps],
     generated_at: new Date().toISOString(),
     diagnosis_at: derivedDiagnosis?.at || null,
     source: !mirror_only ? 'diagnosis_only' : derivedDiagnosis?.at ? 'diagnosis_mirror' : 'mirror_only',
