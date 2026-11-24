@@ -227,7 +227,12 @@ export async function POST(request) {
   const baselineAxes = (derivedDiagnosis?.priority_order || [])
     .filter(axis => BASELINE_AXES.has(axis))
     .slice(0, 5);
-  const budget = diagnosis?.budget || null;
+  // 予算：以前の Me Scan の回答が無ければ、プロフィールで決めた月の予算（任意・2026-11-24〜）を使う
+  let budget = diagnosis?.budget || null;
+  if (!budget) {
+    const { data: bp } = await getSupabase().from('profiles').select('log_budget').eq('id', user.id).maybeSingle();
+    budget = bp?.log_budget || null;
+  }
   const goalScene = diagnosis?.goal_scene || null;
   const triggerType = diagnosis?.trigger_type || null;
 

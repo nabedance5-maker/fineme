@@ -3,11 +3,12 @@ import { useEffect, useRef } from 'react';
 import useTrack from '@/app/_hooks/useTrack';
 import {
   axisChoicesFor, resolveAxis, CUSTOM_AXIS, CUSTOM_ICON_CHOICES, DEFAULT_CUSTOM_ICON,
-  monthlyCost, costSummary, formatYen, BUDGET_LABELS,
+  monthlyCost, costSummary, formatYen, BUDGET_LABELS, budgetLead,
   effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
   monthlyTrend, buildAnalysis,
   ENTRY_TYPES, DEFAULT_ENTRY_TYPE, resolveEntryType,
 } from '@/lib/log-axes';
+import { buildLogCalendar, thisMonthRecorded, ymd } from '@/lib/log-calendar';
 import { listLogs, createLog, updateLog, removeLog, recordVisit, requestBooking, getAccessToken } from '@/lib/log-store';
 import { TRACKS, DEFAULT_TRACK, getKnownTrackId } from '@/lib/track';
 
@@ -252,6 +253,7 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-note { color: rgba(232,228,220,.3); }
       .lfv-budget { color: rgba(232,228,220,.5); }
+      .lfv-budget-link { color: rgba(200,164,90,.85); text-decoration: underline; text-underline-offset: 2px; }
 
       /* ── 一番下の「次の一歩」── */
       .lnx { background: #151b24; border: 1px solid rgba(236,232,223,0.143); border-radius: 14px; padding: 22px 22px 20px; margin: 28px 0 18px; }
@@ -398,6 +400,48 @@ export default function ServiceLog({ withSideNav = false }) {
       .ltp-empty-icon { font-size: 7cqw; margin-bottom: 10px; opacity: .55; }
       .ltp-empty-text { font-size: 2.6cqw; color: rgba(71,48,32,.55); line-height: 1.8; margin: 0; }
 
+      /* ── 冒頭のカレンダー（.lcal-。Muse第2弾 §11・渡邉承認 2026-11-24）── */
+      .lcal { background: #151b24; border: 1px solid rgba(236,232,223,0.143); border-radius: 14px; padding: 16px 0 14px; margin: 0 0 18px; min-width: 0; }
+      .lcal-head { padding: 0 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+      .lcal-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0; }
+      .lcal-sum { font-size: 11.5px; color: rgba(232,228,220,0.6); margin: 0; }
+      .lcal-sum b { color: #c8a45a; font-weight: 800; }
+      .lcal-strip { display: flex; gap: 4px; overflow-x: auto; padding: 12px 16px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .lcal-strip::-webkit-scrollbar { display: none; }
+      .lcal-day { flex: 0 0 44px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 7px; border-radius: 10px; cursor: pointer; font-family: inherit; background: transparent; border: 1px solid transparent; color: rgba(232,228,220,0.78); position: relative; }
+      .lcal-day:hover { background: rgba(255,255,255,0.03); }
+      .lcal-day.is-selected { border-color: rgba(200,164,90,0.55); background: rgba(200,164,90,0.08); }
+      .lcal-day.is-past { color: rgba(232,228,220,0.5); }
+      .lcal-mon { position: absolute; top: -11px; left: 2px; font-size: 9.5px; font-weight: 700; color: rgba(200,164,90,0.8); white-space: nowrap; }
+      .lcal-wd { font-size: 9.5px; color: rgba(232,228,220,0.4); }
+      .lcal-wd.is-sun { color: rgba(220,120,110,0.7); }
+      .lcal-wd.is-sat { color: rgba(120,160,220,0.7); }
+      .lcal-num { font-size: 14px; font-weight: 700; line-height: 1.2; }
+      .lcal-day.is-today .lcal-num { color: #0d1117; background: #c8a45a; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+      .lcal-dots { display: flex; gap: 3px; height: 7px; align-items: center; }
+      .lcal-dot { width: 7px; height: 7px; border-radius: 50%; box-sizing: border-box; }
+      .lcal-dot-done { background: #c8a45a; }
+      .lcal-dot-booked { background: #6aa88a; }
+      .lcal-dot-guide { border: 1.5px dashed rgba(200,164,90,0.6); }
+      .lcal-dot-overdue { border: 1.5px solid rgba(220,140,100,0.85); }
+      .lcal-legend { display: flex; gap: 12px; flex-wrap: wrap; padding: 4px 16px 0; font-size: 10.5px; color: rgba(232,228,220,0.45); }
+      .lcal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+      .lcal-detail { margin: 10px 16px 0; padding: 12px 13px; background: rgba(255,255,255,0.025); border-radius: 10px; }
+      .lcal-detail-date { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.85); margin: 0 0 8px; }
+      .lcal-ev { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(232,228,220,0.06); flex-wrap: wrap; }
+      .lcal-ev:first-of-type { border-top: none; }
+      .lcal-ev-kind { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+      .lcal-k-done { background: rgba(200,164,90,0.15); color: #c8a45a; }
+      .lcal-k-booked { background: rgba(106,168,138,0.15); color: #8cc4a6; }
+      .lcal-k-guide { border: 1px dashed rgba(200,164,90,0.5); color: rgba(200,164,90,0.85); }
+      .lcal-k-overdue { border: 1px solid rgba(220,140,100,0.6); color: rgba(230,160,120,0.95); }
+      .lcal-ev-name { font-size: 12.5px; color: rgba(232,228,220,0.85); flex: 1 1 120px; min-width: 0; }
+      .lcal-ev-sub { display: block; font-size: 10.5px; color: rgba(232,228,220,0.42); margin-top: 2px; }
+      .lcal-ev-jump { font-size: 11px; font-family: inherit; background: none; border: 1px solid rgba(232,228,220,0.16); color: rgba(232,228,220,0.7); border-radius: 8px; padding: 5px 10px; cursor: pointer; white-space: nowrap; }
+      .lcal-none, .lcal-empty { font-size: 11.5px; color: rgba(232,228,220,0.4); margin: 0; line-height: 1.7; }
+      .lcal-empty { padding: 8px 16px 0; }
+      .log-card.is-flash { box-shadow: 0 0 0 2px rgba(200,164,90,0.6); transition: box-shadow .3s; }
+
       /* ── 支出から見えること（.lan- = Log ANalysis） ── */
       .lan-wrap { background: #151b24; border: 1px solid rgba(236,232,223,0.143); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
       .lan-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 14px; }
@@ -431,10 +475,13 @@ export default function ServiceLog({ withSideNav = false }) {
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let activeAxisFilter = 'all'; // 'all' | 軸id（一覧のカテゴリータブ。でお要望2026-08-07）
     let budget = null;
+    let budgetSource = 'scan'; // 'profile'＝プロフィールで決めた月の予算／'scan'＝以前の Me Scan の回答
     let compassAxis = null;   // Me Scan が指す最初の一手
     let mirrorAxis = null;    // Mirror が指した1点
     let hasDiagnosis = false;
     let hasMirror = false;
+    let calSelected = null;   // カレンダーで選んでいる日（null＝今日）
+    let calScrollLeft = null; // カレンダーの横スクロール位置（render()で作り直しても保つ。null＝今日へ寄せる）
     let activeFvSlide = 0;    // FVカード／支出推移カルーセルの現在ページ（render()での再構築後も保持する）
     let bookFormOpenId = null; // 「予約をリクエスト」の希望日時フォームを開いているログid（でお指摘2026-09-09：日時の希望を送れないと使えない）
     const bookServicesCache = {}; // provider_slug -> 公開サービス一覧（予約リクエストのメニュー選択用。でお指摘2026-09-09：メニューが選べないと意味がない）
@@ -486,11 +533,22 @@ export default function ServiceLog({ withSideNav = false }) {
           if (first) {
             compassAxis = first;
             hasDiagnosis = true;
-            budget = d.budget || null;
+            if (budgetSource !== 'profile') budget = d.budget || null;
             return;
           }
         } catch {}
       }
+    }
+
+    // 月の予算（任意・プロフィールで決める。Muse第2弾 7-3・渡邉判断(b) 2026-11-24）。
+    // 決めていればそれを正とし、無ければ以前の Me Scan の回答（あれば）を使う。
+    async function fetchBudgetPref() {
+      if (!isLoggedIn()) return;
+      try {
+        const r = await fetch('/api/me/log-prefs', { headers: { Authorization: `Bearer ${getAccessToken()}` } });
+        const d = r.ok ? await r.json() : null;
+        if (d?.budget && BUDGET_LABELS[d.budget]) { budget = d.budget; budgetSource = 'profile'; }
+      } catch {}
     }
 
     // one-point が無くてもMirror実施済みのことがあるためセッションでも判定する
@@ -568,6 +626,120 @@ export default function ServiceLog({ withSideNav = false }) {
       return '';
     }
 
+    // ── 冒頭のカレンダー（Muse第2弾 §11・渡邉承認 2026-11-24）──
+    // 行った日・買った日・予約日・次の目安日を、横にスクロールする日付の帯で見せる。
+    // 目安は予測ではない：薄い点線の印と「目安」の文言で、ずれても嘘にならない見せ方にする。
+    const WD = ['日', '月', '火', '水', '木', '金', '土'];
+    const CAL_KIND_LABEL = { booked: '予約', guide: '次の目安', overdue: '目安を過ぎています' };
+    function calDateLabel(dateStr, today) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const w = WD[new Date(y, m - 1, d).getDay()];
+      return `${m}月${d}日（${w}）${dateStr === today ? '・今日' : ''}`;
+    }
+    function calDetailHtml(cal, date) {
+      const day = cal.days.find(x => x.date === date);
+      const events = day?.events || [];
+      const head = `<p class="lcal-detail-date">${esc(calDateLabel(date, cal.today))}</p>`;
+      if (!events.length) {
+        return head + `<p class="lcal-none">${date > cal.today ? 'この日の予約・目安はありません' : 'この日の記録はありません'}</p>`;
+      }
+      const order = { overdue: 0, done: 1, booked: 2, guide: 3 };
+      return head + events.slice().sort((a, b) => order[a.kind] - order[b.kind]).map(ev => {
+        const kindLabel = ev.kind === 'done' ? (ev.entryType === 'purchase' ? '買った' : '行った') : CAL_KIND_LABEL[ev.kind];
+        let sub = '';
+        if (ev.kind === 'done') sub = ev.cost ? formatYen(ev.cost) : '';
+        else if (ev.kind === 'guide') sub = `${ev.basis}で数えた目安です`;
+        else if (ev.kind === 'overdue') sub = `目安の日から${ev.overdueDays}日。${ev.basis}で数えています`;
+        else if (ev.kind === 'booked') sub = '自分で入れた予約日';
+        return `
+          <div class="lcal-ev">
+            <span class="lcal-ev-kind lcal-k-${ev.kind}">${esc(kindLabel)}</span>
+            <span class="lcal-ev-name">${esc(ev.name)}${sub ? `<span class="lcal-ev-sub">${esc(sub)}</span>` : ''}</span>
+            <button type="button" class="lcal-ev-jump" data-cal-jump="${esc(String(ev.logId))}">${ev.kind === 'done' ? 'カードを見る' : '記録・予約へ'}</button>
+          </div>`;
+      }).join('');
+    }
+    let lastCal = null;
+    function renderCalendar() {
+      const cal = buildLogCalendar(logs);
+      lastCal = cal;
+      if (!calSelected || !cal.days.some(d => d.date === calSelected)) calSelected = cal.today;
+      const month = thisMonthRecorded(logs, cal.today);
+      const s = costSummary(logs);
+      const sumParts = [];
+      if (month.count) sumParts.push(`今月の記録 <b>${month.total ? formatYen(month.total) : `${month.count}件`}</b>${month.total ? `（${month.count}件）` : ''}`);
+      if (s.counted) sumParts.push(`1ヶ月あたり ${s.estimated ? '約' : ''}${formatYen(s.monthly)}`);
+      const cells = cal.days.map((d, i) => {
+        const [y, m, dd] = d.date.split('-').map(Number);
+        const wd = new Date(y, m - 1, dd).getDay();
+        const kinds = ['done', 'booked', 'guide', 'overdue'].filter(k => d.events.some(e => e.kind === k));
+        const showMon = dd === 1 || i === 0;
+        const counts = kinds.map(k => `${k === 'done' ? '記録' : CAL_KIND_LABEL[k]}${d.events.filter(e => e.kind === k).length}件`).join('、');
+        const cls = ['lcal-day', d.date === cal.today ? 'is-today' : '', d.date < cal.today ? 'is-past' : '', d.date === calSelected ? 'is-selected' : ''].filter(Boolean).join(' ');
+        return `<button type="button" class="${cls}" data-cal-date="${d.date}" aria-pressed="${d.date === calSelected}" aria-label="${esc(calDateLabel(d.date, cal.today))}${counts ? ` ${counts}` : ''}">
+            ${showMon ? `<span class="lcal-mon">${m}月</span>` : ''}
+            <span class="lcal-wd${wd === 0 ? ' is-sun' : wd === 6 ? ' is-sat' : ''}">${WD[wd]}</span>
+            <span class="lcal-num">${dd}</span>
+            <span class="lcal-dots">${kinds.map(k => `<span class="lcal-dot lcal-dot-${k}"></span>`).join('')}</span>
+          </button>`;
+      }).join('');
+      const empty = !cal.counts.done && !cal.counts.guide;
+      return `
+        <section class="lcal" aria-label="記録のカレンダー">
+          <div class="lcal-head">
+            <h1 class="lcal-title">New Me Log</h1>
+            ${sumParts.length ? `<p class="lcal-sum">${sumParts.join(' · ')}</p>` : ''}
+          </div>
+          <div class="lcal-strip" data-cal-strip>${cells}</div>
+          ${empty
+            ? '<p class="lcal-empty">「今日行った」や前回の日を記録すると、行った日と次の目安がここに並びます。</p>'
+            : `<div class="lcal-legend">
+                <span><span class="lcal-dot lcal-dot-done"></span>行った・買った</span>
+                <span><span class="lcal-dot lcal-dot-booked"></span>予約</span>
+                <span><span class="lcal-dot lcal-dot-guide"></span>次の目安（予定ではありません）</span>
+              </div>`}
+          <div class="lcal-detail" data-cal-detail aria-live="polite">${calDetailHtml(cal, calSelected)}</div>
+        </section>`;
+    }
+    function bindCalendar() {
+      const strip = root.querySelector('[data-cal-strip]');
+      if (!strip) return;
+      if (calScrollLeft === null) {
+        const t = strip.querySelector('.lcal-day.is-today');
+        if (t) strip.scrollLeft = Math.max(0, t.offsetLeft - strip.offsetLeft - strip.clientWidth / 3);
+      } else {
+        strip.scrollLeft = calScrollLeft;
+      }
+      strip.addEventListener('scroll', () => { calScrollLeft = strip.scrollLeft; }, { passive: true });
+      strip.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-cal-date]');
+        if (!btn || !lastCal) return;
+        calSelected = btn.dataset.calDate;
+        strip.querySelectorAll('.lcal-day').forEach(b => {
+          const on = b.dataset.calDate === calSelected;
+          b.classList.toggle('is-selected', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        const det = root.querySelector('[data-cal-detail]');
+        if (det) det.innerHTML = calDetailHtml(lastCal, calSelected);
+      });
+      root.querySelector('.lcal')?.addEventListener('click', (e) => {
+        const j = e.target.closest('[data-cal-jump]');
+        if (!j) return;
+        const id = j.dataset.calJump;
+        let card = root.querySelector(`.log-card[data-id="${CSS.escape(id)}"]`);
+        if (!card && activeAxisFilter !== 'all') {
+          activeAxisFilter = 'all';
+          render();
+          card = root.querySelector(`.log-card[data-id="${CSS.escape(id)}"]`);
+        }
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-flash');
+        setTimeout(() => card.classList.remove('is-flash'), 1600);
+      });
+    }
+
     // ── 費用サマリー ──
     // 頻度が無いものは月額換算せず合計にも入れない（推測で数字を作らない）
     // ── FVカード（海図に記した投資額。スクショ1枚でそのまま素材になる）──
@@ -597,8 +769,9 @@ export default function ServiceLog({ withSideNav = false }) {
       const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
       const portCount = logs.length;
 
-      const budgetLine = budget && BUDGET_LABELS[budget] ? `
-        <p class="lfv-budget">Me Scan では「${BUDGET_LABELS[budget]}」と答えていました</p>` : '';
+      const budgetLine = budget && BUDGET_LABELS[budget]
+        ? `<p class="lfv-budget">${esc(budgetLead(budget, budgetSource))}${isLoggedIn() ? ' <a class="lfv-budget-link" href="/mypage/profile#log-budget">変える</a>' : ''}</p>`
+        : (isLoggedIn() ? '<p class="lfv-budget"><a class="lfv-budget-link" href="/mypage/profile#log-budget">月の予算を決めると、実際の支出と比べられます（任意）</a></p>' : '');
       const noteLines = [
         s.estimated ? '「約」は軸ごとの目安の頻度で計算した分です（頻度を入れると実額に変わります）' : '',
         s.unknown ? `＋ ${s.unknown}件は頻度の目安がないため合計に入れていません` : '',
@@ -818,7 +991,7 @@ export default function ServiceLog({ withSideNav = false }) {
     function renderAnalysisSection() {
       if (!logs.length) return '';
       const { economic, effect, items } = buildAnalysis(
-        logs, { budget, compassAxis, mirrorAxis }, analysisGoal, 6
+        logs, { budget, budgetSource, compassAxis, mirrorAxis }, analysisGoal, 6
       );
 
       if (!economic.length && !effect.length) {
@@ -1252,20 +1425,24 @@ export default function ServiceLog({ withSideNav = false }) {
             <button type="button" class="lfv-carousel-dot${activeFvSlide === 1 ? ' is-active' : ''}" data-slide="1" aria-label="2/2 支出の推移"></button>
           </div>
           <p class="lfv-carousel-hint">スワイプで「支出の推移」も見られます</p>
-        </div>` : header;
+        </div>` : '';
 
+      // 冒頭はカレンダー（Muse第2弾 §11）。投資額カード・支出の推移は一覧の下へ移した
+      // （今月の合計はカレンダーの見出しに小さく残す）。
       root.innerHTML = `
-        ${fvBlock}
+        ${renderCalendar()}
         ${partnerBanner}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${axisTabsHtml}
         ${sectionsHtml}
+        ${card ? fvBlock : ''}
         ${renderStoreRecordsSection()}
         ${card ? '' : renderTrendCard()}
         ${renderAnalysisSection()}
         ${renderNextStep()}
         ${renderGuestCta()}`;
       bindEvents();
+      bindCalendar();
 
       // render()はinnerHTMLを丸ごと作り直すため、2枚目を見ていた場合はスクロール位置を復元する
       if (card && activeFvSlide === 1) {
@@ -2047,7 +2224,7 @@ export default function ServiceLog({ withSideNav = false }) {
     });
 
     root.innerHTML = `<div style="text-align:center;padding:60px 0;color:rgba(232,228,220,0.3);font-size:13px">読み込み中...</div>`;
-    Promise.all([fetchLogs(), fetchProviderRecords(), fetchDiagnosisContext()]).then(() => {
+    Promise.all([fetchLogs(), fetchProviderRecords(), fetchBudgetPref().then(fetchDiagnosisContext)]).then(() => {
       render();
       // LINE通知の「予約先を登録する」から来た時（?edit=<id>&focus=action_url）は、
       // その記録の編集画面を開いてURL欄にカーソルを置く（一度登録すれば次回から1タップ）

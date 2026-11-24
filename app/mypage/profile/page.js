@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { TRACKS, setTrackExplicit, saveTrackToServer } from '@/lib/track';
 import { VOICES, NOTIFY_LEVELS, defaultVoiceFor, DEFAULT_NOTIFY_LEVEL } from '@/lib/log-voice';
+import { BUDGET_LABELS } from '@/lib/log-axes';
 import MypageSideNav from '../_components/MypageSideNav';
 
 function urlBase64ToUint8Array(base64String) {
@@ -53,6 +54,8 @@ export default function MypageProfilePage() {
   const [lineTesting, setLineTesting] = useState(false);
   const [logVoice, setLogVoice] = useState(null);     // null = トラックの既定
   const [logLevel, setLogLevel] = useState(DEFAULT_NOTIFY_LEVEL);
+  const [logBudget, setLogBudget] = useState(null); // 月の予算（任意）。null＝決めていない
+  const [budgetMsg, setBudgetMsg] = useState('');
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -142,7 +145,7 @@ export default function MypageProfilePage() {
     if (!accessToken) return;
     fetch('/api/me/log-prefs', { headers: { Authorization: `Bearer ${accessToken}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) { setLogVoice(d.voice ?? null); setLogLevel(d.level || DEFAULT_NOTIFY_LEVEL); } })
+      .then(d => { if (d) { setLogVoice(d.voice ?? null); setLogLevel(d.level || DEFAULT_NOTIFY_LEVEL); setLogBudget(d.budget || null); } })
       .catch(() => {});
   }, [accessToken]);
 
@@ -157,6 +160,25 @@ export default function MypageProfilePage() {
         body: JSON.stringify(body),
       });
     } catch {}
+  }
+
+  // 月の予算（任意）。New Me Log で実際の支出と並べて見せる（Muse第2弾 7-3・渡邉判断(b) 2026-11-24）
+  async function saveLogBudget(next) {
+    const prev = logBudget;
+    setLogBudget(next);
+    setBudgetMsg('');
+    try {
+      const r = await fetch('/api/me/log-prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ budget: next }),
+      });
+      if (!r.ok) throw new Error();
+      setBudgetMsg(next ? '保存しました' : '予算を決めない設定にしました');
+    } catch {
+      setLogBudget(prev);
+      setBudgetMsg('保存できませんでした。時間をおいてもう一度お試しください');
+    }
   }
 
   // 連携できていても公式アカウントを友だち追加していないと届かないため、
@@ -568,6 +590,36 @@ export default function MypageProfilePage() {
                   )}
                 </div>
               )}
+
+              {/* 月の予算（任意） */}
+              <div id="log-budget" style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px', scrollMarginTop: '80px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>見た目づくりの月の予算（任意）</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px', lineHeight: 1.7 }}>
+                  決めておくと、New Me Log で実際の支出と並べて見られます。決めなくても使えます。
+                </p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[...Object.entries(BUDGET_LABELS).map(([id, label]) => ({ id, label: `月 ${label}` })), { id: null, label: '決めない' }].map(o => {
+                    const isActive = logBudget === o.id;
+                    return (
+                      <button
+                        key={o.id || 'none'}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => saveLogBudget(o.id)}
+                        style={{
+                          flex: '1 1 120px', textAlign: 'center', cursor: 'pointer', padding: '10px 8px', borderRadius: '10px', fontFamily: 'inherit',
+                          fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.9)',
+                          background: isActive ? 'rgba(200,164,90,0.12)' : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid ${isActive ? 'rgba(200,164,90,0.5)' : 'rgba(232,228,220,0.14)'}`,
+                        }}
+                      >
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {budgetMsg && <p role="status" style={{ fontSize: '11px', color: 'rgba(232,228,220,0.55)', margin: '10px 0 0' }}>{budgetMsg}</p>}
+              </div>
 
               {/* New Me Log の通知設定（声・頻度） */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
