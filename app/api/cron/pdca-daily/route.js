@@ -3,6 +3,7 @@
 // 毎日だと内容がほぼ同じになるため週次に変更（でお指示 2026-10-19）。Schedule: "0 22 * * 0"（=月曜 JST 7:00）
 import { aiClient } from '@/lib/ai';
 import { getSupabase } from '@/lib/supabase';
+import { whereMirrorPurchase, MIRROR_PURCHASE_DEFINITION } from '@/lib/mirror-metrics';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 
 export const dynamic = 'force-dynamic';
@@ -51,23 +52,25 @@ export async function GET(request) {
   // ── Check：各領域の指標を集約 ──
   const seo = await seoSignals();
 
-  let mirrorWeek = 0, activeSubs = 0, providerTotal = 0, providerPaid = 0;
+  // Mirror は「分析数」と「購入数」を分ける。以前は分析セッション数を「購入」と表示していた。
+  // 購入の定義は週次 Mirror レポート・管理画面と共通（lib/mirror-metrics.js）
+  let mirrorWeek = 0, mirrorPurchaseWeek = 0, activeSubs = 0, providerTotal = 0, providerPaid = 0;
   try {
-    const [{ count: mc }, { count: sc }, { count: pt }, { count: pp }] = await Promise.all([
+    const [{ count: mc }, { count: mpc }, { count: sc }, { count: pt }, { count: pp }] = await Promise.all([
       sb.from('mirror_sessions').select('id', { count: 'exact', head: true }).gte('created_at', d7),
+      whereMirrorPurchase(sb.from('mirror_sessions').select('id', { count: 'exact', head: true }).gte('created_at', d7)),
       sb.from('profiles').select('id', { count: 'exact', head: true }).eq('subscription_status', 'active'),
       sb.from('providers').select('id', { count: 'exact', head: true }),
       sb.from('providers').select('id', { count: 'exact', head: true }).not('stripe_subscription_id', 'is', null),
     ]);
-    mirrorWeek = mc || 0; activeSubs = sc || 0; providerTotal = pt || 0; providerPaid = pp || 0;
+    mirrorWeek = mc || 0; mirrorPurchaseWeek = mpc || 0; activeSubs = sc || 0; providerTotal = pt || 0; providerPaid = pp || 0;
   } catch (e) { console.error('[pdca-daily] kpi', e.message); }
 
-  // ── 店舗SaaS月次マイルストーン（master.md §0-1・2026-09-11確定・67社 by 2026-12-14） ──
-  const milestones = [
-    { date: '2026-09-30', target: 5 }, { date: '2026-10-31', target: 22 },
-    { date: '2026-11-30', target: 45 }, { date: '2026-12-14', target: 67 },
-  ];
-  const nextMilestone = milestones.find(m => new Date(m.date) >= new Date(today)) || milestones[milestones.length - 1];
+  // ── 第一フェーズの区切り（2026-11-18 渡邉判断・master.md §0-1）──
+  // 旧「67社（09-30=5社…12-14=67社）」と既存掲載店舗の有料転換は撤回。12-14 までに
+  // 新規獲得で最初の有料契約1社（初契約）を取るのが区切り。それ以降のマイルストーンは置かない
+  const PHASE_DEADLINE = '2026-12-14';
+  const daysLeft = Math.ceil((new Date(PHASE_DEADLINE) - new Date(today)) / 86400000);
 
   // ── 直近7日の自動化アクティビティ（回っている証拠。x-post/x-engage/feature-article/belle-articleは2026-08-31〜09-01に停止済のためここでは追跡しない） ──
   let improvedCount = 0;
@@ -95,9 +98,9 @@ export async function GET(request) {
   } catch (e) { console.error('[pdca-daily] trend', e.message); }
 
   const signals = {
-    販売_店舗SaaS: `有料契約${providerPaid}社 / 掲載店舗${providerTotal}社（次のマイルストーン: ${nextMilestone.date}に${nextMilestone.target}社）`,
+    販売_店舗SaaS: `有料契約${providerPaid}社（目標：${PHASE_DEADLINE}までに新規獲得で初契約1社・残り${daysLeft}日） / 掲載店舗${providerTotal}社（大半はアフィリエイト掲載で導入実績ではない）`,
     集客_SEO: seo.ok ? `表示${seo.impressions}(${seo.impressionsPct}) / クリック${seo.clicks}(${seo.clicksPct}) / 主要KW: ${seo.topQueries.join(', ')}` : `GSC未連携(${seo.error})`,
-    並走_Mirror: `直近7日の購入${mirrorWeek}件 / サブスク継続${activeSubs}件`,
+    並走_Mirror: `直近7日の分析${mirrorWeek}件・購入${mirrorPurchaseWeek}件（${MIRROR_PURCHASE_DEFINITION}） / サブスク継続${activeSubs}件`,
   };
 
   // ── 分析：過去→現状→これから をClaudeが書く ──
@@ -108,8 +111,13 @@ export async function GET(request) {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001', max_tokens: 1000, temperature: 0.6,
       messages: [{ role: 'user', content: `Finemeの週次事業レポートの「分析」部分を書く。単なる数字報告ではなく、数字を根拠に過去→現状→これからを語る。
-北極星＝3年で年商10億・でお個人年収1億。第一フェーズ＝6ヶ月で月商50万円（達成期限2026-12-14）。
-⚠️ 2026-09-02に主エンジンを店舗SaaS有料契約に方針転換済み（旧：Mirror¥780サブスク640人は撤回）。目標は店舗SaaS有料契約67社（月次マイルストーン：09-30=5社/10-31=22社/11-30=45社/12-14=67社）。Mirrorサブスクは「並走」であり主目標ではない。判断軸＝「10億へ効くか・速いか」＋「①継続価値＞②集客」。
+北極星＝3年で年商10億・渡邉個人年収1億。第一フェーズ＝6ヶ月で月商50万円（達成期限2026-12-14）。
+⚠️ 2026-09-02に主エンジンを店舗SaaS有料契約に方針転換済み（旧：Mirror¥780サブスク640人は撤回）。Mirrorサブスクは「並走」であり主目標ではない。判断軸＝「10億へ効くか・速いか」＋「①継続価値＞②集客」。
+【前提（2026-11-18 渡邉確定・必ず守る）】
+- 第一フェーズの本線は新規の小規模専門店の有料契約獲得。${PHASE_DEADLINE} の区切りは「新規獲得で最初の有料契約1社（初契約）を取る」こと。67社目標・月次マイルストーンは撤回済みで、使わない。
+- 掲載店舗の大半は A8.net アフィリエイト経由の掲載で、取引関係はなく大手中心。掲載は導入実績ではない。掲載店舗への有料転換を今週のアクションに挙げない。
+- 新規営業は Fineme 本体の外の別系統で毎日稼働中（営業メール約30件/日・Instagram DM・問い合わせフォーム営業・提携打診）。「営業が未実施」「手動営業が止まっている」をボトルネックとして挙げない。
+- 評価軸は「初契約に向けた前進」（返信・面談・モニター申込などの動き）。この週報のデータに営業の動きの数字は無いので、無いものは推測で語らない。
 
 【今週(${today}時点)の指標】
 - 店舗SaaS: ${signals.販売_店舗SaaS}
@@ -118,16 +126,16 @@ export async function GET(request) {
 
 【トレンド（今週7日 vs 先週7日）】
 - 記事累計: ${trend.articlesTotal ?? '—'}本 / 今週公開: ${wow(trend.articles)}
-- Mirror購入: ${wow(trend.mirror)}
+- Mirror分析数: ${wow(trend.mirror)}
 
 【直近7日の自動アクティビティ】既存記事改稿${improvedCount}件 / 自己観測issue:${seo.ok ? 0 : 1}
 
-【自動で回っている施策】seo-improve(既存記事の改稿・週1回), provider-log-toolkit-announce(掲載店舗へのツール案内), auto-visited/index-submit/seo-bulk-submit(SEOインデックス系)。店舗SaaS営業そのもの（既存21社への有料転換提案・新規開拓）は自動化されておらず、でお手動が主。
+【自動で回っている施策】seo-improve(既存記事の改稿・週1回), provider-log-toolkit-announce(掲載店舗へのツール案内), auto-visited/index-submit/seo-bulk-submit(SEOインデックス系)。新規の店舗営業は本体の外の別系統で毎日稼働中（このデータには含まれない）。
 
 次を簡潔な日本語・HTMLの<p>/<ul>のみで出力：
 ■過去（ここまでの流れ）… トレンドから何が伸び/停滞しているか2〜3行。憶測でなく数字に基づく
-■現状（診断）… 店舗SaaS有料契約67社（12-14期限）に対して今どの局面か・先週から何が変わったか、ボトルネックは何か2〜3行
-■今週のアクション … 箇条書きで具体的に。各項目に【AI自動】か【要でお】を明記し、優先順に。要でお＝店舗営業・有料転換提案など人間しかできないことを最優先で挙げる。5分で着手できる粒度。
+■現状（診断）… ${PHASE_DEADLINE}までの初契約1社に向けて今どの局面か・先週から何が変わったか、ボトルネックは何か2〜3行（データに無いことは推測しない）
+■今週のアクション … 箇条書きで具体的に。各項目に【AI自動】か【要渡邉】を明記し、優先順に。初契約に近づくもの（返信・面談・モニター申込を増やす・受け皿を整える等）を優先。掲載店舗への有料転換は挙げない。5分で着手できる粒度。
 盛らない・データが薄い項目は「まだ0」と正直に。` }],
     });
     board = ((msg.content || []).find(b => b.type === 'text')?.text || '').trim();
@@ -137,7 +145,6 @@ export async function GET(request) {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const seoStatus = seo.ok ? '✅ 稼働' : '⚠️ 要対応（自己観測が起票済）';
-    const milestoneGap = nextMilestone.target - providerPaid;
     const html = `
       <h2 style="color:#111">📊 Fineme 事業週報 ${today}</h2>
 
@@ -147,8 +154,7 @@ export async function GET(request) {
       <h3 style="color:#111;margin:18px 0 6px">🏪 店舗SaaS有料契約（第一フェーズ主エンジン）</h3>
       <table style="border-collapse:collapse;font-size:13px">
         <tr><td style="padding:4px 10px;color:#888">有料契約</td><td style="padding:4px 10px"><b>${providerPaid}社</b> / 掲載店舗${providerTotal}社</td></tr>
-        <tr><td style="padding:4px 10px;color:#888">次のマイルストーン</td><td style="padding:4px 10px">${nextMilestone.date}までに${nextMilestone.target}社（残り${milestoneGap > 0 ? milestoneGap : 0}社）</td></tr>
-        <tr><td style="padding:4px 10px;color:#888">最終期限</td><td style="padding:4px 10px">2026-12-14 までに67社</td></tr>
+        <tr><td style="padding:4px 10px;color:#888">第一フェーズの区切り</td><td style="padding:4px 10px">${PHASE_DEADLINE} までに新規獲得で初契約1社（残り${daysLeft}日）</td></tr>
       </table>
 
       <h3 style="color:#111;margin:18px 0 6px">🤖 この1週間に自動で回ったこと（直近7日）</h3>
@@ -156,7 +162,7 @@ export async function GET(request) {
         <tr><td style="padding:4px 10px;color:#888">既存記事 自動改稿</td><td style="padding:4px 10px"><b>${improvedCount}件</b></td></tr>
         <tr><td style="padding:4px 10px;color:#888">SEO連携/自己観測</td><td style="padding:4px 10px">${seoStatus}</td></tr>
       </table>
-      <p style="color:#999;font-size:12px;margin:4px 0 0">店舗SaaS営業（既存21社の有料転換提案・新規開拓）は自動化されておらず、でお手動が主。</p>
+      <p style="color:#999;font-size:12px;margin:4px 0 0">新規の店舗営業は本体の外の別系統で毎日稼働中（このメールの数字には含まれない）。掲載店舗の大半はアフィリエイト掲載で、導入実績ではない。</p>
 
       <h3 style="color:#111;margin:18px 0 6px">📈 並走指標（Mirror・SEO）</h3>
       <table style="border-collapse:collapse;font-size:13px">
@@ -165,8 +171,8 @@ export async function GET(request) {
       </table>
 
       <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
-      <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／第一フェーズ=店舗SaaS有料契約67社（2026-12-14期限）。自動: seo-improve(改稿・週1) / provider-log-toolkit-announce(掲載店舗案内) / auto-visited・index-submit・seo-bulk-submit(SEOインデックス)。</p>`;
-    await resend.emails.send({ from: 'Fineme 週報 <noreply@fineme.me>', to: OWNER_EMAIL, subject: `📊 Fineme 事業週報 ${today}｜店舗SaaS有料${providerPaid}社・購入${mirrorWeek}(7日)`, html });
+      <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／第一フェーズの区切り=${PHASE_DEADLINE}までに新規獲得で初契約1社。自動: seo-improve(改稿・週1) / provider-log-toolkit-announce(掲載店舗案内) / auto-visited・index-submit・seo-bulk-submit(SEOインデックス)。</p>`;
+    await resend.emails.send({ from: 'Fineme 週報 <noreply@fineme.me>', to: OWNER_EMAIL, subject: `📊 Fineme 事業週報 ${today}｜店舗SaaS有料${providerPaid}社・Mirror購入${mirrorPurchaseWeek}(7日)`, html });
   }
 
   return Response.json({ ok: true, signals, seoConnected: seo.ok });

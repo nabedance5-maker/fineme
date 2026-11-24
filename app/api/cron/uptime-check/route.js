@@ -5,6 +5,7 @@
 // 止まっている間は10分ごとに知らせ続ける。
 export const dynamic = 'force-dynamic';
 import { sendLinePush } from '@/lib/line-push';
+import { getSupabase } from '@/lib/supabase';
 
 const SITE = 'https://www.fineme.me';
 
@@ -68,6 +69,12 @@ export async function GET(request) {
     results = results.map((r, i) => (r.ok ? r : again[i]));
   }
   const down = results.filter(r => !r.ok);
+  // 止まりを記録する（週次レポートが障害の期間を需要の低下と取り違えないため。手元の確認用 ?notify=0 は記録しない）
+  if (down.length && new URL(request.url).searchParams.get('notify') !== '0') {
+    try {
+      await getSupabase().from('service_incidents').insert(down.map(r => ({ name: r.name, status: String(r.status) })));
+    } catch (e) { console.error('[uptime-check] incident record', e.message); }
+  }
   // ?notify=0 は手元の自動調査（~/fineme/incident-watch.sh）からの確認用。でおへの通知は出さない
   const notify = new URL(request.url).searchParams.get('notify') !== '0';
   if (down.length && notify) {

@@ -2,6 +2,7 @@
 // Mirrorファネルの統計（利用数・無料→課金転換・紹介経由・フィードバック）
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { isMirrorPurchase, isMirrorFreeUnlock, isMirrorOwnerTest, MIRROR_PRICE, MIRROR_PURCHASE_DEFINITION } from '@/lib/mirror-metrics';
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -19,7 +20,7 @@ export async function computeMirrorStats() {
 
   const d90 = new Date(now - 90 * 86400000).toISOString();
   const [sessionsRes, subRes, refRes, fbRes, cancelledRes] = await Promise.all([
-    supabase.from('mirror_sessions').select('created_at, paid, stripe_payment_intent_id'),
+    supabase.from('mirror_sessions').select('created_at, paid, stripe_payment_intent_id, is_owner_test'),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('subscription_status', 'active'),
     supabase.from('referrals').select('created_at'),
     supabase.from('feedback').select('rating_accuracy, rating_revisit, comment, created_at').eq('page', 'mirror'),
@@ -28,20 +29,23 @@ export async function computeMirrorStats() {
 
   const sessions = sessionsRes.data || [];
   const inWindow = (rows, since) => rows.filter(r => r.created_at >= since);
-  const isPurchase = (s) => !!s.stripe_payment_intent_id;             // ¥500実購入
-  const isFreeUnlock = (s) => s.paid && !s.stripe_payment_intent_id;  // サブスク/紹介/オーナー無料
+  // 定義は lib/mirror-metrics.js（管理画面・事業週報と共通）
+  const isPurchase = isMirrorPurchase;
+  const isFreeUnlock = isMirrorFreeUnlock;
 
   const agg = (rows) => {
     const total = rows.length;
     const purchases = rows.filter(isPurchase).length;
     const freeUnlocks = rows.filter(isFreeUnlock).length;
+    const ownerTests = rows.filter(isMirrorOwnerTest).length;
     const previewOnly = rows.filter(s => !s.paid).length;
     return {
       total,
       purchases,
       freeUnlocks,
+      ownerTests,
       previewOnly,
-      revenue: purchases * 500,
+      revenue: purchases * MIRROR_PRICE,
       conversionRate: total > 0 ? Math.round((purchases / total) * 1000) / 10 : 0, // %
     };
   };
@@ -70,6 +74,7 @@ export async function computeMirrorStats() {
     .map(month => ({ month, count: cancelsByMonth[month] || 0 }));
 
   return {
+    definition: MIRROR_PURCHASE_DEFINITION,
     all: agg(sessions),
     last30d: agg(inWindow(sessions, d30)),
     last7d: agg(inWindow(sessions, d7)),

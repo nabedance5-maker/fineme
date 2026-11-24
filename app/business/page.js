@@ -232,7 +232,7 @@ export default function BusinessPage() {
             <div className={styles.flow}>
               <div className={styles.flowStep}><b>商品 ✅</b><span>SaaS機能・New Me Mapの継続価値</span></div>
               <div className={styles.flowArrow}>→</div>
-              <div className={styles.flowStep}><b>店舗営業 ◉現在地</b><span>既存21社の有料転換＋新規開拓</span></div>
+              <div className={styles.flowStep}><b>店舗営業 ◉現在地</b><span>新規の小規模専門店の開拓（2026-12-14までに初契約1社）</span></div>
               <div className={styles.flowArrow}>→</div>
               <div className={styles.flowStep}><b>契約者増加</b><span>選べる店舗が増える</span></div>
               <div className={styles.flowArrow}>→</div>

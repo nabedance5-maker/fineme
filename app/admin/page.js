@@ -114,7 +114,7 @@ export default function AdminDashboardPage() {
             { label: '🧭 Me Scan受診',   count: d.meScan.total,   color: '#1d4ed8' },
             { label: '🗺️ Navi利用',      count: d.navi.users,     color: '#0e7490' },
             { label: '🪞 Mirror利用',    count: d.mirror.total,   color: '#047857' },
-            { label: '💳 Mirror有料',    count: d.mirror.paid,    color: '#b45309' },
+            { label: '💳 Mirror購入',    count: d.mirror.paid,    color: '#b45309' },
           ];
           const base = steps[0].count || 1;
           funnelEl.innerHTML = '';
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
               <div className="db-kpi-sub"><span id="kpi-prov-month">—</span>　<span id="kpi-prov-detail" style={{color:'#111'}}></span></div>
             </div>
             <div className="db-kpi-card">
-              <div className="db-kpi-label">🪞 Mirror有料利用数</div>
+              <div className="db-kpi-label" title="購入＝¥500単発の実決済（Stripeの決済IDあり・運営者のテスト購入を除く）。運営者本人・サブスク・お試し・紹介の無料解放は含まない">🪞 Mirror購入数（¥500実決済）</div>
               <div className="db-kpi-main" id="kpi-mirror-paid">—</div>
               <div className="db-kpi-sub"><span id="kpi-mirror-revenue" style={{color:'#047857', fontWeight:700}}></span>　<span id="kpi-mirror-total" style={{color:'#111'}}></span></div>
             </div>

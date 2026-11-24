@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { whereMirrorPurchase, MIRROR_PRICE, MIRROR_PURCHASE_DEFINITION } from '@/lib/mirror-metrics';
 
 function getSupabase() {
   return createClient(
@@ -40,7 +41,9 @@ export async function GET(request) {
     supabase.from('diagnosis_results').select('id', { count: 'exact', head: true }).gte('created_at', thisMonthStart),
     supabase.from('providers').select('id, main_category, entity_type, created_at'),
     supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }),
-    supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }).eq('paid', true),
+    // 購入の定義は週次レポートと共通（lib/mirror-metrics.js）。以前は paid フラグで数えていて、
+    // 運営者本人の無料・サブスク等の解放まで「購入」と売上に入っていた（32件・¥16,000表示）
+    whereMirrorPurchase(supabase.from('mirror_sessions').select('id', { count: 'exact', head: true })),
     supabase.from('provider_inquiries').select('id', { count: 'exact', head: true }).neq('status', 'done'),
     supabase.from('stories').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('profiles').select('step_done').not('step_done', 'is', null),
@@ -83,7 +86,8 @@ export async function GET(request) {
     mirror: {
       total: mirrorTotal.count ?? 0,
       paid: mirrorPaid.count ?? 0,
-      revenue: (mirrorPaid.count ?? 0) * 500,
+      revenue: (mirrorPaid.count ?? 0) * MIRROR_PRICE,
+      definition: MIRROR_PURCHASE_DEFINITION,
     },
     navi: {
       users: naviUsers,
