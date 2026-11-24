@@ -5,6 +5,7 @@ import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
 import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST, POSTURE_OPS_GUIDE } from '@/lib/dashboard-tutorial';
 import { POSTURE_SHOOTING_GUIDE } from '@/lib/posture-guide';
+import { POSTURE_PARTS, POSTURE_CHECKS, POSTURE_SCORE_RULE } from '@/lib/posture-scoring';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
@@ -9938,13 +9939,46 @@ export default function ProviderDashboardPage() {
             ${R.changes?.length && R.previous_entry_id === L.id ? `<ul style="margin:8px 0 0;padding-left:16px;font-size:12.5px;">${R.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
           </div>`;
       }
-      // 部位別の目安（点数は小さく添えるだけ。2026-11-24 §2）。4部位を毎回同じ並びで出し、
-      // 写真から判断できなかった部位は「判定できませんでした」と出す（消すと「測っていない」のか「問題ない」のか分からないため）
-      const POSTURE_BREAKDOWN_KEYS = ['頭部・首', '肩まわり', '背中・胸椎', '骨盤・腰'];
-      function postureBreakdownHtml(b) {
+      // 部位別の目安（点数は小さく添えるだけ。2026-11-24 §2）。4部位を毎回同じ並びで出し、判定できなかった部位はそう出す。
+      // 2026-11-25 渡邉指摘「なんでその点数なのか、何を基準に何点マイナスなのか説明できないなら意味がない」：
+      // 採点の内訳（score_details）がある記録は、項目ごとに「引いた点・見えたこと」を並べ、総合の計算式まで出す
+      const POSTURE_BREAKDOWN_KEYS = POSTURE_PARTS;
+      const postureSkip = '<span style="color:#9ca3af;">—（写真からは判定できませんでした）</span>';
+      function postureBreakdownHtml(e, open = false) {
+        const b = e.score_breakdown;
         if (!b || typeof b !== 'object') return ''; // 部位別の目安が始まる前（2026-11-24より前）の記録
-        return `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">部位別の目安</p>
-          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:1px 10px;margin:0 0 6px;font-size:11.5px;color:#4b5563;">${POSTURE_BREAKDOWN_KEYS.map(k => `<dt style="margin:0;">${esc(k)}</dt><dd style="margin:0;">${Number.isFinite(b[k]) ? esc(String(b[k])) : '<span style="color:#9ca3af;">—（写真からは判定できませんでした）</span>'}</dd>`).join('')}</dl>`;
+        const details = Array.isArray(e.score_details) ? e.score_details : null;
+        if (!details) {
+          return `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">部位別の目安</p>
+            <dl style="display:grid;grid-template-columns:max-content 1fr;gap:1px 10px;margin:0 0 2px;font-size:11.5px;color:#4b5563;">${POSTURE_BREAKDOWN_KEYS.map(k => `<dt style="margin:0;">${esc(k)}</dt><dd style="margin:0;">${Number.isFinite(b[k]) ? esc(String(b[k])) : postureSkip}</dd>`).join('')}</dl>
+            <p class="muted" style="font-size:10.5px;margin:0 0 6px;">この記録は、採点の内訳を残す前（2026-11-25より前）の記録です。</p>`;
+        }
+        const judgedParts = POSTURE_BREAKDOWN_KEYS.filter(k => Number.isFinite(b[k]));
+        const formula = judgedParts.length && Number.isFinite(e.score)
+          ? `総合 ${e.score} ＝（${judgedParts.map(k => b[k]).join('＋')}）÷ ${judgedParts.length}${judgedParts.length < POSTURE_BREAKDOWN_KEYS.length ? '（判定できた部位だけの平均）' : ''}` : '';
+        const row = d => {
+          let pts, why;
+          if (Number.isFinite(d.deduction)) {
+            pts = d.deduction ? `−${d.deduction}` : '±0';
+            why = d.note || '';
+          } else {
+            const needSide = POSTURE_CHECKS.find(c => c.key === d.key)?.view === 'side' && !e.side_photo_url;
+            pts = '判定なし';
+            why = needSide ? '横の写真がないため見ていません' : '写真から判定できませんでした';
+          }
+          const color = Number.isFinite(d.deduction) && d.deduction > 0 ? '#92400e' : '#6b7280';
+          return `<li style="display:grid;grid-template-columns:4.2em 1fr;gap:6px;margin:0 0 2px;"><span style="font-variant-numeric:tabular-nums;font-weight:700;color:${color};">${esc(pts)}</span><span>${esc(d.label)}${why ? `<span style="color:#6b7280;">：${esc(why)}</span>` : ''}</span></li>`;
+        };
+        return `<details style="margin:0 0 6px;"${open ? ' open' : ''}>
+            <summary style="cursor:pointer;font-size:12px;font-weight:700;">部位別の目安と、点数の内訳</summary>
+            <p class="muted" style="font-size:10.5px;margin:4px 0 6px;">${esc(POSTURE_SCORE_RULE)}</p>
+            ${POSTURE_BREAKDOWN_KEYS.map(k => `
+              <div style="margin:0 0 6px;">
+                <p style="margin:0 0 2px;font-size:11.5px;font-weight:700;">${esc(k)}　${Number.isFinite(b[k]) ? `${esc(String(b[k]))}点` : postureSkip}</p>
+                <ul style="list-style:none;margin:0;padding:0;font-size:11.5px;color:#374151;">${details.filter(d => d.part === k).map(row).join('')}</ul>
+              </div>`).join('')}
+            ${formula ? `<p style="margin:2px 0 0;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;">${esc(formula)}</p>` : ''}
+          </details>`;
       }
       const postureListHtml = (title, items) => (Array.isArray(items) && items.length
         ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">${title}</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '');
@@ -9952,7 +9986,7 @@ export default function ProviderDashboardPage() {
         ? `閲覧リンクあり（${fmtDate(e.share_expires_at)}まで）` : '');
       function renderPostureHistoryHtml(entries, { shareable, memberRecord }) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
-        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => {
+        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map((e, i) => {
           return `
           <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
@@ -9965,7 +9999,7 @@ export default function ProviderDashboardPage() {
             ${postureListHtml('今回の気づき', e.findings)}
             ${Array.isArray(e.focus_areas) && e.focus_areas.length ? `<p style="margin:0 0 4px;font-size:12px;font-weight:700;">気になる部位</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;">${e.focus_areas.map(t => `<span style="font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:99px;background:#fdf6e3;border:1px solid #ecd9a6;color:#6b5516;">${esc(t)}</span>`).join('')}</div>` : ''}
             ${postureListHtml('次の一手', e.next_actions)}
-            ${postureBreakdownHtml(e.score_breakdown)}
+            ${postureBreakdownHtml(e, i === 0)}
             ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">メモ：${esc(e.note)}</p>` : ''}
             ${shareable ? `
               <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様に表示する（写真・気づき・変化・部位・次の一手。メモは出ません）</label>
@@ -10108,7 +10142,7 @@ export default function ProviderDashboardPage() {
           try {
             const photo_base64 = await blobToBase64(await compressImage(file));
             const side_photo_base64 = sideFile ? await blobToBase64(await compressImage(sideFile)) : null;
-            msgEl.textContent = 'AIが分析中…（10秒ほどかかります）';
+            msgEl.textContent = 'AIが分析中…（20秒ほどかかります）';
             const res = await fetch(endpointBase, {
               method: 'POST', headers: authHeaders(),
               body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', ...(side_photo_base64 ? { side_photo_base64, side_media_type: 'image/jpeg' } : {}), note: noteEl?.value || '' }),
