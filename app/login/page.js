@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { lineLoginErrorMessage } from '@/lib/line-login-errors';
 import { createClient } from '@supabase/supabase-js';
 import { timedFetch } from '@/lib/browser-auth';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
@@ -112,11 +113,14 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   // 契約者ログインで、契約者として登録されていないアカウントだった時（自動でマイページへは移らない）
   const [notProvider, setNotProvider] = useState(false);
+  // LINEログインに失敗して戻ってきた時の案内（?line_error=...。内部コードは文面に変えて出す）
+  const [lineError, setLineError] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'signup') setView('signup');
     if (params.get('type') === 'provider') setIsProvider(true);
+    if (params.get('line_error')) setLineError(lineLoginErrorMessage(params.get('line_error')));
     const loc = getLocalUserArea();
     if (loc) {
       setSignupArea(loc.area);
@@ -331,6 +335,11 @@ export default function LoginPage() {
             <p style={{ fontSize: '14px', color: T.muted, margin: '0 0 24px' }}>
               登録されたメールアドレスとパスワードを入力してください
             </p>
+            {lineError && (
+              <div role="alert" style={{ margin: '-8px 0 20px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444', fontSize: '13px', lineHeight: 1.7 }}>
+                {lineError}
+              </div>
+            )}
 
             {/* Android Chrome等でパスワードマネージャーの自動保存プロンプトを確実に出す
                 には<form>のsubmitイベントが必須（でお報告2026-09-13、詳細は上部コメント）。 */}

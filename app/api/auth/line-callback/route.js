@@ -98,26 +98,35 @@ export async function GET(request) {
     return Response.redirect(`${BASE_URL}/mypage/profile?line_connected=1`);
   }
 
-  // LINE ユーザー専用メールアドレス（Supabase auth の識別子として使用）
-  const lineEmail = `line_${lineUserId}@line.fineme.me`;
+  // LINE ユーザー専用メールアドレス（Supabase auth の識別子として使用）。
+  // Supabase はメールアドレスを小文字で保存するため、照合も小文字で行う
+  // （LINE の userId は "U..." と大文字で始まり、厳密一致では既存の人が必ず見つからなかった。
+  //  2026-11-24 実地確認で /login?line_error=user_lookup_failed が出た原因の1つ）。
+  const lineEmail = `line_${lineUserId}@line.fineme.me`.toLowerCase();
 
   // 既存ユーザーを検索、なければ作成
   let userId;
   try {
-    // まず profiles テーブルで line_user_id 検索（最速）
-    const { data: profile } = await supabase
+    // LINE でログインした時に入るのは、その LINE 専用のアカウント（lineEmail）だけ。
+    // マイページで LINE を連携したメールのアカウントには入れない：連携の手続きを他人に踏ませると
+    // その人の LINE が別のアカウントに結びつき、LINE ログインで他人のアカウントへ入らせる
+    // （ログインの取り違え）ことができてしまうため（2026-11-25 判断）。
+    //
+    // 以前は profiles を line_user_id で maybeSingle() 検索していたが、同じ LINE が複数の
+    // アカウントに入っていると（LINE専用＋メールのアカウントへ連携）2件で失敗し、さらにメールの
+    // 大文字・小文字の違いで既存の LINE 専用アカウントも見つからず user_lookup_failed になっていた。
+    // ここでは line_user_id の持ち主の中から、メールアドレスが lineEmail のものだけを選ぶ。
+    const { data: linked } = await supabase
       .from('profiles')
       .select('id')
       .eq('line_user_id', lineUserId)
-      .maybeSingle();
+      .limit(10);
+    for (const row of linked || []) {
+      const { data: u } = await supabase.auth.admin.getUserById(row.id);
+      if (String(u?.user?.email || '').toLowerCase() === lineEmail) { userId = row.id; break; }
+    }
 
-    if (profile?.id) {
-      userId = profile.id;
-    } else {
-      // auth.users を email で検索
-      const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1 });
-      // listUsers はページネーションが複雑なので email 直接検索はできない
-      // getUserByEmail がないため createUser で upsert 的に処理
+    if (!userId) {
       // まず作成を試みる（既存なら error になる）
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: lineEmail,
@@ -126,18 +135,18 @@ export async function GET(request) {
       });
 
       if (createError) {
-        // 既存ユーザーの場合 → email でユーザーリストを絞る（admin API）
-        // email が一致するユーザーをページ検索
+        // 既存ユーザーの場合 → email が一致するユーザーをページ検索（小文字どうしで比べる）
         let found = null;
         let page = 1;
-        while (!found) {
+        while (!found && page <= 200) {
           const { data: pg } = await supabase.auth.admin.listUsers({ page, perPage: 50 });
           if (!pg?.users?.length) break;
-          found = pg.users.find(u => u.email === lineEmail) || null;
+          found = pg.users.find(u => String(u.email || '').toLowerCase() === lineEmail) || null;
           if (pg.users.length < 50) break;
           page++;
         }
         if (!found) {
+          console.error('[line-callback] user lookup failed:', createError?.message);
           return Response.redirect(`${BASE_URL}/login?line_error=user_lookup_failed`);
         }
         userId = found.id;
