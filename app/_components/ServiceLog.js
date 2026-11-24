@@ -786,6 +786,8 @@ export default function ServiceLog({ withSideNav = false }) {
                 </div>
                 ${r.type === 'posture' && r.changes?.length ? `<p class="lsr-card-score"><b>前回からの変化</b></p><ul class="lsr-card-findings">${r.changes.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
                 ${r.findings?.length ? `<ul class="lsr-card-findings">${r.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+                ${r.type === 'posture' && r.focus_areas?.length ? `<p class="lsr-card-score"><b>気になる部位</b></p><p class="lsr-card-findings" style="margin-top:0">${r.focus_areas.map(f => esc(f)).join('・')}</p>` : ''}
+                ${r.type === 'posture' && r.next_actions?.length ? `<p class="lsr-card-score"><b>次の一手</b></p><ul class="lsr-card-findings">${r.next_actions.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
                 ${r.type === 'posture' && r.score != null ? `<p class="lsr-card-score" style="font-size:11.5px;opacity:.75">目安スコア ${esc(String(r.score))}（撮り方で変わるため、変化の目安としてご覧ください）</p>` : ''}
                 ${r.photo_url ? `<a class="lsr-card-photo-link" href="${esc(r.photo_url)}" target="_blank" rel="noopener">${r.side_photo_url ? '正面の写真を見る' : '写真を見る'}</a>` : ''}
                 ${r.side_photo_url ? ` <a class="lsr-card-photo-link" href="${esc(r.side_photo_url)}" target="_blank" rel="noopener">横の写真を見る</a>` : ''}

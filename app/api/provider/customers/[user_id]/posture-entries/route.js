@@ -7,11 +7,21 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
-import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
+import { createPostureEntry, isPostureEligiblePlan, POSTURE_ENTRY_COLUMNS } from '@/lib/posture-analysis';
+import { shareFlagPatch } from '@/lib/posture-share';
 import { withAudit } from '@/lib/activity-log';
 import { providerCustomerIds } from '@/lib/broadcast';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+
+// この会員の記録と、この会員に結びついた登録前（手動顧客）の記録の両方を切り替えられるようにする（カルテでは合算して見せているため）
+async function ownerFilter(providerId, userId) {
+  // URLの値をそのままフィルタの文字列に入れないよう、UUIDの形の時だけ使う
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) return 'id.is.null';
+  const { data } = await supabase.from('provider_manual_customers').select('id').eq('provider_id', providerId).eq('linked_user_id', userId);
+  const ids = (data || []).map(m => m.id);
+  return ids.length ? `user_id.eq.${userId},manual_customer_id.in.(${ids.join(',')})` : `user_id.eq.${userId}`;
+}
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -31,7 +41,7 @@ export async function GET(request, props) {
   const [{ data, error }, manualLinked] = await Promise.all([
     supabase
       .from('provider_posture_entries')
-      .select('id, photo_url, side_photo_url, score, findings, changes, shared_with_customer, note, staff_id, created_at')
+      .select(POSTURE_ENTRY_COLUMNS)
       .eq('provider_id', provider.id)
       .eq('user_id', params.user_id)
       .order('created_at', { ascending: false }),
@@ -49,10 +59,11 @@ export async function GET(request, props) {
   if (manualLinked.length) {
     const { data: manualEntries } = await supabase
       .from('provider_posture_entries')
-      .select('id, photo_url, side_photo_url, score, findings, changes, shared_with_customer, note, staff_id, created_at')
+      .select(POSTURE_ENTRY_COLUMNS)
       .eq('provider_id', provider.id)
       .in('manual_customer_id', manualLinked.map(m => m.id));
-    merged = [...merged, ...(manualEntries || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const seen = new Set(merged.map(e => e.id));
+    merged = [...merged, ...(manualEntries || []).filter(e => !seen.has(e.id))].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
   return Response.json(await withSignedPhotoUrls(supabase, merged));
 }
@@ -106,10 +117,12 @@ async function __PATCH(request, { params }) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, shared_with_customer } = await request.json().catch(() => ({}));
   if (!id || typeof shared_with_customer !== 'boolean') return Response.json({ error: '指定が正しくありません' }, { status: 400 });
+  if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
+  // OFFにした時は閲覧リンクも消す（lib/posture-share.js）
   const { data, error } = await supabase.from('provider_posture_entries')
-    .update({ shared_with_customer })
-    .eq('id', id).eq('provider_id', provider.id).eq('user_id', params.user_id)
-    .select('id, shared_with_customer').maybeSingle();
+    .update(shareFlagPatch(shared_with_customer))
+    .eq('id', id).eq('provider_id', provider.id).or(await ownerFilter(provider.id, params.user_id))
+    .select('id, shared_with_customer, share_expires_at').maybeSingle();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!data) return Response.json({ error: '記録が見つかりません' }, { status: 404 });
   return Response.json(data);

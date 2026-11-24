@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { PAGE_VISIBILITY_GROUPS } from '@/lib/page-visibility';
-import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST } from '@/lib/dashboard-tutorial';
+import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey, FEATURE_LIST, POSTURE_OPS_GUIDE } from '@/lib/dashboard-tutorial';
 import { POSTURE_SHOOTING_GUIDE } from '@/lib/posture-guide';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
@@ -1233,7 +1233,10 @@ export default function ProviderDashboardPage() {
         const btn = document.querySelector(`.tab-btn[data-tab="${li.dataset.featureItem}"]`);
         li.style.display = btn ? '' : 'none';
         const off = li.querySelector('[data-feature-off]');
-        if (off) off.style.display = btn?.classList.contains('tab-feature-off') ? '' : 'none';
+        // タブの中の機能（AIカルテ等）は、その機能自体のオン・オフで「オフ」を出す
+        const flag = li.dataset.featureFlag;
+        const flagOff = flag && window.__providerFeatures ? !window.__providerFeatures[flag] : false;
+        if (off) off.style.display = (btn?.classList.contains('tab-feature-off') || flagOff) ? '' : 'none';
       });
       document.querySelectorAll('#feature-list [data-feature-group]').forEach(g => {
         g.style.display = [...g.querySelectorAll('[data-feature-item]')].some(li => li.style.display !== 'none') ? '' : 'none';
@@ -2541,6 +2544,14 @@ export default function ProviderDashboardPage() {
       review_request: {
         title: '来店後のクチコミ依頼を自動で送れます',
         points: ['来店が確定した翌日に、クチコミのお願いが自動でLINEに届きます', '声をかけ忘れがなくなり、クチコミが自然に増えます'],
+      },
+      posture_analysis: {
+        title: 'AIカルテで、来店のたびに姿勢の変化を見せられます',
+        points: ['AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン限定です', '来店ごとに写真を撮ると、AIが前回と見比べて変化・気になる部位・次の一手をまとめます', '記録はお客様のNew Me Logや閲覧リンクで渡せるので、次の来店の理由になります'],
+      },
+      health_advice_analysis: {
+        title: 'AIカルテで、健診の結果から生活習慣のアドバイスを記録できます',
+        points: ['AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン限定です', '健診の結果写真を読み、食事・運動・生活習慣のアドバイスを記録します'],
       },
       customer_packages: {
         title: '回数券を発行・管理できます',
@@ -9923,25 +9934,48 @@ export default function ProviderDashboardPage() {
             ${R.changes?.length && R.previous_entry_id === L.id ? `<ul style="margin:8px 0 0;padding-left:16px;font-size:12.5px;">${R.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
           </div>`;
       }
-      function renderPostureHistoryHtml(entries, { shareable }) {
+      // 部位別の目安（点数は小さく添えるだけ。2026-11-24 §2）。写真から判断できない部位は出さない
+      const POSTURE_BREAKDOWN_KEYS = ['頭部・首', '肩まわり', '背中・胸椎', '骨盤・腰'];
+      function postureBreakdownText(b) {
+        if (!b || typeof b !== 'object') return '';
+        return POSTURE_BREAKDOWN_KEYS.filter(k => Number.isFinite(b[k])).map(k => `${k} ${b[k]}`).join('／');
+      }
+      const postureListHtml = (title, items) => (Array.isArray(items) && items.length
+        ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">${title}</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '');
+      const postureShareState = e => (e.shared_with_customer && e.share_expires_at && new Date(e.share_expires_at) > new Date()
+        ? `閲覧リンクあり（${fmtDate(e.share_expires_at)}まで）` : '');
+      function renderPostureHistoryHtml(entries, { shareable, memberRecord }) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
-        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => `
+        return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => {
+          const bd = postureBreakdownText(e.score_breakdown);
+          return `
           <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
               <span style="font-size:12px;font-weight:700;">${fmtDate(e.created_at)}</span>
-              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}</span>` : ''}
+              ${e.is_sample ? '<span style="font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:#eef2ff;color:#3730a3;">デモ用のサンプル</span>' : ''}
+              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}${bd ? `（${esc(bd)}）` : ''}</span>` : ''}
             </div>
             <div style="display:grid;grid-template-columns:repeat(2,minmax(0,90px));gap:6px;margin-bottom:6px;">${postureImg(e.photo_url, '正面')}${e.side_photo_url ? postureImg(e.side_photo_url, '横') : ''}</div>
-            ${(e.changes || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">前回からの変化</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${e.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
-            ${(e.findings || []).length ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">今回の気づき</p><ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+            ${postureListHtml('前回からの変化', e.changes)}
+            ${postureListHtml('今回の気づき', e.findings)}
+            ${Array.isArray(e.focus_areas) && e.focus_areas.length ? `<p style="margin:0 0 4px;font-size:12px;font-weight:700;">気になる部位</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;">${e.focus_areas.map(t => `<span style="font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:99px;background:#fdf6e3;border:1px solid #ecd9a6;color:#6b5516;">${esc(t)}</span>`).join('')}</div>` : ''}
+            ${postureListHtml('次の一手', e.next_actions)}
             ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">メモ：${esc(e.note)}</p>` : ''}
-            ${shareable ? `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様のNew Me Logに表示する（写真と気づき・変化。メモは出ません）</label>` : ''}
+            ${shareable ? `
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様に表示する（写真・気づき・変化・部位・次の一手。メモは出ません）</label>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                <button type="button" class="btn-ghost" data-posture-link="${esc(e.id)}" style="font-size:11.5px;padding:5px 10px;">${e.share_expires_at ? '閲覧リンクを作り直す' : 'お客様に送る閲覧リンクを作る'}</button>
+                <span class="muted" data-posture-link-state="${esc(e.id)}" style="font-size:11px;">${esc(postureShareState(e))}</span>
+              </div>
+              <div data-posture-link-box="${esc(e.id)}"></div>
+              <p class="muted" style="font-size:10.5px;margin:4px 0 0;">${memberRecord ? '表示するにすると、お客様のNew Me Logに出ます。' : ''}閲覧リンクはLINE等で送れます（90日間有効・表示をOFFにすると使えなくなります）。</p>` : ''}
           </div>
-        `).join('');
+        `;
+        }).join('');
       }
       // 履歴を表示して、比べる記録の切り替えと「お客様に表示する」の切り替えをつなぐ
-      function mountPostureHistory(el, entries, { patchUrl } = {}) {
-        el.innerHTML = renderPostureHistoryHtml(entries, { shareable: !!patchUrl });
+      function mountPostureHistory(el, entries, { patchUrl, memberRecord } = {}) {
+        el.innerHTML = renderPostureHistoryHtml(entries, { shareable: !!patchUrl, memberRecord });
         const wireCompare = () => {
           el.querySelectorAll('[data-posture-cmp]').forEach(sel => sel.addEventListener('change', () => {
             const box = el.querySelector('[data-posture-compare]');
@@ -9957,8 +9991,50 @@ export default function ProviderDashboardPage() {
           const res = await fetch(patchUrl, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ id: cb.dataset.postureShare, shared_with_customer: cb.checked }) });
           cb.disabled = false;
           if (!res.ok) { cb.checked = !cb.checked; showToast('切り替えられませんでした'); return; }
-          const e = entries.find(x => x.id === cb.dataset.postureShare); if (e) e.shared_with_customer = cb.checked;
-          showToast(cb.checked ? 'お客様のNew Me Logに表示します' : 'お客様のNew Me Logに表示しないようにしました');
+          const d = await res.json().catch(() => ({}));
+          const e = entries.find(x => x.id === cb.dataset.postureShare);
+          if (e) { e.shared_with_customer = cb.checked; e.share_expires_at = d.share_expires_at ?? (cb.checked ? e.share_expires_at : null); }
+          const st = el.querySelector(`[data-posture-link-state="${cb.dataset.postureShare}"]`);
+          if (st && e) st.textContent = postureShareState(e);
+          if (!cb.checked) { const box = el.querySelector(`[data-posture-link-box="${cb.dataset.postureShare}"]`); if (box) box.innerHTML = ''; }
+          showToast(cb.checked ? 'お客様に表示します' : 'お客様に表示しないようにしました（閲覧リンクも使えなくなります）');
+        }));
+        // 閲覧リンク（2026-11-24 §3）。作るたびに新しいURLになり、前のURLは使えなくなる。URLはこの画面でだけ表示する
+        el.querySelectorAll('[data-posture-link]').forEach(btn => btn.addEventListener('click', async () => {
+          const id = btn.dataset.postureLink;
+          const e = entries.find(x => x.id === id);
+          if (e?.share_expires_at && !confirm('閲覧リンクを作り直すと、前に送ったリンクは使えなくなります。作り直しますか？')) return;
+          btn.disabled = true;
+          try {
+            const res = await fetch(`/api/provider/posture-entries/${encodeURIComponent(id)}/share-link`, { method: 'POST', headers: authHeaders() });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok || !d.url) { showToast(d.error || 'リンクを作れませんでした'); return; }
+            if (e) { e.shared_with_customer = true; e.share_expires_at = d.expires_at; }
+            const cb = el.querySelector(`[data-posture-share="${id}"]`); if (cb) cb.checked = true;
+            const st = el.querySelector(`[data-posture-link-state="${id}"]`); if (st && e) st.textContent = postureShareState(e);
+            btn.textContent = '閲覧リンクを作り直す';
+            const box = el.querySelector(`[data-posture-link-box="${id}"]`);
+            if (box) {
+              const lineText = `姿勢チェックの記録です。こちらからご覧いただけます。\n${d.url}`;
+              box.innerHTML = `
+                <div style="margin-top:6px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;">
+                  <input type="text" readonly value="${esc(d.url)}" data-posture-link-url style="width:100%;box-sizing:border-box;font-size:11.5px;padding:6px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px;" />
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button type="button" class="btn" data-posture-link-copy style="font-size:11.5px;padding:5px 10px;">リンクをコピー</button>
+                    <a class="btn-ghost" href="https://line.me/R/share?text=${encodeURIComponent(lineText)}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px;padding:5px 10px;text-decoration:none;">LINEで送る</a>
+                    <a class="btn-ghost" href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" style="font-size:11.5px;padding:5px 10px;text-decoration:none;">お客様の見え方を確認</a>
+                  </div>
+                </div>`;
+              box.querySelector('[data-posture-link-copy]')?.addEventListener('click', () => {
+                navigator.clipboard?.writeText(d.url).then(() => showToast('リンクをコピーしました')).catch(() => { box.querySelector('[data-posture-link-url]')?.select(); showToast('リンクを選択しました。コピーしてください'); });
+              });
+            }
+            showToast('閲覧リンクを作りました');
+          } catch {
+            showToast('通信エラーが発生しました');
+          } finally {
+            btn.disabled = false;
+          }
         }));
       }
 
@@ -10031,7 +10107,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            mountPostureHistory(custModalPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries` });
+            mountPostureHistory(custModalPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries`, memberRecord: true });
           } catch {
             custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -10059,7 +10135,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/posture-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            mountPostureHistory(custModalManualPostureHistoryEl, entries);
+            mountPostureHistory(custModalManualPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/manual/${currentCustUid}/posture-entries` });
           } catch {
             custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -10072,7 +10148,7 @@ export default function ProviderDashboardPage() {
       const HEALTH_ADVICE_AXES = [
         ['diet', '食事'], ['exercise', '運動'], ['lifestyle', '生活習慣'], ['overall', '全般'],
       ];
-      function renderHealthHistoryHtml(entries) {
+      function renderHealthHistoryHtml(entries, { memberRecord } = {}) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
         return entries.map(e => `
           <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
@@ -10085,9 +10161,23 @@ export default function ProviderDashboardPage() {
               ${(e.advice || []).length ? `<ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.advice.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
               ${e.input_text ? `<p style="margin:0 0 2px;font-size:11.5px;color:#9ca3af;">補足入力：${esc(e.input_text)}</p>` : ''}
               ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">${esc(e.note)}</p>` : ''}
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-health-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様に表示する（アドバイスと写真。補足入力・メモは出ません）</label>
+              ${memberRecord ? '' : '<p class="muted" style="font-size:10.5px;margin:2px 0 0;">このお客様がFinemeに登録して結びつくと、New Me Logに出ます。</p>'}
             </div>
           </div>
         `).join('');
+      }
+      // 健診アドバイスも、お客様に出すかを記録ごとに選ぶ（既定は出さない。2026-11-24）
+      function mountHealthHistory(el, entries, patchUrl, opts) {
+        el.innerHTML = renderHealthHistoryHtml(entries, opts);
+        el.querySelectorAll('[data-health-share]').forEach(cb => cb.addEventListener('change', async () => {
+          cb.disabled = true;
+          const res = await fetch(patchUrl, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ id: cb.dataset.healthShare, shared_with_customer: cb.checked }) }).catch(() => null);
+          cb.disabled = false;
+          if (!res || !res.ok) { cb.checked = !cb.checked; showToast('切り替えられませんでした'); return; }
+          const e = entries.find(x => x.id === cb.dataset.healthShare); if (e) e.shared_with_customer = cb.checked;
+          showToast(cb.checked ? 'お客様に表示します' : 'お客様に表示しないようにしました');
+        }));
       }
 
       function buildHealthAddForm(container, endpointBase, onSaved) {
@@ -10155,7 +10245,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/${currentCustUid}/health-advice-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalHealthHistoryEl.innerHTML = renderHealthHistoryHtml(entries);
+            mountHealthHistory(custModalHealthHistoryEl, entries, `/api/provider/customers/${currentCustUid}/health-advice-entries`, { memberRecord: true });
           } catch {
             custModalHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -10183,7 +10273,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/health-advice-entries`, { headers: authHeaders() });
             const entries = res.ok ? await res.json() : [];
-            custModalManualHealthHistoryEl.innerHTML = renderHealthHistoryHtml(entries);
+            mountHealthHistory(custModalManualHealthHistoryEl, entries, `/api/provider/customers/manual/${currentCustUid}/health-advice-entries`);
           } catch {
             custModalManualHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
@@ -17545,7 +17635,7 @@ export default function ProviderDashboardPage() {
                   <h3 style={{ fontSize: '13px', margin: '0 0 6px', color: '#c9a84c', letterSpacing: '0.04em' }}>{group.heading}</h3>
                   <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                     {group.items.map(item => (
-                      <li key={item.key} data-feature-item={item.key} style={{ borderTop: '1px solid rgba(26,20,16,0.08)' }}>
+                      <li key={item.id || item.key} data-feature-item={item.key} data-feature-flag={item.flag || undefined} style={{ borderTop: '1px solid rgba(26,20,16,0.08)' }}>
                         <button type="button" data-goto-tab={item.key} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '8px 2px', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
                           <span style={{ fontWeight: 700, fontSize: '13.5px', textDecoration: 'underline', textDecorationColor: 'rgba(201,168,76,0.6)', textUnderlineOffset: '3px' }}>{item.label}</span>
                           <span data-feature-off style={{ display: 'none', marginLeft: '6px', fontSize: '11px', color: '#8a7d70', border: '1px solid rgba(26,20,16,0.2)', borderRadius: '99px', padding: '0 6px' }}>オフ</span>
@@ -17557,6 +17647,29 @@ export default function ProviderDashboardPage() {
                 </div>
               ))}
             </div>
+          </div>
+          {/* 姿勢分析の運用ガイド（2026-11-24 §7）。AIカルテをお店の定番の流れに組み込むための案内と、店頭POP */}
+          <div className="card" id="posture-ops-guide" style={{ padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>姿勢分析の運用ガイド</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 14px', lineHeight: '1.7' }}>AIカルテ（プレミアムプラン限定）のAI姿勢分析を、お店の定番サービスとして回すための流れです。{POSTURE_OPS_GUIDE.intro}</p>
+            <h3 style={{ fontSize: '13px', margin: '0 0 8px', color: '#c9a84c' }}>流れ</h3>
+            <ol style={{ margin: '0 0 16px', paddingLeft: '20px', fontSize: '13px', lineHeight: '1.75' }}>
+              {POSTURE_OPS_GUIDE.flow.map(f => <li key={f.title} style={{ marginBottom: '6px' }}><b>{f.title}</b>：{f.body}</li>)}
+            </ol>
+            <h3 style={{ fontSize: '13px', margin: '0 0 8px', color: '#c9a84c' }}>声かけの例</h3>
+            <ul style={{ margin: '0 0 16px', paddingLeft: '18px', fontSize: '13px', lineHeight: '1.75' }}>
+              {POSTURE_OPS_GUIDE.phrases.map(p => <li key={p.when} style={{ marginBottom: '4px' }}><b>{p.when}</b>　{p.text}</li>)}
+            </ul>
+            <h3 style={{ fontSize: '13px', margin: '0 0 8px', color: '#c9a84c' }}>毎回同じ条件で撮る理由とコツ</h3>
+            <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 6px', lineHeight: '1.7' }}>AIは前回の写真と見比べて変化を書きます。撮る場所・距離・角度が変わると、姿勢の変化なのか撮り方の違いなのか分からなくなるため、条件を揃えるほど比べ方が正確になります。</p>
+            <ul style={{ margin: '0 0 16px', paddingLeft: '18px', fontSize: '13px', lineHeight: '1.75' }}>
+              {POSTURE_SHOOTING_GUIDE.map(g => <li key={g}>{g}</li>)}
+            </ul>
+            <h3 style={{ fontSize: '13px', margin: '0 0 8px', color: '#c9a84c' }}>気をつけること</h3>
+            <ul style={{ margin: '0 0 16px', paddingLeft: '18px', fontSize: '13px', lineHeight: '1.75' }}>
+              {POSTURE_OPS_GUIDE.cautions.map(c => <li key={c}>{c}</li>)}
+            </ul>
+            <a href="/provider/posture-pop" target="_blank" rel="noopener" className="btn btn-ghost" style={{ fontSize: '12px' }}>店頭POP（A4・印刷用）を開く ↗</a>
           </div>
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
@@ -19462,7 +19575,7 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン（¥10,000/月）限定です。AI姿勢分析は、来店ごとに写真を撮って前回と並べて比べ、気になる部位と次の一手をお客様に渡せます。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
 
               {/* AI健診アドバイス（でお要望2026-09-27・今野くん発案。health_advice_analysis機能
@@ -19476,7 +19589,7 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン（¥10,000/月）限定です。AI健診アドバイスは、健診の結果写真から生活習慣のアドバイスを記録できます。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '6px' }}>
                 <button type="button" className="btn btn-ghost" id="cust-modal-card-link-btn" style={{ fontSize: '12px', padding: '6px 12px', marginRight: 'auto' }}>カード登録のURLを送る</button>
@@ -19515,7 +19628,7 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン（¥10,000/月）限定です。AI姿勢分析は、来店ごとに写真を撮って前回と並べて比べ、気になる部位と次の一手をお客様に渡せます。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
 
               <div id="cust-modal-manual-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
@@ -19527,7 +19640,7 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-manual-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AIカルテ（AI姿勢分析・AI健診アドバイス）はプレミアムプラン（¥10,000/月）限定です。AI健診アドバイスは、健診の結果写真から生活習慣のアドバイスを記録できます。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
 

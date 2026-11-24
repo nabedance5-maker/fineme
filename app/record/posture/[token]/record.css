@@ -1,0 +1,31 @@
+/* 姿勢の記録の閲覧ページ（/record/posture/[token]）。サイトの墨色×真鍮色に合わせ、本文は読みやすい明るいカード */
+.rp { min-height: 70vh; padding: 40px 16px 72px; background: #0b0f17; color: #f3efe6; font-family: 'Noto Sans JP', sans-serif; }
+.rp-card { max-width: 640px; margin: 0 auto; background: #f7f4ee; color: #1a1d24; border-radius: 16px; padding: 32px 28px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+.rp-kicker { font-size: 12px; font-weight: 800; color: #8a6d1e; letter-spacing: .04em; margin: 0 0 6px; }
+.rp-title { font-family: 'Shippori Mincho', 'Noto Serif JP', serif; font-size: clamp(21px, 4.6vw, 27px); line-height: 1.45; margin: 0 0 10px; text-wrap: balance; }
+.rp-lead { font-size: 13px; line-height: 1.85; color: #4a4f59; margin: 0 0 20px; }
+.rp-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 20px; }
+.rp-photos figure { margin: 0; }
+.rp-photos img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; background: #e7e2d8; display: block; }
+.rp-photos figcaption { font-size: 11.5px; color: #6b7280; margin-top: 4px; }
+.rp-block { border-top: 1px solid #e4ddcf; padding: 14px 0 4px; }
+.rp-h { font-size: 14px; font-weight: 800; margin: 0 0 8px; }
+.rp-list { margin: 0 0 8px; padding-left: 18px; font-size: 14.5px; line-height: 1.85; color: #1f2937; }
+.rp-list li + li { margin-top: 4px; }
+.rp-chips { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.rp-chips li { font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #fff; border: 1px solid #d9cfbb; color: #3b3424; }
+.rp-foot { font-size: 12px; color: #6b7280; margin: 16px 0 0; line-height: 1.7; }
+.rp-foot a { color: #8a6d1e; font-weight: 700; }
+.rp-gone .rp-lead { margin-bottom: 0; }
+.rp-claim { max-width: 640px; margin: 18px auto 0; border: 1px solid rgba(232,207,126,.35); background: rgba(201,168,76,.08); border-radius: 14px; padding: 20px 22px; }
+.rp-claim-h { font-weight: 800; font-size: 15px; color: #e8cf7e; margin: 0 0 6px; }
+.rp-claim-p { font-size: 13px; line-height: 1.85; color: rgba(243,239,230,.86); margin: 0 0 14px; }
+.rp-claim-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 22px; border-radius: 10px; border: none; background: #c9a84c; color: #10131a; font-weight: 800; font-size: 14px; font-family: inherit; cursor: pointer; text-decoration: none; }
+.rp-claim-btn:disabled { opacity: .6; cursor: default; }
+.rp-claim-btn:focus-visible { outline: 2px solid #e8cf7e; outline-offset: 2px; }
+.rp-claim-err { font-size: 12.5px; color: #ffb4a8; margin: 10px 0 0; }
+@media (max-width: 520px) {
+  .rp { padding-top: 24px; }
+  .rp-card { padding: 24px 18px; }
+  .rp-claim-btn { width: 100%; }
+}

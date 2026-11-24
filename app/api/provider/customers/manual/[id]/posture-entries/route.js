@@ -1,11 +1,13 @@
 // GET  /api/provider/customers/manual/[id]/posture-entries → 非会員顧客の姿勢分析記録一覧
 // POST /api/provider/customers/manual/[id]/posture-entries → 写真をAI分析して1件記録
+// PATCH /api/provider/customers/manual/[id]/posture-entries → { id, shared_with_customer } お客様に表示するか（2026-11-24。閲覧リンク・紐付け後のNew Me Logに効く）
 // app/api/provider/customers/[user_id]/posture-entries/route.js の非会員版。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
 import { hasFeature } from '@/lib/feature-flags';
-import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
+import { createPostureEntry, isPostureEligiblePlan, POSTURE_ENTRY_COLUMNS } from '@/lib/posture-analysis';
+import { shareFlagPatch } from '@/lib/posture-share';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -31,7 +33,7 @@ export async function GET(request, props) {
 
   const { data, error } = await supabase
     .from('provider_posture_entries')
-    .select('id, photo_url, side_photo_url, score, findings, changes, shared_with_customer, note, staff_id, created_at')
+    .select(POSTURE_ENTRY_COLUMNS)
     .eq('provider_id', provider.id)
     .eq('manual_customer_id', params.id)
     .order('created_at', { ascending: false });
@@ -80,3 +82,24 @@ async function __POST(request, { params }) {
 }
 
 export const POST = withAudit(__POST);
+
+// お客様に表示するかを記録ごとに切り替える（会員版の PATCH と同じ。OFFにすると閲覧リンクも消える）
+async function __PATCH(request, ctx) {
+  const params = await ctx.params;
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
+  const { id, shared_with_customer } = await request.json().catch(() => ({}));
+  if (!id || typeof shared_with_customer !== 'boolean') return Response.json({ error: '指定が正しくありません' }, { status: 400 });
+  const { data, error } = await supabase.from('provider_posture_entries')
+    .update(shareFlagPatch(shared_with_customer))
+    .eq('id', id).eq('provider_id', provider.id).eq('manual_customer_id', params.id)
+    .select('id, shared_with_customer, share_expires_at').maybeSingle();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (!data) return Response.json({ error: '記録が見つかりません' }, { status: 404 });
+  return Response.json(data);
+}
+
+export const PATCH = withAudit(__PATCH);

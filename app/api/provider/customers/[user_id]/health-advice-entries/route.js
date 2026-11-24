@@ -1,6 +1,7 @@
 // GET  /api/provider/customers/[user_id]/health-advice-entries → その顧客の健診アドバイス記録一覧
 // POST /api/provider/customers/[user_id]/health-advice-entries → 写真をAI分析して1件記録
 // でお要望2026-09-27（今野くん発案）。app/api/.../posture-entries/route.jsと同じパターン。
+// PATCH { id, shared_with_customer } → その記録をお客様のNew Me Logに出すか（2026-11-24。姿勢分析と同じく既定は出さない）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withSignedPhotoUrls } from '@/lib/customer-record-photos';
@@ -11,6 +12,15 @@ import { withAudit } from '@/lib/activity-log';
 import { providerCustomerIds } from '@/lib/broadcast';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+
+// この会員の記録と、この会員に結びついた登録前（手動顧客）の記録の両方を切り替えられるようにする（カルテでは合算して見せているため）
+async function ownerFilter(providerId, userId) {
+  // URLの値をそのままフィルタの文字列に入れないよう、UUIDの形の時だけ使う
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId))) return 'id.is.null';
+  const { data } = await supabase.from('provider_manual_customers').select('id').eq('provider_id', providerId).eq('linked_user_id', userId);
+  const ids = (data || []).map(m => m.id);
+  return ids.length ? `user_id.eq.${userId},manual_customer_id.in.(${ids.join(',')})` : `user_id.eq.${userId}`;
+}
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -29,7 +39,7 @@ export async function GET(request, props) {
   const [{ data, error }, manualLinked] = await Promise.all([
     supabase
       .from('provider_health_advice_entries')
-      .select('id, category, advice_axis, photo_url, input_text, advice, note, staff_id, created_at')
+      .select('id, category, advice_axis, photo_url, input_text, advice, note, staff_id, shared_with_customer, created_at')
       .eq('provider_id', provider.id)
       .eq('user_id', params.user_id)
       .order('created_at', { ascending: false }),
@@ -47,7 +57,7 @@ export async function GET(request, props) {
   if (manualLinked.length) {
     const { data: manualEntries } = await supabase
       .from('provider_health_advice_entries')
-      .select('id, category, advice_axis, photo_url, input_text, advice, note, staff_id, created_at')
+      .select('id, category, advice_axis, photo_url, input_text, advice, note, staff_id, shared_with_customer, created_at')
       .eq('provider_id', provider.id)
       .in('manual_customer_id', manualLinked.map(m => m.id));
     merged = [...merged, ...(manualEntries || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -96,3 +106,24 @@ async function __POST(request, { params }) {
 }
 
 export const POST = withAudit(__POST);
+
+// お客様に表示するかを記録ごとに切り替える（既定は出さない。お店がAIの文を確認してから出す。2026-11-24）
+async function __PATCH(request, ctx) {
+  const params = await ctx.params;
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
+  const { id, shared_with_customer } = await request.json().catch(() => ({}));
+  if (!id || typeof shared_with_customer !== 'boolean') return Response.json({ error: '指定が正しくありません' }, { status: 400 });
+  const { data, error } = await supabase.from('provider_health_advice_entries')
+    .update({ shared_with_customer })
+    .eq('id', id).eq('provider_id', provider.id).or(await ownerFilter(provider.id, params.user_id))
+    .select('id, shared_with_customer').maybeSingle();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (!data) return Response.json({ error: '記録が見つかりません' }, { status: 404 });
+  return Response.json(data);
+}
+
+export const PATCH = withAudit(__PATCH);

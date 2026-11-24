@@ -20,14 +20,18 @@ export async function GET(request) {
 
   // note（スタッフの内部メモ欄）は本人向けの表現になっていない可能性があるため、
   // このお客様向けエンドポイントでは意図的に取得・返却しない（AIが生成したfindings/adviceのみ渡す）。
+  // 本人の記録に加えて、本人に結びついたお店の手動顧客（お店が選んで結びつけた・閲覧リンクから本人が残した）の記録も出す（2026-11-24 §9）
+  const { data: linkedManual } = await supabase.from('provider_manual_customers').select('id').eq('linked_user_id', user.id);
+  const manualIds = (linkedManual || []).map(m => m.id);
+  const whose = q => (manualIds.length ? q.or(`user_id.eq.${user.id},manual_customer_id.in.(${manualIds.join(',')})`) : q.eq('user_id', user.id));
   const [{ data: postureRows }, { data: healthRows }] = await Promise.all([
-    // 姿勢分析は、お店が「お客様に表示する」にした記録だけ（2026-11-12）
-    supabase.from('provider_posture_entries').select('id, provider_id, photo_url, side_photo_url, score, findings, changes, created_at').eq('user_id', user.id).eq('shared_with_customer', true).order('created_at', { ascending: false }),
-    supabase.from('provider_health_advice_entries').select('id, provider_id, category, advice_axis, photo_url, advice, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+    // 姿勢分析・健診アドバイスとも、お店が「お客様に表示する」にした記録だけ（姿勢 2026-11-12・健診 2026-11-24）
+    whose(supabase.from('provider_posture_entries').select('id, provider_id, photo_url, side_photo_url, score, findings, focus_areas, next_actions, changes, created_at').eq('shared_with_customer', true)).order('created_at', { ascending: false }),
+    whose(supabase.from('provider_health_advice_entries').select('id, provider_id, category, advice_axis, photo_url, advice, created_at').eq('shared_with_customer', true)).order('created_at', { ascending: false }),
   ]);
 
   const records = [
-    ...(postureRows || []).map(r => ({ id: r.id, type: 'posture', provider_id: r.provider_id, photo_url: r.photo_url, side_photo_url: r.side_photo_url, score: r.score, findings: r.findings || [], changes: r.changes || [], created_at: r.created_at })),
+    ...(postureRows || []).map(r => ({ id: r.id, type: 'posture', provider_id: r.provider_id, photo_url: r.photo_url, side_photo_url: r.side_photo_url, score: r.score, findings: r.findings || [], focus_areas: r.focus_areas || [], next_actions: r.next_actions || [], changes: r.changes || [], created_at: r.created_at })),
     ...(healthRows || []).map(r => ({ id: r.id, type: 'health_advice', provider_id: r.provider_id, category: r.category, advice_axis: r.advice_axis, photo_url: r.photo_url, findings: r.advice || [], created_at: r.created_at })),
   ];
   if (!records.length) return Response.json([]);

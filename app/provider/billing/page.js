@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { contractActive } from '@/lib/provider-contract';
+import { FEATURE_DEFS, planRank } from '@/lib/feature-flags';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -22,10 +23,26 @@ const PLANS = {
   C: {
     name: 'プレミアム', amount: 10000, color: '#f59e0b',
     summary: 'スタンダードの全機能に加えて',
-    features: ['店舗の公式LINEから送信', 'カルテAI分析', '姿勢・健康アドバイスAI', 'POS・在庫管理', '操作ログ'],
+    features: ['AIカルテ（AI姿勢分析・AI健診アドバイス）', '店舗の公式LINEから送信', 'カルテAI分析', 'POS・在庫管理', '操作ログ'],
   },
 };
 const PAYMENT_FEE_PERCENT = 4.5;
+
+// プランごとの主な違い（2026-11-24 §8）。○/— は lib/feature-flags.js の最低プラン（minPlan）から出すので、制限と表がずれない
+const COMPARE_ROWS = [
+  ['AIカルテ（AI姿勢分析・AI健診アドバイス）', 'posture_analysis'],
+  ['カルテAI分析', 'karte_ai'],
+  ['店舗の公式LINEから送信', 'line_channel'],
+  ['POS・物販・在庫管理', 'pos'],
+  ['チケット・回数券', 'customer_packages'],
+  ['会員プラン・月会費のオンライン入会', 'membership_enrollment'],
+  ['休眠顧客の掘り起こし', 'dormant_outreach'],
+  ['クチコミ依頼の自動化', 'review_request'],
+  ['シフト・勤怠管理', 'shift_management'],
+  ['AI専属コンサル', 'ai_consultant'],
+  ['予約（即時予約・予約リクエスト）', 'instant_booking'],
+];
+const planHas = (plan, key) => planRank(plan) >= planRank(FEATURE_DEFS[key]?.minPlan || 'A');
 
 export default function BillingPage() {
   const initialized = useRef(false);
@@ -340,6 +357,29 @@ export default function BillingPage() {
                 </div>
               );
             })}
+          </div>
+          <div style={{ overflowX: 'auto', marginTop: '18px' }}>
+            <table style={{ width: '100%', minWidth: '420px', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+              <caption style={{ textAlign: 'left', fontSize: '13px', fontWeight: 700, padding: '0 0 8px', color: '#e8e4dc' }}>プランごとの主な違い</caption>
+              <thead>
+                <tr>
+                  <th scope="col" style={{ textAlign: 'left', padding: '8px 6px', borderBottom: '1px solid rgba(232,228,220,0.18)', color: '#9ca3af', fontWeight: 600 }}>機能</th>
+                  {Object.entries(PLANS).map(([key, p]) => <th key={key} scope="col" style={{ padding: '8px 6px', borderBottom: '1px solid rgba(232,228,220,0.18)', color: p.color, fontWeight: 700, whiteSpace: 'nowrap' }}>{p.name}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map(([label, key]) => (
+                  <tr key={key}>
+                    <th scope="row" style={{ textAlign: 'left', padding: '8px 6px', borderBottom: '1px solid rgba(232,228,220,0.08)', fontWeight: key === 'posture_analysis' ? 700 : 400, color: '#e8e4dc' }}>{label}</th>
+                    {Object.keys(PLANS).map(pk => (
+                      <td key={pk} style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid rgba(232,228,220,0.08)', color: planHas(pk, key) ? '#e8e4dc' : '#6b7280' }}>
+                        {planHas(pk, key) ? '○' : '—'}<span className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{planHas(pk, key) ? '使える' : '使えない'}</span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
