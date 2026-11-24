@@ -49,7 +49,8 @@ export default async function PostureRecordPage(props) {
     <main className="rp">
       <div className="rp-card">
         <p className="rp-kicker">{v.provider_name} からの姿勢の記録{v.is_sample ? '（デモ用のサンプル）' : ''}</p>
-        <h1 className="rp-title">{fmt(v.created_at)}の姿勢チェック</h1>
+        <h1 className="rp-title">姿勢チェックの記録</h1>
+        <p className="rp-date">{fmt(v.created_at)}</p>
         <p className="rp-lead">お店で撮った写真を、AIが見た目から読み取ったメモです。医療的な診断ではありません。撮り方で変わるため、変化の目安としてご覧ください。</p>
 
         {(v.photo_url || v.side_photo_url) && (
