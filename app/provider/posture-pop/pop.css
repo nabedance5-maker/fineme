@@ -39,10 +39,13 @@
   .pop-sheet { zoom: .45; }
   .pop-fields { grid-template-columns: 1fr; }
 }
+/* 印刷：このページ（.pop-sheet がある時）だけ、見本以外を表示から外して A4 1枚に収める。
+   CSS はページを移っても読み込まれたままになるため、:has(.pop-sheet) で他のページの印刷には効かないようにする */
 @media print {
   @page { size: A4; margin: 0; }
-  body * { visibility: hidden !important; }
-  .pop-sheet, .pop-sheet * { visibility: visible !important; }
-  .pop-wrap { padding: 0; background: #fff; }
-  .pop-sheet { position: absolute; left: 0; top: 0; zoom: 1; box-shadow: none; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body:has(.pop-sheet) header, body:has(.pop-sheet) nav, body:has(.pop-sheet) footer,
+  body:has(.pop-sheet) .pop-tools, body:has(.pop-sheet) .demo-note { display: none !important; }
+  body:has(.pop-sheet) *:not(:has(.pop-sheet)):not(.pop-sheet):not(.pop-sheet *) { display: none !important; }
+  body:has(.pop-sheet), body:has(.pop-sheet) main, body:has(.pop-sheet) .pop-wrap { margin: 0 !important; padding: 0 !important; min-height: 0 !important; background: #fff !important; }
+  .pop-sheet { zoom: 1; box-shadow: none; margin: 0; height: 297mm; min-height: 0; overflow: hidden; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
