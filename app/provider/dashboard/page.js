@@ -88,6 +88,10 @@ const DASHBOARD_CSS = `
       #tab-calendar.pd-cal-loading::before { content: ''; position: absolute; left: 50%; top: 160px; width: 36px; height: 36px; margin-left: -18px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; z-index: 6; }
       .pd-spinner { width: 40px; height: 40px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; }
       @keyframes pd-spin { to { transform: rotate(360deg); } }
+      /* 姿勢分析の履歴の読み込み中の骨組み（2026-11-25） */
+      .posture-skel { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; border-radius: 6px; animation: posture-skel 1.2s ease-in-out infinite; }
+      @keyframes posture-skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+      @media (prefers-reduced-motion: reduce) { .posture-skel { animation: none; } }
       /* <main>には共通クラス"section"（globals.cssでpadding:64px 0）も付いており、
          ダッシュボードではこれが上下に意図しない大きな余白を作っていた
          （でお指摘2026-09-14：「上部の空間は全然消えてない」の正体。今までの
@@ -9255,7 +9259,7 @@ export default function ProviderDashboardPage() {
         custModalHistoryEl.style.display = 'none'; custModalHistoryEl.innerHTML = ''; custModalHistoryEl.dataset.built = '';
         custModalInsightEl.style.display = 'none'; custModalInsightEl.innerHTML = '';
         if (custModalPostureAddForm) { custModalPostureAddForm.style.display = 'none'; custModalPostureAddForm.innerHTML = ''; custModalPostureAddForm.dataset.built = ''; }
-        if (custModalPostureHistoryEl) { custModalPostureHistoryEl.style.display = 'none'; custModalPostureHistoryEl.innerHTML = ''; custModalPostureHistoryEl.dataset.built = ''; }
+        if (custModalPostureHistoryEl) { custModalPostureHistoryEl.style.display = 'none'; custModalPostureHistoryEl.innerHTML = ''; custModalPostureHistoryEl.dataset.built = ''; delete custModalPostureHistoryEl.dataset.loadSeq; }
         custModalNoteTa.value = ''; custModalNoteTa.disabled = true; custModalNoteTa.placeholder = '読み込み中…';
         custModalNoteSaveBtn.disabled = true;
 
@@ -9305,7 +9309,7 @@ export default function ProviderDashboardPage() {
         custModalManualAddForm.style.display = 'none'; custModalManualAddForm.innerHTML = ''; custModalManualAddForm.dataset.built = '';
         custModalManualHistoryEl.style.display = 'none'; custModalManualHistoryEl.innerHTML = ''; custModalManualHistoryEl.dataset.built = '';
         if (custModalManualPostureAddForm) { custModalManualPostureAddForm.style.display = 'none'; custModalManualPostureAddForm.innerHTML = ''; custModalManualPostureAddForm.dataset.built = ''; }
-        if (custModalManualPostureHistoryEl) { custModalManualPostureHistoryEl.style.display = 'none'; custModalManualPostureHistoryEl.innerHTML = ''; custModalManualPostureHistoryEl.dataset.built = ''; }
+        if (custModalManualPostureHistoryEl) { custModalManualPostureHistoryEl.style.display = 'none'; custModalManualPostureHistoryEl.innerHTML = ''; custModalManualPostureHistoryEl.dataset.built = ''; delete custModalManualPostureHistoryEl.dataset.loadSeq; }
         custModalEl.style.display = 'flex';
         loadCustProfile({ manual_id: id });
       }
@@ -9934,11 +9938,13 @@ export default function ProviderDashboardPage() {
             ${R.changes?.length && R.previous_entry_id === L.id ? `<ul style="margin:8px 0 0;padding-left:16px;font-size:12.5px;">${R.changes.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
           </div>`;
       }
-      // 部位別の目安（点数は小さく添えるだけ。2026-11-24 §2）。写真から判断できない部位は出さない
+      // 部位別の目安（点数は小さく添えるだけ。2026-11-24 §2）。4部位を毎回同じ並びで出し、
+      // 写真から判断できなかった部位は「判定できませんでした」と出す（消すと「測っていない」のか「問題ない」のか分からないため）
       const POSTURE_BREAKDOWN_KEYS = ['頭部・首', '肩まわり', '背中・胸椎', '骨盤・腰'];
-      function postureBreakdownText(b) {
-        if (!b || typeof b !== 'object') return '';
-        return POSTURE_BREAKDOWN_KEYS.filter(k => Number.isFinite(b[k])).map(k => `${k} ${b[k]}`).join('／');
+      function postureBreakdownHtml(b) {
+        if (!b || typeof b !== 'object') return ''; // 部位別の目安が始まる前（2026-11-24より前）の記録
+        return `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">部位別の目安</p>
+          <dl style="display:grid;grid-template-columns:max-content 1fr;gap:1px 10px;margin:0 0 6px;font-size:11.5px;color:#4b5563;">${POSTURE_BREAKDOWN_KEYS.map(k => `<dt style="margin:0;">${esc(k)}</dt><dd style="margin:0;">${Number.isFinite(b[k]) ? esc(String(b[k])) : '<span style="color:#9ca3af;">—（写真からは判定できませんでした）</span>'}</dd>`).join('')}</dl>`;
       }
       const postureListHtml = (title, items) => (Array.isArray(items) && items.length
         ? `<p style="margin:0 0 2px;font-size:12px;font-weight:700;">${title}</p><ul style="margin:0 0 6px;padding-left:16px;font-size:12.5px;color:#374151;">${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '');
@@ -9947,19 +9953,19 @@ export default function ProviderDashboardPage() {
       function renderPostureHistoryHtml(entries, { shareable, memberRecord }) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
         return (entries.length >= 2 ? postureCompareHtml(entries) : '') + entries.map(e => {
-          const bd = postureBreakdownText(e.score_breakdown);
           return `
           <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
               <span style="font-size:12px;font-weight:700;">${fmtDate(e.created_at)}</span>
               ${e.is_sample ? '<span style="font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:#eef2ff;color:#3730a3;">デモ用のサンプル</span>' : ''}
-              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}${bd ? `（${esc(bd)}）` : ''}</span>` : ''}
+              ${Number.isFinite(e.score) ? `<span class="muted" style="font-size:11px;">目安スコア ${e.score}</span>` : ''}
             </div>
             <div style="display:grid;grid-template-columns:repeat(2,minmax(0,90px));gap:6px;margin-bottom:6px;">${postureImg(e.photo_url, '正面')}${e.side_photo_url ? postureImg(e.side_photo_url, '横') : ''}</div>
             ${postureListHtml('前回からの変化', e.changes)}
             ${postureListHtml('今回の気づき', e.findings)}
             ${Array.isArray(e.focus_areas) && e.focus_areas.length ? `<p style="margin:0 0 4px;font-size:12px;font-weight:700;">気になる部位</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;">${e.focus_areas.map(t => `<span style="font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:99px;background:#fdf6e3;border:1px solid #ecd9a6;color:#6b5516;">${esc(t)}</span>`).join('')}</div>` : ''}
             ${postureListHtml('次の一手', e.next_actions)}
+            ${postureBreakdownHtml(e.score_breakdown)}
             ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">メモ：${esc(e.note)}</p>` : ''}
             ${shareable ? `
               <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;"><input type="checkbox" data-posture-share="${esc(e.id)}"${e.shared_with_customer ? ' checked' : ''} />お客様に表示する（写真・気づき・変化・部位・次の一手。メモは出ません）</label>
@@ -10038,6 +10044,41 @@ export default function ProviderDashboardPage() {
         }));
       }
 
+      // 姿勢分析の履歴を読み込む（2026-11-25 §3）。読み込み中は骨組みを出し、遅い時・失敗した時は分かるように案内する
+      const postureSkeletonHtml = () => `<div aria-busy="true" aria-label="姿勢分析の記録を読み込み中">
+          <p class="muted" style="font-size:12px;margin:0 0 8px;">記録を読み込んでいます…</p>
+          ${[0, 1].map(() => `<div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+            <div class="posture-skel" style="width:90px;height:12px;margin-bottom:8px;"></div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,90px));gap:6px;margin-bottom:8px;"><div class="posture-skel" style="aspect-ratio:3/4;border-radius:8px;"></div><div class="posture-skel" style="aspect-ratio:3/4;border-radius:8px;"></div></div>
+            <div class="posture-skel" style="width:80%;height:10px;margin-bottom:6px;"></div><div class="posture-skel" style="width:60%;height:10px;"></div>
+          </div>`).join('')}</div>`;
+      let postureLoadSeq = 0;
+      async function loadPostureHistory(el, url, opts) {
+        // 読み込み中に別のお客様へ切り替えた時、前のお客様の記録を出さないよう、いちばん新しい読み込みの結果だけを使う
+        const seq = String(++postureLoadSeq);
+        el.dataset.loadSeq = seq;
+        const stale = () => el.dataset.loadSeq !== seq;
+        el.dataset.built = '1';
+        el.innerHTML = postureSkeletonHtml();
+        const ctrl = new AbortController();
+        const slow = setTimeout(() => { const p = el.querySelector('[aria-busy] > p'); if (p) p.textContent = '読み込みに時間がかかっています。通信状況をご確認ください…'; }, 5000);
+        const giveUp = setTimeout(() => ctrl.abort(), 30000);
+        try {
+          const res = await fetch(url, { headers: authHeaders(), signal: ctrl.signal });
+          if (!res.ok) throw new Error(String(res.status));
+          const entries = await res.json();
+          if (stale()) return;
+          mountPostureHistory(el, entries, opts);
+        } catch {
+          if (stale()) return;
+          el.dataset.built = '';
+          el.innerHTML = '<p class="muted" style="font-size:12px;">読み込めませんでした。<button type="button" class="btn-ghost" data-posture-retry style="font-size:11.5px;padding:4px 10px;margin-left:4px;">もう一度読み込む</button></p>';
+          el.querySelector('[data-posture-retry]')?.addEventListener('click', () => loadPostureHistory(el, url, opts));
+        } finally {
+          clearTimeout(slow); clearTimeout(giveUp);
+        }
+      }
+
       function buildPostureAddForm(container, endpointBase, onSaved) {
         container.innerHTML = `
           <div style="background:#f9fafb;border-radius:8px;padding:8px 10px;margin-bottom:8px;">
@@ -10092,7 +10133,10 @@ export default function ProviderDashboardPage() {
         custModalPostureAddForm.style.display = opening ? 'block' : 'none';
         if (opening && !custModalPostureAddForm.dataset.built) {
           buildPostureAddForm(custModalPostureAddForm, `/api/provider/customers/${currentCustUid}/posture-entries`, () => {
-            if (custModalPostureHistoryEl) custModalPostureHistoryEl.dataset.built = '';
+            // 記録した直後は履歴を開いて読み直す（閉じたままだと「記録が増えていない」ように見えるため）
+            if (!custModalPostureHistoryEl || !currentCustUid) return;
+            custModalPostureHistoryEl.style.display = 'block';
+            loadPostureHistory(custModalPostureHistoryEl, `/api/provider/customers/${currentCustUid}/posture-entries`, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries`, memberRecord: true });
           });
         }
       });
@@ -10102,15 +10146,7 @@ export default function ProviderDashboardPage() {
         const opening = custModalPostureHistoryEl.style.display === 'none';
         custModalPostureHistoryEl.style.display = opening ? 'block' : 'none';
         if (opening && !custModalPostureHistoryEl.dataset.built) {
-          custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
-          custModalPostureHistoryEl.dataset.built = '1';
-          try {
-            const res = await fetch(`/api/provider/customers/${currentCustUid}/posture-entries`, { headers: authHeaders() });
-            const entries = res.ok ? await res.json() : [];
-            mountPostureHistory(custModalPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries`, memberRecord: true });
-          } catch {
-            custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
-          }
+          loadPostureHistory(custModalPostureHistoryEl, `/api/provider/customers/${currentCustUid}/posture-entries`, { patchUrl: `/api/provider/customers/${currentCustUid}/posture-entries`, memberRecord: true });
         }
       });
 
@@ -10120,7 +10156,9 @@ export default function ProviderDashboardPage() {
         custModalManualPostureAddForm.style.display = opening ? 'block' : 'none';
         if (opening && !custModalManualPostureAddForm.dataset.built) {
           buildPostureAddForm(custModalManualPostureAddForm, `/api/provider/customers/manual/${currentCustUid}/posture-entries`, () => {
-            if (custModalManualPostureHistoryEl) custModalManualPostureHistoryEl.dataset.built = '';
+            if (!custModalManualPostureHistoryEl || !currentCustUid) return;
+            custModalManualPostureHistoryEl.style.display = 'block';
+            loadPostureHistory(custModalManualPostureHistoryEl, `/api/provider/customers/manual/${currentCustUid}/posture-entries`, { patchUrl: `/api/provider/customers/manual/${currentCustUid}/posture-entries` });
           });
         }
       });
@@ -10130,15 +10168,7 @@ export default function ProviderDashboardPage() {
         const opening = custModalManualPostureHistoryEl.style.display === 'none';
         custModalManualPostureHistoryEl.style.display = opening ? 'block' : 'none';
         if (opening && !custModalManualPostureHistoryEl.dataset.built) {
-          custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
-          custModalManualPostureHistoryEl.dataset.built = '1';
-          try {
-            const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/posture-entries`, { headers: authHeaders() });
-            const entries = res.ok ? await res.json() : [];
-            mountPostureHistory(custModalManualPostureHistoryEl, entries, { patchUrl: `/api/provider/customers/manual/${currentCustUid}/posture-entries` });
-          } catch {
-            custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
-          }
+          loadPostureHistory(custModalManualPostureHistoryEl, `/api/provider/customers/manual/${currentCustUid}/posture-entries`, { patchUrl: `/api/provider/customers/manual/${currentCustUid}/posture-entries` });
         }
       });
 
