@@ -3,6 +3,7 @@ import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MypageSideNav from '../_components/MypageSideNav';
+import { freshAccessToken } from '@/lib/browser-auth';
 
 const LEVEL_TEXT = ['全然', '少し', 'そこそこ', 'かなり', 'すごく'];
 const CONCERN_ICONS = {
@@ -176,7 +177,8 @@ export default function MypageDiagnosisPage() {
   // サーバーの最新結果と受検履歴。端末に結果が無い（別端末・localStorage消去）時もここから表示する
   useEffect(() => {
     if (!session) return;
-    const token = authToken();
+    (async () => {
+    const token = (await freshAccessToken()) || authToken();
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
     fetch(`/api/me/diagnosis?track=${trackId}`, { headers })
@@ -188,15 +190,45 @@ export default function MypageDiagnosisPage() {
         }
       })
       .catch(() => {});
-    fetch(`/api/me/diagnosis?track=${trackId}&history=1`, { headers })
+    const loadHistory = () => fetch(`/api/me/diagnosis?track=${trackId}&history=1`, { headers })
       .then(r => (r.ok ? r.json() : []))
-      .then(list => setMeScanHistory(Array.isArray(list) ? list : []))
-      .catch(() => {});
+      .then(list => { const arr = Array.isArray(list) ? list : []; setMeScanHistory(arr); return arr; })
+      .catch(() => []);
+    const serverList = await loadHistory();
+    // この端末に残っている受検のうち、サーバーに届いていないものを送り直す
+    // （以前は保存の送信がページ移動で打ち切られ、受け直しがサーバーに残っていなかった）。
+    // 古い順に送る。サーバーは「より新しい受検」の時だけ最新を置き換える
+    try {
+      const histKey = 'fineme:diagnosis:history';
+      const localKey = trackId === 'belle' ? 'fineme:diagnosis:belle' : 'fineme:diagnosis:latest';
+      const known = new Set(serverList.map(h => new Date(h.taken_at).getTime()));
+      const candidates = [];
+      for (const item of JSON.parse(localStorage.getItem(histKey) || '[]')) {
+        const prof = item?.profile;
+        if (prof?.version !== 'v9_me_scan' || !prof.at) continue;
+        if ((prof.gender === 'female') !== (trackId === 'belle')) continue;
+        candidates.push(prof);
+      }
+      const latestLocal = JSON.parse(localStorage.getItem(localKey) || 'null');
+      if (latestLocal?.version === 'v9_me_scan' && latestLocal.at) candidates.push(latestLocal);
+      const missing = [...new Map(candidates.map(c => [Number(c.at), c])).values()]
+        .filter(c => !known.has(Number(c.at)))
+        .sort((a, b) => Number(a.at) - Number(b.at));
+      for (const prof of missing.slice(-20)) {
+        await fetch('/api/me/diagnosis', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_data: prof, track: trackId }),
+        }).catch(() => {});
+      }
+      if (missing.length) await loadHistory();
+    } catch {}
+    })();
   }, [session, trackId]);
 
   async function toggleSnapshot(id) {
     if (openSnap?.id === id) { setOpenSnap(null); return; }
-    const token = authToken();
+    const token = (await freshAccessToken()) || authToken();
     if (!token) return;
     const r = await fetch(`/api/me/diagnosis?snapshot=${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
     const d = r && r.ok ? await r.json() : null;
@@ -244,13 +276,23 @@ export default function MypageDiagnosisPage() {
           )}
 
           {diagStatus === 'mescan' && meScan && (() => {
-            const latestType = meScanHistory[0]?.type || null;
+            // タイプ：同じ受検の判定がサーバーにあればそれ、無ければ結果ページが端末に残した判定
+            const sameAsServer = meScanHistory[0] && Math.abs(new Date(meScanHistory[0].taken_at).getTime() - Number(meScan.at)) < 1000;
+            let latestType = sameAsServer ? meScanHistory[0].type : null;
+            if (!latestType) {
+              try {
+                const t = JSON.parse(localStorage.getItem(`fineme:type:identity:${trackId}`) || 'null');
+                if (t && Number(t.at) === Number(meScan.at)) latestType = t;
+              } catch {}
+            }
             const first = meScan.compass_first || meScan.priority_order?.[0] || null;
             return (
               <>
                 <div className="result-hero">
                   <div className="result-badge">最新の Me Scan</div>
-                  {latestType?.fullName && <h2>{latestType.fullName}{latestType.displayCode ? `（${latestType.displayCode}）` : ''}</h2>}
+                  {latestType?.fullName
+                    ? <h2>{latestType.fullName}{latestType.displayCode ? `（${latestType.displayCode}）` : ''}</h2>
+                    : <p style={{ marginBottom: '6px' }}><Link href={track.diagnosisResult} style={{ color: '#e8c97a' }}>結果ページでタイプを見る →</Link></p>}
                   <p>{fmtDate(Number(meScan.at) || meScan.at)} 受検</p>
                   {first && <p style={{ marginTop: '6px' }}>最初の一手：{MESCAN_AXIS_LABEL[first] || first}</p>}
                 </div>
@@ -419,20 +461,20 @@ export default function MypageDiagnosisPage() {
               )}
             </>
           )}
-        </section>
-
-        {/* Fineme Mirror CTA */}
-        <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '14px' }}>
-            <span style={{ fontSize: '28px', flexShrink: 0 }}></span>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
-              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.95)', margin: '0 0 3px' }}>写真1枚で変容余地を可視化する</p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.5' }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
+          {/* Fineme Mirror CTA（本文の列の中に置く。グリッドの外に出ていて左のメニューの列に回り込み、
+            スクロール時にメニューの文字と重なっていた：Muse第2弾 §7-1） */}
+          <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '14px' }}>
+              <span style={{ fontSize: '28px', flexShrink: 0 }}></span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.95)', margin: '0 0 3px' }}>写真1枚で変容余地を可視化する</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.5' }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d1117', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
             </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d1117', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
-          </div>
-        </a>
+          </a>
+        </section>
       </div>
 
       <style>{`

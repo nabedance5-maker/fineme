@@ -199,14 +199,43 @@ export async function POST(request) {
   // 明示指定 → raw_data.gender からの導出 の順で決める
   const track = normalizeTrack(body?.track, raw_data.gender === 'female' ? 'belle' : 'fineme');
 
-  const { error } = await supabase
+  // 最新の1行は「より新しい受検」の時だけ置き換える。端末に残っていた過去の受検を
+  // 履歴へ送り直す時（/mypage/diagnosis が古い順に送る）に、最新が古い結果で上書きされないようにする
+  const { data: current } = await supabase
     .from('diagnosis_results')
-    .upsert(
-      { user_id: user.id, track, raw_data, scores: null, result: null },
-      { onConflict: 'user_id,track' }
-    );
+    .select('raw_data, created_at')
+    .eq('user_id', user.id)
+    .eq('track', track)
+    .maybeSingle();
+  const curAt = current?.raw_data ? new Date(takenAtOf({ at: current.raw_data.at || current.created_at })).getTime() : 0;
+  const newAt = new Date(takenAtOf(raw_data)).getTime();
+  const replaceLatest = body?.mode === 'update' || !current || newAt >= curAt;
+
+  const { error } = replaceLatest
+    ? await supabase
+      .from('diagnosis_results')
+      .upsert(
+        { user_id: user.id, track, raw_data, scores: null, result: null },
+        { onConflict: 'user_id,track' }
+      )
+    : { error: null };
 
   if (!error) {
+    if (body?.mode === 'update') {
+      // 結果ページからの描き込み（1領域ずつ）は新しい受検ではない。最新の履歴を書き換える
+      const { data: latest } = await supabase
+        .from('diagnosis_snapshots')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('track', track)
+        .order('taken_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latest) {
+        await supabase.from('diagnosis_snapshots').update({ raw_data }).eq('id', latest.id).eq('user_id', user.id);
+        return Response.json({ ok: true });
+      }
+    }
     // 受け直しても前回の結果が消えないよう、履歴に追記する（同じ受検の再送は無視）
     const { error: snapErr } = await supabase
       .from('diagnosis_snapshots')

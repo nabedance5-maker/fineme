@@ -47,6 +47,32 @@ const GOAL_SCENE_LABELS = {
   approach:         '積極的に行動できる自信をつける',
 };
 
+// 途中で切れた {"steps":[{...},{...},{... を、閉じている要素だけ残して読み直す
+function salvageSteps(text) {
+  const start = text.indexOf('[');
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false, lastEnd = -1;
+  for (let i = start + 1; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) lastEnd = i; }
+  }
+  if (lastEnd < 0) return null;
+  try {
+    const steps = JSON.parse(text.slice(start, lastEnd + 1) + ']');
+    return Array.isArray(steps) && steps.length >= 10 ? { steps } : null;
+  } catch { return null; }
+}
+
+export const maxDuration = 300;
+
 export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -525,9 +551,11 @@ ${BRAND_PHILOSOPHY}
   const client = claudeClient({ personal: true });
   let generated;
   try {
+    // 25〜35件を hint 付きで書くと5000トークンでは足りず、出力が途中で切れて JSON が
+    // 壊れていた（本番 2026-11-22 は受け直し後の生成が6回とも失敗し、固定ステップに落ちていた）。
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 5000,
+      max_tokens: 12000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContext }],
     });
@@ -535,7 +563,14 @@ ${BRAND_PHILOSOPHY}
     // コードフェンス（```json...```）を除去してからJSONを抽出
     const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
     const jsonMatch = stripped.match(/\{[\s\S]*\}/);
-    generated = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+    try {
+      generated = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
+    } catch (parseErr) {
+      // 上限で切れた時も、最後まで書き切れたステップまでは使う（全部捨てて固定ステップに落とさない）
+      generated = salvageSteps(stripped);
+      if (!generated) throw parseErr;
+      console.warn('[navi-steps] salvaged truncated output', { stop: msg.stop_reason, steps: generated.steps.length });
+    }
     if (!Array.isArray(generated?.steps) || generated.steps.length === 0) {
       throw new Error('steps配列が空または不正');
     }

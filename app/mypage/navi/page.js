@@ -5,6 +5,8 @@ import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS, FACE_TYPE_OPTIONS_BELLE, isMeaningfulProfileValue } from '@/lib/profile-basics';
 import MypageSideNav from '../_components/MypageSideNav';
+import { freshAccessToken } from '@/lib/browser-auth';
+import { firstStepOf, clearLegacyOverride } from '@/lib/compass';
 import { idealNextDate } from '@/lib/log-axes';
 import { goalHeadline, hasGoal, goalPickerHtml, bindGoalPicker, GOAL_PICKER_CSS } from '@/lib/goal';
 
@@ -777,6 +779,11 @@ export default function NewMeNaviPage() {
         currentUid = sbObj?.user?.id || null;
       }
     } catch {}
+    // 端末に残ったトークンは期限切れのことがあり、そのまま送ると Log・診断・進捗の読み込みが
+    // 本人確認で弾かれて「未登録」等に見えていた（Muse第2弾 §4：受け直し後にLog欄が空）。
+    // 必要なら更新してから使う
+    if (token) { try { token = (await freshAccessToken()) || token; } catch {} }
+    clearLegacyOverride(); // 旧方式の端末の上書き値は使わない（lib/compass.js）
 
     // ── アカウント切り替え検知: 前回と異なるユーザーならfineme:*キーを全削除 ──
     try {
@@ -920,7 +927,7 @@ export default function NewMeNaviPage() {
         root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
           <div style="font-size:36px"></div>
           <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">Mirrorデータを反映してMapを更新しています…</p>
-          <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.4)">1〜2分ほどかかります（あなたの回答から30件前後の道を書いています）。このままお待ちください。</p>
         </div>`;
 
         // 直近のMirrorセッションIDを取得（先月の振り返り接続・部分更新の両方に使う）
@@ -1120,7 +1127,7 @@ export default function NewMeNaviPage() {
         root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
           <div style="font-size:36px"></div>
           <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">${isFirstTime ? 'あなた専用のMapを生成しています…' : '新しいMe Scanを反映してMapを更新しています…'}</p>
-          <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.4)">1〜2分ほどかかります（あなたの回答から30件前後の道を書いています）。このままお待ちください。</p>
         </div>`;
         try {
           const genRes = await fetch('/api/me/navi-steps/generate', {
@@ -1680,6 +1687,10 @@ export default function NewMeNaviPage() {
       const activeChunkAllSteps = combinedSteps.filter(s => isForcedActive(s) || stepChunkIndex(s) === activeChunkIndex);
       const totalDone = activeChunkAllSteps.filter(isStepDone).length;
       const pct = activeChunkAllSteps.length > 0 ? Math.round(totalDone / activeChunkAllSteps.length * 100) : 0;
+      // 一覧の上の進捗表示はヘッダーと同じ集計（computeMapProgress）を出す。以前はチャンク内の
+      // 数（例 16/146）を出していて、ヘッダー（28/178）と分子・分母・％が食い違っていた（Muse第2弾 §3）
+      const _mp = computeMapProgress();
+      const _mpPct = _mp.total > 0 ? Math.round(_mp.done / _mp.total * 100) : 0;
       const genDate = naviStepsData.generated_at
         ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
         : '';
@@ -1792,6 +1803,7 @@ export default function NewMeNaviPage() {
               <div class="gmap-node-label">
                 ${nowBadge}
                 <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}${baselineChip}${habitStatusChip}</span>
+                ${step.text ? `<span class="gmap-node-text">${esc(String(step.text).replace(/^✓\s*/, '').slice(0, 44))}${String(step.text).length > 44 ? '…' : ''}</span>` : ''}
               </div>
             </div>
           </div>
@@ -1857,7 +1869,7 @@ export default function NewMeNaviPage() {
                 <span class="mb-icon"></span>
                 <div>
                   <p class="mb-title">${dateLabel ? `${esc(dateLabel)}のMirror分析がこのMapに反映されています` : 'Mirror分析がこのMapに反映されています'}</p>
-                  <p class="mb-sub">以下の変容余地データをもとに優先順位を決定しました</p>
+                  <p class="mb-sub">以下の変容余地データを、ステップの並び順に反映しています（最初の一手は診断の推奨のまま）</p>
                 </div>
               </div>
               <div class="mb-axes">${axisRows}</div>
@@ -1929,11 +1941,11 @@ export default function NewMeNaviPage() {
           </div>
           <div style="background:#151b24;border:1px solid rgba(236,232,223,0.066);border-radius:10px;padding:12px 14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-              <span style="font-size:11px;color:rgba(232,228,220,0.50)">今の一手：${totalDone} / ${activeChunkAllSteps.length}</span>
-              <span style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8)">${pct}%</span>
+              <span style="font-size:11px;color:rgba(232,228,220,0.50)">${_mp.done} / ${_mp.total} ステップ完了</span>
+              <span style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8)">${_mpPct}%</span>
             </div>
             <div style="height:3px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c8a45a,#f5d78e);border-radius:2px;transition:width .4s"></div>
+              <div style="height:100%;width:${_mpPct}%;background:linear-gradient(90deg,#c8a45a,#f5d78e);border-radius:2px;transition:width .4s"></div>
             </div>
           </div>
         </div>
@@ -2555,7 +2567,8 @@ export default function NewMeNaviPage() {
           const done = selected.includes(key);
           items.push({
             id: `habit-${axisId}-${key}`, axis: axisId,
-            text: `${done ? '✓' : ''} ${label}`,
+            // 未実施の習慣は「やってみる」と分かる文にする（見出しに出すため。Muse第2弾 §3）
+            text: done ? label : `やってみる：${label}`,
             action_type: 'quick', guide: 'none',
             _isHabitStatus: true, _autoDone: done,
           });
@@ -2601,7 +2614,7 @@ export default function NewMeNaviPage() {
       if (Math.abs(scoreA - scoreB) > 0.01) return scoreB - scoreA;
       return _diagPriorityOrder.indexOf(a) - _diagPriorityOrder.indexOf(b);
     });
-    const compassFirst  = p.compass_first  || priorityOrder[0] || 'body';
+    const compassFirst  = firstStepOf(p);
     const overallGoal   = getOverallGoal();
 
     // ── goal_scene（複数選択対応・後方互換） ──
@@ -2666,11 +2679,10 @@ export default function NewMeNaviPage() {
         const { done, total } = computeAxisCompletion(axisId);
         if (total > 0 && done >= total) doneAxes.add(axisId);
       });
-      const compassOverride = localStorage.getItem('fineme:compass:override');
-      if (compassOverride && AREA_DEFS[compassOverride] && !doneAxes.has(compassOverride)) {
-        return compassOverride;
-      }
-      // ③の動的priorityOrderを使い、未完了の先頭軸を選ぶ
+      // 最初の一手は結果ページと同じ1つの値（lib/compass.js の firstStepOf＝診断プロフィールの
+      // compass_first、選び直しも含む）。以前はMapだけ別の計算式で決めていて、同じ受検でも
+      // 結果ページと違う軸を出していた（Muse第2弾 §2）。その軸を歩き切った時だけ、次の軸へ進む
+      if (AREA_DEFS[compassFirst] && !doneAxes.has(compassFirst)) return compassFirst;
       const next = priorityOrder.find(id => !doneAxes.has(id));
       return next || compassFirst;
     }
@@ -3670,13 +3682,20 @@ export default function NewMeNaviPage() {
           prev = cd.prev || null;
         }
       }
+      // 週の途中で最初の一手が変わった（受け直し・選び直し）のに、文だけ前の軸のまま残って
+      // 「服」のラベルに体型の文が出ていた（Muse第2弾 §6）。まだ済んでいなければ選び直す
+      if (cd && cd.status !== 'done' && cd.axisId !== compassFirst) {
+        prev = cd.prev || null;
+        cd = null;
+      }
       if (!cd) {
         const pick = pickWeeklyPoint(compassFirst, WEEKLY_STEPS[compassFirst]);
         cd = { axisId: compassFirst, weekStart: thisWeek, stepText: pick.text, reason: pick.reason, status: 'todo', prev };
         try { localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd)); } catch {}
         pushCheckinsToServer();
       }
-      const def = AREA_DEFS[compassFirst];
+      // 軸・文・理由は同じ1つの選択（cd）から描く
+      const def = AREA_DEFS[cd.axisId] || AREA_DEFS[compassFirst];
       const isDone = cd.status === 'done';
       const prevHtml = prev
         ? `<div class="wcw-prev"><span class="wcw-prev-label">先週</span><span class="wcw-prev-text">${esc(prev.stepText)}</span>${prev.status === 'done' ? '<span class="wcw-prev-done">✓</span>' : ''}</div><div class="wcw-prev-arrow">↓ 今週</div>`

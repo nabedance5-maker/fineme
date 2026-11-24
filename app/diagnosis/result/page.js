@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { LocationPrompt } from '@/app/_components/LocationPrompt';
+import { freshAccessToken } from '@/lib/browser-auth';
+import { firstStepOf, recommendedFirstOf, isFirstChosenByUser, withFirstStep, clearLegacyOverride } from '@/lib/compass';
 import { habitItemLabel, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { GOAL_SCENES, GOAL_CHANGES, GOAL_VISIONS, goalScenesOf, hasGoal, goalPickerHtml, bindGoalPicker, GOAL_PICKER_CSS } from '@/lib/goal';
 
@@ -315,8 +317,8 @@ export default function DiagnosisResultPage() {
     try {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       if (sbKey) {
-        const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
-        const token = sbObj?.access_token;
+        // 期限切れのままだと読み込み・タイプの保存が本人確認で弾かれるため、必要なら更新する
+        const token = await freshAccessToken();
         if (token) {
           isLoggedIn = true;
           authToken = token;
@@ -613,10 +615,14 @@ export default function DiagnosisResultPage() {
     const priorityOrder = p.priority_order || [];
     // 選び直した時に元の推奨を compass_first_original に退避している（下の上書きチップ）。
     // 以前は compass_first を直接上書きして元の値が消え、「診断の推奨に戻す」で戻せなかった（2026-11-22修正）
-    const compassCalculated = p.compass_first_original || p.compass_first || priorityOrder[0] || 'body';
-    const compassOverride = localStorage.getItem('fineme:compass:override');
-    const isOverrideActive = !!(compassOverride && AREA_DEFS[compassOverride]);
-    const compassFirst = isOverrideActive ? compassOverride : compassCalculated;
+    // 最初の一手は診断プロフィールの compass_first ひとつ（lib/compass.js）。全画面がこれを読む。
+    // 以前は端末の上書き値（fineme:compass:override）が受検をまたいで残り、押していないのに
+    // 「あなたが選んだ方角」と出ていた（Muse第2弾 §2）
+    clearLegacyOverride();
+    const compassCalculated = recommendedFirstOf(p);
+    const isOverrideActive = isFirstChosenByUser(p);
+    const compassOverride = isOverrideActive ? p.compass_first : null;
+    const compassFirst = firstStepOf(p);
 
     // ─── タイプ（識別軸）は「一番できてる軸」、Compass（次の一手）は従来どおり
     // 「一番優先度が高い軸」——でお指摘 2026-08-26：優先順位＝タイプだと、タイプが
@@ -784,6 +790,8 @@ export default function DiagnosisResultPage() {
       };
     }
     const typeIdentity = computeTypeIdentity();
+    // マイページの診断結果でも同じタイプを出せるよう、どの受検の判定かと一緒に端末へ残す
+    try { if (typeIdentity) localStorage.setItem('fineme:type:identity:fineme', JSON.stringify({ at: p.at, ...typeIdentity })); } catch {}
     // 掲載店舗のカルテ等から参照できるよう、計算済みのタイプ判定結果をDBへ保存する
     // （判定ロジック自体はここでのみ計算・サーバー側では再実装しない）
     if (typeIdentity && authToken) {
@@ -1638,39 +1646,32 @@ export default function DiagnosisResultPage() {
     // 目指す場所を決める／変える（lib/goal.js）。保存したら見出し等に反映するため読み直す
     bindGoalPicker(document, { storageKey: 'fineme:diagnosis:latest', track: 'fineme', token: authToken, onSaved: () => setTimeout(() => location.reload(), 600) });
 
-    // Compass override チップ
+    // 最初の一手を選び直す／推奨に戻す。その受検のプロフィールに入れ、サーバーにも保存してから
+    // 読み直す（Map・マイページも同じ値を読む）
+    async function saveFirstStep(axis) {
+      let next = null;
+      try {
+        const d = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null');
+        if (d) { next = withFirstStep(d, axis); localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(next)); }
+      } catch {}
+      if (next && authToken) {
+        const save = fetch('/api/me/diagnosis', {
+          method: 'POST', keepalive: true,
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ raw_data: next, track: 'fineme', mode: 'update' }),
+        }).catch(() => {});
+        await Promise.race([save, new Promise(r => setTimeout(r, 4000))]);
+      }
+      location.reload();
+    }
     document.querySelectorAll('.compass-override-chip').forEach(btn => {
       btn.addEventListener('click', () => {
         const axis = btn.dataset.axis;
         if (!axis || !AREA_DEFS[axis]) return;
-        localStorage.setItem('fineme:compass:override', axis);
-        // 診断データにも反映（New Me Mapが読む用）
-        try {
-          const raw = localStorage.getItem('fineme:diagnosis:latest');
-          if (raw) {
-            const d = JSON.parse(raw);
-            if (!d.compass_first_original) d.compass_first_original = compassCalculated;
-            d.compass_first = axis;
-            localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
-          }
-        } catch {}
-        location.reload();
+        saveFirstStep(axis);
       });
     });
-    document.getElementById('compass-reset-btn')?.addEventListener('click', () => {
-      localStorage.removeItem('fineme:compass:override');
-      // 診断データのcompass_firstを元の計算値に戻す
-      try {
-        const raw = localStorage.getItem('fineme:diagnosis:latest');
-        if (raw) {
-          const d = JSON.parse(raw);
-          d.compass_first = compassCalculated;
-          delete d.compass_first_original;
-          localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
-        }
-      } catch {}
-      location.reload();
-    });
+    document.getElementById('compass-reset-btn')?.addEventListener('click', () => saveFirstStep(compassCalculated));
 
     // 保存ボタン
     const saveBtn = document.getElementById('btn-save-map');

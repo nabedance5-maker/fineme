@@ -5,6 +5,7 @@ import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServ
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS_BELLE, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
 import { renderGoalStep, previousGoals } from '@/lib/goal';
+import { freshAccessToken } from '@/lib/browser-auth';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -563,32 +564,38 @@ export default function BelleDiagnosisPage() {
         localStorage.setItem(histKey, JSON.stringify(arr));
       } catch (e) {}
 
-      // ログイン済みの場合はSupabaseにも保存（他デバイス・localStorage消去後の復元用）
+      // ログイン済みの場合はSupabaseにも保存（他デバイス・localStorage消去後の復元用）。
+      // 以前は送信直後にページを移動していて保存が打ち切られ、受け直しがサーバーに1件も
+      // 残っていなかった（本番 2026-11-22：受検履歴・Map・最初の一手が画面ごとにずれた原因）。
+      // 保存は終わるのを待ってから移動する（上限4秒。keepaliveで移動後も送り切る）。
+      persistAndGo(profile, '/belle/diagnosis/result', { generate: true });
+    }
+
+    async function persistAndGo(profile, dest, { generate = false, mode = 'new' } = {}) {
       try {
-        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (sbKey) {
-          const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
-          const token = sbObj?.access_token;
-          if (token) {
-            fetch('/api/me/diagnosis', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ raw_data: profile, track: 'belle' }),
-            }).catch(() => {});
-            // 診断完了と同時にパーソナライズされた変容ステップを非同期生成
+        // 期限切れのトークンを送ると本人確認に失敗して保存されないため、必要なら更新してから送る
+        const token = await freshAccessToken();
+        if (token) {
+          const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+          const save = fetch('/api/me/diagnosis', {
+            method: 'POST', headers, keepalive: true,
+            body: JSON.stringify({ raw_data: profile, track: 'belle', mode }),
+          }).catch(() => {});
+          if (generate) {
+            // 診断完了と同時にパーソナライズされた変容ステップを生成（時間がかかるので待たない。
+            // keepaliveでページ移動後もサーバーへ届ける）
             try {
               const bd = JSON.parse(localStorage.getItem('fineme:body:data') || '{}');
               fetch('/api/me/navi-steps/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                method: 'POST', headers, keepalive: true,
                 body: JSON.stringify({ diagnosis: profile, body_data: bd }),
               }).catch(() => {});
             } catch (_) {}
           }
+          await Promise.race([save, new Promise(r => setTimeout(r, 4000))]);
         }
       } catch (e) {}
-
-      window.location.href = '/belle/diagnosis/result';
+      window.location.href = dest;
     }
 
     // 年代で「理想値」の自動算出だけをヒント補正する（gap計算式やスコアリング自体は変えない）
@@ -1055,7 +1062,8 @@ export default function BelleDiagnosisPage() {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
         } catch (e) {}
         if (typeof window.gtag === 'function') window.gtag('event', 'mescan_axis_drawn', { axis: axisId, track: 'belle' });
-        window.location.href = '/belle/diagnosis/result';
+        // 描き込みはサーバーの最新の回答にも反映する（新しい受検としては数えない）
+        persistAndGo(profile, '/belle/diagnosis/result', { mode: 'update' });
       });
 
       showScreen('deepen');

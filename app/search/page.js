@@ -232,7 +232,7 @@ function SearchContent() {
       if (scan) {
         if (scan.trigger) params.set('trigger', scan.trigger);
         if (scan.failure_pattern && scan.failure_pattern !== 'ongoing') params.set('failure', scan.failure_pattern);
-        const compass = localStorage.getItem('fineme:compass:override') || scan.compass_first;
+        const compass = scan.compass_first; // 選び直しもプロフィールに入る（lib/compass.js）
         if (compass) params.set('compass', compass);
         const axes = scan.priority_order;
         if (Array.isArray(axes) && axes.length) params.set('axes', axes.join(','));

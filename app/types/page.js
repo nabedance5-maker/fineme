@@ -251,8 +251,9 @@ export default function TypesPage() {
         // あればその軸、無ければ「今」がいちばん高い軸（同点は基盤の層を優先）。以前は最初の一手の
         // 軸で出していて、結果ページのタイプと食い違っていた（Muse調査 2026-11-22）
         const tv = p.transform_vectors || {};
-        const override = localStorage.getItem('fineme:compass:override');
-        let typeAxis = override && AXIS_TYPE_CODE[override] ? override : null;
+        // 選び直し（その受検のプロフィールの compass_first_original があり、値が違う時）だけ反映
+        const chosen = p.compass_first_original && p.compass_first && p.compass_first !== p.compass_first_original ? p.compass_first : null;
+        let typeAxis = chosen && AXIS_TYPE_CODE[chosen] ? chosen : null;
         if (!typeAxis) {
           const entries = Object.entries(tv).sort((a, b) =>
             (b[1].current - a[1].current) || ((a[1].tier || 9) - (b[1].tier || 9)));

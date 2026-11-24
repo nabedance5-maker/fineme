@@ -97,8 +97,7 @@ export default function MapPage() {
 
     const computeCompass = (p) => {
       try {
-        const override = localStorage.getItem('fineme:compass:override');
-        if (override && T[override]) return override;
+        // 最初の一手は診断プロフィールの compass_first ひとつ（選び直しも含む。lib/compass.js）
         const diagRaw = localStorage.getItem('fineme:diagnosis:latest');
         const diag = diagRaw ? JSON.parse(diagRaw) : null;
         // フェーズ4: 診断結果（Fineme Compass）の最優先軸をMapの現在地にも使う。
