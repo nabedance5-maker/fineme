@@ -187,6 +187,23 @@ const DASHBOARD_CSS = `
       .cal-block.is-class-session, .cal-block-h.is-class-session { background: rgba(168,85,247,0.16); border-left-color: #a855f7; }
       .cal-block.is-class-session:hover, .cal-block-h.is-class-session:hover { background: rgba(168,85,247,0.28); }
       .cal-block.is-class-session.is-closed, .cal-block-h.is-class-session.is-closed { opacity: .55; border-left-style: dashed; }
+      /* 店舗が選んだ色（メニューごと・スタッフごと。2026-11-25）。返答待ちは斜線と点線、来店済みは薄く、の見分けは残す */
+      .cal-block.has-color, .cal-block-h.has-color { background: color-mix(in srgb, var(--cal-c) 17%, #fff); border-left-color: var(--cal-c); }
+      .cal-block.has-color:hover, .cal-block-h.has-color:hover { background: color-mix(in srgb, var(--cal-c) 30%, #fff); }
+      .cal-block.has-color.is-pending, .cal-block-h.has-color.is-pending { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--cal-c) 12%, #fff), color-mix(in srgb, var(--cal-c) 12%, #fff) 6px, color-mix(in srgb, var(--cal-c) 24%, #fff) 6px, color-mix(in srgb, var(--cal-c) 24%, #fff) 12px); border-left-style: dashed; }
+      .cal-block.has-color.is-visited, .cal-block-h.has-color.is-visited { opacity: .55; }
+      .cal-color-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0 0 8px; font-size: 11.5px; color: rgba(26,20,16,0.72); }
+      .cal-color-legend span { display: inline-flex; align-items: center; gap: 5px; }
+      .cal-color-legend i { width: 11px; height: 11px; border-radius: 3px; background: var(--cal-c); display: inline-block; }
+      .cc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(26,20,16,0.07); flex-wrap: wrap; }
+      .cc-row-name { flex: 1 1 140px; min-width: 0; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+      .cc-row-name i { width: 14px; height: 14px; border-radius: 4px; background: var(--cal-c, transparent); border: 1px solid rgba(26,20,16,0.2); flex-shrink: 0; }
+      .cc-swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .cc-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(26,20,16,0.18); background: var(--cal-c); cursor: pointer; padding: 0; }
+      .cc-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #1a1410; }
+      .cc-swatch:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+      .cc-custom { width: 32px; height: 30px; padding: 0; border: 1px solid rgba(26,20,16,0.2); border-radius: 6px; background: #fff; cursor: pointer; }
+      .cc-none { font-size: 11.5px; padding: 4px 8px; border: 1px solid rgba(26,20,16,0.2); border-radius: 6px; background: #fff; cursor: pointer; color: rgba(26,20,16,0.7); }
       .cal-block-tag { display: block; font-size: 9.5px; color: #3b82f6; font-weight: 700; }
       /* スタッフの休憩・外出ブロック／シフト外時間のグレー帯（でお要望2026-09-14：
          「出勤してないスタッフの枠は予約が入らないように自動でブロックしてカレンダーでも
@@ -14195,7 +14212,7 @@ export default function ProviderDashboardPage() {
             const minHeight = 16 + tagCount * 13;
             const height = Math.max(minHeight, (durationOf(r) / totalMin) * totalHeight);
             return `
-              <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
+              <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}${calColorCls(r)}" style="${calColorStyle(r)}top:${top}px;height:${height}px" data-cal-open="${r.id}">
                 <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${tagsHtml}
               </div>
             `;
@@ -14273,7 +14290,7 @@ export default function ProviderDashboardPage() {
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             const classTagH = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">${esc(classById[r.class_id])}</span>` : '';
             return `
-              <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
+              <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}${calColorCls(r)}" style="${calColorStyle(r)}left:${left}px;width:${width}px" data-cal-open="${r.id}">
                 <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${classTagH}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
@@ -14308,9 +14325,39 @@ export default function ProviderDashboardPage() {
       // 表示中の日付が今日の時だけ、現在時刻が画面上部から1/3あたりに来るように
       // スクロールする。60秒ごとの定期再描画（下のsetInterval）では、線の位置は
       // 更新しつつユーザーが自分でスクロールした位置を奪わないよう据え置く。
+      // 予約の色分け（2026-11-25 渡邉要望）。店舗が選んだ色だけを使い、#rrggbb 以外は使わない（style属性に入るため）
+      const CAL_HEX = /^#[0-9a-fA-F]{6}$/;
+      function calColorOf(r) {
+        const cc = dashboardPrefs?.calendar_colors;
+        if (!cc || (cc.by !== 'menu' && cc.by !== 'staff') || r._isClassSession) return null;
+        const key = cc.by === 'menu' ? r.service_id : r.staff_id;
+        const c = key ? cc[cc.by]?.[key] : null;
+        return typeof c === 'string' && CAL_HEX.test(c) ? c : null;
+      }
+      const calColorCls = r => (calColorOf(r) ? ' has-color' : '');
+      const calColorStyle = r => { const c = calColorOf(r); return c ? `--cal-c:${c};` : ''; };
+      function renderColorLegend(items) {
+        const el = document.getElementById('cal-color-legend');
+        if (!el) return;
+        const cc = dashboardPrefs?.calendar_colors;
+        if (!cc || cc.by === 'none' || viewMode === 'class') { el.style.display = 'none'; el.innerHTML = ''; return; }
+        const seen = new Map();
+        for (const r of items) {
+          const c = calColorOf(r);
+          if (!c) continue;
+          const name = cc.by === 'menu' ? r.service_name : r.staff_name;
+          const key = cc.by === 'menu' ? r.service_id : r.staff_id;
+          if (!seen.has(key)) seen.set(key, { c, name: name || (cc.by === 'menu' ? 'メニュー' : 'スタッフ') });
+        }
+        if (!seen.size) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        el.style.display = 'flex';
+        el.innerHTML = [...seen.values()].map(v => `<span><i style="--cal-c:${v.c}"></i>${esc(v.name)}</span>`).join('');
+      }
+
       function renderDesktopGrid(opts = {}) {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
+        renderColorLegend(items);
         const horizontal = dashboardPrefs?.calendar_axis === 'time-x';
         const prevScrollTop = gridWrapEl.scrollTop;
         const prevScrollLeft = gridWrapEl.scrollLeft;
@@ -14574,7 +14621,7 @@ export default function ProviderDashboardPage() {
           <div class="cal-agenda-row" data-cal-open="${r.id}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}${(r.status === 'pending' || r.status === 'counter_proposed') ? 'border-style:dashed;border-color:#f59e0b' : ''}">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
             <div style="flex:1;min-width:0">
-              <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
+              ${calColorOf(r) ? `<i aria-hidden="true" style="display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:${calColorOf(r)}"></i>` : ''}<strong style="font-size:13px">${esc(r.user_name || '')}</strong>
               ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}${r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700"> （指名なし）</span>' : ''}</span>` : ''}
               ${r.status === 'pending' ? `<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">${r._choiceLabel ? r._choiceLabel + '・' : ''}返答待ち</span>` : ''}
               ${r.status === 'counter_proposed' ? '<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">代替提案中（返答待ち）</span>' : ''}
@@ -15464,6 +15511,99 @@ export default function ProviderDashboardPage() {
           if (res.ok) { const { prefs } = await res.json(); if (prefs) setDashboardPrefs(prefs); }
           else if (prev) { setDashboardPrefs(prev); axisBtnLabel(); await loadWeek(); }
         } catch {}
+      });
+
+      // 予約の色分けの設定（2026-11-25 渡邉要望「自分で色を選ぶみたいな」）。保存先は表示設定（dashboard_prefs.calendar_colors）
+      const COLOR_PALETTE = ['#c9a84c', '#e11d48', '#ea580c', '#ca8a04', '#16a34a', '#0d9488', '#2563eb', '#7c3aed', '#db2777', '#64748b'];
+      const colorModalEl = document.getElementById('cal-color-modal');
+      const colorByEl = document.getElementById('cal-color-by');
+      const colorListEl = document.getElementById('cal-color-list');
+      const colorMsgEl = document.getElementById('cal-color-msg');
+      let colorDraft = null;
+      const cloneColors = () => {
+        const cc = dashboardPrefs?.calendar_colors || {};
+        return { by: ['none', 'menu', 'staff'].includes(cc.by) ? cc.by : 'none', menu: { ...(cc.menu || {}) }, staff: { ...(cc.staff || {}) } };
+      };
+      async function renderColorModal() {
+        if (!colorDraft) return;
+        const opts = [['none', '色分けしない'], ['menu', 'メニューごと'], ['staff', 'スタッフごと']];
+        colorByEl.innerHTML = opts.map(([k, l]) => `<button type="button" class="btn ${colorDraft.by === k ? '' : 'btn-ghost'}" data-cc-by="${k}" aria-pressed="${colorDraft.by === k}" style="font-size:12.5px;padding:7px 12px">${l}</button>`).join('');
+        if (colorDraft.by === 'none') { colorListEl.innerHTML = '<p class="muted" style="font-size:12.5px">予約はすべていつもの色で出ます。</p>'; return; }
+        let list;
+        if (colorDraft.by === 'menu') {
+          colorListEl.innerHTML = '<p class="muted" style="font-size:12.5px">メニューを読み込み中…</p>';
+          const svc = await loadManualServices().catch(() => []);
+          list = (svc || []).map(x => ({ id: x.id, name: x.name }));
+          if (!list.length) { colorListEl.innerHTML = '<p class="muted" style="font-size:12.5px">メニューがまだありません。メニューを作ると、ここで色を選べます。</p>'; return; }
+        } else {
+          list = (staffList || []).map(x => ({ id: x.id, name: x.name }));
+          if (!list.length) { colorListEl.innerHTML = '<p class="muted" style="font-size:12.5px">スタッフがまだいません。</p>'; return; }
+        }
+        const map = colorDraft[colorDraft.by];
+        colorListEl.innerHTML = list.map(it => {
+          const cur = CAL_HEX.test(map[it.id] || '') ? map[it.id] : '';
+          return `<div class="cc-row" data-cc-id="${esc(it.id)}">
+            <span class="cc-row-name"><i style="${cur ? `--cal-c:${cur}` : ''}"></i>${esc(it.name || '名前なし')}</span>
+            <span class="cc-swatches">
+              ${COLOR_PALETTE.map(c => `<button type="button" class="cc-swatch" style="--cal-c:${c}" data-cc-pick="${c}" aria-pressed="${cur === c}" aria-label="${esc(it.name || '')}の色を選ぶ"></button>`).join('')}
+              <input type="color" class="cc-custom" data-cc-custom value="${cur || '#c9a84c'}" aria-label="${esc(it.name || '')}の色を自由に選ぶ" title="ほかの色" />
+              <button type="button" class="cc-none" data-cc-clear>${cur ? '色を外す' : '色なし'}</button>
+            </span>
+          </div>`;
+        }).join('');
+      }
+      const setDraftColor = (id, c) => {
+        if (!colorDraft || colorDraft.by === 'none' || !id) return;
+        if (c && CAL_HEX.test(c)) colorDraft[colorDraft.by][id] = c.toLowerCase(); else delete colorDraft[colorDraft.by][id];
+        renderColorModal();
+      };
+      colorByEl?.addEventListener('click', e => {
+        const b = e.target.closest('[data-cc-by]');
+        if (!b || !colorDraft) return;
+        colorDraft.by = b.dataset.ccBy;
+        renderColorModal();
+      });
+      colorListEl?.addEventListener('click', e => {
+        const row = e.target.closest('[data-cc-id]');
+        if (!row) return;
+        const pick = e.target.closest('[data-cc-pick]');
+        if (pick) setDraftColor(row.dataset.ccId, pick.dataset.ccPick);
+        else if (e.target.closest('[data-cc-clear]')) setDraftColor(row.dataset.ccId, null);
+      });
+      colorListEl?.addEventListener('change', e => {
+        const inp = e.target.closest('[data-cc-custom]');
+        const row = e.target.closest('[data-cc-id]');
+        if (inp && row) setDraftColor(row.dataset.ccId, inp.value);
+      });
+      document.getElementById('cal-color-btn')?.addEventListener('click', () => {
+        colorDraft = cloneColors();
+        if (colorMsgEl) colorMsgEl.textContent = '';
+        colorModalEl.style.display = 'flex';
+        renderColorModal();
+      });
+      document.getElementById('cal-color-close')?.addEventListener('click', () => { colorModalEl.style.display = 'none'; colorDraft = null; });
+      colorModalEl?.addEventListener('click', e => { if (e.target === colorModalEl) { colorModalEl.style.display = 'none'; colorDraft = null; } });
+      document.getElementById('cal-color-save')?.addEventListener('click', async e => {
+        if (!colorDraft) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        if (colorMsgEl) colorMsgEl.textContent = '保存しています…';
+        try {
+          const res = await fetch('/api/provider/dashboard-prefs', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
+            body: JSON.stringify({ calendar_colors: colorDraft }),
+          });
+          const j = await res.json().catch(() => ({}));
+          if (!res.ok) { if (colorMsgEl) colorMsgEl.textContent = j.error || '保存できませんでした。もう一度お試しください'; return; }
+          if (j.prefs) setDashboardPrefs(j.prefs);
+          colorModalEl.style.display = 'none';
+          colorDraft = null;
+          showToast('色分けを保存しました');
+          renderDay();
+        } catch {
+          if (colorMsgEl) colorMsgEl.textContent = '通信できませんでした。電波の良い所でもう一度お試しください';
+        } finally { btn.disabled = false; }
       });
 
       // 日付を直接選んで一気に飛ぶ（でお要望2026-09-28）。
@@ -17871,6 +18011,8 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="cal-next-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>次週 →</button>
                 {/* 縦横の切替をカレンダーの上から直接（渡邉要望2026-11-15：表示設定まで行かずに切り替えたい） */}
                 <button type="button" className="btn btn-ghost" id="cal-axis-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>縦横を入れ替え</button>
+                {/* 予約の色分け（渡邉要望2026-11-25：自分で色を選べるように） */}
+                <button type="button" className="btn btn-ghost" id="cal-color-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>色分け</button>
                 {/* 遠い日付へ一気に飛べるよう、ネイティブの日付ピッカーをその場で開く
                     （でお要望2026-09-28：「何月って書いてあるボタンとかで押したら、その次の
                     カレンダーがポップアップで開いて違う日に飛べるボタンもあるといい」）。
@@ -17902,6 +18044,7 @@ export default function ProviderDashboardPage() {
             {/* 時間×スタッフのグリッド（hacomono参考）。PC・スマホ共通の1つのグリッドで、
                 横スクロールでスタッフ列を、縦スクロールで時間帯を確認する。640px以下は
                 でお要望（2026-09-12）でスタッフ列を狭くし、画面内に3〜4人分見える形に調整。 */}
+            <div id="cal-color-legend" className="cal-color-legend" style={{ display: 'none' }}></div>
             <div id="cal-day-grid" className="cal-day-grid"></div>
             <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューを選択した予約は正確に表示、メニュー未選択の予約は目安表示です</p>
 
@@ -18111,6 +18254,20 @@ export default function ProviderDashboardPage() {
 
         {/* 「スタッフ×部屋」列の並び替え（でお要望2026-09-17：「まとまってるところの
             順番を自由に変えられるように。部屋が先に表示できるとか」） */}
+        <div id="cal-color-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card" role="dialog" aria-labelledby="cal-color-title">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 id="cal-color-title" style={{ margin: 0, fontSize: '15px' }}>予約の色分け</h3>
+              <button type="button" className="btn btn-ghost" id="cal-color-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 10px' }}>予約カレンダーの予約の色を、メニューごと・スタッフごとに選べます。色を選んでいない予約は、いつもの色のまま出ます。</p>
+            <div id="cal-color-by" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}></div>
+            <div id="cal-color-list" style={{ maxHeight: '50vh', overflowY: 'auto' }}></div>
+            <p id="cal-color-msg" className="muted" role="status" aria-live="polite" style={{ fontSize: '12px', margin: '8px 0 0', minHeight: '1em' }}></p>
+            <button type="button" className="btn" id="cal-color-save" style={{ marginTop: '8px' }}>この色分けで保存する</button>
+          </div>
+        </div>
+
         <div id="cal-column-order-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
           <div className="cal-modal-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>

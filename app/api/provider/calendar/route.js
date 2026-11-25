@@ -87,7 +87,7 @@ export async function GET(request) {
     classIds.length ? supabase.from('provider_classes').select('id, name').in('id', classIds) : Promise.resolve({ data: [] }),
     classSlotIds.length ? supabase.from('reservations').select('slot_id').in('slot_id', classSlotIds).in('status', OCCUPYING_STATUSES) : Promise.resolve({ data: [] }),
     instantSlotIds.length ? supabase.from('provider_slots').select('id, start_time, end_time').in('id', instantSlotIds) : Promise.resolve({ data: [] }),
-    serviceIds.length ? supabase.from('provider_services').select('id, duration_minutes').in('id', serviceIds) : Promise.resolve({ data: [] }),
+    serviceIds.length ? supabase.from('provider_services').select('id, name, duration_minutes').in('id', serviceIds) : Promise.resolve({ data: [] }),
   ]);
 
   const staffMap = {};
@@ -99,7 +99,8 @@ export async function GET(request) {
   const bookedCountMap = {};
   (bookedRowsRes.data || []).forEach(b => { if (b.slot_id) bookedCountMap[b.slot_id] = (bookedCountMap[b.slot_id] || 0) + 1; });
   const serviceDurationMap = {};
-  (serviceRowsRes.data || []).forEach(s => { if (s.duration_minutes) serviceDurationMap[s.id] = s.duration_minutes; });
+  const serviceNameMap = {};
+  (serviceRowsRes.data || []).forEach(s => { if (s.duration_minutes) serviceDurationMap[s.id] = s.duration_minutes; serviceNameMap[s.id] = s.name || null; });
   const slotDurationMap = {};
   (slotRowsRes.data || []).forEach(s => {
     if (!s.start_time || !s.end_time) return;
@@ -153,6 +154,9 @@ export async function GET(request) {
       same_name_warning: r.same_name_warning || null,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
+      // 予約カレンダーの色分け（メニューごと）に使う（2026-11-25）
+      service_id: r.service_id || null,
+      service_name: r.service_id ? serviceNameMap[r.service_id] || null : null,
       // メニューを選ばない手動予約は、入れた終了時刻の長さ（2026-11-10）
       duration_minutes: endDur(r) || (r.slot_id && slotDurationMap[r.slot_id]) || (r.service_id && serviceDurationMap[r.service_id]) || null,
     }))
