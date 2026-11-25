@@ -46,7 +46,7 @@ export async function GET(request) {
   const [{ data: allRows, error }, { data: classSlots }] = await Promise.all([
     supabase
       .from('reservations')
-      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, end_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id, service_id, same_name_warning')
+      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, end_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id, service_id, same_name_warning, calendar_color')
       .eq('provider_id', provider.id)
       .in('status', ['pending', 'approved', 'visited', 'counter_proposed'])
       .gte('reserved_date', from)
@@ -87,7 +87,7 @@ export async function GET(request) {
     classIds.length ? supabase.from('provider_classes').select('id, name').in('id', classIds) : Promise.resolve({ data: [] }),
     classSlotIds.length ? supabase.from('reservations').select('slot_id').in('slot_id', classSlotIds).in('status', OCCUPYING_STATUSES) : Promise.resolve({ data: [] }),
     instantSlotIds.length ? supabase.from('provider_slots').select('id, start_time, end_time').in('id', instantSlotIds) : Promise.resolve({ data: [] }),
-    serviceIds.length ? supabase.from('provider_services').select('id, name, duration_minutes').in('id', serviceIds) : Promise.resolve({ data: [] }),
+    serviceIds.length ? supabase.from('provider_services').select('id, duration_minutes').in('id', serviceIds) : Promise.resolve({ data: [] }),
   ]);
 
   const staffMap = {};
@@ -99,8 +99,7 @@ export async function GET(request) {
   const bookedCountMap = {};
   (bookedRowsRes.data || []).forEach(b => { if (b.slot_id) bookedCountMap[b.slot_id] = (bookedCountMap[b.slot_id] || 0) + 1; });
   const serviceDurationMap = {};
-  const serviceNameMap = {};
-  (serviceRowsRes.data || []).forEach(s => { if (s.duration_minutes) serviceDurationMap[s.id] = s.duration_minutes; serviceNameMap[s.id] = s.name || null; });
+  (serviceRowsRes.data || []).forEach(s => { if (s.duration_minutes) serviceDurationMap[s.id] = s.duration_minutes; });
   const slotDurationMap = {};
   (slotRowsRes.data || []).forEach(s => {
     if (!s.start_time || !s.end_time) return;
@@ -154,9 +153,8 @@ export async function GET(request) {
       same_name_warning: r.same_name_warning || null,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
-      // 予約カレンダーの色分け（メニューごと）に使う（2026-11-25）
-      service_id: r.service_id || null,
-      service_name: r.service_id ? serviceNameMap[r.service_id] || null : null,
+      // 予約の詳細で店舗が選んだ色（2026-11-26）。画面の style に入るため形を確かめてから返す
+      calendar_color: /^#[0-9a-f]{6}$/.test(r.calendar_color || '') ? r.calendar_color : null,
       // メニューを選ばない手動予約は、入れた終了時刻の長さ（2026-11-10）
       duration_minutes: endDur(r) || (r.slot_id && slotDurationMap[r.slot_id]) || (r.service_id && serviceDurationMap[r.service_id]) || null,
     }))

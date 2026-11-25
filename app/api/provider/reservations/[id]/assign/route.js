@@ -42,6 +42,12 @@ async function __PATCH(request, { params }) {
     if (existing?.user_id) return Response.json({ error: 'この予約は既にFineme会員と紐付いています' }, { status: 409 });
     update.user_id = body.user_id;
   }
+  // 予約カレンダーでの予約の色（2026-11-26 渡邉要望：予約の詳細から色を選ぶ）。null でいつもの色に戻す
+  if ('calendar_color' in body) {
+    const c = body.calendar_color == null || body.calendar_color === '' ? null : String(body.calendar_color).toLowerCase();
+    if (c !== null && !/^#[0-9a-f]{6}$/.test(c)) return Response.json({ error: '色の指定が正しくありません' }, { status: 400 });
+    update.calendar_color = c;
+  }
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   // 担当・部屋を変える時は、その時間に空いているか確かめる（2026-11-10 渡邉報告：空いていない部屋に変えられた）
@@ -73,7 +79,7 @@ async function __PATCH(request, { params }) {
     .update(update)
     .eq('id', params.id)
     .eq('provider_id', provider.id)
-    .select('id, staff_id, resource_id, staff_manually_assigned, user_id')
+    .select('id, staff_id, resource_id, staff_manually_assigned, user_id, calendar_color')
     .single();
 
   if (error) return Response.json({ error: '予約が見つかりません' }, { status: 404 });

@@ -15,8 +15,6 @@ import {
   isValidTabOrderOverrides,
   isValidCustomCategories,
   allCategoryKeys,
-  isValidCalendarColors,
-  normalizeCalendarColors,
 } from '@/lib/dashboard-prefs';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -55,10 +53,6 @@ export async function PATCH(request) {
   }
   if ('calendar_default_view' in body && CALENDAR_DEFAULT_VIEW_OPTIONS.some(o => o.key === body.calendar_default_view)) {
     updates.calendar_default_view = body.calendar_default_view;
-  }
-  if ('calendar_colors' in body) {
-    if (!isValidCalendarColors(body.calendar_colors)) return Response.json({ error: '色の指定が正しくありません' }, { status: 400 });
-    updates.calendar_colors = normalizeCalendarColors(body.calendar_colors);
   }
   for (const k of ['reservation_show_note', 'use_no_show']) if (typeof body[k] === 'boolean') updates[k] = body[k];
   if ('header_shortcuts' in body) {
