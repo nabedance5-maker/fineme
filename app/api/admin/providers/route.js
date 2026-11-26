@@ -1,6 +1,7 @@
 // GET /api/admin/providers - 全掲載者一覧（運営用）
 // POST /api/admin/providers - 掲載者新規登録（パスワード設定リンクのメールを自動送信。inquiry_id があれば、その問い合わせと結びつける）
 import { monitorUntilFrom } from '@/lib/provider-contract';
+import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
 import { checkReferralCode } from '@/lib/referral-code';
@@ -61,8 +62,8 @@ export async function POST(request) {
         photo_url, email,
         line_user_id: line_user_id || null,
         // 特例無料以外は「お店が申し込むまで使えない」状態で作る（billing_status は Stripe が決める）
-        // 無料モニター（2026-11-16）：スタンダードを3か月無料。期限が来たら cron が未契約に戻す
-        plan: plan === 'special' ? 'special' : plan === 'monitor' ? 'B' : (['A', 'B', 'C'].includes(plan) ? plan : 'A'),
+        // 無料モニター（2026-11-16）：MONITOR_CAMPAIGN.planKey のプラン（2026-11-26〜C）を3か月無料。期限が来たら cron が未契約に戻す
+        plan: plan === 'special' ? 'special' : plan === 'monitor' ? MONITOR_CAMPAIGN.planKey : (['A', 'B', 'C'].includes(plan) ? plan : 'A'),
         billing_status: plan === 'special' ? 'active' : plan === 'monitor' ? 'monitor' : null,
         ...(plan === 'monitor' ? { monitor_started_at: new Date().toISOString(), monitor_until: monitorUntilFrom().toISOString() } : {}),
         published: false,

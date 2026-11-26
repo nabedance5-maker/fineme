@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { contractActive } from '@/lib/provider-contract';
+import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 
 export default function AdminProvidersPage() {
   const initialized = useRef(false);
@@ -326,7 +327,7 @@ export default function AdminProvidersPage() {
                   <option value="B">B・スタンダード（¥7,000/月）</option>
                   <option value="C">C・プレミアム（¥10,000/月）</option>
                   <option value="special">【特例無料】有料機能すべて使用可（支払いなし）</option>
-                  <option value="monitor">【無料モニター】Bを3か月無料・終わると自動で未契約に（課金なし）</option>
+                  <option value="monitor">【無料モニター】{MONITOR_CAMPAIGN.planKey}を3か月無料・終わると自動で未契約に（課金なし）</option>
                 </select>
               </div>
               <div className="form-field form-field-full"><label>キャッチコピー</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>

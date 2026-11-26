@@ -2,6 +2,7 @@
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { getSupabase } from '@/lib/supabase';
 import { contractActive, monitorUntilFrom } from '@/lib/provider-contract';
+import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 import { checkReferralCode } from '@/lib/referral-code';
 import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
 import { sendProviderStartEmail } from '@/lib/email';
@@ -61,19 +62,19 @@ export async function PATCH(request, props) {
     if (!cur) return Response.json({ error: 'お店が見つかりません' }, { status: 404 });
     oldPlanForUpsell = cur.plan;
     if (updates.plan === 'free') updates.plan = 'A';
-    // 無料モニター（2026-11-16）：スタンダード（B）を3か月無料。期限が来たら /api/cron/monitor-expiry が未契約に戻す（自動で有料にはしない）。
+    // 無料モニター（2026-11-16）：MONITOR_CAMPAIGN.planKey のプラン（2026-11-26〜C）を3か月無料。期限が来たら /api/cron/monitor-expiry が未契約に戻す（自動で有料にはしない）。
     // すでにモニター中なら期限はそのまま（編集画面で保存し直しても延びない）。月額を払っているお店はモニターにできない
     if (updates.plan === 'monitor') {
       monitorChange = true;
       if (cur.billing_status === 'monitor' && (!cur.monitor_until || new Date(cur.monitor_until).getTime() > Date.now())) {
-        updates.plan = 'B';
+        updates.plan = MONITOR_CAMPAIGN.planKey;
         delete updates.billing_status;
       } else {
         if (cur.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(cur.billing_status)) {
           return Response.json({ error: 'このお店は月額プランを契約中のため、無料モニターにできません' }, { status: 400 });
         }
         Object.assign(updates, {
-          plan: 'B', billing_status: 'monitor',
+          plan: MONITOR_CAMPAIGN.planKey, billing_status: 'monitor',
           monitor_started_at: new Date().toISOString(), monitor_until: monitorUntilFrom().toISOString(),
           monitor_notified_14_at: null, monitor_notified_3_at: null, monitor_ended_at: null,
         });

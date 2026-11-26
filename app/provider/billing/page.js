@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { contractActive } from '@/lib/provider-contract';
+import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 import { FEATURE_DEFS, planRank } from '@/lib/feature-flags';
 
 const _sb = createClient(
@@ -50,7 +51,7 @@ export default function BillingPage() {
   const [billingStatus, setBillingStatus] = useState('free');
   const [monitorUntil, setMonitorUntil] = useState(null);
   const [billingStarted, setBillingStarted] = useState(null);
-  const [monitorPlan, setMonitorPlan] = useState('B');
+  const [monitorPlan, setMonitorPlan] = useState(MONITOR_CAMPAIGN.planKey); // モニター後に続けるプランの初期値＝モニター中のプラン
   const [monitorAgree, setMonitorAgree] = useState(false);
   const [monitorBusy, setMonitorBusy] = useState(false);
   const [monitorErr, setMonitorErr] = useState('');

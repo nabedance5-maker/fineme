@@ -147,7 +147,7 @@ export default function AdminInquiriesPage() {
           navigator.clipboard.writeText(url).then(() => alert(`コピーしました\n${url}`)).catch(() => prompt('このURLをお店に送ってください', url));
         });
         td2.querySelector('[data-act="create"]')?.addEventListener('click', async e => {
-          // 無料モニターの応募は、モニター（スタンダード・3か月無料）でアカウントを作る。紹介コードはお店の紹介者になる（モニター後の紹介報酬が紐づく）
+          // 無料モニターの応募は、モニター（lib/monitor-campaign.js のプラン・3か月無料）でアカウントを作る。紹介コードはお店の紹介者になる（モニター後の紹介報酬が紐づく）
           const plan = it.desired_plan === 'monitor' ? 'monitor' : ['A', 'B', 'C'].includes(it.desired_plan) ? it.desired_plan : 'A';
           if (plan === 'monitor' && !confirm(`無料モニターとしてお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\n紹介者：${it.referral_code || 'なし'}\n\n作るとすぐ3か月の無料モニターが始まり、お店にパスワード設定のメールが届きます。モニターで受け入れると決めた時だけ使ってください。`)) return;
           if (plan !== 'monitor' && !confirm(`この内容でお店のアカウントを作りますか？\n\nお店の名前：${it.biz_name}\nログイン用メール：${it.email}\nカテゴリ：${labelCategory(it.category)}\nはじめに選んでおくプラン：PLAN ${plan}\n\n通常は、オンライン相談でご利用が決まったら、お店に登録ページ（/provider/signup）から登録してもらいます。お店の代わりに運営が登録する時だけ使ってください。作るとすぐ、お店に「管理画面のご用意ができました」というパスワード設定のメールが届きます。お店が管理画面で申し込む（支払う）まで、機能は使えません。`)) return;

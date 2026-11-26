@@ -206,7 +206,7 @@ export async function GET(request) {
     .or('admin_hidden.eq.false,admin_hidden.is.null');
 
   // New Me Map モードでは有料掲載者（active）のみを対象にする
-  // 無料モニター（2026-11-16）もスタンダード契約と同じ扱い
+  // 無料モニター（2026-11-16）も有料契約と同じ扱い
   if (naviMode) query = query.in('billing_status', ['active', 'monitor']);
 
   if (category) query = query.eq('main_category', category);
