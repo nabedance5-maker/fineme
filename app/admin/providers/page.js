@@ -339,6 +339,9 @@ export default function AdminProvidersPage() {
                   </optgroup>
                   <optgroup label="神奈川"><option value="横浜">横浜</option><option value="川崎">川崎</option></optgroup>
                   <optgroup label="埼玉・千葉"><option value="大宮・さいたま">大宮・さいたま</option><option value="千葉市">千葉市</option></optgroup>
+                  {/* 大阪府（2026-11-26 追加：営業は全国対象のため関西の店舗も登録できるように）。値は「東京・渋谷」と同じ「府県・市」の形。
+                      利用者側の検索（/search）は「大阪」を含むかで探すので、この形ならそのまま大阪府で見つかる */}
+                  <optgroup label="大阪"><option value="大阪・大阪市">大阪市</option><option value="大阪・枚方市">枚方市</option><option value="大阪・その他">大阪（その他）</option></optgroup>
                   <option value="オンライン">オンライン</option>
                 </select>
               </div>
