@@ -211,7 +211,10 @@ export async function GET(request) {
 
   if (category) query = query.eq('main_category', category);
   // エリアフィルター：アフィリエイト（area=null）は全国対応のため常に含める
-  if (area) query = query.or(`area.ilike.%${area}%,entity_type.eq.affiliate`);
+  // 2026-11-26：管理画面で都道府県を選んで登録した店舗は prefecture にも入るので、そちらでも探す。
+  // 検索語はフィルターの書き方を壊す記号（, ( ) * % など）を除いてから使う
+  const areaQ = String(area || '').replace(/[^\p{L}\p{N}ー・\s]/gu, '').trim().slice(0, 20);
+  if (areaQ) query = query.or(`area.ilike.%${areaQ}%,prefecture.ilike.%${areaQ}%,entity_type.eq.affiliate`);
 
   const { data: providers, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });

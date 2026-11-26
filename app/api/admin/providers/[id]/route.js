@@ -3,6 +3,8 @@
 import { getSupabase } from '@/lib/supabase';
 import { contractActive, monitorUntilFrom, specialUntilFromDate } from '@/lib/provider-contract';
 import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
+import { PREFECTURES } from '@/lib/customer-profile';
+import { geocodeAddress } from '@/lib/geocode';
 import { checkReferralCode } from '@/lib/referral-code';
 import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
 import { sendProviderStartEmail } from '@/lib/email';
@@ -46,6 +48,19 @@ export async function PATCH(request, props) {
   const updates = {};
   for (const key of allowed) {
     if (body[key] !== undefined) updates[key] = body[key];
+  }
+  // エリア（2026-11-26）：都道府県は47都道府県のどれか（オンラインのみの店舗は null）。変えた時は市区町村までの位置を入れ直す。
+  // すでにお店が番地まで住所を入れている時は、そちらの位置を優先する（運営の編集で番地の位置を粗くしない）
+  if (body.prefecture !== undefined || body.city !== undefined) {
+    const pref = PREFECTURES.includes(body.prefecture) ? body.prefecture : null;
+    const city = pref && body.city ? String(body.city).trim().slice(0, 40) || null : null;
+    updates.prefecture = pref; updates.city = city;
+    if (body.area !== undefined) updates.area = pref ? [pref, city].filter(Boolean).join('・') : (body.area ? String(body.area).slice(0, 60) : null);
+    const { data: cur } = await supabase.from('providers').select('prefecture, city, address').eq('id', id).maybeSingle();
+    if (pref && (pref !== cur?.prefecture || city !== cur?.city || !cur?.address)) {
+      const geo = await geocodeAddress([pref, city, pref === cur?.prefecture && city === cur?.city ? cur?.address : '']);
+      if (geo) { updates.lat = geo.lat; updates.lon = geo.lon; }
+    }
   }
   // price_from: 空文字・nullはnullに（Supabase integer型エラー対策）
   if (updates.price_from !== undefined) {

@@ -2,6 +2,8 @@
 // POST /api/admin/providers - 掲載者新規登録（パスワード設定リンクのメールを自動送信。inquiry_id があれば、その問い合わせと結びつける）
 import { monitorUntilFrom, specialUntilFromDate } from '@/lib/provider-contract';
 import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
+import { PREFECTURES } from '@/lib/customer-profile';
+import { geocodeAddress } from '@/lib/geocode';
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
 import { checkReferralCode } from '@/lib/referral-code';
@@ -35,7 +37,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { slug, name, catchphrase, description, target_desc, philosophy,
-            main_category, sub_categories, area, price_from,
+            main_category, sub_categories, area, prefecture, city, price_from,
             photo_url, plan, referral_code, referred_by, email, line_user_id,
             suitable_triggers, handles_failure_patterns, provider_style, inquiry_id } = body;
 
@@ -57,13 +59,21 @@ export async function POST(request) {
     const rc = await checkReferralCode(supabase, referred_by);
     if (rc.error) return Response.json({ error: rc.error }, { status: 400 });
 
+    // エリア（2026-11-26）：都道府県は47都道府県のどれかだけ。都道府県と市区町村から、市区町村までの位置を入れておく
+    // （番地までの位置は、お店が管理画面のプロフィールで住所を入れた時に lib/geocode.js で更新される）
+    const pref = PREFECTURES.includes(prefecture) ? prefecture : null;
+    const cityVal = pref && city ? String(city).trim().slice(0, 40) || null : null;
+    const geo = pref ? await geocodeAddress([pref, cityVal]) : null;
+
     // providersテーブルに登録
     const { data, error } = await supabase
       .from('providers')
       .insert([{
         slug: resolvedSlug, name, catchphrase, description, target_desc, philosophy,
         main_category, sub_categories: sub_categories || [],
-        area, price_from: price_from ? Number(price_from) : null,
+        area: pref ? [pref, cityVal].filter(Boolean).join('・') : (area ? String(area).slice(0, 60) : null),
+        prefecture: pref, city: cityVal, ...(geo ? { lat: geo.lat, lon: geo.lon } : {}),
+        price_from: price_from ? Number(price_from) : null,
         photo_url, email,
         line_user_id: line_user_id || null,
         // 特例無料以外は「お店が申し込むまで使えない」状態で作る（billing_status は Stripe が決める）

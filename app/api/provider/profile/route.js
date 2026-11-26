@@ -1,4 +1,5 @@
 // PATCH /api/provider/profile - 掲載者が自分のプロフィールを更新
+import { geocodeAddress } from '@/lib/geocode';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
 import { normalizeVisibility } from '@/lib/page-visibility';
@@ -48,7 +49,7 @@ async function __PATCH(request) {
   // メールで掲載者を特定（geocoding フォールバック用に prefecture/city も取得）
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, prefecture, city')
+    .select('id, prefecture, city, address')
     .eq('email', user.email)
     .single();
 
@@ -72,27 +73,12 @@ async function __PATCH(request) {
     return Response.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
-  // 住所が更新された場合、Nominatimでジオコーディングしてlat/lonを保存
-  const prefectureVal = updates.prefecture || provider.prefecture || '';
-  const cityVal = updates.city ?? '';
-  const addressVal = updates.address ?? '';
+  // 住所が更新された場合、緯度・経度を出して保存（国土地理院→Nominatim。lib/geocode.js）。
+  // 一部の欄だけ更新された時は、保存済みの都道府県・市区町村・番地と合わせて引く（以前は市区町村が抜けることがあった）
   if (updates.address !== undefined || updates.prefecture !== undefined || updates.city !== undefined) {
-    const fullAddress = [prefectureVal, cityVal, addressVal].filter(Boolean).join('');
-    if (fullAddress.length >= 3) {
-      try {
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress + ' 日本')}&limit=1&accept-language=ja`,
-          { headers: { 'User-Agent': 'Fineme/1.0' }, signal: AbortSignal.timeout(5000) }
-        );
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          if (geoData?.[0]) {
-            updates.lat = parseFloat(geoData[0].lat);
-            updates.lon = parseFloat(geoData[0].lon);
-          }
-        }
-      } catch { /* ジオコーディング失敗は無視してデータ保存は継続 */ }
-    }
+    const pick = k => (updates[k] !== undefined ? updates[k] : provider[k]) || '';
+    const geo = await geocodeAddress([pick('prefecture'), pick('city'), pick('address')]);
+    if (geo) { updates.lat = geo.lat; updates.lon = geo.lon; }
   }
 
   const { data, error } = await supabase

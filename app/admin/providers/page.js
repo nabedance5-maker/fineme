@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { contractActive } from '@/lib/provider-contract';
 import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
+import { PREFECTURES } from '@/lib/customer-profile';
 
 export default function AdminProvidersPage() {
   const initialized = useRef(false);
@@ -211,6 +212,12 @@ export default function AdminProvidersPage() {
         form.querySelectorAll('[name=suitable_triggers]').forEach(cb => { cb.checked = (data.suitable_triggers || []).includes(cb.value); });
         form.querySelectorAll('[name=handles_failure_patterns]').forEach(cb => { cb.checked = (data.handles_failure_patterns || []).includes(cb.value); });
         form.elements['_id'].value = data.id;
+        // 都道府県：「東京」のような書き方で入っている店舗も「東京都」に合わせる。どれにも当てはまらなければ空欄（保存しても今のエリアは変えない）
+        const prefSel = form.querySelector('select[name="prefecture"]');
+        if (prefSel) {
+          const raw = String(data.prefecture || (data.area === 'オンライン' ? 'オンライン' : '') || String(data.area || '').split('・')[0] || '').trim();
+          prefSel.value = raw === 'オンライン' ? 'オンライン' : (PREFECTURES.find(x => raw && (x === raw || x.replace(/[都道府県]$/, '') === raw.replace(/[都道府県]$/, ''))) || '');
+        }
         // プランセレクトの初期値を billing_status と plan から正しく復元
         const planSel = form.querySelector('select[name="plan"]');
         if (planSel) {
@@ -254,6 +261,10 @@ export default function AdminProvidersPage() {
       // 特例無料の期限（2026-11-26）：特例無料の時だけ送る（空欄＝期限なし）
       if (data.plan === 'special') data.special_until = form.querySelector('input[name="special_until"]')?.value || '';
       else delete data.special_until;
+      // エリア（2026-11-26）：都道府県を選んだ時だけ area・prefecture・city を送る。選んでいなければ今のエリアのまま（空で上書きしない）
+      if (data.prefecture === 'オンライン') { data.area = 'オンライン'; data.prefecture = null; data.city = null; }
+      else if (data.prefecture) { data.city = String(data.city || '').trim() || null; data.area = [data.prefecture, data.city].filter(Boolean).join('・'); }
+      else { delete data.prefecture; delete data.city; }
       // billing_status は Stripe（A/B/C）とサーバー（特例無料）が決めるため、ここからは送らない
       const id = data._id; delete data._id;
       const res = await fetch(id ? `/api/admin/providers/${id}` : '/api/admin/providers', { method: id ? 'PATCH' : 'POST', headers: h(), body: JSON.stringify(data) });
@@ -326,25 +337,16 @@ export default function AdminProvidersPage() {
                   <option value="marriage">結婚関連サービス</option>
                 </select>
               </div>
-              <div className="form-field"><label>エリア</label>
-                <select name="area">
+              {/* エリア（2026-11-26 渡邉要望：全国47都道府県から選べるように）。都道府県と市区町村を選ぶと、area は「大阪府・枚方市」の形で保存し、
+                  市区町村までの位置（緯度・経度）も入れる。番地までの正しい位置は、お店が管理画面の「プロフィール」で住所を入れた時に更新される */}
+              <div className="form-field"><label>都道府県</label>
+                <select name="prefecture">
                   <option value="">選択してください</option>
-                  <optgroup label="東京">
-                    <option value="東京・渋谷">渋谷</option><option value="東京・新宿">新宿</option>
-                    <option value="東京・表参道">表参道・青山</option><option value="東京・銀座">銀座</option>
-                    <option value="東京・恵比寿">恵比寿・代官山</option><option value="東京・六本木">六本木</option>
-                    <option value="東京・品川">品川</option><option value="東京・池袋">池袋</option>
-                    <option value="東京・上野">上野・秋葉原</option><option value="東京・吉祥寺">吉祥寺・三鷹</option>
-                    <option value="東京・その他">東京（その他）</option>
-                  </optgroup>
-                  <optgroup label="神奈川"><option value="横浜">横浜</option><option value="川崎">川崎</option></optgroup>
-                  <optgroup label="埼玉・千葉"><option value="大宮・さいたま">大宮・さいたま</option><option value="千葉市">千葉市</option></optgroup>
-                  {/* 大阪府（2026-11-26 追加：営業は全国対象のため関西の店舗も登録できるように）。値は「東京・渋谷」と同じ「府県・市」の形。
-                      利用者側の検索（/search）は「大阪」を含むかで探すので、この形ならそのまま大阪府で見つかる */}
-                  <optgroup label="大阪"><option value="大阪・大阪市">大阪市</option><option value="大阪・枚方市">枚方市</option><option value="大阪・その他">大阪（その他）</option></optgroup>
-                  <option value="オンライン">オンライン</option>
+                  {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+                  <option value="オンライン">オンラインのみ（店舗なし）</option>
                 </select>
               </div>
+              <div className="form-field"><label>市区町村（任意）</label><input name="city" placeholder="例：枚方市、渋谷区" maxLength={40} /></div>
               <div className="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
               <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#111',fontSize:'11px'}}>登録すると契約者にパスワード設定メールが自動送信されます</small></div>
               <div className="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /></div>

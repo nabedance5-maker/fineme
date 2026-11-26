@@ -28,7 +28,7 @@ export async function GET(request) {
   if (a.staff) return Response.json({ hidden: true, steps: [] });
   const pid = a.pid;
   const [{ data: p }, { data: ob }, services, staff, manual, profiles, packages, { data: line }] = await Promise.all([
-    supabase.from('providers').select('plan, enabled_features, photo_url, catchphrase, business_hours, booking_unit, stripe_connect_status, published').eq('id', pid).single(),
+    supabase.from('providers').select('plan, enabled_features, photo_url, catchphrase, address, lat, business_hours, booking_unit, stripe_connect_status, published').eq('id', pid).single(),
     supabase.from('provider_onboarding').select('answers, completed_at, setup_skipped, setup_hidden_at').eq('provider_id', pid).maybeSingle(),
     supabase.from('provider_services').select('id', head).eq('provider_id', pid),
     supabase.from('provider_staff').select('id', head).eq('provider_id', pid),
@@ -41,6 +41,8 @@ export async function GET(request) {
   const status = {
     photo: !!p.photo_url,
     catchphrase: !!String(p.catchphrase || '').trim(),
+    address: !!String(p.address || '').trim(),
+    located: p.lat !== null && p.lat !== undefined,
     businessHours: !!p.business_hours && Object.keys(p.business_hours).length > 0,
     bookingSet: !!p.booking_unit,
     services: n(services),
