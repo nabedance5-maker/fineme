@@ -1,6 +1,6 @@
 // GET /api/admin/providers - 全掲載者一覧（運営用）
 // POST /api/admin/providers - 掲載者新規登録（パスワード設定リンクのメールを自動送信。inquiry_id があれば、その問い合わせと結びつける）
-import { monitorUntilFrom } from '@/lib/provider-contract';
+import { monitorUntilFrom, specialUntilFromDate } from '@/lib/provider-contract';
 import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderLoginInvite } from '@/lib/provider-login-invite';
@@ -48,6 +48,11 @@ export async function POST(request) {
       return Response.json({ error: 'メールアドレスは必須です（契約者ログインに使用します）' }, { status: 400 });
     }
 
+    // 特例無料のお試し期限（2026-11-26）：特例無料の時だけ。空欄なら期限なし
+    const specialUntil = plan === 'special' ? specialUntilFromDate(body.special_until) : null;
+    if (specialUntil === undefined) return Response.json({ error: '特例無料の期限の日付が正しくありません' }, { status: 400 });
+    if (specialUntil && specialUntil.getTime() <= Date.now()) return Response.json({ error: '特例無料の期限は今日以降の日付にしてください' }, { status: 400 });
+
     // 紹介者コードは登録済みの営業パートナーのものか確かめる（2026-11-06）
     const rc = await checkReferralCode(supabase, referred_by);
     if (rc.error) return Response.json({ error: rc.error }, { status: 400 });
@@ -66,6 +71,7 @@ export async function POST(request) {
         plan: plan === 'special' ? 'special' : plan === 'monitor' ? MONITOR_CAMPAIGN.planKey : (['A', 'B', 'C'].includes(plan) ? plan : 'A'),
         billing_status: plan === 'special' ? 'active' : plan === 'monitor' ? 'monitor' : null,
         ...(plan === 'monitor' ? { monitor_started_at: new Date().toISOString(), monitor_until: monitorUntilFrom().toISOString() } : {}),
+        ...(specialUntil ? { special_until: specialUntil.toISOString() } : {}),
         published: false,
         referral_code: referral_code || null, // nullならトリガーで自動生成
         referred_by: rc.code,

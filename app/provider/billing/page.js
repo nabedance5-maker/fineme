@@ -51,6 +51,7 @@ export default function BillingPage() {
   const [billingStatus, setBillingStatus] = useState('free');
   const [monitorUntil, setMonitorUntil] = useState(null);
   const [billingStarted, setBillingStarted] = useState(null);
+  const [specialUntil, setSpecialUntil] = useState(null); // 特例無料のお試し期限（2026-11-26）
   const [monitorPlan, setMonitorPlan] = useState(MONITOR_CAMPAIGN.planKey); // モニター後に続けるプランの初期値＝モニター中のプラン
   const [monitorAgree, setMonitorAgree] = useState(false);
   const [monitorBusy, setMonitorBusy] = useState(false);
@@ -142,6 +143,7 @@ export default function BillingPage() {
             setCurrentPlan(me.plan || 'A');
             setBillingStatus(me.billing_status || 'free');
             setMonitorUntil(me.monitor_until || null);
+            setSpecialUntil(me.plan === 'special' ? me.special_until || null : null);
             setBillingStarted(me.billing_started || null);
             if (['A', 'B', 'C'].includes(me.plan)) setMonitorPlan(me.plan);
             try {
@@ -236,12 +238,16 @@ export default function BillingPage() {
   }
 
   // 契約中＝払っている（引き落とし失敗でやり直し中も含む）か特例無料。それ以外は未契約（lib/provider-contract.js）
-  const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus, monitor_until: monitorUntil });
+  const isActive = contractActive({ plan: currentPlan, billing_status: billingStatus, monitor_until: monitorUntil, special_until: specialUntil });
+  // 特例無料のお試し（期限つき・2026-11-26）：無料モニターと同じく、期間中に申し込めて課金は期限の次の日から。言葉だけ「お試し」にする
+  const isTrial = isActive && currentPlan === 'special' && !!specialUntil;
+  const freeName = isTrial ? 'お試し' : '無料モニター';
   // 無料モニター中（2026-11-16）：Stripe の契約は無いので、プラン変更・支払い方法の画面は出さない
-  const isMonitor = isActive && billingStatus === 'monitor';
+  const isMonitor = isActive && (billingStatus === 'monitor' || isTrial);
+  const freeUntil = isTrial ? specialUntil : monitorUntil;
   // モニター中に申し込み済み（課金はモニター終了の次の日から・まだ1度も払っていない）
-  const monitorScheduled = isActive && !isMonitor && !billingStarted && !!monitorUntil && new Date(monitorUntil).getTime() > Date.now() && ['active', 'trialing'].includes(billingStatus);
-  const monitorUntilLabel = monitorUntil ? new Date(monitorUntil).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const monitorScheduled = isActive && !isMonitor && !billingStarted && !!freeUntil && new Date(freeUntil).getTime() > Date.now() && ['active', 'trialing'].includes(billingStatus);
+  const monitorUntilLabel = freeUntil ? new Date(freeUntil).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric' }) : '';
   const isFree   = !isActive;
   const plan     = PLANS[currentPlan] || PLANS.A;
 
@@ -249,10 +255,10 @@ export default function BillingPage() {
     active:   { icon: '', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
     free:     { icon: '', cls: 'badge-free',   label: '未契約',       heroClass: 'free',     title: 'まだプランのお申し込みがありません', desc: 'プランをお申し込みいただくと、その日から管理画面の機能が使えるようになります。' },
     past_due: { icon: '', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
-    monitor:  { icon: '', cls: 'badge-active', label: '無料モニター',   heroClass: 'active',   title: `${monitorUntilLabel}まで、無料でお使いいただけます`, desc: 'お申し込みがないまま期間が終わると、管理画面の機能は止まります。自動で課金されることはありません。続けてお使いになる場合は、下から今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。' },
-    scheduled: { icon: '', cls: 'badge-active', label: 'お申し込み済み', heroClass: 'active',  title: `${monitorUntilLabel}までは無料、その次の日から月額が始まります`, desc: '無料モニター期間中にお申し込みいただきました。期間が終わっても、そのまま続けてお使いいただけます。' },
+    monitor:  { icon: '', cls: 'badge-active', label: freeName,   heroClass: 'active',   title: `${monitorUntilLabel}まで、無料でお使いいただけます`, desc: 'お申し込みがないまま期間が終わると、管理画面の機能は止まります。自動で課金されることはありません。続けてお使いになる場合は、下から今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。' },
+    scheduled: { icon: '', cls: 'badge-active', label: 'お申し込み済み', heroClass: 'active',  title: `${monitorUntilLabel}までは無料、その次の日から月額が始まります`, desc: '無料期間中にお申し込みいただきました。期間が終わっても、そのまま続けてお使いいただけます。' },
   };
-  const st = isActive ? (monitorScheduled ? statusMap.scheduled : statusMap[billingStatus] || statusMap.active) : statusMap.free;
+  const st = isActive ? (monitorScheduled ? statusMap.scheduled : isTrial ? statusMap.monitor : statusMap[billingStatus] || statusMap.active) : statusMap.free;
 
   return (
     <main className="section">
@@ -270,7 +276,7 @@ export default function BillingPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className={`badge ${st.cls}`}>{st.label}</span>
               {isActive && (
-                <span className="muted" style={{ fontSize: '13px' }}>Finemeのご利用プラン: <strong style={{ color: plan.color }}>{plan.name} {isMonitor ? '（無料モニター）' : `¥${plan.amount.toLocaleString()}/月`}</strong></span>
+                <span className="muted" style={{ fontSize: '13px' }}>Finemeのご利用プラン: <strong style={{ color: plan.color }}>{plan.name} {isMonitor ? `（${freeName}）` : `¥${plan.amount.toLocaleString()}/月`}</strong></span>
               )}
             </div>
             <div style={{ fontWeight: 700, fontSize: '17px' }}>{st.title}</div>
@@ -294,7 +300,7 @@ export default function BillingPage() {
           <div className="kpi-card">
             <div className="kpi-label">今月の掲載料</div>
             <div className="kpi-value">¥{isActive && !isMonitor && !monitorScheduled ? plan.amount.toLocaleString() : '0'}</div>
-            <div className="kpi-sub">{isMonitor || monitorScheduled ? '無料モニター期間中' : isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
+            <div className="kpi-sub">{isMonitor || monitorScheduled ? '無料期間中' : isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">決済手数料率</div>
@@ -387,7 +393,7 @@ export default function BillingPage() {
         {/* 無料モニター中のお申し込み（2026-11-16） */}
         {isMonitor && (
           <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ margin: '0 0 6px' }}>モニター期間のあとも続ける</h2>
+            <h2 style={{ margin: '0 0 6px' }}>{isTrial ? 'お試し期間' : 'モニター期間'}のあとも続ける</h2>
             <p className="muted" style={{ fontSize: '13px', marginBottom: '14px', lineHeight: 1.8 }}>
               今お申し込みいただいても、{monitorUntilLabel}までは無料のままです。月額はその次の日から毎月かかります。期間が終わる前に解約すれば、課金はされません。
             </p>

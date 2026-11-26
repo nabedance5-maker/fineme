@@ -51,7 +51,13 @@ export default function AdminProvidersPage() {
     // 契約の状態（2026-10-30）：特例無料／プラン契約中／引き落とし失敗／未契約（お店の申し込み待ち）
     function contractBadge(p) {
       const planName = { A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || 'プランA';
-      if (p.plan === 'special') return '<span class="badge badge-green">特例無料</span>';
+      if (p.plan === 'special') {
+        // 特例無料のお試し（期限つき・2026-11-26）
+        if (!p.special_until) return '<span class="badge badge-green">特例無料</span>';
+        const su = new Date(p.special_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
+        return contractActive(p) ? `<span class="badge badge-green">特例無料のお試し（${su}まで）</span>` : `<span class="badge badge-gray">特例無料のお試し終了（${su}・未契約に戻す処理待ち）</span>`;
+      }
+      if (p.special_trial_ended_at && !contractActive(p)) return '<span class="badge badge-gray">特例無料のお試し終了・未契約</span>';
       if (p.billing_status === 'monitor') {
         const until = p.monitor_until ? new Date(p.monitor_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '';
         return contractActive(p) ? `<span class="badge badge-green">無料モニター（${until}まで）</span>` : `<span class="badge badge-gray">無料モニター終了（${until}・未契約に戻す処理待ち）</span>`;
@@ -69,7 +75,7 @@ export default function AdminProvidersPage() {
     const fv = id => document.getElementById(id)?.value || '';
     const norm = v => String(v || '').toLowerCase().replace(/\s+/g, '');
     function contractState(p) {
-      if (p.plan === 'special') return 'special';
+      if (p.plan === 'special') return contractActive(p) ? 'special' : 'none';
       if (p.billing_status === 'monitor') return contractActive(p) ? 'monitor' : 'none';
       if (p.billing_status === 'past_due') return 'past_due';
       return contractActive(p) ? 'active' : 'none';
@@ -210,10 +216,26 @@ export default function AdminProvidersPage() {
         if (planSel) {
           planSel.value = data.billing_status === 'monitor' ? 'monitor' : ['A', 'B', 'C', 'special'].includes(data.plan) ? data.plan : 'A';
         }
+        const suEl = form.querySelector('input[name="special_until"]');
+        if (suEl) suEl.value = data.plan === 'special' && data.special_until ? new Date(new Date(data.special_until).getTime() + 9 * 3600000).toISOString().slice(0, 10) : '';
       }
+      syncSpecialUntil();
       modal.style.display = 'flex';
     }
 
+    // 特例無料の期限（2026-11-26 渡邉要望「特例無料に1個だけ期限を付けられるように」）：プランが特例無料の時だけ出す
+    function syncSpecialUntil() {
+      const row = document.getElementById('special-until-row');
+      const sel = form.querySelector('select[name="plan"]');
+      if (row) row.style.display = sel?.value === 'special' ? '' : 'none';
+    }
+    form.querySelector('select[name="plan"]')?.addEventListener('change', syncSpecialUntil);
+    document.querySelectorAll('[data-special-days]').forEach(btn => btn.addEventListener('click', () => {
+      const el = form.querySelector('input[name="special_until"]');
+      if (!el) return;
+      const d = new Date(Date.now() + 9 * 3600000 + Number(btn.dataset.specialDays) * 86400000);
+      el.value = d.toISOString().slice(0, 10);
+    }));
     document.getElementById('btn-new').addEventListener('click', () => openModal(null));
     document.getElementById('modal-close').addEventListener('click', () => modal.style.display = 'none');
     document.getElementById('modal-cancel').addEventListener('click', () => modal.style.display = 'none');
@@ -229,6 +251,9 @@ export default function AdminProvidersPage() {
       // plan: select要素から明示的に取得（FormData取りこぼし対策）
       const planEl = form.querySelector('select[name="plan"]');
       if (planEl) data.plan = planEl.value || 'A';
+      // 特例無料の期限（2026-11-26）：特例無料の時だけ送る（空欄＝期限なし）
+      if (data.plan === 'special') data.special_until = form.querySelector('input[name="special_until"]')?.value || '';
+      else delete data.special_until;
       // billing_status は Stripe（A/B/C）とサーバー（特例無料）が決めるため、ここからは送らない
       const id = data._id; delete data._id;
       const res = await fetch(id ? `/api/admin/providers/${id}` : '/api/admin/providers', { method: id ? 'PATCH' : 'POST', headers: h(), body: JSON.stringify(data) });
@@ -326,9 +351,17 @@ export default function AdminProvidersPage() {
                   <option value="A">A・ライト（¥5,000/月）</option>
                   <option value="B">B・スタンダード（¥7,000/月）</option>
                   <option value="C">C・プレミアム（¥10,000/月）</option>
-                  <option value="special">【特例無料】有料機能すべて使用可（支払いなし）</option>
+                  <option value="special">【特例無料】有料機能すべて使用可（支払いなし・期限も付けられる）</option>
                   <option value="monitor">【無料モニター】{MONITOR_CAMPAIGN.planKey}を3か月無料・終わると自動で未契約に（課金なし）</option>
                 </select>
+              </div>
+              <div className="form-field" id="special-until-row" style={{ display: 'none' }}><label htmlFor="special-until-input">特例無料の期限（空欄なら期限なし）</label>
+                <input id="special-until-input" name="special_until" type="date" />
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-ghost" data-special-days="7" style={{ fontSize: '12px', padding: '5px 10px' }}>今日から1週間</button>
+                  <button type="button" className="btn btn-ghost" data-special-days="14" style={{ fontSize: '12px', padding: '5px 10px' }}>今日から2週間</button>
+                </div>
+                <small style={{ color: '#111', fontSize: '11px' }}>その日の23:59まで全機能が使えます。過ぎると未契約に戻り、お店が申し込むまで止まります（自動で課金はされません）</small>
               </div>
               <div className="form-field form-field-full"><label>キャッチコピー</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>
               <div className="form-field form-field-full"><label>サービス説明文</label><textarea name="description" placeholder="サービスの詳細・料金・メニューなど"></textarea></div>

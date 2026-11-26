@@ -4,6 +4,7 @@
 // - モニター中に申し込んだお店は billing_status が Stripe の状態に変わるので、ここでは扱わない（終了しない・知らせない）
 // - 期限を過ぎたら：billing_status を null（未契約）に戻し、契約が理由で公開ページを閉じる。お店と運営に知らせる
 // 自動で有料プランに切り替えることはしない（告知「自動で課金されることはない」どおり）。
+// 特例無料のお試し（期限つき・2026-11-26）も、期限を過ぎたらここで未契約に戻す（運営にだけ知らせる）。
 import { getSupabase } from '@/lib/supabase';
 import { syncContractVisibility } from '@/lib/provider-contract';
 import { sendBroadcastEmail } from '@/lib/email';
@@ -87,19 +88,41 @@ export async function GET(request) {
     }
   }
 
-  if (ended.length || reminded.length || failed.length) {
+  // 特例無料のお試し（2026-11-26 渡邉要望）：期限が来たら未契約に戻す（自動で有料にはしない）。
+  // プランは C（全部の機能を試した状態）にして、申し込み画面でプレミアムが選ばれた状態にする。期限の記録（special_until）は残す。
+  // お店へのメールはまだ送らない（新しい送信は渡邉判断）。お店には管理画面の上に残り日数を出している
+  const trialEnded = [];
+  const { data: trials, error: trialErr } = await db.from('providers')
+    .select('id, name').eq('plan', 'special').not('special_until', 'is', null).lte('special_until', new Date(now).toISOString());
+  if (trialErr) failed.push(`特例無料のお試しの確認（${trialErr.message}）`);
+  for (const p of trials || []) {
+    try {
+      const { error: upErr } = await db.from('providers')
+        .update({ plan: 'C', billing_status: null, special_trial_ended_at: new Date().toISOString() })
+        .eq('id', p.id).eq('plan', 'special');
+      if (upErr) throw upErr;
+      await syncContractVisibility(db, p.id, null);
+      trialEnded.push(p.name);
+    } catch (e) {
+      console.error('[monitor-expiry] special trial', p.id, e.message);
+      failed.push(p.name);
+    }
+  }
+
+  if (ended.length || reminded.length || failed.length || trialEnded.length) {
     const li = (title, list) => list.length ? `<p><b>${title}</b></p><ul>${list.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '';
     await sendBroadcastEmail({
       to: OWNER_EMAIL,
-      subject: `【Fineme運営】無料モニター：終了${ended.length}件・お知らせ${reminded.length}件${failed.length ? `・失敗${failed.length}件` : ''}`,
+      subject: `【Fineme運営】無料モニター：終了${ended.length}件・お知らせ${reminded.length}件${trialEnded.length ? `・お試し終了${trialEnded.length}件` : ''}${failed.length ? `・失敗${failed.length}件` : ''}`,
       html: `<div style="font-family:sans-serif;line-height:1.8;color:#1a1a1a">
         ${li('期間が終わり、未契約に戻したお店', ended)}
         ${li('終了前のお知らせを送ったお店', reminded)}
+        ${li('特例無料のお試し期限が来て、未契約に戻したお店（お店へのメールは送っていません）', trialEnded)}
         ${li('処理に失敗したお店（翌日もう一度試します）', failed)}
         <p style="font-size:13px;color:#666">続けるかどうかのご相談は、月1回のヒアリングの中でどうぞ。お店の一覧は管理画面の「契約者」で「無料モニター」に絞り込めます。</p>
       </div>`,
     }).catch(e => console.error('[monitor-expiry] owner mail', e.message));
   }
 
-  return Response.json({ checked: (rows || []).length, ended: ended.length, reminded: reminded.length, failed: failed.length });
+  return Response.json({ checked: (rows || []).length, ended: ended.length, reminded: reminded.length, trial_ended: trialEnded.length, failed: failed.length });
 }

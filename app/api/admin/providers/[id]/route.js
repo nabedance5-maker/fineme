@@ -1,7 +1,7 @@
 // PATCH /api/admin/providers/[id] - 掲載者情報更新（運営用）
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { getSupabase } from '@/lib/supabase';
-import { contractActive, monitorUntilFrom } from '@/lib/provider-contract';
+import { contractActive, monitorUntilFrom, specialUntilFromDate } from '@/lib/provider-contract';
 import { MONITOR_CAMPAIGN } from '@/lib/monitor-campaign';
 import { checkReferralCode } from '@/lib/referral-code';
 import { setProviderReferrer, recordUpsellReward } from '@/lib/collaborator-rewards';
@@ -57,8 +57,11 @@ export async function PATCH(request, props) {
   // 公開は、契約が有効な（払っている・特例無料の）お店だけ
   let oldPlanForUpsell;
   let monitorChange = false;
-  if (updates.plan !== undefined || updates.published === true) {
-    const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id, monitor_until').eq('id', id).maybeSingle();
+  // 特例無料のお試し期限（2026-11-26 渡邉要望）：YYYY-MM-DD（その日の23:59まで）。空欄なら期限なし
+  const specialUntilIn = 'special_until' in body ? specialUntilFromDate(body.special_until) : undefined;
+  if ('special_until' in body && specialUntilIn === undefined) return Response.json({ error: '特例無料の期限の日付が正しくありません' }, { status: 400 });
+  if (updates.plan !== undefined || updates.published === true || 'special_until' in body) {
+    const { data: cur } = await supabase.from('providers').select('plan, billing_status, stripe_subscription_id, monitor_until, special_until').eq('id', id).maybeSingle();
     if (!cur) return Response.json({ error: 'お店が見つかりません' }, { status: 404 });
     oldPlanForUpsell = cur.plan;
     if (updates.plan === 'free') updates.plan = 'A';
@@ -89,6 +92,19 @@ export async function PATCH(request, props) {
       updates.billing_status = null;
     }
     if (updates.plan === 'special' && updates.billing_status === undefined) updates.billing_status = 'active';
+    const finalPlan = updates.plan !== undefined ? updates.plan : cur.plan;
+    if (finalPlan === 'special' && 'special_until' in body) {
+      const prev = cur.special_until ? new Date(cur.special_until).getTime() : null;
+      const next = specialUntilIn ? specialUntilIn.getTime() : null;
+      // 保存し直しただけ（同じ期限）なら、過去の日付でも弾かない
+      if (next !== prev) {
+        if (specialUntilIn && next <= Date.now()) return Response.json({ error: '特例無料の期限は今日以降の日付にしてください' }, { status: 400 });
+        updates.special_until = specialUntilIn ? specialUntilIn.toISOString() : null;
+        updates.special_trial_ended_at = null;
+      }
+    } else if (finalPlan !== 'special' && cur.special_until) {
+      updates.special_until = null;
+    }
     if (updates.published === true && !contractActive({ ...cur, ...updates })) {
       return Response.json({ error: 'このお店はまだ契約（月額プランのお支払い）が済んでいないため、公開できません。特例無料にするか、お店の申し込みを待ってください' }, { status: 400 });
     }
