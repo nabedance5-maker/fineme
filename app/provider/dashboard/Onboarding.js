@@ -110,6 +110,7 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [doneSteps, setDoneSteps] = useState([]);
+  const [reopened, setReopened] = useState(false); // 機能設定から開き直した時（スキップしても回答済みのまま閉じるだけ）
 
   async function loadLocks() {
     try {
@@ -136,7 +137,7 @@ export default function Onboarding() {
         const data = res.ok ? await res.json() : {};
         setAnswers({ ...EMPTY, ...normalizeAnswers(data.answers || {}) });
       } catch { setAnswers(EMPTY); }
-      setError(''); setStep(0); setOpen(true); loadLocks();
+      setError(''); setStep(0); setOpen(true); setReopened(true); loadLocks();
     };
     window.addEventListener('pd-open-onboarding', reopen);
     return () => { cancelled = true; window.removeEventListener('pd-open-onboarding', reopen); };
@@ -261,6 +262,8 @@ export default function Onboarding() {
               <span className="pob-count">{step + 1} / {STEPS.length}</span>
             </>
           ) : <div style={{ flex: 1 }} />}
+          {/* いつでもすぐに作業へ（2026-11-26 渡邉要望：チュートリアルはいつでもすぐスキップできるように） */}
+          {step <= 6 && <button type="button" className="pob-ghost" onClick={() => (reopened ? setOpen(false) : skip())}>スキップしてすぐ使う</button>}
         </div>
 
         {step === -1 && (
@@ -352,7 +355,7 @@ export default function Onboarding() {
           <>
             <div className="pob-body">
               <h2 id="pob-title">設定しました</h2>
-              <p className="pob-note">まずはこの順に進めると、すぐに使い始められます。AI専属コンサルも、今の回答をもとに今日やることを提案します。</p>
+              <p className="pob-note">まずはこの順に進めると、すぐに使い始められます。管理画面の上に「初期設定ガイド」が出て、終わった手順は自動で「済」になります（ガイドはいつでも閉じられます）。</p>
               <ol className="pob-steps">
                 {doneSteps.map(s => (
                   <li key={s.tab}>

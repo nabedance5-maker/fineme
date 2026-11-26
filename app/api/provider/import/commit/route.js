@@ -1,4 +1,6 @@
-// POST /api/provider/import/commit { type, mapping, rows: string[][] }
+// POST /api/provider/import/commit { type, mapping, rows: string[][], lines?: number[], extras?: [{ i, label }] }
+// lines：ファイルの何行目のデータか（行を種類で絞った時に、エラーの行番号をファイルどおりに出すため）
+// extras：どこにも割り振れなかった列。お客様のメモ・予約のメモに「見出し：値」で残す（2026-11-26）
 // お店が確認した割り振り（mapping：Finemeの項目→列番号）で、CSVの行を取り込む（2026-10-30）。
 // 画面から300行ずつ送られる。AIはここでは使わない（割り振りどおりに機械的に入れる）。
 // 同じCSVを2回取り込んでも増えないよう、顧客は電話・メール・氏名、予約は日時と名前、シフト・打刻は同じ時刻で重複を飛ばす。
@@ -9,7 +11,7 @@ import { memberAuth } from '@/lib/provider-members';
 import { withAudit } from '@/lib/activity-log';
 import { planAllows } from '@/lib/feature-flags';
 import { ensureManualLinked } from '@/lib/customer-accounts';
-import { IMPORT_TYPES, IMPORT_CHUNK, missingRequired, pick, normDate, normTime, normDateTime, normPhone, normEmail, normInt, normGender, splitName, resolveName, normStatus } from '@/lib/import-schema';
+import { IMPORT_TYPES, IMPORT_CHUNK, MAX_EXTRA_COLUMNS, EXTRA_TARGETS, missingRequired, pick, extraLines, normDate, normTime, normDateTime, normPhone, normEmail, normInt, normGender, splitName, resolveName, normStatus } from '@/lib/import-schema';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const BY = 'CSVの取り込み';
@@ -103,7 +105,14 @@ async function __POST(request) {
   const errors = [];
   const today = jstToday();
   const offset = Number(body.offset) || 0;
-  const fail = (i, msg) => { counts.skipped++; if (errors.length < 50) errors.push(`${offset + i + 2}行目：${msg}`); };
+  const lines = Array.isArray(body.lines) ? body.lines : null;
+  const lineNo = i => (lines && Number.isInteger(lines[i]) ? lines[i] : offset + i) + 2;
+  const fail = (i, msg) => { counts.skipped++; if (errors.length < 50) errors.push(`${lineNo(i)}行目：${msg}`); };
+  // どこにも割り振れなかった列（列番号と見出しだけ受け取り、値はその行から読む）
+  const extras = EXTRA_TARGETS.includes(type) && Array.isArray(body.extras)
+    ? body.extras.filter(e => Number.isInteger(e?.i) && e.i >= 0 && e.i < 200).slice(0, MAX_EXTRA_COLUMNS).map(e => ({ i: e.i, label: String(e.label || '').slice(0, 40) }))
+    : [];
+  const extraOf = row => (extras.length ? extraLines(row, extras) : '');
 
   const idx = ['customers', 'reservations', 'tickets', 'memberships'].includes(type) ? await customerIndex(pid) : null;
   const staffOf = ['reservations', 'shifts', 'attendance'].includes(type) ? await staffIndex(pid, counts) : null;
@@ -113,7 +122,7 @@ async function __POST(request) {
       const c = pick(row, body.mapping);
       if (c.kana && !c.last_name_kana) [c.last_name_kana, c.first_name_kana] = splitName(c.kana);
       if (!c.name && !c.last_name && !c.first_name) { fail(i, '名前がありません'); continue; }
-      c.memo = [c.memo, c.member_number && `前のサービスの会員番号：${c.member_number}`, c.registered_at && `前のサービスでの登録日：${normDate(c.registered_at) || c.registered_at}`].filter(Boolean).join('\n');
+      c.memo = [c.memo, c.member_number && `前のサービスの会員番号：${c.member_number}`, c.registered_at && `前のサービスでの登録日：${normDate(c.registered_at) || c.registered_at}`, extraOf(row)].filter(Boolean).join('\n');
       const { last: ln, first: fn, full: name } = resolveName({ name: c.name, last: c.last_name, first: c.first_name });
       const hit = idx.find({ phone: c.phone, email: c.email, name });
       try {
@@ -157,7 +166,7 @@ async function __POST(request) {
         const { error } = await supabase.from('reservations').insert({
           provider_id: pid, user_id: cust.user_id || null, user_name: String(name).slice(0, 60),
           user_contact: normPhone(r.customer_phone) || normEmail(r.customer_email) || '',
-          note: [r.memo, r.menu_name && !svc && `メニュー：${r.menu_name}`, '前のサービスから取り込み'].filter(Boolean).join('\n'),
+          note: [r.memo, r.menu_name && !svc && `メニュー：${r.menu_name}`, extraOf(row), '前のサービスから取り込み'].filter(Boolean).join('\n'),
           status: visited ? 'visited' : 'approved', visited_at: visited ? `${date}T${time || '12:00'}:00+09:00` : null,
           booking_mode: 'manual', origin: 'import',
           reserved_date: date, start_time: time, end_time: r.end_time ? normTime(r.end_time) : null, confirmed_date: date, confirmed_time: time,
@@ -207,7 +216,7 @@ async function __POST(request) {
       if (/退会|解約|cancel/i.test(m.status || '')) { counts.skipped++; continue; }
       try {
         const cust = await resolveCustomer(pid, idx, customerOf(m), counts);
-        const line = `前のサービスの会員プラン：${m.plan_name}${m.monthly_fee ? `（月額¥${(normInt(m.monthly_fee) || 0).toLocaleString()}）` : ''}${m.started_at ? `・開始 ${normDate(m.started_at) || m.started_at}` : ''}${m.status ? `・${m.status}` : ''}${m.memo ? `・${m.memo}` : ''}`;
+        const line = `前のサービスの会員プラン：${m.plan_name}${m.monthly_fee ? `（月額¥${(normInt(m.monthly_fee) || 0).toLocaleString()}）` : ''}${m.started_at ? `・開始 ${normDate(m.started_at) || m.started_at}` : ''}${m.status ? `・${m.status}` : ''}${m.memo ? `・${m.memo}` : ''}${extraOf(row) ? `・${extraOf(row).replace(/\n/g, '・')}` : ''}`;
         if (cust.manual_id) {
           const { data: cur } = await supabase.from('provider_manual_customers').select('memo').eq('id', cust.manual_id).single();
           if (String(cur?.memo || '').includes(line)) { counts.skipped++; continue; }
@@ -219,6 +228,49 @@ async function __POST(request) {
         }
         counts.created++;
       } catch (e) { fail(i, e.message); }
+    }
+  }
+
+  if (type === 'services') {
+    // メニュー一覧：同じ名前のメニューがすでにあれば飛ばす（Finemeで作ったメニューを上書きしない）
+    const { data: cur } = await supabase.from('provider_services').select('name, sort_order').eq('provider_id', pid);
+    const names = new Set((cur || []).map(x => squash(x.name)));
+    let order = Math.max(0, ...(cur || []).map(x => Number(x.sort_order) || 0)) + 1;
+    for (const [i, row] of rows.entries()) {
+      const m = pick(row, body.mapping);
+      const name = String(m.name || '').trim().slice(0, 80);
+      const price = normInt(m.price);
+      if (!name) { fail(i, 'メニュー名がありません'); continue; }
+      if (price === null || price < 0) { fail(i, '料金が読めません'); continue; }
+      if (names.has(squash(name))) { counts.skipped++; continue; }
+      const minutes = m.duration ? normInt(m.duration) : null;
+      const { error } = await supabase.from('provider_services').insert({
+        provider_id: pid, name, price, description: m.description ? String(m.description).slice(0, 1000) : null,
+        category: m.category ? String(m.category).slice(0, 40) : null,
+        duration: minutes ? `${minutes}分` : null, duration_minutes: minutes && minutes > 0 && minutes <= 1440 ? minutes : null, sort_order: order++,
+      });
+      if (error) { fail(i, error.message); continue; }
+      names.add(squash(name));
+      counts.created++;
+    }
+  }
+
+  if (type === 'staff') {
+    // スタッフ一覧：非公開・指名候補なしで作る（公開と指名は「スタッフ」でお店が選ぶ）。同じ名前がいれば飛ばす
+    const { data: cur } = await supabase.from('provider_staff').select('name').eq('provider_id', pid);
+    const names = new Set((cur || []).map(x => squash(x.name)));
+    for (const [i, row] of rows.entries()) {
+      const m = pick(row, body.mapping);
+      const name = String(m.name || '').trim().slice(0, 40);
+      if (!name) { fail(i, 'スタッフ名がありません'); continue; }
+      if (names.has(squash(name))) { counts.skipped++; continue; }
+      const { error } = await supabase.from('provider_staff').insert({
+        provider_id: pid, name, role: m.role ? String(m.role).slice(0, 40) : null, bio: m.bio ? String(m.bio).slice(0, 1000) : null,
+        is_public: false, bookable: false,
+      });
+      if (error) { fail(i, error.message); continue; }
+      names.add(squash(name));
+      counts.created++;
     }
   }
 

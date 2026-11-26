@@ -82,6 +82,12 @@ export default function ConsultantWidget() {
     const urgentN = open.filter(t => t.bucket === 'today' || t.bucket === 'missed').length;
     const here = tab && open.find(t => t.tab === tab);
     const cut = (t, n = 48) => (t.length > n ? `${t.slice(0, n)}…` : t);
+    // 初期設定が残っている間は、次の手順を最優先で案内する（2026-11-26 渡邉要望：最初の方はAIでも「ここをやりましょう」と出てきてほしい）。
+    // 次の手順は SetupGuide.js が実データから決めて window.__finemeSetup に置く。その画面を開いている時は画面内に手順が出ているので出さない
+    const setup = typeof window !== 'undefined' ? window.__finemeSetup : null;
+    if (setup?.next && setup.next.tab !== tab) {
+      return { text: `初期設定、次は「${cut(setup.next.title, 30)}」をやりましょう`, sub: `残り${setup.remaining}つ。押すとその画面を開きます`, tab: setup.next.tab };
+    }
     if (here) return { text: `この画面でできること：${cut(here.title)}`, sub: 'AIコンサルがお店のデータから選んだ、今日のおすすめです' };
     if (!everOpened()) return { text: 'AIコンサルです。お店のデータから「今日やること」を出しています', sub: urgentN ? `いま${urgentN}件あります。押すと開きます` : '押すと開きます' };
     if (d.needsGoal) return { text: 'お店がどうなりたいか教えてもらえれば、今日やることを考えます', sub: '押すと開きます' };
@@ -173,7 +179,7 @@ export default function ConsultantWidget() {
         </button>
         {bubble && (
           <div className="cw-bubble" role="status" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={() => { hideTimer.current = setTimeout(() => setBubble(null), 6000); }}>
-            <button type="button" className="cw-bubble-main" onClick={() => setCollapsedPersist(false)}>
+            <button type="button" className="cw-bubble-main" onClick={() => { if (bubble.tab) { setBubble(null); goToTab(bubble.tab); } else setCollapsedPersist(false); }}>
               <b>{bubble.text}</b>
               {bubble.sub && <span>{bubble.sub}</span>}
             </button>

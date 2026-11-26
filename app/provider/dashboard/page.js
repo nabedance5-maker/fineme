@@ -19,6 +19,8 @@ import PageDesignSettings from './PageDesignSettings';
 import Onboarding from './Onboarding';
 import ContractGate from './ContractGate';
 import DataImport from './DataImport';
+import SetupGuide from './SetupGuide';
+import HelpFinder from './HelpFinder';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
@@ -17715,6 +17717,8 @@ export default function ProviderDashboardPage() {
                 始まるようにした。店舗名・契約者番号を確認したい時は「使い方」タブの
                 「公開ページを確認」から辿れる）。 */}
 
+            {/* 初期設定ガイド（2026-11-26）：上に細い帯で「次はここ」。いつでも閉じられる。手順の画面では「この画面でやること」 */}
+            <SetupGuide />
             {/* 初回チュートリアル（タブごとに初回のみ表示） */}
             <div id="tab-tutorial-banner" />
 
@@ -17746,6 +17750,14 @@ export default function ProviderDashboardPage() {
 
         {/* タブ：チュートリアル一覧（全タブの使い方まとめ） */}
         <div className="tab-pane" id="tab-tutorial">
+          {/* 初期設定の進み具合（2026-11-26）：ガイドを閉じていても、ここからはいつでも見られる */}
+          <SetupGuide mode="card" />
+          {/* やりたいことから探す（2026-11-26）：目的のボタンか言葉で、合う画面だけを使い方つきで出してそのまま開く */}
+          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>やりたいことから探す</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 14px', lineHeight: '1.6' }}>やりたいことを押すか、言葉を入れると、使う画面と使い方が出ます。そのまま開けます。</p>
+            <HelpFinder />
+          </div>
           {/* 機能一覧（渡邉要望 2026-10-31）：全機能を1枚に。押すとそのタブへ（data-goto-tab）。
               権限で使えないタブは消し、機能設定でオフのタブには「オフ」を付ける（syncFeatureList） */}
           <div className="card" id="feature-list" style={{ padding: '24px', marginBottom: '16px' }}>
