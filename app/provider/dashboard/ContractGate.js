@@ -159,12 +159,14 @@ export default function ContractGate() {
     }
     // 特例無料のお試し（期限つき・2026-11-26）：期間中はずっと、期限と「自動で課金されない」ことを出す
     if (me.plan === 'special' && me.special_until && !me._member) {
-      const left = Math.ceil((new Date(me.special_until).getTime() - Date.now()) / 86400000);
+      // 残り日数は日本時間の日付どうしの差（期限の日の23:59まで使える。今日が期限の日なら「あと0日」＝今日まで）
+      const jstDay = t => Math.floor((t + 9 * 3600000) / 86400000);
+      const left = jstDay(new Date(me.special_until).getTime()) - jstDay(Date.now());
       const until = new Date(me.special_until).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric' });
       return (
         <div className="pcg-due" role="status">
           <style>{CSS}</style>
-          <span>お試し期間は{until}までです（あと{Math.max(left, 0)}日）。すべての機能をお使いいただけます。お申し込みがないまま終わると機能は止まりますが、自動で課金されることはありません。続ける場合は今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。</span>
+          <span>お試し期間は{until}までです（{left > 0 ? `あと${left}日` : '今日まで'}）。すべての機能をお使いいただけます。お申し込みがないまま終わると機能は止まりますが、自動で課金されることはありません。続ける場合は今のうちにお申し込みいただけます（課金は期間が終わった次の日から）。</span>
           <a href="/provider/billing" style={{ border: '1px solid #7c2d12', background: '#fff', color: '#7c2d12', borderRadius: 99, padding: '6px 14px', fontWeight: 800, fontSize: 13, textDecoration: 'none' }}>続けるお申し込み</a>
         </div>
       );
