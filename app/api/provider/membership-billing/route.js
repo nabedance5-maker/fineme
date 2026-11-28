@@ -19,7 +19,7 @@ export async function GET(request) {
   const a = await memberAuth(request);
   if (!a) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { data: ms } = await supabase.from('provider_memberships')
-    .select('id, user_id, plan_id, status, payment_status, last_name, first_name, phone, enrollment_date, last_paid_at, last_failed_at, stripe_subscription_id, stripe_payment_method_id')
+    .select('id, user_id, plan_id, status, payment_status, paused_at, pause_fee, last_name, first_name, phone, enrollment_date, last_paid_at, last_failed_at, stripe_subscription_id, stripe_payment_method_id')
     .eq('provider_id', a.provider.id).in('status', ['active', 'pending_approval', 'cancelled']).order('created_at', { ascending: false });
   const list = ms || [];
   const ids = list.map(m => m.id);
@@ -62,7 +62,10 @@ export async function GET(request) {
   return Response.json({
     members: list.map((m, i) => ({
       id: m.id, user_id: m.user_id, name: [m.last_name, m.first_name].filter(Boolean).join(' '), phone: m.phone,
-      plan: planOf[m.plan_id]?.name || '会員プラン', monthly_price: planOf[m.plan_id]?.monthly_price ?? null,
+      plan: planOf[m.plan_id]?.name || '会員プラン',
+      // 休会費ありの休会中（2026-11-28）は、毎月の金額は休会費
+      monthly_price: m.status === 'active' && m.paused_at && m.pause_fee ? m.pause_fee : (planOf[m.plan_id]?.monthly_price ?? null),
+      paused: m.status === 'active' && !!m.paused_at, pause_fee: m.pause_fee ?? null,
       status: m.status, payment_status: m.payment_status, enrollment_date: m.enrollment_date,
       last_paid_at: m.last_paid_at, last_failed_at: m.last_failed_at,
       ...live[i],

@@ -2063,7 +2063,7 @@ export default function ProviderDashboardPage() {
           return `<div class="mbill-row">
             <div class="mbill-main">
               <b>${e(m.name || '（お名前未登録）')}</b>
-              <span>${e(m.plan)}${m.monthly_price != null ? `・月額¥${Number(m.monthly_price).toLocaleString()}` : ''}${m.status !== 'active' ? `・${m.status === 'cancelled' ? '退会' : '承認待ち'}` : ''}</span>
+              <span>${e(m.plan)}${m.paused ? (m.pause_fee ? `・休会中（休会費 月額¥${Number(m.pause_fee).toLocaleString()}）` : '・休会中（休会費なし）') : m.monthly_price != null ? `・月額¥${Number(m.monthly_price).toLocaleString()}` : ''}${m.status !== 'active' ? `・${m.status === 'cancelled' ? '退会' : '承認待ち'}` : ''}</span>
               <span>最終支払い ${m.last_paid_at ? e(new Date(m.last_paid_at).toLocaleDateString('ja-JP')) : '—'}${m.next_charge_date ? `・次回の引き落とし ${e(m.next_charge_date.replace(/-/g, '/'))}` : ''}</span>
               <span>${m.card ? `${e(BRAND[m.card.brand] || m.card.brand)} •••• ${e(m.card.last4)}（有効期限 ${String(m.card.exp_month).padStart(2, '0')}/${String(m.card.exp_year).slice(-2)}）${cardSoon(m.card) ? '<em class="ng">期限が近い</em>' : ''}` : 'カード情報なし'}</span>
               ${failed ? `<span class="ng">${e(failed.period_start ? failed.period_start.slice(0, 7).replace('-', '年') + '月分' : '')} ¥${Number(failed.amount).toLocaleString()}：${e(failed.failure_message || ST[failed.status])}</span>` : ''}
@@ -6915,6 +6915,8 @@ export default function ProviderDashboardPage() {
         fetch('/api/provider/booking-limits', { headers: authH() }).then(r => (r.ok ? r.json() : null)).then(d => { if (d) window.__setMemberRegToggles?.(d.require_member_registration); }).catch(() => {});
         const allowEl = document.getElementById('mbr-set-allowreq');
         if (allowEl) allowEl.checked = s.allow_online_requests !== false;
+        const pauseFeeEl = document.getElementById('mbr-set-pausefee');
+        if (pauseFeeEl) pauseFeeEl.value = String(s.pause_fee ?? 0);
         ffState = { ...(s.form_fields || {}) };
         cfList = JSON.parse(JSON.stringify(s.custom_fields || []));
         renderFormFields();
@@ -6926,6 +6928,7 @@ export default function ProviderDashboardPage() {
           require_id_document: document.getElementById('mbr-set-idreq')?.checked,
           auto_approve: document.getElementById('mbr-set-autoapprove')?.checked,
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
+          pause_fee: document.getElementById('mbr-set-pausefee')?.value || 0,
           form_fields: ffState,
           custom_fields: cfList,
         };
@@ -6941,7 +6944,7 @@ export default function ProviderDashboardPage() {
       const ymd = d => (d ? String(d).slice(0, 10).replace(/-/g, '/') : '');
       function stateChips(m) {
         const chips = [];
-        if (m.status === 'active' && m.paused_at) chips.push(`休会中${m.pause_until ? `（${ymd(m.pause_until)}に再開）` : ''}`);
+        if (m.status === 'active' && m.paused_at) chips.push(`休会中${m.pause_fee ? `・休会費${fmtYen(m.pause_fee)}` : ''}${m.pause_until ? `（${ymd(m.pause_until)}に再開）` : ''}`);
         if (m.status === 'active' && m.cancel_at) chips.push(`${ymd(m.cancel_at)}で退会予定`);
         if (m.pending_request) chips.push(`${CHANGE_LABEL[m.pending_request]}の申請あり`);
         return chips.map(c => `<span class="mbr-chip mbr-chip-sub">${esc(c)}</span>`).join('');
@@ -6959,6 +6962,8 @@ export default function ProviderDashboardPage() {
           if (timing) lines.push(['反映', TIMING_LABEL[timing] || timing]);
         } else if (kind === 'pause') {
           lines.push(['再開日', ymd(p.pause_until || req?.pause_until) || '未定（手動で再開）']);
+          const fee = p.request_id ? Number(m.default_pause_fee || 0) : Number(p.pause_fee || 0);
+          lines.push(['休会中の月額', fee > 0 ? `休会費 ${fmtYen(fee)}（次回の引き落としから）` : '無料（引き落としなし）']);
         } else if (kind === 'cancel') {
           lines.push(['退会日', timing === 'date' ? (ymd(date) || '—') : (TIMING_LABEL[timing] || '今の支払い期間の終わり')]);
         } else if (kind === 'option_add') {
@@ -7074,8 +7079,8 @@ export default function ProviderDashboardPage() {
         ].filter(Boolean).join('<br>');
         box.innerHTML = `
           <div class="mbr-state">
-            <div><span>状態</span><b>${m.paused_at ? `休会中${m.pause_until ? `（${ymd(m.pause_until)}に自動で再開）` : '（再開日は未定）'}` : '通常'}${m.cancel_at ? `・${ymd(m.cancel_at)}で退会予定` : ''}</b></div>
-            <div><span>次回の引き落とし</span><b>${m.paused_at ? '休会中のため無し' : m.cancel_at ? '退会予定のため無し' : esc(ymd(m.next_charge_date) || '—')}</b></div>
+            <div><span>状態</span><b>${m.paused_at ? `休会中${m.pause_fee ? `・休会費 月額${fmtYen(m.pause_fee)}` : '・休会費なし'}${m.pause_until ? `（${ymd(m.pause_until)}に自動で再開）` : '（再開日は未定）'}` : '通常'}${m.cancel_at ? `・${ymd(m.cancel_at)}で退会予定` : ''}</b></div>
+            <div><span>次回の引き落とし</span><b>${m.paused_at && !m.pause_fee ? '休会中のため無し' : m.cancel_at ? '退会予定のため無し' : esc(ymd(m.next_charge_date) || '—')}</b></div>
           </div>
           ${req ? `<div class="mbr-req">
             <b>お客様から「${CHANGE_LABEL[req.kind]}」の申請があります（${ymd(req.created_at)}）</b>
@@ -7084,7 +7089,7 @@ export default function ProviderDashboardPage() {
           </div>` : ''}
           <div class="mbr-actions">
             ${m.paused_at ? '<button type="button" class="btn btn-ghost" data-mbr-act="resume">休会から再開する</button>' : '<button type="button" class="btn btn-ghost" data-mbr-act="pause">休会する</button>'}
-            ${otherPlans.length ? '<button type="button" class="btn btn-ghost" data-mbr-act="plan_change">プランを変更する</button>' : ''}
+            ${otherPlans.length && !(m.paused_at && m.pause_fee) ? '<button type="button" class="btn btn-ghost" data-mbr-act="plan_change">プランを変更する</button>' : ''}
             ${m.cancel_at ? '<button type="button" class="btn btn-ghost" data-mbr-act="cancel_undo">退会を取り消す</button>' : '<button type="button" class="btn btn-ghost" data-mbr-act="cancel">退会する</button>'}
           </div>
           <div id="mbr-act-form"></div>
@@ -7114,7 +7119,7 @@ export default function ProviderDashboardPage() {
           const act = b.dataset.mbrAct;
           if (act === 'resume') { send({ kind: 'resume' }, '休会から再開しました'); return; }
           if (act === 'cancel_undo') { send({ kind: 'cancel_undo' }, '退会の予定を取り消しました'); return; }
-          if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>休会中の月会費は引き落としません（すでに払った期間はそのまま）。再開日を決めると、その日に自動で再開します。</p><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>すでに払った期間はそのままです。休会費が0円なら休会中は引き落としません。金額を入れると、次回の引き落としから月会費のかわりに休会費を引き落とし、再開するとプランの月額に戻ります（オプションは続きます）。再開日を決めると、その日に自動で再開します。</p><label>休会費（月額・円）<input type="number" id="mbr-f-fee" min="0" max="1000000" step="1" inputmode="numeric" value="${Number(m.default_pause_fee || 0)}"></label><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'plan_change') formEl.innerHTML = `<div class="mbr-form"><b>プランを変更する</b><label>変更先のプラン<select id="mbr-f-plan">${otherPlans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select></label><label>いつから<select id="mbr-f-timing"><option value="period_end">次回の引き落としから新しい月額（差額の精算なし）</option><option value="now">今日から（差額を日割りで次回の請求に加減）</option></select></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">変更する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">お店の締め日どおり（締め日までの申し込みはその月分まで、過ぎていれば翌月分まで）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" style="display:none">退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           document.getElementById('mbr-f-x')?.addEventListener('click', () => { formEl.innerHTML = ''; });
@@ -7122,7 +7127,7 @@ export default function ProviderDashboardPage() {
           if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').style.display = tEl.value === 'date' ? '' : 'none'; });
           document.getElementById('mbr-f-go')?.addEventListener('click', () => {
             const reason = document.getElementById('mbr-f-reason')?.value || '';
-            if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, reason }, '休会にしました');
+            if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, pause_fee: document.getElementById('mbr-f-fee')?.value || 0, reason }, '休会にしました');
             if (act === 'plan_change') send({ kind: 'plan_change', to_plan_id: document.getElementById('mbr-f-plan').value, timing: tEl.value }, 'プランを変更しました');
             if (act === 'cancel') {
               const date = document.getElementById('mbr-f-date').value;
@@ -20570,6 +20575,12 @@ export default function ProviderDashboardPage() {
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
               <input type="checkbox" id="mbr-set-allowreq" />お客様がマイページから休会・プラン変更・退会を申請できるようにする（承認するまで契約は変わりません）
+            </label>
+            {/* 休会費（渡邉要望 2026-11-28「休会プランを作れるように。0円プランなど」） */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+              <span>休会費（休会中の月額）</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>¥<input type="number" id="mbr-set-pausefee" min="0" max="1000000" step="1" inputMode="numeric" style={{ width: '140px' }} />／月</span>
+              <span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>0円なら、休会中は月会費を引き落としません。金額を入れると、休会中は月会費のかわりにこの金額を毎月引き落とします（次回の引き落としから。再開するとプランの月額に戻ります）。会員ごとに休会する時に金額を変えることもできます。オプションは休会中も続きます。</span>
             </label>
             {/* 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10） */}
             <div className="ff-box">

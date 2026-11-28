@@ -45,8 +45,11 @@ export async function GET(request, { params }) {
     };
   }
 
+  // 休会費の明細のStripeのID（2026-11-28）はお客様の画面に要らないので外す
+  const { pause_item_id: _pi, pause_return_price_id: _pr, ...mOut } = m;
   return Response.json({
-    ...m,
+    ...mOut,
+    pause_fee_setting: settings?.pause_fee ?? 0, // 休会を申請した時の休会費（月額・円）。0＝無料
     changes: (changes || []).map(c => ({ ...c, to_plan_name: planName[c.to_plan_id] || null })),
     plans: plans || [],
     allow_online_requests: settings?.allow_online_requests ?? true,

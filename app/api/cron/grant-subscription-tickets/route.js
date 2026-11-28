@@ -7,7 +7,9 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { grantPlanTickets, memberStartDate, monthlyGrantDue } from '@/lib/membership-plan';
-import { endLockerContracts } from '@/lib/membership-changes';
+import Stripe from 'stripe';
+import { endLockerContracts, PAUSE_CLEAR } from '@/lib/membership-changes';
+import { resumeDuePauses } from '@/lib/membership-pause-resume';
 
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
@@ -23,7 +25,7 @@ export async function GET(request) {
   const jstToday = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
   const { data: ending } = await db.from('provider_memberships').select('id').eq('status', 'active').not('cancel_at', 'is', null).lte('cancel_at', jstToday);
   for (const m of ending || []) {
-    await db.from('provider_memberships').update({ status: 'cancelled', cancelled_at: new Date().toISOString(), paused_at: null, pause_until: null, updated_at: new Date().toISOString() }).eq('id', m.id);
+    await db.from('provider_memberships').update({ status: 'cancelled', cancelled_at: new Date().toISOString(), ...PAUSE_CLEAR, updated_at: new Date().toISOString() }).eq('id', m.id);
     await endLockerContracts(db, m.id);
   }
 
@@ -57,6 +59,11 @@ export async function GET(request) {
     }
   }
 
+  // 休会の再開日が来た会員を再開する（休会費ありの会員・カード決済でない会員。2026-11-28）。再開した日からチケットも配る
+  let pauseResult = null;
+  try { pauseResult = await resumeDuePauses(db, process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null); }
+  catch (e) { console.error('[cron/grant-subscription-tickets] pause resume', e?.message); }
+
   // 会員プランで配るチケット（でお要望 2026-10-22／2026-10-27）。毎日動く。
   // ・入会時の分：入会日が来たら付ける（入会日が先の方に、承認した日には付けない）
   // ・毎月の分：プランで決めた「毎月◯日」が来たら、その月に1回だけ。入会日より前の月・入会日と同じ日の二重は付けない
@@ -77,5 +84,5 @@ export async function GET(request) {
     }
   }
 
-  return Response.json({ ok: true, checked: due?.length || 0, granted, planGranted, results });
+  return Response.json({ ok: true, checked: due?.length || 0, granted, planGranted, pause: pauseResult, results });
 }
