@@ -84,7 +84,7 @@ export default function RequestPanel({ detail, token, onChanged }) {
           {kind && (
             <div className="mrq-box">
               <p className="mrq-strong">{KIND_LABEL[kind]}を申請する</p>
-              {kind === 'pause' && <><p>{Number(detail.pause_fee_setting) > 0 ? `休会中は、月会費のかわりに休会費（月額¥${Number(detail.pause_fee_setting).toLocaleString()}）がかかります（次回の引き落としから）。` : '休会中は月会費がかかりません。'}再開日を決めている場合は選んでください。</p><label>再開の希望日（任意）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
+              {kind === 'pause' && <><p>{Number(detail.pause_fee_setting) > 0 ? `休会中は、月会費のかわりに休会費（月額¥${Number(detail.pause_fee_setting).toLocaleString()}）がかかります（次回の引き落としから）。` : '休会中は月会費がかかりません。'}{detail.pause_keep_options_setting ? 'オプションは休会中も続きます。' : 'オプションも休会中は止まります。'}再開日を決めている場合は選んでください。</p><label>再開の希望日（任意）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
               {kind === 'plan_change' && <label>変更先のプラン<select value={planId} onChange={e => setPlanId(e.target.value)}><option value="">選んでください</option>{otherPlans.map(p => <option key={p.id} value={p.id}>{p.name}（月額¥{Number(p.monthly_price).toLocaleString()}）</option>)}</select><span className="mrq-hint">次回の引き落としから新しい月額になります。</span></label>}
               {kind === 'cancel' && <>{cancelGuide(detail.billing)}<label>退会の希望日（任意。お店と相談のうえで決める場合）<input type="date" min={tomorrow()} value={date} onChange={e => setDate(e.target.value)} /></label></>}
               {kind !== 'resume' && <label>理由・お店へのひとこと（任意）<input maxLength={300} value={reason} onChange={e => setReason(e.target.value)} /></label>}

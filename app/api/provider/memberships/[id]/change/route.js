@@ -52,6 +52,8 @@ async function __POST(request, { params }) {
     pause_until: body.pause_until ?? req?.pause_until,
     // 休会費（2026-11-28）：店舗が休会の時に金額を決められる。お客様の申請の承認ではお店の設定の金額
     pause_fee: req ? undefined : body.pause_fee,
+    // 休会中も続けるオプション（会員のオプションのID）。お客様の申請の承認ではお店の設定どおり
+    keep_option_item_ids: req || !Array.isArray(body.keep_option_item_ids) ? undefined : body.keep_option_item_ids.slice(0, 50),
     reason: body.reason ?? req?.reason,
     requested_at: req?.created_at || null, // 退会の締め日はお客様が申請した日で判定する
     option_id: body.option_id, item_id: body.item_id, discount_id: body.discount_id,
@@ -78,7 +80,7 @@ async function __POST(request, { params }) {
   // お客様へのお知らせ（申請への返事のときは必ず、店舗の操作のときも休会・退会など契約が変わる操作は伝える）
   const { data: toPlan } = rec.to_plan_id ? await supabase.from('provider_membership_plans').select('name').eq('id', rec.to_plan_id).maybeSingle() : { data: null };
   const msg = {
-    pause: `休会を受け付けました。${opts.pause_until ? `${ymd(opts.pause_until)}に再開します。` : '再開のご希望はお店にお伝えください。'}${result.detail ? `休会中は、月会費のかわりに${result.detail}をお支払いいただきます（次回の引き落としから）。` : '休会中の月会費はかかりません。'}`,
+    pause: `休会を受け付けました。${opts.pause_until ? `${ymd(opts.pause_until)}に再開します。` : '再開のご希望はお店にお伝えください。'}${result.pause_fee > 0 ? `休会中は、月会費のかわりに休会費（月額¥${result.pause_fee.toLocaleString()}）をお支払いいただきます（次回の引き落としから）。` : '休会中の月会費はかかりません。'}${(result.kept_options || []).length ? `オプション（${result.kept_options.join('・')}）は休会中も続きます。` : ''}${(result.stopped_options || []).length ? `オプション（${result.stopped_options.join('・')}）は休会中は止まります。` : ''}`,
     resume: '休会から再開しました。次回から月会費の引き落としが再開します。',
     plan_change: `プランを「${toPlan?.name || ''}」に変更しました（${ymd(result.effective_date)}から新しい月額）。`,
     cancel: `退会を受け付けました。${result.detail ? `（${result.detail}）` : `${ymd(result.effective_date)}で退会となります。`}これまでのご利用ありがとうございました。`,

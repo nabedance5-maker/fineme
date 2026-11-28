@@ -6724,7 +6724,7 @@ export default function ProviderDashboardPage() {
         box.innerHTML = `
           <div class="mbr-ex">
             <b>オプション</b>
-            ${(m.option_items || []).length ? m.option_items.map(i => `<div class="mbr-ex-row"><span>${esc(i.name)}（月額${fmtYen(i.monthly_price)}）</span><button type="button" class="btn btn-ghost" data-mbr-opt-rm="${i.id}">外す</button></div>`).join('') : '<span>付いていません</span>'}
+            ${(m.option_items || []).length ? m.option_items.map(i => `<div class="mbr-ex-row"><span>${esc(i.name)}（月額${fmtYen(i.monthly_price)}）${i.paused_at && m.paused_at ? '・休会中は停止' : ''}</span><button type="button" class="btn btn-ghost" data-mbr-opt-rm="${i.id}">外す</button></div>`).join('') : '<span>付いていません</span>'}
             ${addable.length ? `<div class="mbr-ex-row"><select id="mbr-ex-opt">${addable.map(o => `<option value="${o.id}">${esc(o.name)}（月額${fmtYen(o.monthly_price)}）</option>`).join('')}</select><button type="button" class="btn btn-ghost" id="mbr-ex-opt-add">追加する</button></div>` : ''}
             <span class="mbr-ex-note">付け外しは次回の引き落としから反映されます（日割りの精算はしません）。</span>
           </div>
@@ -6917,6 +6917,8 @@ export default function ProviderDashboardPage() {
         if (allowEl) allowEl.checked = s.allow_online_requests !== false;
         const pauseFeeEl = document.getElementById('mbr-set-pausefee');
         if (pauseFeeEl) pauseFeeEl.value = String(s.pause_fee ?? 0);
+        const pauseKeepEl = document.getElementById('mbr-set-pausekeepopt');
+        if (pauseKeepEl) pauseKeepEl.checked = !!s.pause_keep_options;
         ffState = { ...(s.form_fields || {}) };
         cfList = JSON.parse(JSON.stringify(s.custom_fields || []));
         renderFormFields();
@@ -6929,6 +6931,7 @@ export default function ProviderDashboardPage() {
           auto_approve: document.getElementById('mbr-set-autoapprove')?.checked,
           allow_online_requests: document.getElementById('mbr-set-allowreq')?.checked,
           pause_fee: document.getElementById('mbr-set-pausefee')?.value || 0,
+          pause_keep_options: !!document.getElementById('mbr-set-pausekeepopt')?.checked,
           form_fields: ffState,
           custom_fields: cfList,
         };
@@ -6964,6 +6967,13 @@ export default function ProviderDashboardPage() {
           lines.push(['再開日', ymd(p.pause_until || req?.pause_until) || '未定（手動で再開）']);
           const fee = p.request_id ? Number(m.default_pause_fee || 0) : Number(p.pause_fee || 0);
           lines.push(['休会中の月額', fee > 0 ? `休会費 ${fmtYen(fee)}（次回の引き落としから）` : '無料（引き落としなし）']);
+          if ((m.option_items || []).length) {
+            const keep = p.request_id ? (m.default_pause_keep_options ? m.option_items.map(i => i.id) : []) : (p.keep_option_item_ids || []);
+            const kept = m.option_items.filter(i => keep.includes(i.id)).map(i => i.name);
+            const stopped = m.option_items.filter(i => !keep.includes(i.id)).map(i => i.name);
+            if (kept.length) lines.push(['続けるオプション', kept.join('・')]);
+            if (stopped.length) lines.push(['止めるオプション', stopped.join('・')]);
+          }
         } else if (kind === 'cancel') {
           lines.push(['退会日', timing === 'date' ? (ymd(date) || '—') : (TIMING_LABEL[timing] || '今の支払い期間の終わり')]);
         } else if (kind === 'option_add') {
@@ -7119,7 +7129,7 @@ export default function ProviderDashboardPage() {
           const act = b.dataset.mbrAct;
           if (act === 'resume') { send({ kind: 'resume' }, '休会から再開しました'); return; }
           if (act === 'cancel_undo') { send({ kind: 'cancel_undo' }, '退会の予定を取り消しました'); return; }
-          if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>すでに払った期間はそのままです。休会費が0円なら休会中は引き落としません。金額を入れると、次回の引き落としから月会費のかわりに休会費を引き落とし、再開するとプランの月額に戻ります（オプションは続きます）。再開日を決めると、その日に自動で再開します。</p><label>休会費（月額・円）<input type="number" id="mbr-f-fee" min="0" max="1000000" step="1" inputmode="numeric" value="${Number(m.default_pause_fee || 0)}"></label><label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
+          if (act === 'pause') formEl.innerHTML = `<div class="mbr-form"><b>休会する</b><p>すでに払った期間はそのままです。休会費が0円なら休会中は引き落としません。金額を入れると、次回の引き落としから月会費のかわりに休会費を引き落とし、再開するとプランの月額に戻ります。再開日を決めると、その日に自動で再開します。</p><label>休会費（月額・円）<input type="number" id="mbr-f-fee" min="0" max="1000000" step="1" inputmode="numeric" value="${Number(m.default_pause_fee || 0)}"></label>${(m.option_items || []).length ? `<div><span style="font-size:12.5px;font-weight:600">休会中も続けるオプション（チェックしないものは休会中は止まります）</span>${m.option_items.map(i => `<label style="display:flex;gap:6px;align-items:center;font-weight:400"><input type="checkbox" data-mbr-keep-opt="${i.id}"${m.default_pause_keep_options ? ' checked' : ''}>${esc(i.name)}（月額${fmtYen(i.monthly_price)}）</label>`).join('')}</div>` : ''}<label>再開日（任意）<input type="date" id="mbr-f-until" min="${tomorrow}"></label><label>理由・メモ（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">休会にする</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'plan_change') formEl.innerHTML = `<div class="mbr-form"><b>プランを変更する</b><label>変更先のプラン<select id="mbr-f-plan">${otherPlans.map(p => `<option value="${p.id}">${esc(p.name)}（月額¥${Number(p.monthly_price).toLocaleString()}）</option>`).join('')}</select></label><label>いつから<select id="mbr-f-timing"><option value="period_end">次回の引き落としから新しい月額（差額の精算なし）</option><option value="now">今日から（差額を日割りで次回の請求に加減）</option></select></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">変更する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           if (act === 'cancel') formEl.innerHTML = `<div class="mbr-form"><b>退会する</b><label>退会日<select id="mbr-f-timing"><option value="period_end">お店の締め日どおり（締め日までの申し込みはその月分まで、過ぎていれば翌月分まで）</option><option value="date">日付を指定</option><option value="now">今すぐ（返金はしません）</option></select></label><label id="mbr-f-date-wrap" style="display:none">退会日<input type="date" id="mbr-f-date" min="${tomorrow}"></label><label>退会の理由（任意）<input id="mbr-f-reason" maxlength="200"></label><div class="mbr-actions"><button type="button" class="btn" id="mbr-f-go">退会を確定する</button><button type="button" class="btn btn-ghost" id="mbr-f-x">やめる</button></div></div>`;
           document.getElementById('mbr-f-x')?.addEventListener('click', () => { formEl.innerHTML = ''; });
@@ -7127,7 +7137,7 @@ export default function ProviderDashboardPage() {
           if (act === 'cancel') tEl?.addEventListener('change', () => { document.getElementById('mbr-f-date-wrap').style.display = tEl.value === 'date' ? '' : 'none'; });
           document.getElementById('mbr-f-go')?.addEventListener('click', () => {
             const reason = document.getElementById('mbr-f-reason')?.value || '';
-            if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, pause_fee: document.getElementById('mbr-f-fee')?.value || 0, reason }, '休会にしました');
+            if (act === 'pause') send({ kind: 'pause', pause_until: document.getElementById('mbr-f-until').value || null, pause_fee: document.getElementById('mbr-f-fee')?.value || 0, keep_option_item_ids: [...formEl.querySelectorAll('[data-mbr-keep-opt]:checked')].map(el => el.dataset.mbrKeepOpt), reason }, '休会にしました');
             if (act === 'plan_change') send({ kind: 'plan_change', to_plan_id: document.getElementById('mbr-f-plan').value, timing: tEl.value }, 'プランを変更しました');
             if (act === 'cancel') {
               const date = document.getElementById('mbr-f-date').value;
@@ -20580,7 +20590,11 @@ export default function ProviderDashboardPage() {
             <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
               <span>休会費（休会中の月額）</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>¥<input type="number" id="mbr-set-pausefee" min="0" max="1000000" step="1" inputMode="numeric" style={{ width: '140px' }} />／月</span>
-              <span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>0円なら、休会中は月会費を引き落としません。金額を入れると、休会中は月会費のかわりにこの金額を毎月引き落とします（次回の引き落としから。再開するとプランの月額に戻ります）。会員ごとに休会する時に金額を変えることもできます。オプションは休会中も続きます。</span>
+              <span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>0円なら、休会中は月会費を引き落としません。金額を入れると、休会中は月会費のかわりにこの金額を毎月引き落とします（次回の引き落としから。再開するとプランの月額に戻ります）。会員ごとに休会する時に金額を変えることもできます。</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <input type="checkbox" id="mbr-set-pausekeepopt" style={{ marginTop: '3px' }} />
+              <span>休会中もオプションを続ける<br /><span className="muted" style={{ fontSize: '11.5px', lineHeight: 1.6 }}>オフ（おすすめ）なら、休会中はオプションも止まり、再開すると元に戻ります。休会する時に、会員ごと・オプションごとに選び直せます。ロッカー代は、休会中はいつも止まります。</span></span>
             </label>
             {/* 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10） */}
             <div className="ff-box">

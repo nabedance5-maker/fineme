@@ -49,7 +49,8 @@ export async function GET(request, { params }) {
   const { pause_item_id: _pi, pause_return_price_id: _pr, ...mOut } = m;
   return Response.json({
     ...mOut,
-    pause_fee_setting: settings?.pause_fee ?? 0, // 休会を申請した時の休会費（月額・円）。0＝無料
+    pause_fee_setting: settings?.pause_fee ?? 0,
+    pause_keep_options_setting: !!settings?.pause_keep_options, // 休会中もオプションが続くか // 休会を申請した時の休会費（月額・円）。0＝無料
     changes: (changes || []).map(c => ({ ...c, to_plan_name: planName[c.to_plan_id] || null })),
     plans: plans || [],
     allow_online_requests: settings?.allow_online_requests ?? true,

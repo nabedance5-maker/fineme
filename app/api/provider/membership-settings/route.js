@@ -33,7 +33,8 @@ export async function GET(request) {
     require_id_document: data?.require_id_document ?? true,
     auto_approve: !!data?.auto_approve, // カード登録が済んだら自動で入会を確定する（2026-11-12）
     allow_online_requests: data?.allow_online_requests ?? true,
-    pause_fee: data?.pause_fee ?? 0, // 休会費（月額・円）。0＝休会中は請求なし（2026-11-28）
+    pause_fee: data?.pause_fee ?? 0,
+    pause_keep_options: !!data?.pause_keep_options, // 休会中もオプションを続けるか（初期値。false＝止める） // 休会費（月額・円）。0＝休会中は請求なし（2026-11-28）
     form_fields: normalizeFormFields(data?.form_fields),
     custom_fields: data?.custom_fields || [],
     terms_text: data?.terms_text || '',
@@ -69,6 +70,7 @@ async function __PATCH(request) {
     if (!Number.isInteger(fee) || fee < 0 || fee > 1000000) return Response.json({ error: '休会費は0〜1,000,000円の整数で入れてください' }, { status: 400 });
     update.pause_fee = fee;
   }
+  if ('pause_keep_options' in body) update.pause_keep_options = !!body.pause_keep_options;
   if ('terms_text' in body) update.terms_text = body.terms_text || null;
   // 入会フォームの項目（でお要望 2026-10-19：hacomono差分 #10）
   if ('form_fields' in body) update.form_fields = normalizeFormFields(body.form_fields);
