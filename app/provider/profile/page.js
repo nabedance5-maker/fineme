@@ -119,7 +119,7 @@ export default function ProviderProfilePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim()) { alert('店舗・サービス名を入力してください'); return; }
+    if (!form.name.trim()) { alert('表示名を入力してください'); return; }
     setSaving(true);
     try {
       const body = {
@@ -198,7 +198,7 @@ export default function ProviderProfilePage() {
             <h2 style={{ fontSize: '1rem', marginBottom: '16px' }}>基本情報</h2>
             <div className="stack" style={{ gap: '14px' }}>
               <label>
-                <span style={{ fontWeight: 600 }}>店舗・サービス名 <span style={{ color: '#ef4444' }}>*</span></span>
+                <span style={{ fontWeight: 600 }}>表示名 <span style={{ color: '#ef4444' }}>*</span></span>
                 <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="例）田中パーソナルトレーニング" required />
               </label>
               <label>

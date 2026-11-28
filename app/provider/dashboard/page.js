@@ -18262,7 +18262,7 @@ export default function ProviderDashboardPage() {
             <h2 style={{ margin: '0 0 16px', fontSize: '16px' }}>基本情報</h2>
             <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 16px' }}>キャッチコピーや理念などのアピール文言は「アピール設定」タブへ移動しました。ここは住所・営業時間・料金など事実情報のみです。</p>
             <form id="profile-form">
-              <div className="form-field"><label>掲載名 *</label><input name="name" required /></div>
+              <div className="form-field"><label>表示名 *</label><input name="name" required maxLength={80} /><div className="muted" style={{ fontSize: '11.5px', marginTop: '4px' }}>公開ページ・予約の確認メールなど、お客様に見えるお店の名前です</div></div>
               <div className="form-field">
                 <label>プロフィール写真（ヒーロー内に円形アバターとして表示）</label>
                 <div id="photo-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>

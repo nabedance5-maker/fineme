@@ -50,6 +50,17 @@ export default function AdminProvidersPage() {
     function h() { return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY }; }
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     // 契約の状態（2026-10-30）：特例無料／プラン契約中／引き落とし失敗／未契約（お店の申し込み待ち）
+    // 登録名（2026-11-28）：お店が表示名を変えても、運営がどこのお店か分かるように
+    function nameNote(p) {
+      const parts = [];
+      if (p.registered_name && p.registered_name !== p.name) parts.push(`登録名：${esc(p.registered_name)}`);
+      if (p.name_changed_at && p.previous_name && p.previous_name !== p.name) {
+        const d = new Date(new Date(p.name_changed_at).getTime() + 9 * 3600000);
+        parts.push(`${d.getUTCMonth() + 1}/${d.getUTCDate()}にお店が表示名を変更（前：${esc(p.previous_name)}）`);
+      }
+      return parts.length ? `<div style="font-size:12px;color:#92400e;margin-top:4px">${parts.join(' ・ ')}</div>` : '';
+    }
+
     function contractBadge(p) {
       const planName = { A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || 'プランA';
       if (p.plan === 'special') {
@@ -85,7 +96,7 @@ export default function AdminProvidersPage() {
       const q = norm(fv('pv-q'));
       const pub = fv('pv-pub'); const con = fv('pv-contract'); const kind = fv('pv-kind'); const cat = fv('pv-cat'); const sort = fv('pv-sort') || 'new';
       const out = list.filter(p => {
-        if (q && ![p.name, p.email, p.slug, p.referral_code, p.referred_by, p.area].some(x => norm(x).includes(q))) return false;
+        if (q && ![p.name, p.registered_name, p.previous_name, p.email, p.slug, p.referral_code, p.referred_by, p.area].some(x => norm(x).includes(q))) return false;
         if (pub === 'published' && !(p.published && !p.admin_hidden)) return false;
         if (pub === 'unpublished' && (p.published || p.admin_hidden)) return false;
         if (pub === 'hidden' && !p.admin_hidden) return false;
@@ -138,6 +149,7 @@ export default function AdminProvidersPage() {
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
                   ${contractBadge(p)}
                 </div>
+                ${nameNote(p)}
                 <div style="font-size:12px;color:#111;margin-top:4px">
                   ${p.area ? `📍 ${esc(p.area)} ` : ''}${p.price_from ? `¥${Number(p.price_from).toLocaleString()}〜 ` : ''}
                   <a href="/provider/${esc(p.slug)}" target="_blank" style="color:#4338ca">/provider/${esc(p.slug)}</a>
@@ -297,7 +309,7 @@ export default function AdminProvidersPage() {
             <div className="kpi-card"><div className="kpi-value" id="kpi-billing">—</div><div className="kpi-label">課金中</div></div>
           </div>
           <div className="ad-toolbar" style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
-            <input id="pv-q" type="search" placeholder="掲載名・メール・URL・紹介コード・エリアで探す" style={{flex:'1 1 260px',padding:'8px 10px',border:'1.5px solid #ddd',borderRadius:'8px',fontSize:'14px'}} />
+            <input id="pv-q" type="search" placeholder="表示名・登録名・前の名前・メール・URL・紹介コード・エリアで探す" style={{flex:'1 1 260px',padding:'8px 10px',border:'1.5px solid #ddd',borderRadius:'8px',fontSize:'14px'}} />
             <select id="pv-pub" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">公開：すべて</option><option value="published">公開中</option><option value="unpublished">非公開</option><option value="hidden">強制非公開</option></select>
             <select id="pv-contract" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">契約：すべて</option><option value="active">契約中</option><option value="none">未契約</option><option value="past_due">引き落とし失敗</option><option value="special">特例無料</option><option value="monitor">無料モニター</option></select>
             <select id="pv-kind" style={{padding:'8px',borderRadius:'8px',border:'1.5px solid #ddd'}}><option value="">種類：すべて</option><option value="provider">契約者</option><option value="affiliate">アフィリエイト掲載</option></select>
@@ -317,7 +329,8 @@ export default function AdminProvidersPage() {
           </div>
           <form id="pform" className="stack">
             <div className="form-grid">
-              <div className="form-field"><label>掲載名 *</label><input name="name" required placeholder="パーソナルジム TOKYO" /></div>
+              <div className="form-field"><label>表示名 *（お客様に見える名前。お店も変えられます）</label><input name="name" required maxLength={80} placeholder="パーソナルジム TOKYO" /></div>
+              <div className="form-field"><label>登録名（運営用。お店が表示名を変えてもこちらは変わりません。空欄なら表示名と同じ）</label><input name="registered_name" maxLength={80} placeholder="例）株式会社〇〇 パーソナルジム TOKYO 渋谷店" /></div>
               <input type="hidden" name="slug" value="" />
               <div className="form-field"><label>メインカテゴリ *</label>
                 <select name="main_category" required>

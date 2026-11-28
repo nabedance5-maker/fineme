@@ -69,7 +69,9 @@ export async function POST(request) {
     const { data, error } = await supabase
       .from('providers')
       .insert([{
-        slug: resolvedSlug, name, catchphrase, description, target_desc, philosophy,
+        slug: resolvedSlug, name, catchphrase,
+        // 登録名（2026-11-28）：運営用の名前。お店が表示名を変えてもこちらは変わらない。空欄なら表示名と同じ
+        registered_name: String(body.registered_name || '').trim().slice(0, 80) || name, description, target_desc, philosophy,
         main_category, sub_categories: sub_categories || [],
         area: pref ? [pref, cityVal].filter(Boolean).join('・') : (area ? String(area).slice(0, 60) : null),
         prefecture: pref, city: cityVal, ...(geo ? { lat: geo.lat, lon: geo.lon } : {}),

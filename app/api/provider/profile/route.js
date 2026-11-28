@@ -49,7 +49,7 @@ async function __PATCH(request) {
   // メールで掲載者を特定（geocoding フォールバック用に prefecture/city も取得）
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, prefecture, city, address')
+    .select('id, name, registered_name, prefecture, city, address')
     .eq('email', user.email)
     .single();
 
@@ -67,6 +67,19 @@ async function __PATCH(request) {
     else if (key === 'page_visibility') updates[key] = normalizeVisibility(v);
     else if (ARRAY_FIELDS.has(key))  updates[key] = Array.isArray(v) ? v : [];
     else                             updates[key] = v;
+  }
+
+  // 表示名（2026-11-28）：空にはできない。変えた時は、運営の管理画面でどこのお店か分かるように
+  // 変える前の名前と日時を残す（運営用の登録名 registered_name はお店からは変えられない）
+  if (updates.name !== undefined) {
+    const nm = String(updates.name || '').trim().slice(0, 80);
+    if (!nm) return Response.json({ error: '表示名を入力してください' }, { status: 400 });
+    updates.name = nm;
+    if (nm !== provider.name) {
+      updates.previous_name = provider.name || null;
+      updates.name_changed_at = new Date().toISOString();
+      if (!provider.registered_name) updates.registered_name = provider.name || nm;
+    }
   }
 
   if (Object.keys(updates).length === 0) {

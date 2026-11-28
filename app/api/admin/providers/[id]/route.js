@@ -62,6 +62,15 @@ export async function PATCH(request, props) {
       if (geo) { updates.lat = geo.lat; updates.lon = geo.lon; }
     }
   }
+  // 登録名（2026-11-28）：運営用の名前。空欄にした時は今の表示名を入れる
+  if (body.registered_name !== undefined) {
+    const rn = String(body.registered_name || '').trim().slice(0, 80);
+    if (rn) updates.registered_name = rn;
+    else {
+      const { data: cur } = await supabase.from('providers').select('name').eq('id', id).maybeSingle();
+      updates.registered_name = (updates.name || cur?.name || '').trim() || null;
+    }
+  }
   // price_from: 空文字・nullはnullに（Supabase integer型エラー対策）
   if (updates.price_from !== undefined) {
     updates.price_from = (updates.price_from === '' || updates.price_from === null)
